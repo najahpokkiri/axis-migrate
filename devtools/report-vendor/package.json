@@ -1,0 +1,10 @@
+{
+  "name": "axis-migrate-report-vendor",
+  "private": true,
+  "description": "Dev-only: fetches the exact MapLibre versions vendored into axis-migrate/skills/report/assets/vendor/ and playwright-core for report browser tests (system Chrome).",
+  "dependencies": {
+    "maplibre-gl": "4.7.1",
+    "@maplibre/maplibre-gl-compare": "0.5.0",
+    "playwright-core": "1.48.2"
+  }
+}
