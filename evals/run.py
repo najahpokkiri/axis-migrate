@@ -26,6 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 EVALS = ROOT / "evals"
 DROP = Path("/tmp/axis-eval-drop")
 FIXTURES = ROOT / "fixtures"
+BASES = {"lux": FIXTURES / "lux-exposure-legacy",                      # case.yaml `base:` -> legacy folder
+         "s1": EVALS / "cases" / "_bases" / "s1-buffers-legacy",
+         "s1L": EVALS / "cases" / "_bases" / "s1L-buffers-legacy"}
 
 
 def sh(cmd, **kw):
@@ -63,7 +66,7 @@ def build_workspace_tar(cdir: Path, case: dict, trial_name: str) -> Path:
         proj.mkdir()
         base = case.get("base", "lux")
         legacy_name = case.get("legacy_name", "lux-exposure-legacy")
-        src = (cdir / "legacy") if (cdir / "legacy").exists() else FIXTURES / {"lux": "lux-exposure-legacy"}[base]
+        src = (cdir / "legacy") if (cdir / "legacy").exists() else BASES[base]
         shutil.copytree(src, proj / legacy_name, symlinks=False)
         for op in case.get("overlay", []) or []:
             tgt = proj / legacy_name / op["path"]
@@ -95,14 +98,14 @@ if [ ! -d "$P/axis-migrate" ]; then mkdir -p "$P"; tar -xf {plugin_tar} -C "$P";
 tar -xf {ws_tar} -C "$T"
 chmod -R a-w "$T/project/{legacy}"
 cd "$T/project"
-"$HOME/harness-env/.venv/bin/python" {driver} < /dev/stdin
+"$HOME/harness-env/.venv/bin/python" {driver}
 cd "$T"; tar -cf {out_tar} out project
 chmod 644 {out_tar}
 '''
 
 
 def run_trial(case_id, cdir, case, sha, plugin_tar, model, trial_idx, results_root, effort):
-    trial = f"{case_id}-{sha[:8]}-{dt.datetime.utcnow().strftime('%H%M%S')}-t{trial_idx}"
+    trial = f"{case_id}-{sha[:8]}-{dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).strftime('%H%M%S')}-t{trial_idx}"
     ws_tar = build_workspace_tar(cdir, case, trial)
     out_tar = DROP / f"out-{trial}.tar"
     driver = DROP / "driver.py"
@@ -122,7 +125,7 @@ def run_trial(case_id, cdir, case, sha, plugin_tar, model, trial_idx, results_ro
     env = dict(os.environ)
     if "CLAUDE_CODE_OAUTH_TOKEN" not in env:
         raise SystemExit("CLAUDE_CODE_OAUTH_TOKEN not in the environment: set -a; . ~/.config/axis-migrate/secrets.env; set +a")
-    t0 = dt.datetime.utcnow()
+    t0 = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     p = subprocess.run(["sudo", "-n", "--preserve-env=CLAUDE_CODE_OAUTH_TOKEN", "-u", "axis-eval", "bash", "-c", script],
                        input=json.dumps(job), text=True, capture_output=True, env=env,
                        timeout=case.get("timeout_s", 2700) + 600)
@@ -130,7 +133,7 @@ def run_trial(case_id, cdir, case, sha, plugin_tar, model, trial_idx, results_ro
     dest.mkdir(parents=True, exist_ok=True)
     (dest / "harness.log").write_text(f"exit {p.returncode}\nSTDOUT\n{p.stdout[-20000:]}\nSTDERR\n{p.stderr[-20000:]}\n")
     meta = {"case": case_id, "trial": trial, "plugin_commit": sha, "model": model, "started": t0.isoformat() + "Z",
-            "ended": dt.datetime.utcnow().isoformat() + "Z", "harness_exit": p.returncode, "effort": effort}
+            "ended": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z", "harness_exit": p.returncode, "effort": effort}
     if out_tar.exists():
         with tarfile.open(out_tar) as tf:
             tf.extractall(dest, filter="tar")
