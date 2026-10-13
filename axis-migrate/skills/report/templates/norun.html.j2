@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en-GB">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>axis-migrate report — no sealed run</title>
+<style>body{font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:#fff;color:#1f2328}
+main{max-width:860px;margin:48px auto;padding:0 16px}h1{font-size:28px;margin:0 0 8px}
+.bar{background:#b42318;color:#fff;padding:12px 16px;font-weight:600}</style></head>
+<body><div class="bar" id="integrity">No sealed run: nothing verified</div>
+<main id="headline"><h1>No sealed run: nothing verified</h1>
+<p>There is no sealed run in <code>{{ migration }}/runs/index.jsonl</code>. A rung is only ever computed from a sealed
+evidence bundle, so this page shows no status. Run the pipeline, verify it, then seal the run with
+<code>seal.py</code> and render again.</p>
+<p><code>axis-migrate status: none | run none | 0 pass, 0 FAIL, 0 NOT_COMPARED, 0 needs review | report migration/report/index.html</code></p>
+</main></body></html>

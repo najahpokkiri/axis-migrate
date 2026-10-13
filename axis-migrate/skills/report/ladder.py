@@ -773,8 +773,12 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
         bind_errs = []
         if cmp.get("run_id") != b.run_id:
             bind_errs.append(f"run_id {cmp.get('run_id')} ≠ {b.run_id}")
-        if not outo or refs.get("out") != outo["id"]:
-            bind_errs.append(f"refs.out {refs.get('out')} ≠ this run's {outo and outo['id']}")
+        if outo is None:
+            # no output in this run: only a non-pass result without an out ref is consistent (OUTPUT_MISSING …)
+            if refs.get("out") or declared_state(cmp) in ac.PASS_STATES:
+                bind_errs.append(f"refs.out {refs.get('out')} but this run has no output for {dsid}")
+        elif refs.get("out") != outo["id"]:
+            bind_errs.append(f"refs.out {refs.get('out')} ≠ this run's {outo['id']}")
         ref_ok_ids = set()
         if refo:
             ref_ok_ids = {refo["id"]} | {f"ref:{hex_of((refo.get('meta') or {}).get('content_sha256'))}"}
@@ -797,7 +801,8 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
             r["disposition"] = "EVIDENCE_INCOMPLETE"
             r["reason_codes"] = ["STATE_RECOMPUTE_MISMATCH"]
             continue
-        n_compared += 1
+        if state not in ("BLOCKED", "NOT_COMPARED", "EVALUATOR_ERROR"):
+            n_compared += 1  # BLOCKED / NOT_COMPARED / EVALUATOR_ERROR say nothing about the candidate
         codes = list(_norm_list(cmp.get("reason_codes")))
         fr, fc = first_reason(cmp)
         r["first_reason"], r["first_check"] = fr, fc
@@ -1012,7 +1017,7 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
     if n_compared == 0:
         headline = "NOTHING VERIFIED"
         rung = rung_cap(rung, "sandbox-validated")
-        blockers.append({"code": "NOTHING_VERIFIED", "detail": "zero datasets compared"})
+        blockers.append({"code": "NOTHING_VERIFIED", "detail": "zero datasets actually compared"})
     finals = [d for d in dres.values() if d["role"] == "final"]
     for d in finals:
         if d["disposition"] not in ("VERIFIED", "ACCEPTED_DIFFERENCE", "BRIDGED"):
