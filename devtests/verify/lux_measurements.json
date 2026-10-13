@@ -1,4 +1,51 @@
 {
+ "invariant": {
+  "A1_clean": {
+   "codes": [
+    "TOLERANCE_UNJUSTIFIED",
+    "LEGACY_DEFECT_SUSPECTED"
+   ],
+   "legacy": 1.5661014843071722e-09,
+   "new": 1.5661014843071722e-09,
+   "state": "NEEDS_DECISION"
+  },
+  "A3_float64_exposure": {
+   "codes": [
+    "TOLERANCE_UNJUSTIFIED",
+    "LEGACY_DEFECT_SUSPECTED"
+   ],
+   "legacy": 1.5661014843071722e-09,
+   "new": 2.6049939693991383e-15,
+   "state": "NEEDS_DECISION"
+  },
+  "W_s02_linework": {
+   "codes": [
+    "TOLERANCE_UNJUSTIFIED",
+    "LEGACY_DEFECT_SUSPECTED"
+   ],
+   "legacy": 1.5661014843071722e-09,
+   "new": 1.5661014843071722e-09,
+   "state": "NEEDS_DECISION"
+  },
+  "W_s04_factor_all_touched": {
+   "codes": [
+    "TOLERANCE_UNJUSTIFIED",
+    "LEGACY_DEFECT_SUSPECTED"
+   ],
+   "legacy": 1.5661014843071722e-09,
+   "new": 0.0017940379743437225,
+   "state": "NEEDS_DECISION"
+  },
+  "W_s04_nostrip": {
+   "codes": [
+    "TOLERANCE_UNJUSTIFIED",
+    "LEGACY_DEFECT_SUSPECTED"
+   ],
+   "legacy": 1.5661014843071722e-09,
+   "new": 1.5661014843071722e-09,
+   "state": "NEEDS_DECISION"
+  }
+ },
  "legit": {
   "A1_clean": {
    "datasets": {
@@ -1262,7 +1309,9 @@
        "value": 0
       }
      },
-     "diagnostic_codes": [],
+     "diagnostic_codes": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
      "reason_codes": [],
      "verdict": "PASS_EXACT"
     },
@@ -2197,7 +2246,9 @@
        "value": 0
       }
      },
-     "diagnostic_codes": [],
+     "diagnostic_codes": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
      "reason_codes": [],
      "verdict": "PASS_EXACT"
     },
@@ -12252,7 +12303,9 @@
        "value": 0
       }
      },
-     "diagnostic_codes": [],
+     "diagnostic_codes": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
      "reason_codes": [],
      "verdict": "PASS_EXACT"
     },
@@ -13698,7 +13751,9 @@
        "value": 0
       }
      },
-     "diagnostic_codes": [],
+     "diagnostic_codes": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
      "reason_codes": [],
      "verdict": "PASS_EXACT"
     },
@@ -19135,7 +19190,9 @@
        "value": 0
       }
      },
-     "diagnostic_codes": [],
+     "diagnostic_codes": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
      "reason_codes": [],
      "verdict": "PASS_EXACT"
     },
@@ -24130,7 +24187,9 @@
        "value": 0
       }
      },
-     "diagnostic_codes": [],
+     "diagnostic_codes": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
      "reason_codes": [],
      "verdict": "PASS_EXACT"
     },

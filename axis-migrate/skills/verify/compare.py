@@ -2220,10 +2220,13 @@ def _invariant_eval(ctx: "PairCtx", inv: dict, side: str, rule: Rule) -> tuple[b
         return rule.close(b, a), rel, {"lhs": a, "rhs": b}
     if kind == "zone_sum_equals":
         path, layer, _ = paths_for("lhs")
-        zref = str(inv.get("zones"))
+        # CONTRACTS §4 invariants carry no zones field: default to the lhs dataset's declared compare.zones
+        zref = str(inv.get("zones") or (ctx.spec.get("compare") or {}).get("zones"))
         zds, zkey = _ds_col(zref)
         zr = resolved.get("zones") or (ctx.spec.get("zones") if (ctx.spec.get("compare") or {}).get("zones") == zref
                                        else None)
+        if inv.get("rule") not in ("centre", "all_touched"):
+            raise EvaluatorFault("CHECKER_EXCEPTION", f"invariant {inv.get('id')}: rule must be centre|all_touched")
         if zr is None:
             raise EvaluatorFault("CHECKER_EXCEPTION", f"invariant {inv.get('id')}: zones {zref} not resolved")
         zr = zr.get(side, zr) if isinstance(zr, dict) and side in zr else zr
@@ -2236,15 +2239,19 @@ def _invariant_eval(ctx: "PairCtx", inv: dict, side: str, rule: Rule) -> tuple[b
         fr = _read_vector(rpath, rlayer or _list_layers(rpath, side)[0], side)
         if rkey not in fr.data or rcol not in fr.data:
             raise EvaluatorFault("CHECKER_EXCEPTION", f"invariant {inv.get('id')}: {rkey}/{rcol} not in {rpath}")
-        rhs = {}
+        rhs: dict = {}
         for k, v in zip(fr.data[rkey], fr.data[rcol]):
-            rhs[_canon_key(k)] = (rhs.get(_canon_key(k)) or 0.0) + (0.0 if _is_null(v) else float(v))
+            kk = _canon_key(k)
+            if _is_null(v) or (kk in rhs and rhs[kk] is None):
+                rhs[kk] = None                            # a null is never 0 (no fillna): the zone cannot satisfy it
+            else:
+                rhs[kk] = (rhs.get(kk) or 0.0) + float(v)
         worst_rel, table, ok = 0.0, [], True
         for i, k in enumerate(keys, start=1):
             kk = _canon_key(k)
             b = rhs.get(kk)
             a = sums[i]
-            if b is None:
+            if b is None:                                 # missing or null on the right-hand side
                 ok = False
                 table.append({"zone": k, "raster": a, "table": None, "rel": None})
                 continue
@@ -3296,6 +3303,12 @@ def main(argv: list[str] | None = None) -> int:
     except SetupError as e:
         print(f"compare.py: {e}", file=sys.stderr)
         print(json.dumps({"verdict": "EVALUATOR_ERROR", "error": str(e)}))
+        return EXIT_SETUP
+    except Exception as e:                                # an evaluator fault is never a candidate verdict
+        tb = traceback.format_exc()
+        print(tb, file=sys.stderr)
+        print(json.dumps({"verdict": "EVALUATOR_ERROR", "reason_codes": ["CHECKER_EXCEPTION"],
+                          "error": f"{type(e).__name__}: {e}"}))
         return EXIT_SETUP
 
 

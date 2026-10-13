@@ -422,3 +422,36 @@ def test_L18_repair_loop(tmp_path, variant):
     assert e["verdict"] == "FAIL" and "ZONE_TOTAL_DRIFT" in e["reason_codes"]
     from importlib import import_module
     import_module("repair_loop")                       # not built: xfail until the loop exists
+
+
+# ============================================================================ invariant: canton sums come back (NOTES)
+def test_invariant_canton_sums_legacy_first(work, variant):
+    clean = work / "A1_clean"
+    exp = lambda t: str(L.outputs_from(t, ["ds.lux_res_exposure_2020"])["ds.lux_res_exposure_2020"])  # noqa: E731
+    ref = str(L.FIXTURE / "04_FINAL/lux_res_exposure_2020.tif")
+    cid = f"invariant:{L.INVARIANT_ID}"
+    # exact (no signed record): the legacy itself misses by 1.57e-9 (float32) -> suspected legacy defect
+    c = chk(compare.compare_pair(ref, exp(clean), L.invariant_pair_spec(clean)), cid)
+    assert c["state"] == "NEEDS_DECISION" and "LEGACY_DEFECT_SUSPECTED" in c["reason_codes"]
+    assert abs(c["legacy"] - 1.566e-9) < 1e-11                                  # PROV Check 2: 1.57e-9
+    # the measured, still unsigned proposal would cover it -> NEEDS_DECISION / TOLERANCE_UNSIGNED, never PASS
+    c = chk(compare.compare_pair(ref, exp(clean), L.invariant_pair_spec(
+        clean, tolerances=yaml.safe_load(unsigned_proposals_text()))), cid)
+    assert c["state"] == "NEEDS_DECISION" and "TOLERANCE_UNSIGNED" in c["reason_codes"]
+    signed = yaml.safe_load(signed_proposals_text())
+    c = chk(compare.compare_pair(ref, exp(clean), L.invariant_pair_spec(clean, tolerances=signed)), cid)
+    assert c["state"] == "PASS_WITHIN_TOLERANCE"
+    for name in ("W_s04_factor_all_touched", "W_s04_nostrip"):
+        t = variant(name)
+        c = chk(compare.compare_pair(ref, exp(t), L.invariant_pair_spec(t, tolerances=signed)), cid)
+        assert c["state"] == "FAIL" and c["reason_codes"] == ["INVARIANT_VIOLATED"], (name, c)
+
+
+def test_invariant_from_graph_in_run_mode(tmp_path):
+    leg = L.copy_fixture(tmp_path)
+    run = lux_run(tmp_path, L.legacy_copies(leg), tolerances=signed_proposals_text(),
+                  invariants=[L.canton_sums_invariant()])
+    results, rc = compare.run_compare(run)
+    c = chk(results["ds.lux_res_exposure_2020"], f"invariant:{L.INVARIANT_ID}")
+    assert c["state"] == "PASS_WITHIN_TOLERANCE" and abs(c["legacy"] - 1.566e-9) < 1e-11
+    assert rc == 0

@@ -3,7 +3,29 @@
 # Checks not listed here stay exact (default): the independent implementation reproduced them exactly.
 version: 1
 records:
-- id: tol.02_res_2169.vector.attr:area_m2.v1
+- id: tol.lux_res_exposure_2020.invariant.inv.canton_sums.v1
+  dataset: ds.lux_res_exposure_2020
+  check: invariant:inv.canton_sums
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-06
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 1.5661014843071722e-09
+    how: the legacy run itself (float32 exposure) and the legitimate alternatives;
+      invariant evaluated on legacy first
+    evidence: devtests/verify/lux_measurements.json#invariant
+  nearest_wrong:
+    value: 0.0017940379743437225
+    variant: factor rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#invariant.W_s04_factor_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_res_2169.vector.attr.area_m2.v1
   dataset: ds.02_res_2169
   check: vector.attr:area_m2
   metric: abs+rel
@@ -25,7 +47,7 @@ records:
   agreed_at: null
   decision_ref: null
   fixed_before: null
-- id: tol.02_res_4326.vector.attr:area_m2.v1
+- id: tol.02_res_4326.vector.attr.area_m2.v1
   dataset: ds.02_res_4326
   check: vector.attr:area_m2
   metric: abs+rel
@@ -47,7 +69,7 @@ records:
   agreed_at: null
   decision_ref: null
   fixed_before: null
-- id: tol.exposure_by_canton_csv.table.attr:exposure_raster_sum_eur.v1
+- id: tol.exposure_by_canton_csv.table.attr.exposure_raster_sum_eur.v1
   dataset: ds.exposure_by_canton_csv
   check: table.attr:exposure_raster_sum_eur
   metric: abs+rel
@@ -69,7 +91,7 @@ records:
   agreed_at: null
   decision_ref: null
   fixed_before: null
-- id: tol.exposure_by_canton_csv.table.total:exposure_raster_sum_eur.v1
+- id: tol.exposure_by_canton_csv.table.total.exposure_raster_sum_eur.v1
   dataset: ds.exposure_by_canton_csv
   check: table.total:exposure_raster_sum_eur
   metric: abs+rel
@@ -91,7 +113,7 @@ records:
   agreed_at: null
   decision_ref: null
   fixed_before: null
-- id: tol.exposure_by_canton_gpkg.vector.attr:exp_sum.v1
+- id: tol.exposure_by_canton_gpkg.vector.attr.exp_sum.v1
   dataset: ds.exposure_by_canton_gpkg
   check: vector.attr:exp_sum
   metric: abs+rel
@@ -113,7 +135,7 @@ records:
   agreed_at: null
   decision_ref: null
   fixed_before: null
-- id: tol.exposure_by_canton_xlsx.table.attr:exposure_raster_sum_eur.v1
+- id: tol.exposure_by_canton_xlsx.table.attr.exposure_raster_sum_eur.v1
   dataset: ds.exposure_by_canton_xlsx
   check: table.attr:exposure_raster_sum_eur
   metric: abs+rel
@@ -135,7 +157,7 @@ records:
   agreed_at: null
   decision_ref: null
   fixed_before: null
-- id: tol.exposure_by_canton_xlsx.table.total:exposure_raster_sum_eur.v1
+- id: tol.exposure_by_canton_xlsx.table.total.exposure_raster_sum_eur.v1
   dataset: ds.exposure_by_canton_xlsx
   check: table.total:exposure_raster_sum_eur
   metric: abs+rel

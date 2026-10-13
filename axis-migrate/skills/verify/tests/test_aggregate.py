@@ -186,3 +186,11 @@ def test_unpaired_legacy_note_blocks_pipeline(tmp_path):
     v, rc = compare.aggregate(run)
     assert v["pipeline"]["verdict"] == "NOT_COMPARED" and "UNPAIRED_LEGACY" in v["pipeline"]["reason_codes"]
     assert rc != 0
+
+
+def test_aggregate_corrupt_review_is_evaluator_error_exit_2(tmp_path):
+    run = project(tmp_path)
+    compare.run_compare(run)
+    (run / "verify" / "visual-review.json").write_text("{not json")
+    p = run_cli("aggregate", "--run", run)
+    assert p.returncode == 2 and "CHECKER_EXCEPTION" in p.stdout

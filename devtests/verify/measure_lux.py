@@ -284,8 +284,29 @@ def main(argv=None) -> int:
                                   "from": min(v)[2]} for (d, c), v in sorted(wrong.items())]
     (HERE / "lux_measurements.json").write_text(json.dumps(meas, indent=1, sort_keys=True, default=str) + "\n")
     # ---------------------------------------------------------------- proposals (unsigned)
+    # ---------------------------------------------------------------- the canton-sum invariant (legacy first)
+    inv_rows = {}
+    for name in ("A1_clean", "A3_float64_exposure", "W_s04_factor_all_touched", "W_s02_linework", "W_s04_nostrip"):
+        tree = work / name
+        exp = L.outputs_from(tree, ["ds.lux_res_exposure_2020"])["ds.lux_res_exposure_2020"]
+        r = compare.compare_pair(str(L.FIXTURE / "04_FINAL/lux_res_exposure_2020.tif"), str(exp),
+                                 L.invariant_pair_spec(tree))
+        c = next(x for x in r["checks"] if x["id"] == f"invariant:{L.INVARIANT_ID}")
+        inv_rows[name] = {"legacy": c["legacy"], "new": c["new"], "state": c["state"], "codes": c["reason_codes"]}
+    meas["invariant"] = inv_rows
+    legacy_spread = inv_rows["A1_clean"]["legacy"]
+    legit = max([legacy_spread] + [inv_rows[n]["new"] for n in ("A1_clean", "A3_float64_exposure")])
+    wrongs = sorted((inv_rows[n]["new"], n) for n in inv_rows if n.startswith("W_") and inv_rows[n]["new"] > legit)
     import yaml
     recs = []
+    if wrongs:
+        recs.append(tolcal.propose("ds.lux_res_exposure_2020", f"invariant:{L.INVARIANT_ID}", correct_spread=legit,
+                                   nearest_wrong=wrongs[0][0], form="rtol",
+                                   spread_how="the legacy run itself (float32 exposure) and the legitimate "
+                                              "alternatives; invariant evaluated on legacy first",
+                                   spread_evidence="devtests/verify/lux_measurements.json#invariant",
+                                   wrong_variant=WRONG[wrongs[0][1]][2],
+                                   wrong_evidence=f"devtests/verify/lux_measurements.json#invariant.{wrongs[0][1]}"))
     for row in rows:
         if row["nearest_wrong"] is None or row["correct_spread"] is None:
             continue

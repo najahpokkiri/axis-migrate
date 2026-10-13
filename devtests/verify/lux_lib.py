@@ -137,3 +137,24 @@ def signed(rec: dict, who="human:devtest-fixture", at="2026-10-15T09:00:00Z") ->
     r = dict(rec)
     r["agreed_by"], r["agreed_at"] = who, at
     return r
+
+
+INVARIANT_ID = "inv.canton_sums"
+INVARIANT_TOL = "tol.lux_res_exposure_2020.invariant.inv.canton_sums.v1"
+
+
+def canton_sums_invariant(*, tolerance_ref=INVARIANT_TOL) -> dict:
+    """NOTES.txt: 'sums per canton should come back to the canton total' (CONTRACTS §4 invariant shape)."""
+    return {"id": INVARIANT_ID, "kind": "zone_sum_equals", "lhs": "ds.lux_res_exposure_2020",
+            "rhs": "ds.04_canton_factor:tot_value", "rule": "centre", "tolerance_ref": tolerance_ref}
+
+
+def invariant_pair_spec(new_tree: Path, *, tolerances=None, legacy_root: Path = FIXTURE) -> dict:
+    s = pair_spec("ds.lux_res_exposure_2020", tolerances=tolerances, legacy_root=legacy_root)
+    inv = canton_sums_invariant()
+    inv["resolved"] = {"rhs": {"legacy": {"path": str(Path(legacy_root) / "05_TEMP/04_canton_factor.gpkg"),
+                                          "layer": "canton_factor"},
+                               "new": {"path": str(Path(new_tree) / "s04_distribute_value/04_canton_factor.gpkg"),
+                                       "layer": "canton_factor"}}}
+    s["invariants"] = [inv]
+    return s

@@ -338,3 +338,23 @@ def test_mismatches_parquet(raster_pair):
     assert t.num_rows == 4 and {"check", "row", "col", "x", "y", "legacy", "new"} <= set(t.column_names)
     assert r["mismatches"].endswith("m.parquet")
     del out
+
+
+def test_zone_sum_invariant_null_rhs_is_violation_never_zero(tmp_path):
+    import geopandas as gpd
+    zp = _zones(tmp_path)
+    a = np.where(np.arange(N * N).reshape(N, N) % 25 < 25, 0.0, 1.0).astype("float32")   # all zero raster
+    leg = write_raster(tmp_path / "l.tif", a)
+    z = gpd.read_file(zp)
+    tab = z.copy()
+    tab["total"] = [0.0, 0.0]
+    tl = write_vector(tmp_path / "tl.gpkg", tab, layer="tot")
+    tab2 = z.copy()
+    tab2["total"] = [0.0, None]                         # a null total would "equal" 0 under fillna(0)
+    tn = write_vector(tmp_path / "tn.gpkg", tab2, layer="tot")
+    inv = {"id": "inv.zs", "kind": "zone_sum_equals", "lhs": "ds.synthetic", "zones": "ds.zones:zone",
+           "rhs": "ds.tot:total", "rule": "centre",
+           "resolved": {"zones": {"path": str(zp), "layer": "zones"},
+                        "rhs": {"legacy": {"path": str(tl), "layer": "tot"}, "new": {"path": str(tn), "layer": "tot"}}}}
+    c = check(pair(leg, leg, spec("raster", invariants=[inv])), "invariant:inv.zs")
+    assert c["state"] == "FAIL" and c["reason_codes"] == ["INVARIANT_VIOLATED"]
