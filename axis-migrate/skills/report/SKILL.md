@@ -34,8 +34,8 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
 
 ## Late evidence: amend, never re-seal
 
-- **Late visual receipts** (after sealing): `plot.py review-add` writes to `runs/<id>/amend/visual-review.json`. Then run
-  `axpy seal.py migration --run <id> --amend`.
+- **Late visual receipts** (after sealing): `plot.py review-add` writes to `runs/<id>/amend/visual-review.json` and runs
+  the amend seal itself (exit 4 = recorded but the amend failed: then run `axpy seal.py migration --run <id> --amend`).
 - **Decisions or known differences added after the run** are picked up by the same `--amend`. A KD decided after the run
   is shown as "decided after seeing the difference" and applies only from the **next** run.
 - **Target evidence**: after `target_check.py`, run `axpy seal.py migration --run <id> --amend --target`. Without this,
