@@ -1,0 +1,11 @@
+{
+ "build_id": "729afa7f-183e-45f6-a360-260b0633ebb9",
+ "build_seconds": 79.9,
+ "built_at": "2026-10-13T23:21:12Z",
+ "cpu_count": 2,
+ "lock_sha256": "1eb65b368ad63edc0a44c9795e7ca4ef657ad7ac0ca96fe690a2a48ed23d0097",
+ "memory_mb": 2048,
+ "name": "axis-geo-migrate-1eb65b36",
+ "template_id": "jybwir2outykhh2enymu",
+ "uv": "0.13.0"
+}

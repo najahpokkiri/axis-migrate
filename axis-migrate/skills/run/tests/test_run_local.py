@@ -56,6 +56,9 @@ def test_clean_chained_run_is_sealed_and_complete(runner, project):
     assert all(not w["path"].startswith("/") for w in io["reads"] + io["writes"])
     res = json.loads((rd / "logs" / f"{S01}.result.json").read_text())
     assert res["ok"] is True and res["stub_check"]["passed"] is True
+    assert res["python_flags"] == {"hash_randomization": 0, "dont_write_bytecode": True,
+                                   "ignore_environment": False, "no_user_site": True}
+    assert not list((rd / "snapshot").rglob("__pycache__"))
     # sealed: checksums intact, files read-only, verify/ writable, index appended
     assert rl.verify_checksums(rd) == []
     assert not os.access(rd / "manifest.json", os.W_OK) and not os.access(rd / "outputs", os.W_OK)

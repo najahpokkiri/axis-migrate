@@ -60,7 +60,7 @@ EXIT = ac.EXIT_RUN
 CONTRACT_REASONS = ("STUB_DETECTED", "UNDECLARED_READ", "UNDECLARED_WRITE", "STAGED_INPUT_MODIFIED",
                     "OUTPUT_MISSING", "OUTPUT_EMPTY", "OUTPUT_STALE", "OUTPUT_UNOPENABLE", "RUNTIME_NOT_FROM_SNAPSHOT",
                     "MODULE_MISSING", "RUNTIME_MODIFIED", "CTX_STEP_MISMATCH", "OUTPUT_NOT_IN_WRITE_LEDGER",
-                    "LEDGER_EMPTY")
+                    "LEDGER_EMPTY", "DOWNLOAD_HASH_MISMATCH")
 ENV_REASONS = ("PROJ_NETWORK_ON",)
 SIDECAR_STAGE_SKIP = (".aux.xml", ".lock", "-wal", "-shm", "-journal")
 
@@ -106,6 +106,8 @@ class ExecResult:
     ledger_kind: str = "strace"          # strace | audit+cpl_debug | e2b-physical | none
     ledger_path: str | None = None       # run-relative
     note: str | None = None
+    extra_reasons: list = field(default_factory=list)   # executor-side findings (e.g. staged input changed remotely)
+    ledger_root: str | None = None       # run root as seen by the traced process (remote executors); remapped
 
 
 @dataclass
@@ -621,6 +623,8 @@ class Run:
         self.ds = {d["id"]: d for d in self.graph.get("datasets", [])}
         self.code_hash, self.code_files = code_tree_hash(self.migration / "pipeline")
         self.snapshot_hashes: dict = {}
+        self.exec_root: str | None = None     # where the run dir lives for the step process (None = here)
+        self.e2b_record: dict | None = None
 
     # ---- allocation, snapshot --------------------------------------------------------------------------------
     def allocate(self) -> None:
@@ -691,7 +695,8 @@ class Run:
         return sorted(found)
 
     def record_environment(self, probe: dict, *, lock_path: Path | None = None, lock_mark: Path | None = None,
-                           reference: dict | None = None, executor_python: Path | None = None) -> None:
+                           reference: dict | None = None, executor_python: Path | str | None = None,
+                           lock_mark_value: str | None = None, mismatch_reason: str = "FREEZE_MISMATCH") -> None:
         """Pipeline env vs lock, reference env, majors (D5-3/D5-4). Raises RunAbort(13) when refused."""
         lock_path = lock_path or LOCK
         lock_mark = lock_mark or LOCK_MARK
@@ -702,7 +707,10 @@ class Run:
         ac.dump_json(env_dir / "probe.json", probe)
         lock_hash = "sha256:" + sha256_file(lock_path)
         fz = freeze_vs_lock(freeze, lock_path)
-        mark = lock_mark.read_text().strip() if lock_mark.is_file() else None
+        if lock_mark_value is not None:
+            mark = lock_mark_value.strip()
+        else:
+            mark = lock_mark.read_text().strip() if lock_mark.is_file() else None
         reasons = []
         self.reference_env = reference or {"source": "unavailable"}
         native = probe.get("native", {})
@@ -715,9 +723,9 @@ class Run:
             self.expect = {"site_packages": probe.get("site_packages", []),
                            "versions": lock_versions_for_boot(lock_path), "enforce_versions": True}
             if mark != sha256_file(lock_path):
-                reasons.append("FREEZE_MISMATCH:lock_not_synced")
+                reasons.append(f"{mismatch_reason}:lock_not_synced")
             if not fz["matches"]:
-                reasons.append("FREEZE_MISMATCH")
+                reasons.append(mismatch_reason)
         ac.dump_json(env_dir / "expect.json", self.expect)
         net = probe.get("proj", {})
         if net.get("network_enabled"):
@@ -741,7 +749,7 @@ class Run:
             "proj": probe.get("proj"), "runner_env": dict(DETERMINISM_ENV),
             "stub_check": {"passed": bool(sc.get("passed")), "canary": sc.get("canary"),
                            "meta_path": sc.get("meta_path"), "problems": sc.get("problems", [])},
-            "read_ledger": self.read_ledger, "e2b": None, "allow_env_major": self.allow_env_major,
+            "read_ledger": self.read_ledger, "e2b": self.e2b_record, "allow_env_major": self.allow_env_major,
             "versions_enforced": enforce, "uv": find_uv()}
         if not sc.get("passed"):
             raise RunAbort(EXIT["contract"], ["STUB_DETECTED:probe"])
@@ -1120,6 +1128,14 @@ class Run:
         self.tests_record["sha256"] = sha256_file(out)
         self.tests_record["path"] = "verify/tests.json"
 
+    def x(self, p: Path | str) -> str:
+        """A local run path as the step process sees it (identity locally; remapped for remote executors)."""
+        p = str(p)
+        if self.exec_root is None:
+            return p
+        base = str(self.dir)
+        return self.exec_root + p[len(base):] if p == base or p.startswith(base + "/") else p
+
     def show_path(self, p: str) -> str:
         """Run-relative inside the run, `project:<rel>` inside the project, else as is (no absolute project paths
         in hashed records; CONTRACTS §1)."""
@@ -1136,13 +1152,14 @@ class Run:
         out_tmp.mkdir(parents=True, exist_ok=True)
         scratch = self.dir / "scratch" / ps.id
         scratch.mkdir(parents=True, exist_ok=True)
-        inputs = {ds: {k: f[k] for k in ("path", "layer", "kind", "format", "source")} for ds, f in ps.feeds.items()}
-        outputs = {ds: {"path": str(out_tmp / s["name"]), "layer": s["layer"], "kind": s["kind"],
+        inputs = {ds: {**{k: f[k] for k in ("layer", "kind", "format", "source")}, "path": self.x(f["path"])}
+                  for ds, f in ps.feeds.items()}
+        outputs = {ds: {"path": self.x(out_tmp / s["name"]), "layer": s["layer"], "kind": s["kind"],
                         "format": s["format"], "may_be_empty": s["may_be_empty"]} for ds, s in ps.out_specs.items()}
         doc = {"schema": CTX_SCHEMA, "run_id": self.run_id, "step_id": ps.id, "chain": self.chain,
-               "inputs": inputs, "outputs": outputs, "params_file": str(self.dir / "snapshot" / "params.yaml"),
-               "declared_params": ps.params, "scratch_dir": str(scratch), "no_seek_roots": [],
-               "io_log": str(self.dir / "logs" / f"{ps.id}.io.json"), "run_dir": str(self.dir)}
+               "inputs": inputs, "outputs": outputs, "params_file": self.x(self.dir / "snapshot" / "params.yaml"),
+               "declared_params": ps.params, "scratch_dir": self.x(scratch), "no_seek_roots": [],
+               "io_log": self.x(self.dir / "logs" / f"{ps.id}.io.json"), "run_dir": self.x(self.dir)}
         p = self.dir / "ctx" / f"{ps.id}.json"
         ac.dump_json(p, doc)
         return p
@@ -1155,18 +1172,21 @@ class Run:
             env.update(extra)
         return env
 
-    def boot_argv(self, ps: PlannedStep, python: Path) -> list[str]:
-        return [str(python), "-I", str(AXIS_BOOT), "--step", ps.id, "--ctx", str(self.dir / "ctx" / f"{ps.id}.json"),
-                "--snapshot", str(self.dir / "snapshot"),
-                "--result", str(self.dir / "logs" / f"{ps.id}.result.json"),
-                "--expect", str(self.dir / "env" / "expect.json")]
+    def boot_argv(self, ps: PlannedStep, python: Path | str, boot: Path | str | None = None) -> list[str]:
+        # not -I: it implies -E, which would drop PYTHONHASHSEED; the environment is a full allow-list anyway.
+        # -s: no user site, -P: no script dir on sys.path, -B: no bytecode written into the snapshot.
+        return [str(python), "-s", "-P", "-B", str(boot or AXIS_BOOT), "--step", ps.id,
+                "--ctx", self.x(self.dir / "ctx" / f"{ps.id}.json"), "--snapshot", self.x(self.dir / "snapshot"),
+                "--result", self.x(self.dir / "logs" / f"{ps.id}.result.json"),
+                "--expect", self.x(self.dir / "env" / "expect.json")]
 
     def ledger_policy(self, ps: PlannedStep, python: Path) -> LedgerPolicy:
         d = _real(self.dir)
         out_tmp = _real(self.dir / "outputs" / f"{ps.id}.tmp")
         allowed_prefixes = [out_tmp, _real(self.dir / "scratch" / ps.id), _real(self.dir / "snapshot" / "axis_pipeline")]
         allowed_files = [_real(self.dir / "snapshot" / "params.yaml"), _real(self.dir / "ctx" / f"{ps.id}.json"),
-                         _real(self.dir / "env" / "expect.json"), _real(self.dir / "snapshot")]
+                         _real(self.dir / "env" / "expect.json"), _real(self.dir / "snapshot"),
+                         _real(self.dir / "boot" / "axis_boot.py")]
         logs_dir = _real(self.dir / "logs")
         allowed_files.append(logs_dir)
         py = Path(python)
@@ -1215,11 +1235,17 @@ class Run:
                 result = json.loads(res_p.read_text(encoding="utf-8"))
             except ValueError:
                 result = None
-        reasons: list[str] = []
+        reasons: list[str] = list(er.extra_reasons)
         # ledger
         ledger_rel = er.ledger_path
-        if er.ledger_kind == "strace":
+        if er.ledger_kind in ("strace", "e2b-physical+strace"):
             events = parse_strace(self.dir / ledger_rel) if ledger_rel else []
+            if er.ledger_root:   # remote run root → this run dir, so one policy applies to both
+                root = er.ledger_root.rstrip("/")
+                for e in events:
+                    if e["path"] == root or e["path"].startswith(root + "/"):
+                        e["path"] = str(self.dir) + e["path"][len(root):]
+                        e["remote"] = True
         elif er.ledger_kind == "audit+cpl_debug":
             events = parse_audit(self.dir / ledger_rel, logs / f"{ps.id}.stderr") if ledger_rel else []
         else:
@@ -1229,7 +1255,7 @@ class Run:
         for key in ("undeclared", "attempted_protected"):
             led[key] = [dict(u, path=self.show_path(u["path"])) for u in led[key]]
         led["undeclared_writes"] = [self.show_path(p) for p in led["undeclared_writes"]]
-        if er.ledger_kind in ("strace", "audit+cpl_debug") and not events:
+        if er.ledger_kind in ("strace", "audit+cpl_debug", "e2b-physical+strace") and not events:
             reasons.append(f"LEDGER_EMPTY:{ps.id}")
         if led["undeclared"]:
             reasons.append(f"UNDECLARED_READ:{ps.id}")
@@ -1278,7 +1304,7 @@ class Run:
             if out_tmp.is_dir() else []
         writes_ledger = sorted({f"outputs/{ps.id}/" + Path(w).relative_to(pol.out_tmp).as_posix()
                                 for w in led["writes"] if _is_under(w, pol.out_tmp) and w != pol.out_tmp})
-        if er.exit_code == 0 and not er.timed_out and er.ledger_kind == "strace":
+        if er.exit_code == 0 and not er.timed_out and er.ledger_kind in ("strace", "e2b-physical+strace"):
             for o in outs:
                 if o["path"] not in writes_ledger:
                     reasons.append(f"OUTPUT_NOT_IN_WRITE_LEDGER:{o['dataset_id']}")
@@ -1477,7 +1503,7 @@ class Run:
         eligible = "none"
         if (self.chain == "chained" and self.executor in ("local", "e2b") and status == "succeeded" and stub_ok
                 and not undeclared and self.env_record.get("freeze_matches_lock") and not self.allow_env_major
-                and self.read_ledger in ("strace", "e2b-physical")):
+                and self.read_ledger in ("strace", "e2b-physical", "e2b-physical+strace")):
             eligible = "sandbox-validated"
         man = {
             "schema": MANIFEST_SCHEMA, "run_id": self.run_id, "project": self.graph.get("project", {}).get("name"),
@@ -1508,6 +1534,8 @@ class Run:
         }
         if self.executor == "refenv":
             man["env_control"] = self.env_control()
+        if self.e2b_record is not None:
+            man["env"]["e2b"] = self.e2b_record
         shutil.rmtree(self.dir / "scratch", ignore_errors=True)
         ac.dump_json(self.dir / "manifest.json", man)
         write_checksums(self.dir)

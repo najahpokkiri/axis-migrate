@@ -405,7 +405,11 @@ def run_boot(args) -> int:
     ctx_doc = json.loads(Path(args.ctx).read_text(encoding="utf-8"))
     result: dict = {"schema": "axis-migrate.step-result.v1", "step_id": args.step, "ok": False, "exit_code": None,
                     "reason_codes": [], "exception": None, "outputs": [], "stub_check": None, "proj": None,
-                    "boot_version": BOOT_VERSION, "python": platform.python_version(), "executable": sys.executable}
+                    "boot_version": BOOT_VERSION, "python": platform.python_version(), "executable": sys.executable,
+                    "python_flags": {"hash_randomization": sys.flags.hash_randomization,
+                                     "dont_write_bytecode": bool(sys.flags.dont_write_bytecode),
+                                     "ignore_environment": bool(sys.flags.ignore_environment),
+                                     "no_user_site": bool(sys.flags.no_user_site)}}
 
     def finish(code: int) -> int:
         result["exit_code"] = code
