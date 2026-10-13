@@ -78,7 +78,9 @@ EXIT_REJECTED = 2
 EXIT_AMEND_FAILED = 4
 
 C_LEGACY, C_NEW, C_SYMDIFF = "#2166ac", "#e66101", "#d7301f"
-C_NODATA, C_BOTH, C_ZERO = "#e6e6e6", "#bdbdbd", "#f7f7f7"
+C_NODATA, C_BOTH, C_ZERO = "#d4d4d4", "#bdbdbd", "#f7f7f7"
+C_ZONE = "#1b7837"
+MARK_MAX = 600                # over-tolerance cells also get a ring marker when there are at most this many
 C_LEG_ONLY_DIFF, C_NEW_ONLY_DIFF = "#000000", "#7a7a7a"
 NOT_COMPARED_STATES = ("NOT_COMPARED", "EVALUATOR_ERROR", "BLOCKED")
 
@@ -509,10 +511,13 @@ def _value_cmap(norm: dict):
 
 
 def _diff_cmap():
+    """PuOr_r truncated to [0.12, 0.88]: the saturated ends stay clearly purple/brown-orange, never near-black, so
+    black and dark grey remain free for cells valid on one side only."""
     import matplotlib as mpl
-    cmap = mpl.colormaps["PuOr_r"].copy()
-    cmap = cmap.with_extremes(bad=(0, 0, 0, 0))
-    return cmap
+    from matplotlib.colors import ListedColormap
+    base = mpl.colormaps["PuOr_r"]
+    cmap = ListedColormap(base(np.linspace(0.12, 0.88, 256)), name="PuOr_r_trunc")
+    return cmap.with_extremes(bad=(0, 0, 0, 0))
 
 
 def _setup_map_ax(ax, extent, crs, title: str, *, labels=True):
@@ -561,7 +566,48 @@ class RasterPlotter:
             if (self.L.ok or self.N.ok) else None
         self.norm = _value_norm(self.L, self.N, self.categorical)
         self.atol, self.rtol, self.exact = _threshold(res)
+        self.zone_segs, self.zone_label = self._zones()
         self._diff()
+
+    def _zones(self) -> tuple[list, str | None]:
+        """Boundaries of the declared zones (graph compare.zones = '<ds>:<col>'), from the legacy zone file as
+        compare uses it, in the raster CRS: draws where zone-boundary defects sit (Q6)."""
+        z = self.spec.get("zones")
+        if not z or self.crs is None:
+            return [], None
+        zds = str(z).split(":", 1)[0]
+        d = self.run.datasets.get(zds) or {}
+        lg = d.get("legacy") or {}
+        if not lg.get("path") or self.run.legacy_root is None:
+            return [], None
+        gdf, err = _read_gdf(self.run.legacy_root / lg["path"], lg.get("layer"))
+        if gdf is None or gdf.crs is None:
+            return [], None
+        try:
+            gdf = gdf.to_crs(_crs_obj(self.crs))
+        except Exception:
+            return [], None
+        segs = []
+        for g in gdf.geometry:
+            for part in _parts(g):
+                rings = [part.exterior, *part.interiors] if part.geom_type == "Polygon" else [part]
+                for ring in rings:
+                    xy = _geom_coords(ring)
+                    if len(xy) > 1:
+                        segs.append(xy)
+        return segs, f"zone boundaries ({z}) in green"
+
+    def _draw_zones(self, ax, lw=0.5) -> None:
+        if self.zone_segs:
+            _draw_segments(ax, self.zone_segs, colors=C_ZONE, linewidths=lw, alpha=0.9)
+
+    def _mark_over(self, ax, mask: np.ndarray, tr, size=5.0) -> None:
+        n = int(mask.sum())
+        if 0 < n <= MARK_MAX:
+            rr, cc = np.nonzero(mask)
+            xs = tr.c + (cc + 0.5) * tr.a + (rr + 0.5) * tr.b
+            ys = tr.f + (cc + 0.5) * tr.d + (rr + 0.5) * tr.e
+            ax.scatter(xs, ys, s=size ** 2, facecolors="none", edgecolors="black", linewidths=0.7, zorder=6)
 
     # ---------------------------------------------------------------------------------------------- difference
     def _diff(self):
@@ -608,7 +654,7 @@ class RasterPlotter:
              "norm": {k: v for k, v in self.norm.items()},
              "panel_names": [p["name"] for p in boxes], "panels": boxes}
         if self.gate_ok and self.d is not None:
-            e["norm"]["diff"] = {"kind": "symmetric", "cmap": "PuOr_r", "lim": self.lim,
+            e["norm"]["diff"] = {"kind": "symmetric", "cmap": "PuOr_r[0.12:0.88]", "lim": self.lim,
                                  "source": "max(p99.5 |d|, tolerance)", "tolerance_scalar": self.thr_scalar,
                                  "atol": self.atol, "rtol": self.rtol, "exact": self.exact}
         e["norm"]["cmap"] = "categorical" if self.norm["kind"] == "categorical" else "viridis"
@@ -663,10 +709,14 @@ class RasterPlotter:
                       interpolation="nearest", resample=False)
             ob, _ = _block_reduce(self.over.astype("float64"), np.ones_like(self.over), f, "any")
             n_over = int(self.over.sum())
-            segs = _mask_segments(ob > 0, tr) if n_over else []
-            if len(segs) <= MAX_OUTLINE_SEGMENTS:
+            many = n_over > 0.5 * max(int(self.both.sum()), 1)
+            segs = _mask_segments(ob > 0, tr) if (n_over and not many) else []
+            if many:
+                ol = "most cells over tolerance (not outlined)"
+            elif len(segs) <= MAX_OUTLINE_SEGMENTS:
                 _draw_segments(ax, segs, colors="black", linewidths=0.5)
-                ol = "cells over tolerance outlined in black"
+                ol = "over-tolerance cells outlined" + (" and ringed" if n_over <= MARK_MAX else "")
+                self._mark_over(ax, self.over, self.L.tr, size=7.0)
             else:
                 ol = f"{_fmt(n_over)} cells over tolerance: too many to outline"
             tol = "exact" if self.exact else f"atol {_fmt(self.atol)} + rtol {_fmt(self.rtol)}·|l|"
@@ -674,10 +724,15 @@ class RasterPlotter:
             if not self.categorical and self.norm.get("vmax"):
                 span = abs(self.norm["vmax"]) or 1.0
                 rel = f" = {_fmt(self.lim / span, 2)} × legacy-new p98"
+                if self.lim / span < 1e-6:
+                    rel += " (float-rounding size)"
             red = f"; {f}×{f}-cell blocks show the largest |d|" if f > 1 else ""
             ax.set_title(f"difference n − l · scale ±{_fmt(self.lim, 3)}{rel}\n{_fmt(n_over)} over tolerance "
-                         f"({tol}); {ol}{red}", fontsize=6.5)
+                         f"({tol}); {ol}" + (f"\n{red.lstrip('; ')}" if red else ""), fontsize=6.5)
             notes.append("black = valid in legacy only, dark grey = valid in new only (see mask_diff.png)")
+            self._draw_zones(ax)
+            if self.zone_label:
+                notes.append(self.zone_label)
             _scalebar(ax, self.crs, self.mcrs, self.extent)
         else:
             why = self.gate_why or "not computed"
@@ -698,7 +753,9 @@ class RasterPlotter:
             cb.ax.tick_params(labelsize=5.5)
         if im_d is not None:
             cax = fig.add_subplot(gs[1, 2])
-            cb = fig.colorbar(im_d, cax=cax, orientation="horizontal", extend="both")
+            ticks = [-self.lim, -self.lim / 2, 0.0, self.lim / 2, self.lim]
+            cb = fig.colorbar(im_d, cax=cax, orientation="horizontal", extend="both", ticks=ticks)
+            cb.ax.set_xticklabels([_fmt(t, 3) for t in ticks])
             cb.set_label("n − l: orange = new larger, purple = legacy larger", fontsize=6)
             cb.ax.tick_params(labelsize=5.5)
         sub = f"CRS {_crs_label(self.crs)} · {('missing: ' + '; '.join(self.missing)) if self.missing else 'both sides read'}"
@@ -748,6 +805,9 @@ class RasterPlotter:
             ax.set_facecolor("white")
             title = ("valid-data outlines, each on its own grid (grids differ: " + (self.gate_why or "?") + ")\n"
                      + " · ".join(parts) + " · legacy blue solid, new orange dashed")
+        self._draw_zones(ax, lw=0.6)
+        if self.zone_label:
+            title += f"\n{self.zone_label}"
         ax.set_title(title, fontsize=7)
         _scalebar(ax, self.crs, self.mcrs, self.extent)
         fig.suptitle(self._title(), fontsize=8, y=0.985)
@@ -841,32 +901,55 @@ class RasterPlotter:
 
     # ---------------------------------------------------------------------------------------------- worst tiles
     def _pick_tiles(self) -> tuple[list[tuple[int, int, int, int]], str]:
+        """Up to K non-overlapping tiles. Two candidate orders are interleaved so that both kinds of defect get a
+        tile: cells with the largest |d| (valid on both sides) and the densest clusters of cells valid on one side
+        only. Ranking mask cells first (by row order on ties) put every tile on one data edge and hid value defects
+        such as smoothing at the peaks (calibration L5)."""
         H, W = self.L.shape
         th, tw = min(TILE, H), min(TILE, W)
-        score = np.where(self.both, np.abs(self.d), 0.0)
-        score = np.where(self.xor_l | self.xor_n, np.inf, score)
-        basis = "largest |d| (cells valid on one side only first)"
-        if not (score > 0).any():
-            score = np.where(self.L.valid, self.L.arr - np.nanmin(np.where(self.L.valid, self.L.arr, np.inf)) + 1.0,
-                             0.0) if self.L.valid.any() else np.zeros_like(score)
+        dval = np.where(self.over if self.over is not None else self.both, np.abs(self.d), 0.0)
+        if not (dval > 0).any():
+            dval = np.where(self.both, np.abs(self.d), 0.0)
+        xor = (self.xor_l | self.xor_n).astype("float64")
+        dens = np.zeros_like(xor)
+        if xor.any():                                   # XOR count in a (th × tw) window centred on each cell
+            c = np.pad(xor, ((th // 2 + 1, th - th // 2), (tw // 2 + 1, tw - tw // 2))).cumsum(0).cumsum(1)
+            dens = (c[th:th + H, tw:tw + W] - c[:H, tw:tw + W] - c[th:th + H, :W] + c[:H, :W])
+            dens = np.where(xor > 0, dens, 0.0)
+
+        def order(score: np.ndarray) -> list[int]:
+            flat = score.ravel()
+            idx = np.flatnonzero(flat > 0)
+            if idx.size > 200_000:
+                idx = idx[np.argpartition(-flat[idx], 200_000)[:200_000]]
+            return idx[np.lexsort((idx, -flat[idx]))].tolist()
+        lists = [order(dval), order(dens)]
+        basis = "alternating: largest |d| on both-valid cells, densest valid-on-one-side clusters"
+        if not lists[0] and not lists[1]:
+            base = np.where(self.L.valid, self.L.arr, -np.inf) if self.L.valid.any() else np.zeros(self.L.shape)
+            base = np.where(np.isfinite(base), base - base[np.isfinite(base)].min() + 1.0, 0.0) \
+                if np.isfinite(base).any() else np.zeros(self.L.shape)
+            lists = [order(base), []]
             basis = "no differing cells: tiles at the largest legacy values"
-        flat = score.ravel()
-        idx = np.flatnonzero(flat > 0)
-        if idx.size > 200_000:
-            part = np.argpartition(-flat[idx], 200_000)[:200_000]
-            idx = idx[part]
-        order = idx[np.lexsort((idx, -flat[idx]))]
         chosen: list[tuple[int, int, int, int]] = []
-        for k in order.tolist():
-            r, c = divmod(k, W)
-            if any(r0 <= r < r0 + th and c0 <= c < c0 + tw for (r0, c0, _, _) in chosen):
-                continue
-            r0 = min(max(r - th // 2, 0), H - th)
-            c0 = min(max(c - tw // 2, 0), W - tw)
-            if any(not (r0 + th <= a0 or a0 + th <= r0 or c0 + tw <= b0 or b0 + tw <= c0) for (a0, b0, _, _) in chosen):
-                continue
-            chosen.append((r0, c0, th, tw))
-            if len(chosen) == K_TILES:
+        pos = [0, 0]
+        turn = 0
+        while len(chosen) < K_TILES and (pos[0] < len(lists[0]) or pos[1] < len(lists[1])):
+            li = turn if pos[turn] < len(lists[turn]) else 1 - turn
+            turn = 1 - turn
+            seq = lists[li]
+            while pos[li] < len(seq):
+                k = seq[pos[li]]
+                pos[li] += 1
+                r, c = divmod(k, W)
+                if any(r0 <= r < r0 + th and c0 <= c < c0 + tw for (r0, c0, _, _) in chosen):
+                    continue
+                r0 = min(max(r - th // 2, 0), H - th)
+                c0 = min(max(c - tw // 2, 0), W - tw)
+                if any(not (r0 + th <= a0 or a0 + th <= r0 or c0 + tw <= b0 or b0 + tw <= c0)
+                       for (a0, b0, _, _) in chosen):
+                    continue
+                chosen.append((r0, c0, th, tw))
                 break
         return chosen, basis
 
@@ -878,10 +961,10 @@ class RasterPlotter:
         from matplotlib.colors import ListedColormap, Normalize
         tiles, basis = self._pick_tiles()
         nrow = max(1, len(tiles))
-        fig_h = 1.05 + 2.6 * nrow
+        fig_h = 1.1 + 2.25 * nrow
         fig = plt.figure(figsize=(8.0, fig_h))
         gs = fig.add_gridspec(nrow, 3, wspace=0.32, hspace=0.5, left=0.09, right=0.985,
-                              top=1 - 1.05 / fig_h, bottom=0.25 / fig_h)
+                              top=1 - 1.1 / fig_h, bottom=0.25 / fig_h)
         cmap, vnorm = _value_cmap(self.norm)
         dn = Normalize(-self.lim, self.lim)
         panels = []
@@ -913,14 +996,18 @@ class RasterPlotter:
                     ax.imshow(a, extent=(ext[0], ext[2], ext[1], ext[3]), origin="upper", cmap=cmap, norm=vnorm,
                               interpolation="nearest", resample=False)
                 _grid_lines(ax, tr, r0, r0 + th, c0, c0 + tw, colors="#9e9e9e", linewidths=0.25)
-                if lab == "diff" and n_over:
+                if lab == "diff":
+                    self._draw_zones(ax, lw=1.1)
+                if lab == "diff" and n_over and n_over <= 0.5 * max(int(self.both[sub].sum()), 1):
                     _draw_segments(ax, _mask_segments(self.over[sub], tr @ Affine.translation(c0, r0)),
                                    colors="black", linewidths=0.6)
                 head = f"tile {i + 1} {lab}"
                 if j == 0:
                     head += f"\nbbox [{_fmt(ext[0], 7)}, {_fmt(ext[1], 7)}, {_fmt(ext[2], 7)}, {_fmt(ext[3], 7)}]"
                 if lab == "diff":
-                    head += f"\n{n_over} over tolerance · {n_xor} valid one side only"
+                    outl = "outlined" if n_over and n_over <= 0.5 * max(int(self.both[sub].sum()), 1) else \
+                        ("not outlined" if n_over else "")
+                    head += f"\n{n_over} over tol.{' (' + outl + ')' if outl else ''} · {n_xor} one side only"
                 ax.set_title(head, fontsize=6)
                 ax.tick_params(labelsize=5)
                 panels.append((f"tile {i + 1} {lab}", ax))
@@ -930,9 +1017,9 @@ class RasterPlotter:
             panels.append(("tile 1 legacy", ax))
         tol = "exact" if self.exact else f"atol {_fmt(self.atol)} + rtol {_fmt(self.rtol)}·|l|"
         fig.suptitle(f"{self._title()}\nworst tiles at native resolution ({TILE}×{TILE} cells, cell grid drawn) · "
-                     f"{basis}\nvalues: shared scale; diff ±{_fmt(self.lim, 3)} (orange new larger, purple legacy "
-                     f"larger, black legacy-only, grey new-only); outlined = over tolerance ({tol})", fontsize=7,
-                     y=0.997)
+                     f"{basis}\nvalues: shared scale · diff ±{_fmt(self.lim, 3)}: orange new larger, purple legacy "
+                     f"larger, black legacy-only, grey new-only\noutlined = over tolerance ({tol})"
+                     + (f" · {self.zone_label}" if self.zone_label else ""), fontsize=7, y=0.997)
         return self._png("worst_tiles.png", "worst_tiles", fig, panels,
                          {"mode": "tiles", "tiles": tile_meta, "tile_cells": TILE})
 
@@ -1340,20 +1427,20 @@ class VectorPlotter:
             nnull = sum(1 for r in self.metrics if r["attr_class"] == "null_mismatch")
             a2.set_title(f"attributes per key: largest relative difference over shared columns (exact, no "
                          f"tolerance)\n{nnull} keys with a null on one side only", fontsize=7)
-            for _, i in self.match["legacy_only"][:UNMATCHED_LABELS]:
+            for k, i in self.match["legacy_only"][:UNMATCHED_LABELS]:
                 p = self.L.geometry.iloc[i]
                 if p is not None and not p.is_empty:
                     q = p.representative_point()
                     for a in (a1, a2):
-                        a.annotate("|".join(self.match["legacy_only"][0][0]) if False else
-                                   "|".join(next(k for k, ii in self.match["legacy_only"] if ii == i)),
-                                   (q.x, q.y), fontsize=5.5, color=C_LEGACY)
+                        a.annotate("|".join(k), (q.x, q.y), fontsize=5.5, color=C_LEGACY,
+                                   bbox={"facecolor": "white", "edgecolor": C_LEGACY, "alpha": 0.85, "pad": 0.8})
             for r in self.metrics:
                 if r["attr_class"] == "null_mismatch":
                     p = self.L.geometry.iloc[r["li"]]
                     if p is not None and not p.is_empty:
                         q = p.representative_point()
-                        a2.annotate("|".join(r["key"]), (q.x, q.y), fontsize=5.5, color="#6a3d9a")
+                        a2.annotate("|".join(r["key"]), (q.x, q.y), fontsize=5.5, color="#6a3d9a",
+                                    bbox={"facecolor": "white", "edgecolor": "#6a3d9a", "alpha": 0.85, "pad": 0.8})
             _scalebar(a1, self.crs, self.mcrs, ext)
         miss = ("\nmissing: " + "; ".join(self.missing)) if self.missing else ""
         fig.suptitle(f"{self._title()}\nper-feature agreement drawn on legacy geometries · CRS {_crs_label(self.crs)}"
