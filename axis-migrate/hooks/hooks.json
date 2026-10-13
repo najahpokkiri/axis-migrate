@@ -1,0 +1,54 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {"type": "command", "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/bin/session_start.py\"", "timeout": 5}
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {"type": "command", "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/bin/graph_changed.py\"", "timeout": 3}
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {"type": "command", "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/bin/guard_write.py\"", "timeout": 5, "onFailure": "block"}
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/bin/guard_bash.py\"", "timeout": 5, "onFailure": "block"}
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {"type": "command", "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/bin/guard_hidden.py\"", "timeout": 3, "onFailure": "block"}
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {"type": "command", "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/bin/post_scan.py\"", "timeout": 10, "onFailure": "block"}
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/bin/stop_gate.py\"", "timeout": 15}
+        ]
+      }
+    ]
+  }
+}

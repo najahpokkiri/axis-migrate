@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""H1 SessionStart (startup|resume|clear|compact|fork): status line, guard list, unacked graph edits, and
+`export GDAL_PAM_ENABLED=NO` into $CLAUDE_ENV_FILE (D8-11). Informational: fails open.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _hooklib as hl  # noqa: E402
+
+GUARDS = [
+    "1. The legacy folder is read-only (Write/Edit and Bash write verbs are refused; gdalinfo -stats, gdal_edit.py "
+    "and gdaladdo on legacy files too). GDAL_PAM_ENABLED=NO is set for your Bash.",
+    "2. graph.json changes only through graph.py apply --actor agent; migration/runs/** and runs/index.jsonl only "
+    "through the runner and seal.py.",
+    "3. pipeline/<step>.py may be written only after that step's plan is approved; steps run only through "
+    "run_local.py / run_e2b.py (direct runs are UNLEDGERED_RUN).",
+    "4. decisions.md and known-differences.md are append-only; tolerance changes after a run, KDs with a human "
+    "owner and fitted->answer params need the user's approval.",
+    "5. Every write under pipeline/, tests/ and params.yaml is scanned (rules S01-S18); fix block findings, there "
+    "is no inline suppression.",
+    "6. The Stop gate refuses completion or parity claims above the computed status; quote the status line.",
+]
+
+
+def status_line(mig) -> str:
+    try:
+        sys.path.insert(0, str(hl.PLUGIN / "skills" / "report"))
+        import ladder  # type: ignore
+        res = ladder.compute(str(mig))
+        line = res.get("status_line") if isinstance(res, dict) else None
+        return line or "axis-migrate status: unknown (ladder returned no status line)"
+    except ImportError:
+        return "axis-migrate status: unknown (ladder unavailable)"
+    except Exception as e:  # noqa: BLE001 - informational
+        return f"axis-migrate status: unknown (ladder failed: {e.__class__.__name__})"
+
+
+def unacked_edits(mig) -> int:
+    try:
+        sys.path.insert(0, str(hl.PLUGIN / "skills" / "discover"))
+        import graph as gmod  # type: ignore
+        res = gmod.unacked_user_edits(str(mig))
+        return len(res) if isinstance(res, (list, tuple)) else int(res)
+    except Exception:  # noqa: BLE001 - fall back to reading the edit log directly
+        return unacked_local(mig)
+
+
+def unacked_local(mig) -> int:
+    g = hl.load_graph(mig)
+    acked = int(((g.get("acks") or {}).get("agent_seq")) or 0)
+    log = mig / "graph-edits.jsonl"
+    n = 0
+    if log.is_file():
+        for line in log.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            rec = json.loads(line)
+            if rec.get("actor") == "user" and int(rec.get("seq") or 0) > acked:
+                n += 1
+    return n
+
+
+def main() -> int:
+    data = hl.read_input()
+    mig = hl.find_migration(data)
+    if mig is None:
+        return 0
+    notes = []
+    env_file = os.environ.get("CLAUDE_ENV_FILE")
+    if env_file:
+        try:
+            existing = open(env_file, encoding="utf-8").read() if os.path.exists(env_file) else ""
+            if "GDAL_PAM_ENABLED=NO" not in existing:
+                with open(env_file, "a", encoding="utf-8") as fh:
+                    fh.write("export GDAL_PAM_ENABLED=NO\n")
+        except OSError as e:
+            notes.append(f"could not write CLAUDE_ENV_FILE ({e.__class__.__name__}); prefix GDAL commands with "
+                         "GDAL_PAM_ENABLED=NO")
+    else:
+        notes.append("CLAUDE_ENV_FILE not provided; prefix GDAL commands with GDAL_PAM_ENABLED=NO")
+    try:
+        n = unacked_edits(mig)
+    except Exception as e:  # noqa: BLE001
+        n = None
+        notes.append(f"unacked graph edits: unknown ({e.__class__.__name__})")
+    lines = [status_line(mig), f"migration: {mig}"]
+    if n:
+        lines.append(f"The user has {n} unacked graph edit(s): run graph.py diff, act on each, then graph.py ack.")
+    lines.append("axis-migrate guards active:")
+    lines += GUARDS
+    lines += notes
+    hl.emit({"hookSpecificOutput": {"hookEventName": "SessionStart",
+                                    "additionalContext": hl.ascii_text("\n".join(lines))}})
+    return 0
+
+
+if __name__ == "__main__":
+    hl.run_inform(main, "session_start", "SessionStart")
