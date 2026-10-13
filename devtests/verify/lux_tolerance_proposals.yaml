@@ -1,0 +1,225 @@
+# PROPOSED lux tolerance records, measured by devtests/verify/measure_lux.py.
+# Every record is UNSIGNED (agreed_by: null). Only Najah signs, by editing agreed_by/agreed_at himself.
+# Checks not listed here stay exact (default): the independent implementation reproduced them exactly.
+version: 1
+records:
+- id: tol.02_res_2169.vector.attr:area_m2.v1
+  dataset: ds.02_res_2169
+  check: vector.attr:area_m2
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-08
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 8.632161145854927e-13
+    how: independent rasterio/geopandas implementation (masked numpy sums, make_valid
+      structure)
+    evidence: devtests/verify/lux_measurements.json#legit.A1_clean
+  nearest_wrong:
+    value: 3.775732215106478e-05
+    variant: ellipsoidal (WGS84) area instead of planar EPSG:2169
+    evidence: devtests/verify/lux_measurements.json#W_s02_area_ellipsoidal
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_res_4326.vector.attr:area_m2.v1
+  dataset: ds.02_res_4326
+  check: vector.attr:area_m2
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-08
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 8.632161145854927e-13
+    how: independent rasterio/geopandas implementation (masked numpy sums, make_valid
+      structure)
+    evidence: devtests/verify/lux_measurements.json#legit.A1_clean
+  nearest_wrong:
+    value: 3.775732215106478e-05
+    variant: ellipsoidal (WGS84) area instead of planar EPSG:2169
+    evidence: devtests/verify/lux_measurements.json#W_s02_area_ellipsoidal
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.exposure_by_canton_csv.table.attr:exposure_raster_sum_eur.v1
+  dataset: ds.exposure_by_canton_csv
+  check: table.attr:exposure_raster_sum_eur
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-06
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 1.5661014818544984e-09
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 0.001794038049758945
+    variant: factor rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#W_s04_factor_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.exposure_by_canton_csv.table.total:exposure_raster_sum_eur.v1
+  dataset: ds.exposure_by_canton_csv
+  check: table.total:exposure_raster_sum_eur
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-07
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 5.1795217400828205e-11
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 9.595880745763144e-05
+    variant: zones rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#W_s03_zones_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.exposure_by_canton_gpkg.vector.attr:exp_sum.v1
+  dataset: ds.exposure_by_canton_gpkg
+  check: vector.attr:exp_sum
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-06
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 1.5661014818544984e-09
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 0.001794038049758945
+    variant: factor rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#W_s04_factor_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.exposure_by_canton_xlsx.table.attr:exposure_raster_sum_eur.v1
+  dataset: ds.exposure_by_canton_xlsx
+  check: table.attr:exposure_raster_sum_eur
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-06
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 1.5661014818544984e-09
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 0.001794038049758945
+    variant: factor rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#W_s04_factor_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.exposure_by_canton_xlsx.table.total:exposure_raster_sum_eur.v1
+  dataset: ds.exposure_by_canton_xlsx
+  check: table.total:exposure_raster_sum_eur
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-07
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 5.1795070940194134e-11
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 9.595880745777792e-05
+    variant: zones rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#W_s03_zones_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.lux_res_exposure_2020.conservation.total.v1
+  dataset: ds.lux_res_exposure_2020
+  check: conservation.total
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-07
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 5.1795217400828205e-11
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 9.595880745763144e-05
+    variant: zones rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#W_s03_zones_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.lux_res_exposure_2020.conservation.zone_totals.v1
+  dataset: ds.lux_res_exposure_2020
+  check: conservation.zone_totals
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-06
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 1.5661016544205335e-09
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 0.001794038049758945
+    variant: factor rasterised all_touched
+    evidence: devtests/verify/lux_measurements.json#W_s04_factor_all_touched
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.lux_res_exposure_2020.raster.values.v1
+  dataset: ds.lux_res_exposure_2020
+  check: raster.values
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-05
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 5.9480212717464324e-08
+    how: exposure written float64 (legitimate only with KD dtype_widening); applies
+      only with KD dtype_widening float32->float64 on ds.lux_res_exposure_2020
+    evidence: devtests/verify/lux_measurements.json#legit.A3_float64_exposure
+  nearest_wrong:
+    value: 0.000719074025871515
+    variant: shapely make_valid default (linework)
+    evidence: devtests/verify/lux_measurements.json#W_s02_linework
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
