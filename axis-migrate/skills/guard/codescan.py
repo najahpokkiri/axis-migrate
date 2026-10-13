@@ -81,6 +81,31 @@ class Finding:
     evidence: str = ""
 
 
+def load_yaml(text: str) -> dict | None:
+    """PyYAML safe_load when importable (the pinned env the runner uses); None in hooks (stdlib only) or on error.
+
+    A file PyYAML cannot parse falls back to the stdlib reader, which fails closed per rule."""
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        return None
+    try:
+        doc = yaml.safe_load(text)
+    except Exception:  # noqa: BLE001
+        return None
+    return doc if isinstance(doc, dict) else None
+
+
+def _strings(obj) -> list[str]:
+    if isinstance(obj, str):
+        return [obj]
+    if isinstance(obj, dict):
+        return [s for v in obj.values() for s in _strings(v)]
+    if isinstance(obj, (list, tuple)):
+        return [s for v in obj for s in _strings(v)]
+    return []
+
+
 class RuleError(Exception):
     pass
 
@@ -94,6 +119,7 @@ class Context:
     graph: dict | None = None
     params_ids: set | None = None
     params_text: str | None = None
+    params_doc: dict | None = None  # PyYAML parse when PyYAML is importable (runner env), else None
     protected: object | None = None  # protected.ProtectedSet
     decisions_ids: set = field(default_factory=set)
 
@@ -112,8 +138,13 @@ class Context:
         ppath = mig / "params.yaml"
         if ppath.is_file():
             c.params_text = ppath.read_text(encoding="utf-8")
-            items = rp.yaml_list_items(c.params_text, "params") or []
-            c.params_ids = {i.id for i in items if i.id}
+            c.params_doc = load_yaml(c.params_text)
+            if c.params_doc is not None:
+                c.params_ids = {str(p["id"]) for p in (c.params_doc.get("params") or [])
+                                if isinstance(p, dict) and p.get("id")}
+            else:
+                items = rp.yaml_list_items(c.params_text, "params") or []
+                c.params_ids = {i.id for i in items if i.id}
         dpath = mig / "decisions.md"
         if dpath.is_file():
             c.decisions_ids = {b.id for b in rp.md_blocks(dpath.read_text(encoding="utf-8"))}
@@ -694,22 +725,33 @@ def scan_params_yaml(ctx: Context, path: Path, display: str) -> list[Finding]:
     out = []
     text = path.read_text(encoding="utf-8")
     items = rp.yaml_list_items(text, "params") or []
-    for it in items:
-        for s in rp.value_strings(it, "value"):
+    doc = load_yaml(text)
+    entries = []  # (id, line, value strings, role, decision, node)
+    if doc is not None:
+        lines = {it.id: it.start_line for it in items if it.id}
+        for p in doc.get("params") or []:
+            if isinstance(p, dict):
+                pid = str(p.get("id"))
+                entries.append((pid, lines.get(pid, 0), _strings(p.get("value")), p.get("role"), p.get("decision"),
+                                p.get("node")))
+    else:
+        for it in items:
+            entries.append((it.id, it.start_line, rp.value_strings(it, "value"), rp.item_scalar(it, "role"),
+                            rp.item_scalar(it, "decision"), rp.item_scalar(it, "node")))
+    for pid, start_line, values, role, dec, node in entries:
+        for s in values:
             if not _looks_pathy(s):
                 continue
             hit = protected_hit(ctx, s, path.parent)
             if not hit:
                 continue
-            role = rp.item_scalar(it, "role")
-            dec = rp.item_scalar(it, "decision")
-            st = ctx.step(rp.item_scalar(it, "node"))
+            st = ctx.step(node)
             bridge_ok = (role == "bridge" and dec and dec in ctx.decisions_ids and st is not None
                          and (st.get("scope") == "keep_legacy" or st.get("kind") == "bridge"))
             if bridge_ok:
                 continue
-            out.append(Finding("S11", "block", display, it.start_line + 1,
-                               f"param {it.id} value resolves into the protected set ({hit[0]}: {hit[1]}); "
+            out.append(Finding("S11", "block", display, start_line + 1,
+                               f"param {pid} value resolves into the protected set ({hit[0]}: {hit[1]}); "
                                "declare a bridge (role: bridge, decision: D-n, keep_legacy/bridge step) or use an input",
                                s[:160]))
     return out

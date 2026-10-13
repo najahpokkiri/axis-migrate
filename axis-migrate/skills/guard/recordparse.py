@@ -89,6 +89,7 @@ class YamlItem:
     text: str           # raw lines of the item (first line includes the "- ")
     fields: dict        # top-level key -> raw scalar text ("" when the value is a nested block)
     start_line: int
+    flow: bool = False  # item written as a flow mapping `- {id: ..., value: ...}`
 
     @property
     def id(self) -> str | None:
@@ -163,7 +164,54 @@ def yaml_list_items(text: str, key: str) -> list[YamlItem] | None:
     return items
 
 
+def split_flow(body: str) -> list[str]:
+    """Split the inside of a YAML flow collection at top-level commas (quotes and nesting respected)."""
+    parts, depth, cur, quote = [], 0, [], None
+    for ch in body:
+        if quote:
+            cur.append(ch)
+            if ch == quote:
+                quote = None
+            continue
+        if ch in "\"'":
+            quote = ch
+        elif ch in "[{":
+            depth += 1
+        elif ch in "]}":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append("".join(cur).strip())
+            cur = []
+            continue
+        cur.append(ch)
+    if "".join(cur).strip():
+        parts.append("".join(cur).strip())
+    return parts
+
+
+def flow_mapping(text: str) -> dict | None:
+    """`{k: v, k2: [a, b], k3: {x: y}}` -> {k: raw value text}; None when `text` is not one flow mapping."""
+    t = text.strip()
+    if not (t.startswith("{") and t.endswith("}")):
+        return None
+    out = {}
+    for part in split_flow(t[1:-1]):
+        m = re.match(r"^([\"']?)([A-Za-z_][\w.\-]*)\1\s*:\s*(.*)$", part, re.S)
+        if not m:
+            return None
+        out.setdefault(m.group(2), m.group(3).strip())
+    return out
+
+
 def _make_item(lines: list[str], dash_ind: int, start_line: int) -> YamlItem:
+    text = "\n".join(lines).rstrip()
+    first = lines[0].strip()
+    if first.startswith("- {") or first.startswith("-  {"):
+        body = " ".join(strip_comment(l.strip()) if i else strip_comment(first[1:].strip())
+                        for i, l in enumerate(lines) if l.strip() and not l.strip().startswith("#"))
+        fm = flow_mapping(body)
+        if fm is not None:
+            return YamlItem(text=text, fields=fm, start_line=start_line, flow=True)
     fields: dict = {}
     key_ind = dash_ind + 2
     for n, line in enumerate(lines):
@@ -189,6 +237,8 @@ def item_scalar(item: YamlItem, key: str) -> str | None:
 
 def item_subtree(item: YamlItem, key: str) -> str:
     """Raw text of `key:` in the item: inline value plus any deeper-indented continuation lines."""
+    if item.flow:
+        return item.fields.get(key, "")
     lines = item.text.splitlines()
     out: list[str] = []
     key_ind = None

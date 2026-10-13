@@ -202,3 +202,63 @@ def test_hook_rule_exception_blocks(project):
 def test_hook_crash_exits_2(project):
     r = run_hook("post_scan.py", "{not json")
     assert r.rc == 2 and "failed closed" in r.err and r.err.isascii()
+
+
+# --- params.yaml styles (block and flow) under both readers --------------------------------------------------------
+FLOW_PARAMS = """version: 1
+params:
+  - {id: p.min_area, node: s01_prep, kind: threshold, value: 2500, unit: m2, source: code}
+  - {id: p.threshold, node: s01_prep, value: 0.5, source: fitted, fitted_against: ds.01_mid}
+  - {id: p.zones_path, node: s01_prep, kind: other,
+     value: "03_INPUT/zones.gpkg", source: code}
+- {id: p.list, node: s01_prep, value: [a, "04_FINAL/x.csv"]}
+"""
+FLOW_ONLY = FLOW_PARAMS.rsplit("- {id: p.list", 1)[0]
+
+
+def _readers(monkeypatch, use_pyyaml):
+    if not use_pyyaml:
+        monkeypatch.setattr(cs, "load_yaml", lambda text: None)
+
+
+@pytest.mark.parametrize("use_pyyaml", [True, False])
+@pytest.mark.parametrize("style", ["block", "flow"])
+def test_s16_param_ids_both_styles(project, monkeypatch, use_pyyaml, style):
+    _readers(monkeypatch, use_pyyaml)
+    if style == "flow":
+        project.write("params.yaml", FLOW_ONLY)
+    ctx = cs.Context.load(project.mig)
+    assert ctx.params_ids == {"p.min_area", "p.threshold", "p.zones_path"}
+    ok = project.write("pipeline/s01_prep.py", "def run(ctx):\n    return ctx.param('p.min_area'), ctx.param('p.zones_path')\n")
+    assert not [f for f in scan(ok, "pipeline", ctx) if f.rule == "S16"]
+    bad = project.write("pipeline/s03_final.py", "def run(ctx):\n    return ctx.param('p.min_aera')\n")
+    assert [f.rule for f in scan(bad, "pipeline", ctx)] == ["S16"]
+
+
+@pytest.mark.parametrize("use_pyyaml", [True, False])
+def test_s11_params_flow_style(project, monkeypatch, use_pyyaml):
+    _readers(monkeypatch, use_pyyaml)
+    project.write("params.yaml", FLOW_ONLY)
+    f, e = cs.scan_file(project.mig / "params.yaml", cs.Context.load(project.mig))
+    assert e == [] and f == []
+    project.write("params.yaml", FLOW_ONLY.replace('"03_INPUT/zones.gpkg"', '"04_FINAL/final.csv"'))
+    f, _ = cs.scan_file(project.mig / "params.yaml", cs.Context.load(project.mig))
+    assert [(x.rule, x.sev) for x in f] == [("S11", "block")] and "p.zones_path" in f[0].msg
+
+
+def test_stdlib_reader_flow_items():
+    import recordparse as rp
+    items = rp.yaml_list_items(FLOW_ONLY, "params")
+    assert [i.id for i in items] == ["p.min_area", "p.threshold", "p.zones_path"]
+    assert rp.item_scalar(items[1], "source") == "fitted" and "fitted_against" in items[1].fields
+    assert rp.value_strings(items[2]) == ["03_INPUT/zones.gpkg"]
+    lst = rp.flow_mapping('{id: p.l, value: [a, "b/c.tif"], m: {x: "y, z"}}')
+    assert lst == {"id": "p.l", "value": '[a, "b/c.tif"]', "m": '{x: "y, z"}'}
+
+
+def test_guard_write_fitted_to_answer_flow_style(project):
+    project.write("params.yaml", FLOW_ONLY)
+    r = run_hook("guard_write.py", tool_payload("PreToolUse", "Edit", project.root, {
+        "file_path": str(project.mig / "params.yaml"), "old_string": "source: fitted", "new_string": "source: answer",
+        "replace_all": False}))
+    assert r.decision == "ask" and "p.threshold" in r.reason
