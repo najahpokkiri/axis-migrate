@@ -1,0 +1,1 @@
+**Not target-ready (Databricks), not deployed.** Job files are in `migration/databricks/`, but the offline target checks did not all pass (${failing}), so the status stays at the pipeline's own rung (`${rung}`). See `migration/databricks/target-check.json`. **Not done:** nothing was deployed, no Databricks workspace was contacted, and the code has not run on a Databricks cluster.

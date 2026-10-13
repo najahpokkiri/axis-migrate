@@ -1,0 +1,590 @@
+{
+ "$defs": {
+  "bool": {
+   "oneOf": [
+    {
+     "type": "boolean"
+    },
+    {
+     "pattern": "\\$\\{(resources(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(bundle(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(workspace(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(artifacts(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    }
+   ]
+  },
+  "github.com": {
+   "databricks": {
+    "cli": {
+     "bundle": {
+      "config": {
+       "resources.Job": {
+        "oneOf": [
+         {
+          "additionalProperties": false,
+          "properties": {
+           "job_clusters": {
+            "$ref": "#/$defs/slice/github.com/databricks/databricks-sdk-go/service/jobs.JobCluster",
+            "description": "A list of job cluster specifications that can be shared and reused by tasks of this job. Libraries cannot be declared in a shared job cluster. You must declare dependent libraries in task settings."
+           },
+           "max_concurrent_runs": {
+            "$ref": "#/$defs/int",
+            "description": "An optional maximum allowed number of concurrent runs of the job.\nSet this value if you want to be able to execute multiple runs of the same job concurrently.\nThis is useful for example if you trigger your job on a frequent schedule and want to allow consecutive runs to overlap with each other, or if you want to trigger multiple runs which differ by their input parameters.\nThis setting affects only new runs. For example, suppose the job\u2019s concurrency is 4 and there are 4 concurrent active runs. Then setting the concurrency to 3 won\u2019t kill any of the active runs.\nHowever, from then on, new runs are skipped unless there are fewer than 3 active runs.\nThis value cannot exceed 1000. Setting this value to `0` causes all new runs to be skipped."
+           },
+           "name": {
+            "$ref": "#/$defs/string",
+            "description": "An optional name for the job. The maximum length is 4096 bytes in UTF-8 encoding."
+           },
+           "tags": {
+            "$ref": "#/$defs/map/string",
+            "description": "A map of tags associated with the job. These are forwarded to the cluster as cluster tags for jobs clusters, and are subject to the same limitations as cluster tags. A maximum of 25 tags can be added to the job."
+           },
+           "tasks": {
+            "$ref": "#/$defs/slice/github.com/databricks/databricks-sdk-go/service/jobs.Task",
+            "description": "A list of task specifications to be executed by this job.\nIt supports up to 1000 elements in write endpoints (:method:jobs/create, :method:jobs/reset, :method:jobs/update, :method:jobs/submit).\nRead endpoints return only 100 tasks. If more than 100 tasks are available, you can paginate through them using :method:jobs/get. Use the `next_page_token` field at the object root to determine if more results are available."
+           }
+          },
+          "type": "object"
+         },
+         {
+          "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+          "type": "string"
+         }
+        ]
+       },
+       "variable.Variable": {
+        "additionalProperties": false,
+        "description": "Defines a custom variable for the bundle.",
+        "properties": {
+         "default": {
+          "$ref": "#/$defs/interface",
+          "description": "The default value for the variable."
+         },
+         "description": {
+          "$ref": "#/$defs/string",
+          "description": "The description of the variable"
+         },
+         "type": {
+          "$ref": "#/$defs/github.com/databricks/cli/bundle/config/variable.VariableType",
+          "description": "The type of the variable."
+         }
+        },
+        "type": "object"
+       },
+       "variable.VariableType": {
+        "type": "string"
+       }
+      },
+      "config.Bundle": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "name": {
+           "$ref": "#/$defs/string",
+           "description": "The name of the bundle."
+          }
+         },
+         "required": [
+          "name"
+         ],
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "config.Mode": {
+       "type": "string"
+      },
+      "config.Resources": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "jobs": {
+           "$ref": "#/$defs/map/github.com/databricks/cli/bundle/config/resources.Job",
+           "description": "The job definitions for the bundle, where each key is the name of the job."
+          }
+         },
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "config.Sync": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "exclude": {
+           "$ref": "#/$defs/slice/string",
+           "description": "A list of files or folders to exclude from the bundle."
+          }
+         },
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "config.Target": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "default": {
+           "$ref": "#/$defs/bool",
+           "description": "Whether this target is the default target."
+          },
+          "mode": {
+           "$ref": "#/$defs/github.com/databricks/cli/bundle/config.Mode",
+           "description": "The deployment mode for the target."
+          }
+         },
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      }
+     }
+    },
+    "databricks-sdk-go": {
+     "service": {
+      "compute.ClusterSpec": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "description": "Contains a snapshot of the latest user specified settings that were used to create/edit the cluster.",
+         "properties": {
+          "custom_tags": {
+           "$ref": "#/$defs/map/string",
+           "description": "Additional tags for cluster resources. Databricks will tag all cluster resources (e.g., AWS\ninstances and EBS volumes) with these tags in addition to `default_tags`. Notes:\n\n- Currently, Databricks allows at most 45 custom tags\n\n- Clusters can only reuse cloud resources if the resources' tags are a subset of the cluster tags"
+          },
+          "data_security_mode": {
+           "$ref": "#/$defs/github.com/databricks/databricks-sdk-go/service/compute.DataSecurityMode",
+           "description": "Data security mode decides what data governance model to use when accessing data\nfrom a cluster.\n\n* `DATA_SECURITY_MODE_AUTO`: Databricks will choose the most appropriate access mode depending on your compute configuration.\n* `DATA_SECURITY_MODE_STANDARD`: A secure cluster that can be shared by multiple users. Cluster users are fully isolated so that they cannot see each other\u2019s data and credentials. Most data governance features are supported in this mode. But programming languages and cluster features might be limited.\n* `DATA_SECURITY_MODE_DEDICATED`: A secure cluster that can only be exclusively used by a single user specified in `single_user_name`. Most programming languages, cluster features and data governance features are available in this mode.\n\nThe following modes are legacy aliases for the above modes:\n\n* `USER_ISOLATION`: Legacy alias for `DATA_SECURITY_MODE_STANDARD`.\n* `SINGLE_USER`: Legacy alias for `DATA_SECURITY_MODE_DEDICATED`.\n\nThe following modes are deprecated starting with Databricks Runtime 15.0 and\nwill be removed for future Databricks Runtime versions:\n\n* `LEGACY_TABLE_ACL`: This mode is for users migrating from legacy Table ACL clusters.\n* `LEGACY_PASSTHROUGH`: This mode is for users migrating from legacy Passthrough on high concurrency clusters.\n* `LEGACY_SINGLE_USER`: This mode is for users migrating from legacy Passthrough on standard clusters.\n* `LEGACY_SINGLE_USER_STANDARD`: This mode provides a way that doesn\u2019t have UC nor passthrough enabled."
+          },
+          "node_type_id": {
+           "$ref": "#/$defs/string",
+           "description": "This field encodes, through a single value, the resources available to each of\nthe Spark nodes in this cluster. For example, the Spark nodes can be provisioned\nand optimized for memory or compute intensive workloads. A list of available node\ntypes can be retrieved by using the [clusters/listNodeTypes](https://docs.databricks.com/api/workspace/clusters/listnodetypes) API call."
+          },
+          "num_workers": {
+           "$ref": "#/$defs/int",
+           "description": "Number of worker nodes that this cluster should have. A cluster has one Spark Driver\nand `num_workers` Executors for a total of `num_workers` + 1 Spark nodes.\n\nNote: When reading the properties of a cluster, this field reflects the desired number\nof workers rather than the actual current number of workers. For instance, if a cluster\nis resized from 5 to 10 workers, this field will immediately be updated to reflect\nthe target size of 10 workers, whereas the workers listed in `spark_info` will gradually\nincrease from 5 to 10 as the new nodes are provisioned."
+          },
+          "spark_conf": {
+           "$ref": "#/$defs/map/string",
+           "description": "An object containing a set of optional, user-specified Spark configuration key-value pairs.\nUsers can also pass in a string of extra JVM options to the driver and the executors via\n`spark.driver.extraJavaOptions` and `spark.executor.extraJavaOptions` respectively."
+          },
+          "spark_version": {
+           "$ref": "#/$defs/string",
+           "description": "The Spark version of the cluster, e.g. `3.3.x-scala2.11`.\nA list of available Spark versions can be retrieved by using\nthe [clusters/sparkVersions](https://docs.databricks.com/api/workspace/clusters/sparkversions) API call."
+          }
+         },
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "compute.DataSecurityMode": {
+       "oneOf": [
+        {
+         "description": "Data security mode decides what data governance model to use when accessing data\nfrom a cluster.\n\n* `DATA_SECURITY_MODE_AUTO`: Databricks will choose the most appropriate access mode depending on your compute configuration.\n* `DATA_SECURITY_MODE_STANDARD`: A secure cluster that can be shared by multiple users. Cluster users are fully isolated so that they cannot see each other\u2019s data and credentials. Most data governance features are supported in this mode. But programming languages and cluster features might be limited.\n* `DATA_SECURITY_MODE_DEDICATED`: A secure cluster that can only be exclusively used by a single user specified in `single_user_name`. Most programming languages, cluster features and data governance features are available in this mode.\n\nThe following modes are legacy aliases for the above modes:\n\n* `USER_ISOLATION`: Legacy alias for `DATA_SECURITY_MODE_STANDARD`.\n* `SINGLE_USER`: Legacy alias for `DATA_SECURITY_MODE_DEDICATED`.\n\nThe following modes are deprecated starting with Databricks Runtime 15.0 and\nwill be removed for future Databricks Runtime versions:\n\n* `LEGACY_TABLE_ACL`: This mode is for users migrating from legacy Table ACL clusters.\n* `LEGACY_PASSTHROUGH`: This mode is for users migrating from legacy Passthrough on high concurrency clusters.\n* `LEGACY_SINGLE_USER`: This mode is for users migrating from legacy Passthrough on standard clusters.\n* `LEGACY_SINGLE_USER_STANDARD`: This mode provides a way that doesn\u2019t have UC nor passthrough enabled.",
+         "enum": [
+          "NONE",
+          "SINGLE_USER",
+          "USER_ISOLATION",
+          "LEGACY_TABLE_ACL",
+          "LEGACY_PASSTHROUGH",
+          "LEGACY_SINGLE_USER",
+          "LEGACY_SINGLE_USER_STANDARD",
+          "DATA_SECURITY_MODE_STANDARD",
+          "DATA_SECURITY_MODE_DEDICATED",
+          "DATA_SECURITY_MODE_AUTO"
+         ],
+         "type": "string"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "compute.Library": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "whl": {
+           "$ref": "#/$defs/string",
+           "description": "URI of the wheel library to install. Supported URIs include Workspace paths, Unity Catalog Volumes paths, and S3 URIs.\nFor example: `{ \"whl\": \"/Workspace/path/to/library.whl\" }`, `{ \"whl\" : \"/Volumes/path/to/library.whl\" }` or\n`{ \"whl\": \"s3://my-bucket/library.whl\" }`.\nIf S3 is used, please make sure the cluster has read access on the library. You may need to\nlaunch the cluster with an IAM role to access the S3 URI."
+          }
+         },
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "jobs.JobCluster": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "job_cluster_key": {
+           "$ref": "#/$defs/string",
+           "description": "A unique name for the job cluster. This field is required and must be unique within the job.\n`JobTaskSettings` may refer to this field to determine which cluster to launch for the task execution."
+          },
+          "new_cluster": {
+           "$ref": "#/$defs/github.com/databricks/databricks-sdk-go/service/compute.ClusterSpec",
+           "description": "If new_cluster, a description of a cluster that is created for each task."
+          }
+         },
+         "required": [
+          "job_cluster_key"
+         ],
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "jobs.PythonWheelTask": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "entry_point": {
+           "$ref": "#/$defs/string",
+           "description": "Named entry point to use, if it does not exist in the metadata of the package it executes the function from the package directly using `$packageName.$entryPoint()`"
+          },
+          "package_name": {
+           "$ref": "#/$defs/string",
+           "description": "Name of the package to execute"
+          },
+          "parameters": {
+           "$ref": "#/$defs/slice/string",
+           "description": "Command-line parameters passed to Python wheel task. Leave it empty if `named_parameters` is not null."
+          }
+         },
+         "required": [
+          "entry_point",
+          "package_name"
+         ],
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "jobs.Task": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "depends_on": {
+           "$ref": "#/$defs/slice/github.com/databricks/databricks-sdk-go/service/jobs.TaskDependency",
+           "description": "An optional array of objects specifying the dependency graph of the task. All tasks specified in this field must complete before executing this task. The task will run only if the `run_if` condition is true.\nThe key is `task_key`, and the value is the name assigned to the dependent task."
+          },
+          "job_cluster_key": {
+           "$ref": "#/$defs/string",
+           "description": "If job_cluster_key, this task is executed reusing the cluster specified in `job.settings.job_clusters`."
+          },
+          "libraries": {
+           "$ref": "#/$defs/slice/github.com/databricks/databricks-sdk-go/service/compute.Library",
+           "description": "An optional list of libraries to be installed on the cluster.\nThe default value is an empty list."
+          },
+          "python_wheel_task": {
+           "$ref": "#/$defs/github.com/databricks/databricks-sdk-go/service/jobs.PythonWheelTask",
+           "description": "The task runs a Python wheel when the `python_wheel_task` field is present."
+          },
+          "task_key": {
+           "$ref": "#/$defs/string",
+           "description": "A unique name for the task. This field is used to refer to this task from other tasks.\nThis field is required and must be unique within its parent job.\nOn Update or Reset, this field is used to reference the tasks to be updated or reset."
+          }
+         },
+         "required": [
+          "task_key"
+         ],
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      },
+      "jobs.TaskDependency": {
+       "oneOf": [
+        {
+         "additionalProperties": false,
+         "properties": {
+          "task_key": {
+           "$ref": "#/$defs/string",
+           "description": "The name of the task this task depends on."
+          }
+         },
+         "required": [
+          "task_key"
+         ],
+         "type": "object"
+        },
+        {
+         "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+         "type": "string"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "int": {
+   "oneOf": [
+    {
+     "type": "integer"
+    },
+    {
+     "pattern": "\\$\\{(resources(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(bundle(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(workspace(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(artifacts(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    },
+    {
+     "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+     "type": "string"
+    }
+   ]
+  },
+  "interface": {},
+  "map": {
+   "github.com": {
+    "databricks": {
+     "cli": {
+      "bundle": {
+       "config": {
+        "resources.Job": {
+         "oneOf": [
+          {
+           "additionalProperties": {
+            "$ref": "#/$defs/github.com/databricks/cli/bundle/config/resources.Job"
+           },
+           "type": "object"
+          },
+          {
+           "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+           "type": "string"
+          }
+         ]
+        },
+        "variable.Variable": {
+         "oneOf": [
+          {
+           "additionalProperties": {
+            "$ref": "#/$defs/github.com/databricks/cli/bundle/config/variable.Variable"
+           },
+           "type": "object"
+          },
+          {
+           "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+           "type": "string"
+          }
+         ]
+        }
+       },
+       "config.Target": {
+        "oneOf": [
+         {
+          "additionalProperties": {
+           "$ref": "#/$defs/github.com/databricks/cli/bundle/config.Target"
+          },
+          "type": "object"
+         },
+         {
+          "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+          "type": "string"
+         }
+        ]
+       }
+      }
+     }
+    }
+   },
+   "string": {
+    "oneOf": [
+     {
+      "additionalProperties": {
+       "$ref": "#/$defs/string"
+      },
+      "type": "object"
+     },
+     {
+      "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+      "type": "string"
+     }
+    ]
+   }
+  },
+  "slice": {
+   "github.com": {
+    "databricks": {
+     "databricks-sdk-go": {
+      "service": {
+       "compute.Library": {
+        "oneOf": [
+         {
+          "items": {
+           "$ref": "#/$defs/github.com/databricks/databricks-sdk-go/service/compute.Library"
+          },
+          "type": "array"
+         },
+         {
+          "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+          "type": "string"
+         }
+        ]
+       },
+       "jobs.JobCluster": {
+        "oneOf": [
+         {
+          "items": {
+           "$ref": "#/$defs/github.com/databricks/databricks-sdk-go/service/jobs.JobCluster"
+          },
+          "type": "array"
+         },
+         {
+          "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+          "type": "string"
+         }
+        ]
+       },
+       "jobs.Task": {
+        "oneOf": [
+         {
+          "items": {
+           "$ref": "#/$defs/github.com/databricks/databricks-sdk-go/service/jobs.Task"
+          },
+          "type": "array"
+         },
+         {
+          "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+          "type": "string"
+         }
+        ]
+       },
+       "jobs.TaskDependency": {
+        "oneOf": [
+         {
+          "items": {
+           "$ref": "#/$defs/github.com/databricks/databricks-sdk-go/service/jobs.TaskDependency"
+          },
+          "type": "array"
+         },
+         {
+          "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+          "type": "string"
+         }
+        ]
+       }
+      }
+     }
+    }
+   },
+   "string": {
+    "oneOf": [
+     {
+      "items": {
+       "$ref": "#/$defs/string"
+      },
+      "type": "array"
+     },
+     {
+      "pattern": "\\$\\{(var(\\._*[^\\W\\d_]+([-_]*[^\\W_]+)*(\\[[0-9]+\\])*)+)\\}",
+      "type": "string"
+     }
+    ]
+   }
+  },
+  "string": {
+   "type": "string"
+  }
+ },
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "additionalProperties": false,
+ "properties": {
+  "bundle": {
+   "$ref": "#/$defs/github.com/databricks/cli/bundle/config.Bundle",
+   "description": "The bundle attributes when deploying to this target."
+  },
+  "resources": {
+   "$ref": "#/$defs/github.com/databricks/cli/bundle/config.Resources",
+   "description": "A Map that defines the resources for the bundle, where each key is the name of the resource, and the value is a Map that defines the resource."
+  },
+  "sync": {
+   "$ref": "#/$defs/github.com/databricks/cli/bundle/config.Sync",
+   "description": "The files and file paths to include or exclude in the bundle."
+  },
+  "targets": {
+   "$ref": "#/$defs/map/github.com/databricks/cli/bundle/config.Target",
+   "description": "Defines deployment targets for the bundle."
+  },
+  "variables": {
+   "$ref": "#/$defs/map/github.com/databricks/cli/bundle/config/variable.Variable",
+   "description": "A Map that defines the custom variables for the bundle, where each key is the name of the variable, and the value is a Map that defines the variable."
+  }
+ },
+ "type": "object",
+ "x-axis-migrate": {
+  "cli_version": "v1.20.0",
+  "produced_by": "skills/target/schema/extract_subset.py (not `databricks bundle schema`: the CLI is not installed)",
+  "retrieved": "2026-10-13",
+  "source_sha256": "48099e331139f2eecae8e97aea4340316415bce6620219173614fa102b140ada",
+  "source_url": "https://raw.githubusercontent.com/databricks/cli/v1.20.0/bundle/schema/jsonschema.json",
+  "stricter_than_cli": true,
+  "what": "hand-maintained SUBSET of the Databricks Asset Bundle schema (keys make_databricks.py emits)"
+ }
+}
