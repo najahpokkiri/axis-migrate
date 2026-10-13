@@ -1568,7 +1568,7 @@ def write_checksums(run_dir: Path) -> None:
 
 
 def verify_checksums(run_dir: Path) -> list[str]:
-    """Mismatches between checksums.sha256 and the sealed files (verify/ outputs added later are ignored)."""
+    """Mismatches between checksums.sha256 and the sealed files (verify/, amend/ and target/ added after sealing are ignored; they are sealed by seal.py)."""
     ck = run_dir / "checksums.sha256"
     if not ck.is_file():
         return ["CHECKSUMS_MISSING"]
@@ -1586,7 +1586,7 @@ def verify_checksums(run_dir: Path) -> list[str]:
             bad.append(f"CHANGED:{r}")
     for p in _walk_files(run_dir):
         r = p.relative_to(run_dir).as_posix()
-        if r != "checksums.sha256" and r not in listed and not r.startswith("verify/"):
+        if r != "checksums.sha256" and r not in listed and not r.startswith(("verify/", "amend/", "target/")):
             bad.append(f"ADDED:{r}")
     return bad
 
