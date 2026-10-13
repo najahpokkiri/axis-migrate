@@ -568,8 +568,9 @@ def dry_run(mig: Path, run_id: str, evidence: Path, *, keep: bool = False, use_s
         t0 = time.monotonic()
         venv = make_venv(tmp, runtime, dbx / "requirements-target.lock", wheel, install_log)
         venv["seconds"] = round(time.monotonic() - t0, 2)
-        res["venv"] = {k: v for k, v in venv.items() if k != "venv"}
-        ac.dump_json(evidence / "logs" / "install.json", install_log)
+        res["venv"] = json.loads(json.dumps({k: v for k, v in venv.items() if k != "venv"}).replace(str(tmp), "<tmp>"))
+        ac.dump_json(evidence / "logs" / "install.json",
+                     json.loads(json.dumps(install_log).replace(str(tmp), "<tmp>")))
         # ---- inputs
         legacy = ac.legacy_root(mig, ac.load_json(run_dir / "snapshot" / "graph.json"))
         inv_p = run_dir / "snapshot" / "inventory.json"
