@@ -146,6 +146,7 @@ Generic residential exposure distribution for Luxembourg: canton value = populat
 
 | When | Status |
 |---|---|
+| 14 Oct, ~00:30 | Done: graph store + editor (54 tests, Chrome-checked), seal/ladder/report (71 tests, reference-verified on a real sealed run, offline swipe map), interview (params_check, fit, SKILL; 17 tests), eval harness (fence probe holds 18/18 as `axis-eval`; SDK driver; run.py; score.py; cases F-L, NC1–NC3). AT-7 decided: `claude -p` has no AskUserQuestion; Agent SDK `can_use_tool` answers it (oracle), and in bypassPermissions only AskUserQuestion and hook `ask`s reach the callback. Lux integration check: scan 12 s → lineage → graph rev 1 with m01, s01–s04, s03b(drop), 13 legacy pairs, 1 question (manual step). Running: discover (map/tests), compare (P/L tests), runner (+ golden lux done), guards/hooks, plot.py + rubric, migrate skill + F1–F11. Next: target, E2B, seeded cases + S1, headless e2e. |
 | 13 Oct, night | Build started (orchestrator session). Founder answered **yes to all 12 questions in DESIGN §12**; day-by-day schedule dropped: build by dependency, as fast as possible. `uv` 0.13.0 installed; `skills/run/env/uv.lock` resolves to the reference versions (Py 3.12.15, numpy 2.5.4, rasterio 1.5.2/GDAL 3.12.2, pyogrio 0.13.0/GDAL 3.12.4, shapely 2.2.0, pyproj 3.8.0/PROJ 9.8.1, geopandas 1.2.0). Cross-module contracts in `docs/CONTRACTS.md`. Unix user `axis-eval` available for fenced evals. |
 
 ## Schedule (superseded 13 Oct night: build by dependency, not by day)
