@@ -574,10 +574,16 @@ def risky_ops(ops: list, graph: dict) -> list[str]:
             if val in ("keep_legacy", "drop", "bridge") and tid and _step_failed(graph, tid):
                 out.append(f"{typ} {tid} -> {val} after its last verify FAILED (bridging a failing step)")
         if _demotes(op, typ, field, val) and tid and _compared(graph, tid):
-                out.append(f"{typ or 'set_field'} {tid}: demotes a compared dataset to no reference")
-        if typ.startswith(("delete", "remove")) or (typ == "reject_edge" and "equivalent" in str(op)):
-            out.append(f"{typ} {tid}: deletes a pair or graph element")
-        if typ == "set_new" and tid and (op.get("path", "x") is None or val is None and "value" in op) \
+            out.append(f"{typ or 'set_field'} {tid}: demotes a compared dataset to no reference")
+        if typ.startswith(("delete", "remove")):
+            out.append(f"{typ} {tid}: deletes a step, pair or graph element")
+        if typ == "reject_edge" and tid:
+            edge = next((e for e in graph.get("edges") or [] if e.get("id") == tid), {})
+            if edge.get("kind") == "equivalent_to" or any(_compared(graph, x) for x in (edge.get("from"),
+                                                                                       edge.get("to")) if x):
+                out.append(f"reject_edge {tid}: removes the pairing/lineage of a compared dataset")
+        if typ == "set_new" and tid and "new" in op and (op["new"] is None or (isinstance(op["new"], dict) and
+                                                                               op["new"].get("path", 1) is None)) \
                 and _compared(graph, tid):
             out.append(f"set_new {tid} -> null: unpairs a compared dataset")
     return out

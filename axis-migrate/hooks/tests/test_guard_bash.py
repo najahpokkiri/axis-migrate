@@ -122,6 +122,20 @@ def test_g7_demote_compared_dataset_asks(project):
     assert r.decision == "ask"
 
 
+def test_g7_unpair_and_reject_pair_edge_ask(project):
+    g = project.graph()
+    g["edges"] = [{"id": "e.s01_prep>ds.01_mid", "from": "s01_prep", "to": "ds.01_mid", "kind": "writes"},
+                  {"id": "e.s02_mask>ds.pop", "from": "s02_mask", "to": "ds.pop", "kind": "reads"}]
+    project.set_graph(g)
+    assert bash(project, ops_file(project, [{"type": "set_new", "id": "ds.01_mid", "new": None}])).decision == "ask"
+    assert bash(project, ops_file(project, [{"type": "reject_edge", "id": "e.s01_prep>ds.01_mid",
+                                             "reason": "x"}])).decision == "ask"
+    assert bash(project, ops_file(project, [{"type": "reject_edge", "id": "e.s02_mask>ds.pop",
+                                             "reason": "x"}])).out is None
+    assert bash(project, ops_file(project, [{"type": "set_new", "id": "ds.01_mid",
+                                             "new": {"path": "s01_prep/01_mid.tif"}}])).out is None
+
+
 def test_g7_inline_ops_json(project):
     ops = json.dumps([{"type": "set_scope", "id": "s03_final", "scope": "drop"}])
     r = bash(project, f"python3 graph.py apply migration --actor agent --base-rev 7 --ops '{ops}'")
