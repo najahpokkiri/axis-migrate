@@ -217,13 +217,54 @@ def gpkg_content_sha256(path: str | os.PathLike) -> str:
 
 
 def xlsx_content_sha256(path: str | os.PathLike) -> str:
-    """Content hash of an XLSX: every zip member except docProps/* (timestamps), by bytes, sorted by name."""
+    """Content hash of an XLSX: per sheet (workbook order, by name) every non-empty cell's reference, value and
+    formula, with shared strings resolved and numbers normalised. Styles, docProps (timestamps) and the XML
+    serialisation (lxml vs ElementTree writers) do not enter the hash."""
+    import xml.etree.ElementTree as ET
+    ns = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+          "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships"}
+    rel_ns = "{http://schemas.openxmlformats.org/package/2006/relationships}"
     h = hashlib.sha256()
     with zipfile.ZipFile(path) as z:
-        for name in sorted(z.namelist()):
-            if name.startswith("docProps/"):
+        names = set(z.namelist())
+        shared = []
+        if "xl/sharedStrings.xml" in names:
+            for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall("m:si", ns):
+                shared.append("".join(t.text or "" for t in si.iter(f"{{{ns['m']}}}t")))
+        rels = {}
+        if "xl/_rels/workbook.xml.rels" in names:
+            for r in ET.fromstring(z.read("xl/_rels/workbook.xml.rels")).iter(f"{rel_ns}Relationship"):
+                tgt = r.get("Target", "")
+                tgt = tgt.lstrip("/") if tgt.startswith("/") else "xl/" + tgt
+                rels[r.get("Id")] = tgt
+        wb = ET.fromstring(z.read("xl/workbook.xml"))
+        for sh in wb.findall("m:sheets/m:sheet", ns):
+            name = sh.get("name")
+            target = rels.get(sh.get(f"{{{ns['r']}}}id"))
+            h.update(b"S\0" + name.encode() + b"\n")
+            if not target or target not in names:
                 continue
-            h.update(name.encode() + b"\0" + hashlib.sha256(z.read(name)).digest())
+            cells = []
+            for c in ET.fromstring(z.read(target)).iter(f"{{{ns['m']}}}c"):
+                typ = c.get("t") or "n"
+                v = c.find("m:v", ns)
+                f = c.find("m:f", ns)
+                val = v.text if v is not None else None
+                if typ == "s" and val is not None:
+                    val = shared[int(val)]
+                elif typ == "inlineStr":
+                    val = "".join(t.text or "" for t in c.iter(f"{{{ns['m']}}}t"))
+                elif typ == "n" and val is not None:
+                    try:
+                        val = repr(float(val))
+                    except ValueError:
+                        pass
+                ftxt = f.text if f is not None else None
+                if val is None and ftxt is None:
+                    continue
+                cells.append(f"{c.get('r')}|{typ if typ != 'str' else 's'}|{val}|{ftxt}")
+            for line in sorted(cells):
+                h.update(line.encode() + b"\n")
     return h.hexdigest()
 
 
