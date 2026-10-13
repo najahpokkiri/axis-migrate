@@ -34,12 +34,15 @@ anything in it.
    citations; run `params_check.py`; ask the few remaining questions one at a time (AskUserQuestion, recommended
    option first, explicit "Don't know"); `confirm_all` then the target question last.
 3. **Plan** — skill `migrate` §Plan: one `plan` block per step, `graph.py render-plan`, one approval question.
-   No `pipeline/` file may exist before approval.
+   No `pipeline/` file may exist before approval. Plans cite reference-entry ids (`G-1`, `N-2`, …) in `risks[]`.
+   After approval, once: `run_local.py migration --vendor-runtime` (never edit the vendored runtime).
 4. **Migrate step by step** — skill `migrate`: in topological order write one step module, let the scanner check it,
-   run it in isolation (`run` skill), verify it (`verify` skill: compare, plots, **look at the plots**, review-add),
+   run it in isolation (`run_local.py migration --chain isolated --steps <id>`; exit 12 or a step exit 2 goes to the
+   interview, never to a code fix), verify it (`verify` skill: compare, plots, **look at the plots**, review-add),
    repair at most 3 times with spec + current error only, then the next step.
 5. **Chained run and verify** — skill `run` (chained, from raw inputs), skill `verify` (compare every pair, plots,
-   visual review of every compared raster/vector, aggregate).
+   visual review of every compared raster/vector, aggregate). Then `params_check.py migration --fill-used-by` and
+   `params_check.py migration --stage wired` (every answer must reach the code that reads it).
 6. **Evidence and report** — skill `report`: seal, ladder, report; give the user `migration/report/index.html`.
 7. **Target** — skill `target` if the user chose Databricks: generate the bundle, run the offline checks and dry run,
    seal the target evidence, re-render the report. Never deploy, authenticate or contact a workspace.

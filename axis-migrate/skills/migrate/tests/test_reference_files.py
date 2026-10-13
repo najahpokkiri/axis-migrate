@@ -7,6 +7,7 @@ flags appear in its --help). The template step is run through the runtime on syn
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import re
 import subprocess
 import sys
@@ -49,12 +50,20 @@ FORM_RE = re.compile(r"^[PSCR](\+[PSCR])*( \(.+\))?$")
 # Candidate ids from the private research notes (EP/MP/MPV/IN/AK/FH/HL/T-nn) and other private source markers.
 CANDIDATE_RE = re.compile(r"\b(EP|MP|MPV|IN|AK|FH|HL|T)-\d+\b|\bGEN:\d|\bBug ?#?\d|\b0\d ?§|\bERR-\d")
 ABS_PATH_RE = re.compile(r"(?<![\w.$}])/(home|Users|root|tmp|mnt|opt|srv|data|Volumes|var)/|~/|\b[A-Z]:\\")
-# NDA (client, partner, private paths) and fixture facts that must never enter the skill (D4-14).
-FORBIDDEN = [
-    "munich", "reinsur", "workflows-real", "exposure_distribution", "inventory_nos", "here-maps", "src/private",
-    "luxembourg", "canton", "wiltz", "worldpop", "ppp_2020", "05_temp", "04_final", "03b", "keep_resolution",
-    "provenance", "lux-exposure",
-]
+# NDA words (client, partner, private paths) are checked by hash so this file never contains them; fixture facts
+# (D4-14) are checked in the dev repo (devtests/migrate/test_skill_no_fixture_facts.py), not here.
+FORBIDDEN_SHA16 = {'e9daf3e4235e6aa3', '67833a92def7097d', '4684b2c32bd5dd3c', '2a3dfd151657b8f6', '4d476833f309a1bf', '2e1e1052a793ba7e', 'd5a5fec6a9b32b5b'}
+FORBIDDEN_LENS = [6, 7, 9, 11, 13, 14, 21]
+
+
+def _has_forbidden(low: str) -> str | None:
+    for n in FORBIDDEN_LENS:
+        for i in range(len(low) - n + 1):
+            if hashlib.sha256(low[i:i + n].encode()).hexdigest()[:16] in FORBIDDEN_SHA16:
+                return low[i:i + n]
+    return None
+
+
 # Wrong old rules (04 §6) that must not appear in any form.
 WRONG = [r"numpy\s*<\s*2", r"local_disk0", r"11132\d|111000", r"unary_union", r"\bfiona\b", r"rioxarray",
          r"ckdtree", r"esri:54009", r"\bmosaic\(", r"to_wkt\(", r"int\(\(x\s*\+\s*180\)", r"synthetic data"]
@@ -121,8 +130,8 @@ def test_no_candidate_ids_paths_or_forbidden_words():
         assert not CANDIDATE_RE.search(text), f"{name}: candidate id {CANDIDATE_RE.search(text).group(0)!r}"
         assert not ABS_PATH_RE.search(text), f"{name}: absolute path {ABS_PATH_RE.search(text).group(0)!r}"
         low = re.sub(r"ev:[0-9a-f]{10}", "ev:", text).lower()   # opaque ids may contain any hex run
-        for w in FORBIDDEN:
-            assert w not in low, f"{name}: forbidden word {w!r}"
+        hit = _has_forbidden(low)
+        assert hit is None, f"{name}: forbidden word {hit!r}"
         for pat in WRONG:
             assert not re.search(pat, low), f"{name}: wrong old rule {pat!r}"
 

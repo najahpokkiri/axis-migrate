@@ -25,7 +25,7 @@ $PLUGIN/bin/axpy $PLUGIN/skills/run/run_local.py migration --check-sealed <run_i
 
 ## Isolated vs chained
 - **Isolated** (`--chain isolated --steps sNN_x`): while writing a step. Upstream intermediates are the legacy
-  files, copied read-only into `stage/legacy_ro/`; the step never sees its own reference or any `04_FINAL`-type
+  files, copied read-only into `stage/legacy_ro/`; the step never sees its own reference or any final-output
   final. Use it to localise a defect to one step. It never earns a rung.
 - **Chained** (default, all in-scope steps from raw inputs): the run verify grades. Only a chained,
   succeeded, lock-matched run with a clean ledger can support `sandbox-validated` (ladder.py decides).

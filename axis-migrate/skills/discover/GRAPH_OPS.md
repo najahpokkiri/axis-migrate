@@ -127,7 +127,7 @@ status, notes, verify.*` (agent), `ladder` (agent).
 
 `set_scope`:
 ```json
-{"type": "set_scope", "id": "s03b_alt", "scope": "drop", "scope_reason": "alternative_impl", "question": "q02"}
+{"type": "set_scope", "id": "s07b_alt", "scope": "drop", "scope_reason": "alternative_impl", "question": "q02"}
 ```
 `scope` ∈ `migrate|keep_legacy|drop`; reasons: `dead_code | alternative_impl | out_of_scope_by_owner | display_only |
 no_oss_equivalent | …`. Agent: `question` required (answered or assumed, linked to the step; if the user owns the scope,

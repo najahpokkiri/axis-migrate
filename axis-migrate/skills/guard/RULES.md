@@ -14,8 +14,8 @@ Exit codes: 0 clean (warnings allowed) · 2 block · 3 rule error (fails closed;
 21 runs, **318 non-test / 164 test** `.py` files. Test files are `test_*.py`, `*_test.py`, `tests/` and `conftest.py`.
 08 counted 312 non-test files; the difference comes from counting `__init__.py` and the stray `*.md.py` files.
 
-**Clean corpus.** The 5 legacy PyQGIS/ArcPy scripts (`fixtures/lux-exposure-legacy/02_SCRIPTS`) and the 5 fixture
-build scripts (`fixtures/lux-exposure-legacy.build/*.py`). The golden lux step modules
+**Clean corpus.** The 5 legacy PyQGIS/ArcPy scripts (the demo fixture in the dev repo) and the 5 fixture
+build scripts (dev repo). The golden lux step modules
 (`evals/golden/lux/pipeline/[sm]*.py`, 5 files) are the clean corpus for the pipeline-context rules.
 
 Counts are files (non-test + test) / findings. Reproduce with `codescan.py --corpus <dirs>`; `devtests/guard/test_corpus.py` checks these counts and the floors below.
@@ -51,7 +51,7 @@ S12 ≥ 30. All of them pass, with 138, 79, 164 and 44.
 
 **Clean corpus result.** Every rule that applies to plain Python (S01–S10, S12, S13, S15, S17, S18) has 0 hits on the 10
 clean scripts. **S11(a) and S14 fire on the legacy scripts by design.** Those scripts *are* the legacy engine
-(`import processing`, `import arcpy`) and hard-code the fixture path (`/home/…/lux-exposure-legacy`, `D:\GIS\…`),
+(`import processing`, `import arcpy`) and hard-code the fixture path (an absolute home path, `D:\GIS\…`),
 which is exactly what pipeline code must not do. Both are pipeline-context rules. Their clean corpus is the golden
 lux pipeline, where they give 0 hits. No rule shipped with a clean-corpus false positive. One false positive was
 fixed during measurement: `"/Absolute"`, a QGIS project key in `30_make_qgz.py`. A single-segment absolute path now
@@ -78,7 +78,7 @@ Five block rules have no archive hits. Each is kept for the reason below.
   from a module whose name contains `mock`, because `from jsonpatch import patch` is not a mock.
 - **S08.** `nan_to_num(..., nan=<literal>)` also fires, as the same pattern as `fillna(0)`.
 - **S11.** These are additions: (i) a bare output-directory literal that resolves to an existing directory with no
-  input under it (for example `"05_TEMP"`) fires; (ii) a literal equal to a protected basename is a warning.
+  input under it (for example `"work"`) fires; (ii) a literal equal to a protected basename is a warning.
 - **S15.** A `#` heading is flagged only when the file also contains a code fence, so ordinary `# comment` first lines
   pass.
 - **T01** is new: the 08 §5c "scanner checks each record has `correct_spread` and `nearest_wrong`" is a warning.
