@@ -1,0 +1,596 @@
+{
+ "datasets": [
+  {
+   "exists": true,
+   "id": "ds.lux_ppp_2020",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "03_INPUT/lux_ppp_2020.tif",
+   "reference_candidate": false,
+   "role": "input"
+  },
+  {
+   "exists": true,
+   "id": "ds.geoboundaries_lux_adm1",
+   "kind": "vector",
+   "layer": "geoBoundaries-LUX-ADM1",
+   "legacy_path": "03_INPUT/geoBoundaries-LUX-ADM1.geojson",
+   "reference_candidate": false,
+   "role": "input"
+  },
+  {
+   "exists": true,
+   "id": "ds.geoboundaries_lux_adm2",
+   "kind": "vector",
+   "layer": "geoBoundaries-LUX-ADM2",
+   "legacy_path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+   "reference_candidate": false,
+   "role": "unused"
+  },
+  {
+   "exists": true,
+   "id": "ds.cantons_lux_edit",
+   "kind": "vector",
+   "layer": "cantons",
+   "legacy_path": "03_INPUT/cantons_lux_edit.gpkg",
+   "reference_candidate": false,
+   "role": "input"
+  },
+  {
+   "exists": true,
+   "id": "ds.osm_landuse_lux",
+   "kind": "vector",
+   "layer": "landuse",
+   "legacy_path": "03_INPUT/osm_landuse_lux.gpkg",
+   "reference_candidate": false,
+   "role": "input"
+  },
+  {
+   "exists": true,
+   "id": "ds.value_per_capita",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "03_INPUT/value_per_capita.xlsx",
+   "reference_candidate": false,
+   "role": "input"
+  },
+  {
+   "exists": true,
+   "id": "ds.01_lux_outline",
+   "kind": "vector",
+   "layer": "01_lux_outline",
+   "legacy_path": "05_TEMP/01_lux_outline.gpkg",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.01_pop_lux",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "05_TEMP/01_pop_lux.tif",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.02_res_2169",
+   "kind": "vector",
+   "layer": "02_res_2169",
+   "legacy_path": "05_TEMP/02_res_2169.gpkg",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.02_res_4326",
+   "kind": "vector",
+   "layer": "02_res_4326",
+   "legacy_path": "05_TEMP/02_res_4326.gpkg",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.02_res_mask",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "05_TEMP/02_res_mask.tif",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.03_pop_res",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "05_TEMP/03_pop_res.tif",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.03_canton_pop",
+   "kind": "vector",
+   "layer": "03_canton_pop",
+   "legacy_path": "05_TEMP/03_canton_pop.gpkg",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.04_canton_factor",
+   "kind": "vector",
+   "layer": "canton_factor",
+   "legacy_path": "05_TEMP/04_canton_factor.gpkg",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.04_factor",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "05_TEMP/04_factor.tif",
+   "reference_candidate": true,
+   "role": "intermediate"
+  },
+  {
+   "exists": true,
+   "id": "ds.lux_res_exposure_2020",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "04_FINAL/lux_res_exposure_2020.tif",
+   "reference_candidate": true,
+   "role": "final"
+  },
+  {
+   "exists": true,
+   "id": "ds.exposure_by_canton_gpkg",
+   "kind": "vector",
+   "layer": "exposure_by_canton",
+   "legacy_path": "04_FINAL/exposure_by_canton.gpkg",
+   "reference_candidate": true,
+   "role": "final"
+  },
+  {
+   "exists": true,
+   "id": "ds.exposure_by_canton_csv",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "04_FINAL/exposure_by_canton.csv",
+   "reference_candidate": true,
+   "role": "final"
+  },
+  {
+   "exists": true,
+   "id": "ds.exposure_by_canton_xlsx",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "04_FINAL/exposure_by_canton.xlsx",
+   "reference_candidate": true,
+   "role": "final"
+  },
+  {
+   "exists": false,
+   "id": "ds.work__res_mask",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "work.gdb/res_mask",
+   "reference_candidate": false,
+   "role": "intermediate"
+  },
+  {
+   "exists": false,
+   "id": "ds.work__cantons_edit",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "work.gdb/cantons_edit",
+   "reference_candidate": false,
+   "role": "intermediate"
+  },
+  {
+   "exists": false,
+   "id": "ds.work__pop_lux",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "work.gdb/pop_lux",
+   "reference_candidate": false,
+   "role": "intermediate"
+  },
+  {
+   "exists": false,
+   "id": "ds.work__pop_res",
+   "kind": "raster",
+   "layer": null,
+   "legacy_path": "work.gdb/pop_res",
+   "reference_candidate": false,
+   "role": "intermediate"
+  },
+  {
+   "exists": false,
+   "id": "ds.work__zs_pop",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "work.gdb/zs_pop",
+   "reference_candidate": false,
+   "role": "intermediate"
+  },
+  {
+   "exists": false,
+   "id": "ds.work__zs_res",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "work.gdb/zs_res",
+   "reference_candidate": false,
+   "role": "intermediate"
+  },
+  {
+   "exists": false,
+   "id": "ds.work__canton_pop",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "work.gdb/canton_pop",
+   "reference_candidate": false,
+   "role": "intermediate"
+  }
+ ],
+ "files": [
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "qgz",
+   "path": "01_QGIS/lux_exposure.qgz",
+   "sha256": "947531ffbb36f39be88a36a4709a006c0a9e6a2c14902814f0ab528f6d4ac0d2",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 12640
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "py",
+   "path": "02_SCRIPTS/01_prepare_population.py",
+   "sha256": "ed541653f07c66fc703dd97516086119f370d62fafca6f8b4f0d1f5eb2dcc0e8",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1827
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "py",
+   "path": "02_SCRIPTS/02_landuse_mask.py",
+   "sha256": "51d3806d4a90c24934726db179caba0663bbd3319cd11bd1a6761ef5a659556f",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 2468
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "py",
+   "path": "02_SCRIPTS/03_zonal_population.py",
+   "sha256": "438b8cc796e03ec74d022cef4e7876de37a259207e0396d0eb6b4908e3187f52",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1849
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "py",
+   "path": "02_SCRIPTS/03b_zonal_arcpy_OLD.py",
+   "sha256": "9555d56a2b855f33c7bc689b3b85caf4631180ae8b3d20a853b74c4dec0ed409",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 2115
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "py",
+   "path": "02_SCRIPTS/04_distribute_value.py",
+   "sha256": "6c0eb5a6e35a6e80c45766fb7456d8947b981636e18f1d498bcc2482e2cfbe68",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 4699
+  },
+  {
+   "content_sha256": "3dddf000785c04d4841f3288dd7db51872f29199febbe512688c2788bb20d8fe",
+   "dataset_ids": [
+    "ds.cantons_lux_edit"
+   ],
+   "kind": "gpkg",
+   "path": "03_INPUT/cantons_lux_edit.gpkg",
+   "sha256": "59066aad7bede836e1a3130cd3b485fb3af861f3f8dd5c1911bd91360953c12a",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1253376
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.geoboundaries_lux_adm1"
+   ],
+   "kind": "geojson",
+   "path": "03_INPUT/geoBoundaries-LUX-ADM1.geojson",
+   "sha256": "6d94cd5c195bd0d103fe5bef528a3ee1ed7b2622f7dd261c43ef273b80558e90",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1803171
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.geoboundaries_lux_adm2"
+   ],
+   "kind": "geojson",
+   "path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+   "sha256": "c885587d4883438e800b910029b54a37a3c9bcb73a45ddf48544e496b7ee265d",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 4770799
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.lux_ppp_2020"
+   ],
+   "kind": "tif",
+   "path": "03_INPUT/lux_ppp_2020.tif",
+   "sha256": "6a8f2e17b90bdce076a633c61f82a73f0b474b4137df7c22a5638a4527c34a96",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 2215890
+  },
+  {
+   "content_sha256": "1559f8be4ca6799cf4076a53ba6acb6d096295957eb227f35b314b5c45a7d79d",
+   "dataset_ids": [
+    "ds.osm_landuse_lux"
+   ],
+   "kind": "gpkg",
+   "path": "03_INPUT/osm_landuse_lux.gpkg",
+   "sha256": "106175f643f03f11b209eaa9957139043e7dc8e110cdb716851336da740ca3bd",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 4284416
+  },
+  {
+   "content_sha256": "fb2daa0b7a3e93eacf9b86a28952882759d8fc722bf5853860ba40c8c9d41d28",
+   "dataset_ids": [
+    "ds.value_per_capita"
+   ],
+   "kind": "xlsx",
+   "path": "03_INPUT/value_per_capita.xlsx",
+   "sha256": "1b56e99ee3336b24bfa1be820b6a29907333497d8e88116e714fce63b3a25ad8",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 5371
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.exposure_by_canton_csv"
+   ],
+   "kind": "csv",
+   "path": "04_FINAL/exposure_by_canton.csv",
+   "sha256": "f7e4247d5722a9018c315479c741479dca8186e7803b256b5cc883df1656eb04",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1435
+  },
+  {
+   "content_sha256": "a2347741bb9f0a74563dad104ea27fadcd8ef14febdb3dc47f6594519db22c72",
+   "dataset_ids": [
+    "ds.exposure_by_canton_gpkg"
+   ],
+   "kind": "gpkg",
+   "path": "04_FINAL/exposure_by_canton.gpkg",
+   "sha256": "0028124e9fd999527b5aa4946719f7c89f48f6137d3d620bcf9e62a7cc9c03dc",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1245184
+  },
+  {
+   "content_sha256": "a03a4e08215a9f241d96c60e0c42a0b19a004cebf4123008288b03aa7f3cad37",
+   "dataset_ids": [
+    "ds.exposure_by_canton_xlsx"
+   ],
+   "kind": "xlsx",
+   "path": "04_FINAL/exposure_by_canton.xlsx",
+   "sha256": "e9fc464121d401363660df2875e4a3821326c66f860115982db6fd1cd9106078",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 6068
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.lux_res_exposure_2020"
+   ],
+   "kind": "tif",
+   "path": "04_FINAL/lux_res_exposure_2020.tif",
+   "sha256": "b364ee901a73c4e25b5554569946900f8f443be171de7e1dde6907252e2d6b87",
+   "sidecar_of": null,
+   "sidecars": [
+    "04_FINAL/lux_res_exposure_2020.tif.aux.xml"
+   ],
+   "size": 361231
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "xml",
+   "path": "04_FINAL/lux_res_exposure_2020.tif.aux.xml",
+   "sha256": "c5596fa249be9731507824a44793d4a85546c559d09a52d9efb0eeff262e4dd0",
+   "sidecar_of": "04_FINAL/lux_res_exposure_2020.tif",
+   "sidecars": [],
+   "size": 415
+  },
+  {
+   "content_sha256": "ed189502219075c712da8306d4188b09c0969bf77aa4ba82bdaef0be171a047d",
+   "dataset_ids": [
+    "ds.01_lux_outline"
+   ],
+   "kind": "gpkg",
+   "path": "05_TEMP/01_lux_outline.gpkg",
+   "sha256": "f1f37a88e2aaad745ee1a95ea2592f5c9b14b5e56af1c9782919dfc0a3fa1632",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 405504
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.01_pop_lux"
+   ],
+   "kind": "tif",
+   "path": "05_TEMP/01_pop_lux.tif",
+   "sha256": "e1d622de159d99b2625e53e7e0423ff3fed3a35d54f570a0772ea9ee0b47732b",
+   "sidecar_of": null,
+   "sidecars": [
+    "05_TEMP/01_pop_lux.tif.aux.xml"
+   ],
+   "size": 2199027
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "xml",
+   "path": "05_TEMP/01_pop_lux.tif.aux.xml",
+   "sha256": "a71e74b84fbb983c8933bd14b909224e5baf182cdd3230ce9015cbf1e4229311",
+   "sidecar_of": "05_TEMP/01_pop_lux.tif",
+   "sidecars": [],
+   "size": 438
+  },
+  {
+   "content_sha256": "c4249946f50fa2c53b9d11838a225a6a5853a481596ba84b23e05503247a8c46",
+   "dataset_ids": [
+    "ds.02_res_2169"
+   ],
+   "kind": "gpkg",
+   "path": "05_TEMP/02_res_2169.gpkg",
+   "sha256": "8bc481ec159f91734b59689b5c648863e87ceff8852e862aba38c1de8c11b52b",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 3063808
+  },
+  {
+   "content_sha256": "c12a963b0967c52b087388b2b7fe6010d2b8d5368200e9adbcf38f0296f55830",
+   "dataset_ids": [
+    "ds.02_res_4326"
+   ],
+   "kind": "gpkg",
+   "path": "05_TEMP/02_res_4326.gpkg",
+   "sha256": "6c36e38c7f5689fa166ba35b003c354085557804b1e9787a9b36c23a6d33b3cc",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 3063808
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.02_res_mask"
+   ],
+   "kind": "tif",
+   "path": "05_TEMP/02_res_mask.tif",
+   "sha256": "cb16d48a8514bf3a062a13d1cac4a978e1efcc0a1e0abac040a78e6bc177b0b3",
+   "sidecar_of": null,
+   "sidecars": [
+    "05_TEMP/02_res_mask.tif.aux.xml"
+   ],
+   "size": 32280
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "xml",
+   "path": "05_TEMP/02_res_mask.tif.aux.xml",
+   "sha256": "9fb68272de70542de76a05792208d8ed16cc5b4d6085be8335d2c10f2c7eab1b",
+   "sidecar_of": "05_TEMP/02_res_mask.tif",
+   "sidecars": [],
+   "size": 380
+  },
+  {
+   "content_sha256": "593b0d9df6e0a0fdb732d52e1ba487e2f003b8c799ff8ff911b2b643f9dad4c0",
+   "dataset_ids": [
+    "ds.03_canton_pop"
+   ],
+   "kind": "gpkg",
+   "path": "05_TEMP/03_canton_pop.gpkg",
+   "sha256": "b689f7f3441d6c68ac9a760cfad7c685abf32868443522d72c51cc08612873c5",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1245184
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.03_pop_res"
+   ],
+   "kind": "tif",
+   "path": "05_TEMP/03_pop_res.tif",
+   "sha256": "a6e7158220ee0597777837906595cbf67a1749f051ef918e896f0d984fb5c593",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 3315298
+  },
+  {
+   "content_sha256": "54e53f24fa957ca0d30c3b60a530069cecaa0b145e3a1773ddd8056d665c67bf",
+   "dataset_ids": [
+    "ds.04_canton_factor"
+   ],
+   "kind": "gpkg",
+   "path": "05_TEMP/04_canton_factor.gpkg",
+   "sha256": "fe95dcfc0ede3c508e2a06915661b9f5436a52b71a79dee8d94caa780b172834",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1421312
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.04_factor"
+   ],
+   "kind": "tif",
+   "path": "05_TEMP/04_factor.tif",
+   "sha256": "9b2c5a1e5a029a760f905d0f96fb531869b5e62c057bd2075ce1b3aa3a8e3588",
+   "sidecar_of": null,
+   "sidecars": [
+    "05_TEMP/04_factor.tif.aux.xml"
+   ],
+   "size": 506416
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "xml",
+   "path": "05_TEMP/04_factor.tif.aux.xml",
+   "sha256": "2562d98614f1c685691b5e0dae05df47e77c637c755c9b68983f75f31bf9bdb7",
+   "sidecar_of": "05_TEMP/04_factor.tif",
+   "sidecars": [],
+   "size": 435
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "txt",
+   "path": "NOTES.txt",
+   "sha256": "9c228de7e19a8b9c87800dc4ccd18d4ce10a007878eba54ba2d58efdf34e1b23",
+   "sidecar_of": null,
+   "sidecars": [],
+   "size": 1727
+  }
+ ],
+ "legacy_root": "../lux-exposure-legacy",
+ "scan": {
+  "legacy_roots": [
+   "lux-exposure-legacy"
+  ],
+  "mtime_reliable": false,
+  "note": "devtests fixture; scan.py writes the real inventory",
+  "read_only_verified": true
+ },
+ "schema": "axis-migrate.inventory.v1"
+}

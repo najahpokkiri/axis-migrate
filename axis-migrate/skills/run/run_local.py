@@ -42,7 +42,7 @@ def make_executor(python: Path, *, use_strace: bool):
         ledger_rel, kind = None, "none"
         if use_strace:
             ledger_rel, kind = f"logs/{ps.id}.reads", "strace"
-            argv = [STRACE, "-f", "-qq", "-y", "-s", "65535", "-e", f"trace={rl.TRACE_SET}",
+            argv = [STRACE, "-f", "--seccomp-bpf", "-qq", "-y", "-s", "65535", "-e", f"trace={rl.TRACE_SET}",
                     "-o", str(run.dir / ledger_rel)] + argv
         else:
             ledger_rel, kind = f"logs/{ps.id}.audit", "audit+cpl_debug"

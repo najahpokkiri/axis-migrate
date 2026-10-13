@@ -1,0 +1,2434 @@
+{
+ "acks": {
+  "agent_seq": 0
+ },
+ "datasets": [
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": "extensive",
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [
+    "s01_prepare_population",
+    "s03b_zonal_arcpy_old"
+   ],
+   "evidence": [],
+   "id": "ds.lux_ppp_2020",
+   "kind": "raster",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "03_INPUT/lux_ppp_2020.tif",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "input",
+   "title": "lux_ppp_2020"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "geoBoundaries-LUX-ADM1",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [
+    "m01_cantons_lux_edit"
+   ],
+   "evidence": [],
+   "id": "ds.geoboundaries_lux_adm1",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "geoBoundaries-LUX-ADM1",
+    "path": "03_INPUT/geoBoundaries-LUX-ADM1.geojson",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "input",
+   "title": "geoboundaries_lux_adm1"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "geoBoundaries-LUX-ADM2",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.geoboundaries_lux_adm2",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "geoBoundaries-LUX-ADM2",
+    "path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "unused",
+   "title": "geoboundaries_lux_adm2"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "canton"
+    ],
+    "layer": "cantons",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [
+    "s01_prepare_population",
+    "s03_zonal_population"
+   ],
+   "evidence": [],
+   "id": "ds.cantons_lux_edit",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "cantons",
+    "path": "03_INPUT/cantons_lux_edit.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": "cantons",
+    "path": "m01_cantons_lux_edit/cantons_lux_edit.gpkg"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "m01_cantons_lux_edit"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "input",
+   "title": "cantons_lux_edit"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "landuse",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [
+    "s02_landuse_mask"
+   ],
+   "evidence": [],
+   "id": "ds.osm_landuse_lux",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "landuse",
+    "path": "03_INPUT/osm_landuse_lux.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "input",
+   "title": "osm_landuse_lux"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": [
+     5,
+     16
+    ],
+    "header_row": 4,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": "vpc",
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [
+    "s04_distribute_value"
+   ],
+   "evidence": [],
+   "id": "ds.value_per_capita",
+   "kind": "table",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "03_INPUT/value_per_capita.xlsx",
+    "sheet": "vpc"
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "input",
+   "title": "value_per_capita"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "01_lux_outline",
+    "match": "full_row",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.01_lux_outline",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "01_lux_outline",
+    "path": "05_TEMP/01_lux_outline.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": "01_lux_outline",
+    "path": "s01_prepare_population/01_lux_outline.gpkg"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s01_prepare_population"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "01_lux_outline"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": "extensive",
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": "centre",
+    "zones": "ds.cantons_lux_edit:canton"
+   },
+   "consumed_by": [
+    "s02_landuse_mask",
+    "s03_zonal_population"
+   ],
+   "evidence": [],
+   "id": "ds.01_pop_lux",
+   "kind": "raster",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "05_TEMP/01_pop_lux.tif",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": null,
+    "path": "s01_prepare_population/01_pop_lux.tif"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s01_prepare_population"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "01_pop_lux"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "osm_id",
+     "osm_way_id"
+    ],
+    "layer": "02_res_2169",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.02_res_2169",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "02_res_2169",
+    "path": "05_TEMP/02_res_2169.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": "02_res_2169",
+    "path": "s02_landuse_mask/02_res_2169.gpkg"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s02_landuse_mask"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "02_res_2169"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "osm_id",
+     "osm_way_id"
+    ],
+    "layer": "02_res_4326",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.02_res_4326",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "02_res_4326",
+    "path": "05_TEMP/02_res_4326.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": "02_res_4326",
+    "path": "s02_landuse_mask/02_res_4326.gpkg"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s02_landuse_mask"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "02_res_4326"
+  },
+  {
+   "compare": {
+    "categorical": true,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": "mask",
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [
+    "s03_zonal_population"
+   ],
+   "evidence": [],
+   "id": "ds.02_res_mask",
+   "kind": "raster",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "05_TEMP/02_res_mask.tif",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": null,
+    "path": "s02_landuse_mask/02_res_mask.tif"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s02_landuse_mask"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "02_res_mask"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": "extensive",
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": "centre",
+    "zones": "ds.cantons_lux_edit:canton"
+   },
+   "consumed_by": [
+    "s04_distribute_value"
+   ],
+   "evidence": [],
+   "id": "ds.03_pop_res",
+   "kind": "raster",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "05_TEMP/03_pop_res.tif",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": null,
+    "path": "s03_zonal_population/03_pop_res.tif"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s03_zonal_population"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "03_pop_res"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "canton"
+    ],
+    "layer": "03_canton_pop",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [
+    "s04_distribute_value"
+   ],
+   "evidence": [],
+   "id": "ds.03_canton_pop",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "03_canton_pop",
+    "path": "05_TEMP/03_canton_pop.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": "03_canton_pop",
+    "path": "s03_zonal_population/03_canton_pop.gpkg"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s03_zonal_population"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "03_canton_pop"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "canton"
+    ],
+    "layer": "canton_factor",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.04_canton_factor",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "canton_factor",
+    "path": "05_TEMP/04_canton_factor.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": "canton_factor",
+    "path": "s04_distribute_value/04_canton_factor.gpkg"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s04_distribute_value"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "04_canton_factor"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": "intensive",
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.04_factor",
+   "kind": "raster",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "05_TEMP/04_factor.tif",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": null,
+    "path": "s04_distribute_value/04_factor.tif"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s04_distribute_value"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "04_factor"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": "extensive",
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": "centre",
+    "zones": "ds.cantons_lux_edit:canton"
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.lux_res_exposure_2020",
+   "kind": "raster",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "04_FINAL/lux_res_exposure_2020.tif",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": null,
+    "path": "s04_distribute_value/lux_res_exposure_2020.tif"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s04_distribute_value"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "final",
+   "title": "lux_res_exposure_2020"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "canton"
+    ],
+    "layer": "exposure_by_canton",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.exposure_by_canton_gpkg",
+   "kind": "vector",
+   "legacy": {
+    "exists": true,
+    "layer": "exposure_by_canton",
+    "path": "04_FINAL/exposure_by_canton.gpkg",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": "exposure_by_canton",
+    "path": "s04_distribute_value/exposure_by_canton.gpkg"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s04_distribute_value"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "final",
+   "title": "exposure_by_canton_gpkg"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": 1,
+    "ignore": [],
+    "key": [
+     "canton"
+    ],
+    "layer": null,
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.exposure_by_canton_csv",
+   "kind": "table",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "04_FINAL/exposure_by_canton.csv",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": null,
+    "path": "s04_distribute_value/exposure_by_canton.csv"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s04_distribute_value"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "final",
+   "title": "exposure_by_canton_csv"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": [
+     2,
+     13
+    ],
+    "header_row": 1,
+    "ignore": [],
+    "key": [
+     "canton"
+    ],
+    "layer": null,
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": "by_canton",
+    "total_row": 15,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.exposure_by_canton_xlsx",
+   "kind": "table",
+   "legacy": {
+    "exists": true,
+    "layer": null,
+    "path": "04_FINAL/exposure_by_canton.xlsx",
+    "sheet": "by_canton"
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "layer": null,
+    "path": "s04_distribute_value/exposure_by_canton.xlsx"
+   },
+   "no_reference_reason": null,
+   "persistence": "persisted",
+   "produced_by": {
+    "op": null,
+    "step": "s04_distribute_value"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "role": "final",
+   "title": "exposure_by_canton_xlsx"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.work__res_mask",
+   "kind": "raster",
+   "legacy": {
+    "exists": false,
+    "layer": null,
+    "path": "work.gdb/res_mask",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "legacy_container_item",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "work__res_mask"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.work__cantons_edit",
+   "kind": "table",
+   "legacy": {
+    "exists": false,
+    "layer": null,
+    "path": "work.gdb/cantons_edit",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "legacy_container_item",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "work__cantons_edit"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.work__pop_lux",
+   "kind": "raster",
+   "legacy": {
+    "exists": false,
+    "layer": null,
+    "path": "work.gdb/pop_lux",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "legacy_container_item",
+   "produced_by": {
+    "op": null,
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "work__pop_lux"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.work__pop_res",
+   "kind": "raster",
+   "legacy": {
+    "exists": false,
+    "layer": null,
+    "path": "work.gdb/pop_res",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "legacy_container_item",
+   "produced_by": {
+    "op": null,
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "work__pop_res"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.work__zs_pop",
+   "kind": "table",
+   "legacy": {
+    "exists": false,
+    "layer": null,
+    "path": "work.gdb/zs_pop",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "legacy_container_item",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "work__zs_pop"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.work__zs_res",
+   "kind": "table",
+   "legacy": {
+    "exists": false,
+    "layer": null,
+    "path": "work.gdb/zs_res",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "legacy_container_item",
+   "produced_by": null,
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "work__zs_res"
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": false,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "consumed_by": [],
+   "evidence": [],
+   "id": "ds.work__canton_pop",
+   "kind": "table",
+   "legacy": {
+    "exists": false,
+    "layer": null,
+    "path": "work.gdb/canton_pop",
+    "sheet": null
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "persistence": "legacy_container_item",
+   "produced_by": {
+    "op": null,
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": "devtests/run/lux_project fixture",
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "role": "intermediate",
+   "title": "work__canton_pop"
+  }
+ ],
+ "edges": [
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:27-89",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s02_landuse_mask reads 05_TEMP/01_pop_lux.tif"
+    }
+   ],
+   "from": "ds.01_pop_lux",
+   "id": "e.ds.01_pop_lux->s02_landuse_mask",
+   "kind": "reads",
+   "lines": [
+    [
+     27,
+     89
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s02_landuse_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03_zonal_population.py:28-58",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03_zonal_population reads 05_TEMP/01_pop_lux.tif"
+    }
+   ],
+   "from": "ds.01_pop_lux",
+   "id": "e.ds.01_pop_lux->s03_zonal_population",
+   "kind": "reads",
+   "lines": [
+    [
+     28,
+     58
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s03_zonal_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03_zonal_population.py:28-58",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03_zonal_population reads 05_TEMP/02_res_mask.tif"
+    }
+   ],
+   "from": "ds.02_res_mask",
+   "id": "e.ds.02_res_mask->s03_zonal_population",
+   "kind": "reads",
+   "lines": [
+    [
+     28,
+     58
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s03_zonal_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value reads 05_TEMP/03_canton_pop.gpkg"
+    }
+   ],
+   "from": "ds.03_canton_pop",
+   "id": "e.ds.03_canton_pop->s04_distribute_value",
+   "kind": "reads",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s04_distribute_value"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value reads 05_TEMP/03_pop_res.tif"
+    }
+   ],
+   "from": "ds.03_pop_res",
+   "id": "e.ds.03_pop_res->s04_distribute_value",
+   "kind": "reads",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s04_distribute_value"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/01_prepare_population.py:30-56",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s01_prepare_population reads 03_INPUT/cantons_lux_edit.gpkg"
+    }
+   ],
+   "from": "ds.cantons_lux_edit",
+   "id": "e.ds.cantons_lux_edit->s01_prepare_population",
+   "kind": "reads",
+   "lines": [
+    [
+     30,
+     56
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s01_prepare_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03_zonal_population.py:28-58",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03_zonal_population reads 03_INPUT/cantons_lux_edit.gpkg"
+    }
+   ],
+   "from": "ds.cantons_lux_edit",
+   "id": "e.ds.cantons_lux_edit->s03_zonal_population",
+   "kind": "reads",
+   "lines": [
+    [
+     28,
+     58
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s03_zonal_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "NOTES.txt:14-18",
+     "rev": 1,
+     "state": "documented",
+     "summary": "m01_cantons_lux_edit reads 03_INPUT/geoBoundaries-LUX-ADM1.geojson"
+    }
+   ],
+   "from": "ds.geoboundaries_lux_adm1",
+   "id": "e.ds.geoboundaries_lux_adm1->m01_cantons_lux_edit",
+   "kind": "reads",
+   "lines": [
+    [
+     14,
+     18
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "m01_cantons_lux_edit"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/01_prepare_population.py:30-56",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s01_prepare_population reads 03_INPUT/lux_ppp_2020.tif"
+    }
+   ],
+   "from": "ds.lux_ppp_2020",
+   "id": "e.ds.lux_ppp_2020->s01_prepare_population",
+   "kind": "reads",
+   "lines": [
+    [
+     30,
+     56
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s01_prepare_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:1-62",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03b_zonal_arcpy_old reads 03_INPUT/lux_ppp_2020.tif"
+    }
+   ],
+   "from": "ds.lux_ppp_2020",
+   "id": "e.ds.lux_ppp_2020->s03b_zonal_arcpy_old",
+   "kind": "reads",
+   "lines": [
+    [
+     1,
+     62
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s03b_zonal_arcpy_old"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:27-89",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s02_landuse_mask reads 03_INPUT/osm_landuse_lux.gpkg"
+    }
+   ],
+   "from": "ds.osm_landuse_lux",
+   "id": "e.ds.osm_landuse_lux->s02_landuse_mask",
+   "kind": "reads",
+   "lines": [
+    [
+     27,
+     89
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s02_landuse_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value reads 03_INPUT/value_per_capita.xlsx"
+    }
+   ],
+   "from": "ds.value_per_capita",
+   "id": "e.ds.value_per_capita->s04_distribute_value",
+   "kind": "reads",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "s04_distribute_value"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "NOTES.txt:14-18",
+     "rev": 1,
+     "state": "documented",
+     "summary": "m01_cantons_lux_edit writes 03_INPUT/cantons_lux_edit.gpkg"
+    }
+   ],
+   "from": "m01_cantons_lux_edit",
+   "id": "e.m01_cantons_lux_edit->ds.cantons_lux_edit",
+   "kind": "writes",
+   "lines": [
+    [
+     14,
+     18
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.cantons_lux_edit"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/01_prepare_population.py:30-56",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s01_prepare_population writes 05_TEMP/01_lux_outline.gpkg"
+    }
+   ],
+   "from": "s01_prepare_population",
+   "id": "e.s01_prepare_population->ds.01_lux_outline",
+   "kind": "writes",
+   "lines": [
+    [
+     30,
+     56
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.01_lux_outline"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/01_prepare_population.py:30-56",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s01_prepare_population writes 05_TEMP/01_pop_lux.tif"
+    }
+   ],
+   "from": "s01_prepare_population",
+   "id": "e.s01_prepare_population->ds.01_pop_lux",
+   "kind": "writes",
+   "lines": [
+    [
+     30,
+     56
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.01_pop_lux"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:27-89",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s02_landuse_mask writes 05_TEMP/02_res_2169.gpkg"
+    }
+   ],
+   "from": "s02_landuse_mask",
+   "id": "e.s02_landuse_mask->ds.02_res_2169",
+   "kind": "writes",
+   "lines": [
+    [
+     27,
+     89
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.02_res_2169"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:27-89",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s02_landuse_mask writes 05_TEMP/02_res_4326.gpkg"
+    }
+   ],
+   "from": "s02_landuse_mask",
+   "id": "e.s02_landuse_mask->ds.02_res_4326",
+   "kind": "writes",
+   "lines": [
+    [
+     27,
+     89
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.02_res_4326"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:27-89",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s02_landuse_mask writes 05_TEMP/02_res_mask.tif"
+    }
+   ],
+   "from": "s02_landuse_mask",
+   "id": "e.s02_landuse_mask->ds.02_res_mask",
+   "kind": "writes",
+   "lines": [
+    [
+     27,
+     89
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.02_res_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03_zonal_population.py:28-58",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03_zonal_population writes 05_TEMP/03_canton_pop.gpkg"
+    }
+   ],
+   "from": "s03_zonal_population",
+   "id": "e.s03_zonal_population->ds.03_canton_pop",
+   "kind": "writes",
+   "lines": [
+    [
+     28,
+     58
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.03_canton_pop"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03_zonal_population.py:28-58",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03_zonal_population writes 05_TEMP/03_pop_res.tif"
+    }
+   ],
+   "from": "s03_zonal_population",
+   "id": "e.s03_zonal_population->ds.03_pop_res",
+   "kind": "writes",
+   "lines": [
+    [
+     28,
+     58
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.03_pop_res"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:1-62",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03b_zonal_arcpy_old writes work.gdb/canton_pop"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old->ds.work__canton_pop",
+   "kind": "writes",
+   "lines": [
+    [
+     1,
+     62
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.work__canton_pop"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:1-62",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03b_zonal_arcpy_old writes work.gdb/pop_lux"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old->ds.work__pop_lux",
+   "kind": "writes",
+   "lines": [
+    [
+     1,
+     62
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.work__pop_lux"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:1-62",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s03b_zonal_arcpy_old writes work.gdb/pop_res"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old->ds.work__pop_res",
+   "kind": "writes",
+   "lines": [
+    [
+     1,
+     62
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.work__pop_res"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "ref": "NOTES.txt:12",
+     "state": "documented",
+     "summary": "old ArcGIS version of 03"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old~s03_zonal_population",
+   "kind": "equivalent_to",
+   "lines": [],
+   "op": null,
+   "review": null,
+   "state": "documented",
+   "to": "s03_zonal_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value writes 05_TEMP/04_canton_factor.gpkg"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value->ds.04_canton_factor",
+   "kind": "writes",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.04_canton_factor"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value writes 05_TEMP/04_factor.tif"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value->ds.04_factor",
+   "kind": "writes",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.04_factor"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value writes 04_FINAL/exposure_by_canton.csv"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value->ds.exposure_by_canton_csv",
+   "kind": "writes",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.exposure_by_canton_csv"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value writes 04_FINAL/exposure_by_canton.gpkg"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value->ds.exposure_by_canton_gpkg",
+   "kind": "writes",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.exposure_by_canton_gpkg"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value writes 04_FINAL/exposure_by_canton.xlsx"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value->ds.exposure_by_canton_xlsx",
+   "kind": "writes",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.exposure_by_canton_xlsx"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "fixture",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-154",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "s04_distribute_value writes 04_FINAL/lux_res_exposure_2020.tif"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value->ds.lux_res_exposure_2020",
+   "kind": "writes",
+   "lines": [
+    [
+     35,
+     154
+    ]
+   ],
+   "op": null,
+   "review": null,
+   "state": "structurally_inferred",
+   "to": "ds.lux_res_exposure_2020"
+  }
+ ],
+ "invariants": [],
+ "ladder": {
+  "blocking": [],
+  "derived_rev": null,
+  "project": null
+ },
+ "legacy_output_dirs": [
+  "04_FINAL",
+  "05_TEMP"
+ ],
+ "project": {
+  "created_at": "2026-10-13T00:00:00Z",
+  "legacy_root": "../lux-exposure-legacy",
+  "legacy_tree_sha256": null,
+  "name": "lux-exposure-legacy",
+  "plugin_version": "0.1.0"
+ },
+ "questions": [],
+ "revision": 1,
+ "schema": "axis-migrate.graph.v1",
+ "steps": [
+  {
+   "id": "m01_cantons_lux_edit",
+   "inputs": [
+    "ds.geoboundaries_lux_adm1"
+   ],
+   "kind": "manual",
+   "ladder": null,
+   "legacy": {
+    "executed": true,
+    "lines": [
+     [
+      14,
+      18
+     ]
+    ],
+    "source": "NOTES.txt"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/m01_cantons_lux_edit.py"
+   },
+   "ops": [
+    {
+     "id": "m01_cantons_lux_edit.op1",
+     "ref": "NOTES.txt:14-18",
+     "tool": "manual:attribute_edit"
+    }
+   ],
+   "outputs": [
+    "ds.cantons_lux_edit"
+   ],
+   "params": [
+    "p.canton_name_prefix",
+    "p.canton_rename_map"
+   ],
+   "plan": null,
+   "provenance": "fixture",
+   "review": null,
+   "scope": "migrate",
+   "scope_reason": null,
+   "timeout_s": 120,
+   "title": "Canton names for the value table (manual attribute edit)",
+   "tool": "human",
+   "verify": null
+  },
+  {
+   "id": "s01_prepare_population",
+   "inputs": [
+    "ds.cantons_lux_edit",
+    "ds.lux_ppp_2020"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": true,
+    "lines": [
+     [
+      30,
+      56
+     ]
+    ],
+    "source": "02_SCRIPTS/01_prepare_population.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s01_prepare_population.py"
+   },
+   "ops": [
+    {
+     "id": "s01_prepare_population.op1",
+     "ref": "02_SCRIPTS/01_prepare_population.py:31-35",
+     "tool": "native:dissolve"
+    },
+    {
+     "id": "s01_prepare_population.op2",
+     "ref": "02_SCRIPTS/01_prepare_population.py:40-55",
+     "tool": "gdal:cliprasterbymasklayer"
+    }
+   ],
+   "outputs": [
+    "ds.01_lux_outline",
+    "ds.01_pop_lux"
+   ],
+   "params": [
+    "p.clip_nodata"
+   ],
+   "plan": null,
+   "provenance": "fixture",
+   "review": null,
+   "scope": "migrate",
+   "scope_reason": null,
+   "timeout_s": 120,
+   "title": "Country outline and population clipped to it",
+   "tool": "pyqgis",
+   "verify": null
+  },
+  {
+   "id": "s02_landuse_mask",
+   "inputs": [
+    "ds.01_pop_lux",
+    "ds.osm_landuse_lux"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": true,
+    "lines": [
+     [
+      27,
+      89
+     ]
+    ],
+    "source": "02_SCRIPTS/02_landuse_mask.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s02_landuse_mask.py"
+   },
+   "ops": [
+    {
+     "id": "s02_landuse_mask.op1",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:28-31",
+     "tool": "native:reprojectlayer"
+    },
+    {
+     "id": "s02_landuse_mask.op2",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:33-34",
+     "tool": "native:fixgeometries"
+    },
+    {
+     "id": "s02_landuse_mask.op3",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:36-43",
+     "tool": "native:fieldcalculator"
+    },
+    {
+     "id": "s02_landuse_mask.op4",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:46-49",
+     "tool": "native:extractbyexpression"
+    },
+    {
+     "id": "s02_landuse_mask.op5",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:52-55",
+     "tool": "native:reprojectlayer"
+    },
+    {
+     "id": "s02_landuse_mask.op6",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:62-77",
+     "tool": "gdal:rasterize"
+    }
+   ],
+   "outputs": [
+    "ds.02_res_2169",
+    "ds.02_res_4326",
+    "ds.02_res_mask"
+   ],
+   "params": [
+    "p.area_crs",
+    "p.landuse_class",
+    "p.mask_burn_value",
+    "p.mask_nodata",
+    "p.min_area_m2",
+    "p.rasterize_all_touched"
+   ],
+   "plan": null,
+   "provenance": "fixture",
+   "review": null,
+   "scope": "migrate",
+   "scope_reason": null,
+   "timeout_s": 120,
+   "title": "Residential polygons and all-touched mask on the population grid",
+   "tool": "pyqgis",
+   "verify": null
+  },
+  {
+   "id": "s03_zonal_population",
+   "inputs": [
+    "ds.01_pop_lux",
+    "ds.02_res_mask",
+    "ds.cantons_lux_edit"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": true,
+    "lines": [
+     [
+      28,
+      58
+     ]
+    ],
+    "source": "02_SCRIPTS/03_zonal_population.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s03_zonal_population.py"
+   },
+   "ops": [
+    {
+     "id": "s03_zonal_population.op1",
+     "ref": "02_SCRIPTS/03_zonal_population.py:31-38",
+     "tool": "native:rastercalc"
+    },
+    {
+     "id": "s03_zonal_population.op2",
+     "ref": "02_SCRIPTS/03_zonal_population.py:41-47",
+     "tool": "native:zonalstatisticsfb"
+    },
+    {
+     "id": "s03_zonal_population.op3",
+     "ref": "02_SCRIPTS/03_zonal_population.py:50-56",
+     "tool": "native:zonalstatisticsfb"
+    }
+   ],
+   "outputs": [
+    "ds.03_canton_pop",
+    "ds.03_pop_res"
+   ],
+   "params": [
+    "p.pop_min",
+    "p.pop_res_nodata"
+   ],
+   "plan": null,
+   "provenance": "fixture",
+   "review": null,
+   "scope": "migrate",
+   "scope_reason": null,
+   "timeout_s": 120,
+   "title": "Residential weights and zonal population per canton",
+   "tool": "pyqgis",
+   "verify": null
+  },
+  {
+   "id": "s03b_zonal_arcpy_old",
+   "inputs": [
+    "ds.lux_ppp_2020"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": false,
+    "lines": [
+     [
+      1,
+      62
+     ]
+    ],
+    "source": "02_SCRIPTS/03b_zonal_arcpy_OLD.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": null
+   },
+   "ops": [
+    {
+     "id": "s03b_zonal_arcpy_old.op1",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:28-29",
+     "tool": "arcpy.sa.ExtractByMask"
+    }
+   ],
+   "outputs": [
+    "ds.work__canton_pop",
+    "ds.work__pop_lux",
+    "ds.work__pop_res"
+   ],
+   "params": [],
+   "plan": null,
+   "provenance": "fixture",
+   "review": null,
+   "scope": "drop",
+   "scope_reason": "alternative_impl",
+   "timeout_s": 120,
+   "title": "Old ArcGIS version of step 03 (never run)",
+   "tool": "arcpy",
+   "verify": null
+  },
+  {
+   "id": "s04_distribute_value",
+   "inputs": [
+    "ds.03_canton_pop",
+    "ds.03_pop_res",
+    "ds.value_per_capita"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": true,
+    "lines": [
+     [
+      35,
+      154
+     ]
+    ],
+    "source": "02_SCRIPTS/04_distribute_value.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s04_distribute_value.py"
+   },
+   "ops": [
+    {
+     "id": "s04_distribute_value.op1",
+     "ref": "02_SCRIPTS/04_distribute_value.py:36-43",
+     "tool": "openpyxl.load_workbook"
+    },
+    {
+     "id": "s04_distribute_value.op2",
+     "ref": "02_SCRIPTS/04_distribute_value.py:46",
+     "tool": "native:savefeatures"
+    },
+    {
+     "id": "s04_distribute_value.op3",
+     "ref": "02_SCRIPTS/04_distribute_value.py:57-75",
+     "tool": "QgsVectorDataProvider.changeAttributeValues"
+    },
+    {
+     "id": "s04_distribute_value.op4",
+     "ref": "02_SCRIPTS/04_distribute_value.py:80-95",
+     "tool": "gdal:rasterize"
+    },
+    {
+     "id": "s04_distribute_value.op5",
+     "ref": "02_SCRIPTS/04_distribute_value.py:98-108",
+     "tool": "gdal:rastercalculator"
+    },
+    {
+     "id": "s04_distribute_value.op6",
+     "ref": "02_SCRIPTS/04_distribute_value.py:111-117",
+     "tool": "native:zonalstatisticsfb"
+    },
+    {
+     "id": "s04_distribute_value.op7",
+     "ref": "02_SCRIPTS/04_distribute_value.py:126-130",
+     "tool": "csv.writer"
+    },
+    {
+     "id": "s04_distribute_value.op8",
+     "ref": "02_SCRIPTS/04_distribute_value.py:132-140",
+     "tool": "openpyxl.Workbook.save"
+    }
+   ],
+   "outputs": [
+    "ds.04_canton_factor",
+    "ds.04_factor",
+    "ds.exposure_by_canton_csv",
+    "ds.exposure_by_canton_gpkg",
+    "ds.exposure_by_canton_xlsx",
+    "ds.lux_res_exposure_2020"
+   ],
+   "params": [
+    "p.exposure_nodata",
+    "p.factor_nodata",
+    "p.report_sheet",
+    "p.vpc_first_row",
+    "p.vpc_last_row",
+    "p.vpc_sheet",
+    "p.vpc_unit_factor"
+   ],
+   "plan": null,
+   "provenance": "fixture",
+   "review": null,
+   "scope": "migrate",
+   "scope_reason": null,
+   "timeout_s": 120,
+   "title": "Distribute canton value over residential cells; final outputs",
+   "tool": "pyqgis",
+   "verify": null
+  }
+ ],
+ "updated": {
+  "at": "2026-10-13T00:00:00Z",
+  "by": "fixture",
+  "rev": 1
+ }
+}

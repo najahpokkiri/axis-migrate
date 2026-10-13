@@ -1,0 +1,169 @@
+{
+ "case": "lux-exposure-legacy",
+ "code_hash": "sha256:e00b3bfa85aaaaf6aa4e6831ae5809306bbe75c0d1a00ed22d99d7d412dbd211",
+ "lock_hash": "sha256:1eb65b368ad63edc0a44c9795e7ca4ef657ad7ac0ca96fe690a2a48ed23d0097",
+ "native": {
+  "pyogrio.gdal": "3.12.4",
+  "pyproj.proj": "9.8.1",
+  "rasterio.gdal": "3.12.2",
+  "rasterio.proj": "9.8.1",
+  "shapely.geos": "3.14.1"
+ },
+ "note": "area_m2 in 02_res_2169/02_res_4326 differs from QGIS's planar area by <= 8.7e-13 relative (GEOS vs QGIS summation); every other value, geometry and raster cell is exact.",
+ "outputs": {
+  "ds.01_lux_outline": {
+   "content_sha256": "ed189502219075c712da8306d4188b09c0969bf77aa4ba82bdaef0be171a047d",
+   "path": "s01_prepare_population/01_lux_outline.gpkg",
+   "sha256": "bace83d1ce3b70025e313fef27424ae238035b341121e42946f95d048ecdcfb9"
+  },
+  "ds.01_pop_lux": {
+   "content_sha256": null,
+   "path": "s01_prepare_population/01_pop_lux.tif",
+   "sha256": "e1d622de159d99b2625e53e7e0423ff3fed3a35d54f570a0772ea9ee0b47732b"
+  },
+  "ds.02_res_2169": {
+   "content_sha256": "e6756fcab48a0eb7bf42662368a56de4ee1ba52dcf8f60e7659950608b05d274",
+   "path": "s02_landuse_mask/02_res_2169.gpkg",
+   "sha256": "f54e639f7e2807287c7e83dc8e84c4d88b02214eefcd8fdcf783825d65549339"
+  },
+  "ds.02_res_4326": {
+   "content_sha256": "3dc9b752b2c6f71e20339d46ccaf9f4391460ddc7856d824b7b3435b9effd473",
+   "path": "s02_landuse_mask/02_res_4326.gpkg",
+   "sha256": "7ebc9bffbddb4f9adbd0b17ed0e6b2f922f2bb7f6ec30c9fd3668106562fec10"
+  },
+  "ds.02_res_mask": {
+   "content_sha256": null,
+   "path": "s02_landuse_mask/02_res_mask.tif",
+   "sha256": "cb16d48a8514bf3a062a13d1cac4a978e1efcc0a1e0abac040a78e6bc177b0b3"
+  },
+  "ds.03_canton_pop": {
+   "content_sha256": "593b0d9df6e0a0fdb732d52e1ba487e2f003b8c799ff8ff911b2b643f9dad4c0",
+   "path": "s03_zonal_population/03_canton_pop.gpkg",
+   "sha256": "099f6cee1fa55ba3cf9325a16775f44b4fedf9f5b2ff474a2e08404ccdfdcead"
+  },
+  "ds.03_pop_res": {
+   "content_sha256": null,
+   "path": "s03_zonal_population/03_pop_res.tif",
+   "sha256": "3969d3a3281b677a352b06728e1a714c24484180d66ef5ffecb4e67324b462be"
+  },
+  "ds.04_canton_factor": {
+   "content_sha256": "54e53f24fa957ca0d30c3b60a530069cecaa0b145e3a1773ddd8056d665c67bf",
+   "path": "s04_distribute_value/04_canton_factor.gpkg",
+   "sha256": "2ec7fe01bd3bb4b775515b132c075340a896baf1243fb2502fab2dbb5820c050"
+  },
+  "ds.04_factor": {
+   "content_sha256": null,
+   "path": "s04_distribute_value/04_factor.tif",
+   "sha256": "9b2c5a1e5a029a760f905d0f96fb531869b5e62c057bd2075ce1b3aa3a8e3588"
+  },
+  "ds.cantons_lux_edit": {
+   "content_sha256": "a4f489cf0829976f7fc43c80040289c1c65763373250308e895882a47855c614",
+   "path": "m01_cantons_lux_edit/cantons_lux_edit.gpkg",
+   "sha256": "3a87e76d0ca9590b70bb60f9788a3177c92d3a0f7e45a96ab8e70c65aa71eb9d"
+  },
+  "ds.exposure_by_canton_csv": {
+   "content_sha256": null,
+   "path": "s04_distribute_value/exposure_by_canton.csv",
+   "sha256": "f7e4247d5722a9018c315479c741479dca8186e7803b256b5cc883df1656eb04"
+  },
+  "ds.exposure_by_canton_gpkg": {
+   "content_sha256": "a2347741bb9f0a74563dad104ea27fadcd8ef14febdb3dc47f6594519db22c72",
+   "path": "s04_distribute_value/exposure_by_canton.gpkg",
+   "sha256": "bac89ae635b5794e178261af155b2f02ea14c8617c5f21279317fe6297bfe10e"
+  },
+  "ds.exposure_by_canton_xlsx": {
+   "content_sha256": "672e67b9f35173f67fc9707c63962aef42fd994f8396d3e78d0cff494ff37c18",
+   "path": "s04_distribute_value/exposure_by_canton.xlsx",
+   "sha256": "5312f4d060bbcb8650d218d800b1252b1bafac32349c5d3bbcd93bad3d93df28"
+  },
+  "ds.lux_res_exposure_2020": {
+   "content_sha256": null,
+   "path": "s04_distribute_value/lux_res_exposure_2020.tif",
+   "sha256": "b364ee901a73c4e25b5554569946900f8f443be171de7e1dde6907252e2d6b87"
+  }
+ },
+ "parity_vs_legacy": {
+  "ds.01_lux_outline": {
+   "exact": true
+  },
+  "ds.01_pop_lux": {
+   "exact": true
+  },
+  "ds.02_res_2169": {
+   "diffs": [
+    {
+     "column": "area_m2",
+     "max_rel": 8.632161145854927e-13,
+     "rows": 1512
+    }
+   ],
+   "exact": false
+  },
+  "ds.02_res_4326": {
+   "diffs": [
+    {
+     "column": "area_m2",
+     "max_rel": 8.632161145854927e-13,
+     "rows": 1512
+    }
+   ],
+   "exact": false
+  },
+  "ds.02_res_mask": {
+   "exact": true
+  },
+  "ds.03_canton_pop": {
+   "exact": true
+  },
+  "ds.03_pop_res": {
+   "exact": true
+  },
+  "ds.04_canton_factor": {
+   "exact": true
+  },
+  "ds.04_factor": {
+   "exact": true
+  },
+  "ds.cantons_lux_edit": {
+   "exact": true
+  },
+  "ds.exposure_by_canton_csv": {
+   "exact": true
+  },
+  "ds.exposure_by_canton_gpkg": {
+   "exact": true
+  },
+  "ds.exposure_by_canton_xlsx": {
+   "exact": true
+  },
+  "ds.lux_res_exposure_2020": {
+   "exact": true
+  }
+ },
+ "read_ledger": "strace",
+ "run_id": "r20261013T230758Z-e00b3bfa",
+ "schema": "axis-migrate.golden-outputs.v1",
+ "steps": {
+  "m01_cantons_lux_edit": {
+   "duration_s": 1.277,
+   "peak_rss_mb": 221.3
+  },
+  "s01_prepare_population": {
+   "duration_s": 1.261,
+   "peak_rss_mb": 238.0
+  },
+  "s02_landuse_mask": {
+   "duration_s": 1.827,
+   "peak_rss_mb": 257.8
+  },
+  "s03_zonal_population": {
+   "duration_s": 1.237,
+   "peak_rss_mb": 258.8
+  },
+  "s04_distribute_value": {
+   "duration_s": 1.35,
+   "peak_rss_mb": 252.8
+  }
+ },
+ "wall_time_s": 9.73
+}
