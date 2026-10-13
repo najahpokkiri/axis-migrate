@@ -392,12 +392,9 @@ class Resolver:
         if not parts:
             return None
         if not is_abs:
-            # relative: against the code file's directory, then against the root
+            # relative: against the code file's directory, then against the root (".." resolved; never above it)
             cands = []
-            if base_dir:
-                cands.append(base_dir.split("/") + parts)
-            cands.append(list(parts))
-            for c in cands:
+            for c in ([base_dir.split("/") + parts] if base_dir else []) + [list(parts)]:
                 norm: list[str] = []
                 ok = True
                 for p in c:
@@ -408,29 +405,19 @@ class Resolver:
                         norm.pop()
                     else:
                         norm.append(p)
-                if not ok or not norm:
-                    continue
-                rel = "/".join(norm)
-                k = self._known(rel)
+                if ok and norm and norm not in cands:
+                    cands.append(norm)
+            for c in cands:
+                k = self._known("/".join(c))
                 if k:
                     return self._finish(k, "relative", None)
-            # not on disk (an output not written yet): the candidate whose folder exists, else the code dir
-            c = cands[0]
-            for cc in cands:
-                parent = "/".join(p for p in cc[:-1] if p != "..")
-                if ".." not in cc and (not parent or parent.lower() in self.dirs_ci):
-                    c = cc
-                    break
-            norm = []
-            for p in c:
-                if p == "..":
-                    if not norm:
-                        return None
-                    norm.pop()
-                else:
-                    norm.append(p)
-            if norm:
-                return self._finish("/".join(norm), "relative_missing", None, exists=False)
+            # not on disk (an output not written yet): the candidate whose folder exists, else the first
+            for c in cands:
+                parent = "/".join(c[:-1])
+                if not parent or parent.lower() in self.dirs_ci:
+                    return self._finish("/".join(c), "relative_missing", None, exists=False)
+            if cands:
+                return self._finish("/".join(cands[0]), "relative_missing", None, exists=False)
             return None
         # absolute: longest suffix (>= 2 components) that exists under the root
         for k in range(1, len(parts) - 1):
@@ -582,6 +569,7 @@ class PyAnalyzer:
         self.param_lines: dict[tuple, str] = {}
         self.top_level = True
         self.exists_checks: list[dict] = []
+        self.env["__file__"] = V("const", rel)  # paths built from __file__ stay legacy-root relative
         if star_env:
             self.env.update(star_env)
 
@@ -1354,7 +1342,8 @@ class PyAnalyzer:
             fr.nested.append(api)
             fr.lines.append(node.lineno)
             return None
-        key = (self.rel, self.cell if self.cell is not None else -1, node.lineno, node.col_offset)
+        key = (self.rel, self.cell if self.cell is not None else -1, node.lineno, node.col_offset,
+               getattr(node, "end_lineno", None) or node.lineno, getattr(node, "end_col_offset", None) or 0)
         op = self.ctx.ops.get(key)
         if op is None:
             op = {"key": key, "code": self.code_id, "file": self.rel, "cell": self.cell, "line": node.lineno,
@@ -1443,8 +1432,11 @@ class PyAnalyzer:
             if o is not None:
                 out.extend(self.path_refs(o, line, param, force_path=force_path))
         elif v.k == "unknown" and force_path:
-            out.append({"unresolved": v.x.get("template") or v.v, "param": param, "line": line,
-                        "reason": v.x.get("reason") or v.v})
+            reason = v.x.get("reason") or v.v
+            out.append({"unresolved": v.x.get("template") or v.v, "param": param, "line": line, "reason": reason})
+            self.ctx.unresolved.append({"file": self.rel, "line": line, "cell": self.cell,
+                                        "expr": v.x.get("template") or str(v.v), "reason": reason, "op": None,
+                                        "code": self.code_id})
         return out
 
     def vjson(self, v: V, depth=0) -> Any:
@@ -3028,7 +3020,8 @@ def step_ids_for(code_paths: list[str]) -> dict[str, str]:
     for p, m in numbered:
         n = int(m.group(1))
         maxn = max(maxn, n)
-        rid = f"s{n:02d}{m.group(2).lower()}" + (f"_{ac.slug(m.group(3))}" if m.group(3) and ac.slug(m.group(3)) else "")
+        tail = ac.slug(m.group(3) or "") or ac.slug(stem_of(p)) or "step"
+        rid = f"s{n:02d}{m.group(2).lower()}_{tail}"
         if rid in used:
             rid += "_" + ac.slug(p.rsplit("/", 1)[0] if "/" in p else "root")
         used.add(rid)
@@ -3073,7 +3066,8 @@ class Scan:
         code_entries = [e for e in entries if e["kind"] in ("code", "notebook") and
                         file_ext(e["path"]) in (".py", ".ipynb", ".pyt")]
         other_code = [e for e in entries if e["kind"] == "code" and file_ext(e["path"]) not in (".py", ".ipynb", ".pyt")]
-        self.step_of = step_ids_for([e["path"] for e in code_entries])
+        self.step_of = step_ids_for([e["path"] for e in code_entries] +
+                                    [e["path"] for e in entries if file_ext(e["path"]) == ".model3"])
         for e in code_entries:
             if e["path"].endswith(".py"):
                 self.ctx.local_modules[stem_of(e["path"])] = e["path"]
@@ -3119,6 +3113,11 @@ class Scan:
         ro_ok = after == before and [e["path"] for e in after_entries] == [e["path"] for e in entries]
         changed = sorted({p for p in set(before) | set(after) if before.get(p) != after.get(p)})
         inv = self.assemble(started, ro_ok, changed)
+        self.log(f"files {len(inv['files'])}, datasets {len(inv['datasets'])}, ops {len(inv['ops'])}, "
+                 f"open items {len(inv['open_items'])}, unresolved {len(inv['unresolved'])}")
+        for u in inv["unresolved"]:
+            self.log(f"unresolved {u['file']}:{u['line']} {u['reason']}: {u['expr']}")
+        self.log(f"read-only verified: {ro_ok}" + (f" (changed: {changed})" if changed else ""))
         return inv, (0 if ro_ok else 3)
 
     # ------------------------------------------------------------------ code
@@ -3223,8 +3222,7 @@ class Scan:
     def model_ops(self, rec: dict) -> None:
         """Child algorithms of a .model3 become ops (family qgis_model); static paths are resolved."""
         rel = rec["path"]
-        sid = "q" + ac.slug(stem_of(rel))
-        self.step_of.setdefault(rel, sid)
+        sid = self.step_of[rel]
         an = PyAnalyzer(self.ctx, rel, "code." + sid, rel.rsplit("/", 1)[0] if "/" in rel else "")
         an.cell = None
         for i, ch in enumerate(rec["children"], start=1):
@@ -3349,8 +3347,9 @@ class Scan:
             en = ents[k]
             rel, layer = k
             st = ac.slug(stem_of(rel))
+            st = st or "file"
             if en.get("gdb_item") or en.get("file_kind") == "gdb":
-                did = f"ds.{st}__{ac.slug(layer or 'item')}"
+                did = f"ds.{st}__{ac.slug(layer or 'item') or 'item'}"
             else:
                 did = f"ds.{st}" if len(stems[st]) <= 1 else f"ds.{st}_{ac.slug(file_ext(rel).lstrip('.'))}"
                 if en.get("multi") and layer and ac.slug(layer) != st:
@@ -3382,7 +3381,8 @@ class Scan:
         used_mem = set()
         for rel in sorted(by_file):
             sid = self.step_of.get(rel, "s99_" + ac.slug(rel))
-            raw = sorted(by_file[rel], key=lambda o: (o["cell"] if o["cell"] is not None else -1, o["line"], o["col"]))
+            raw = sorted(by_file[rel], key=lambda o: (o["cell"] if o["cell"] is not None else -1, o["line"], o["col"],
+                                                      o["key"][4], o["key"][5]))
             for i, op in enumerate(raw, start=1):
                 op["id"] = f"{sid}.op{i}"
                 self.op_by_key[op["key"]] = op
@@ -4475,6 +4475,9 @@ class Scan:
         for p in self.projects:
             for u in p.get("unparsed", []):
                 add("unparsed_format", "low", [p["path"]], [{"kind": "parser", "text": u}])
+        for rel, prof in sorted(self.profiles.items()):
+            if prof.get("unparsed") or prof.get("error"):
+                add("unparsed_format", "low", [rel], [{"kind": "profile", "text": prof.get("unparsed") or prof["error"]}])
         for e in self.entries:
             if e["kind"] == "listed_only":
                 add("unparsed_format", "low", [e["path"]], [{"kind": "format", "value": file_ext(e["path"])}])

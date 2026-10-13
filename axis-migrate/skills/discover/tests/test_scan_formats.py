@@ -125,3 +125,71 @@ def test_signature_tables_shipped_and_stamped():
     assert a["tools"]["management.AddField"]["in_place"] == ["in_table"]
     assert a["tools"]["analysis.Buffer"]["outputs"] == ["out_feature_class"]
     assert a["objects"]["da.UpdateCursor"]["kind"] == "in_place"
+
+
+MESSY = '''import os, sys, glob
+import geopandas as gpd
+import rasterio
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+DATA = os.path.join(ROOT, "..", "data")
+OUT = sys.argv[1]
+
+def load(name):
+    return gpd.read_file(os.path.join(DATA, name))
+
+def never_called(p):
+    gpd.read_file(p).to_file("../data/never.gpkg")
+
+for f in ["a.gpkg", "b.gpkg"]:
+    g = load(f)
+
+for tif in glob.glob(DATA + "/*.tif"):
+    with rasterio.open(tif) as src:
+        pass
+
+if not os.path.exists(DATA + "/cache.gpkg"):
+    g.to_file(DATA + "/cache.gpkg")
+
+try:
+    g.to_file(f"{OUT}/result.gpkg")
+except Exception:
+    print("failed")
+'''
+
+
+def test_messy_python_resolution_and_flags(tmp_path):
+    import pyogrio
+    from scan_synth import write_raster, zones_gdf
+    import numpy as np
+    leg = tmp_path / "legacy"
+    (leg / "code").mkdir(parents=True)
+    (leg / "data").mkdir()
+    for n in ("a", "b", "cache"):
+        pyogrio.write_dataframe(zones_gdf(), leg / "data" / f"{n}.gpkg", driver="GPKG")
+    write_raster(leg / "data" / "x.tif", np.ones((4, 4)))
+    write_raster(leg / "data" / "y.tif", np.ones((4, 4)))
+    (leg / "code" / "run.py").write_text(MESSY)
+    (leg / "code" / "broken.py").write_text("def f(:\n  pass\n")
+    inv = scan(leg, tmp_path / "migration")
+    reads = {r["dataset"] for o in inv["ops"] for r in o["reads"]}
+    assert {"ds.a", "ds.b", "ds.x", "ds.y"} <= reads  # local function inlined per literal loop item; glob expanded
+    load = [o for o in inv["ops"] if o["api"] == "geopandas.read_file" and o["line"] == 10]
+    assert len(load) == 1 and load[0].get("visits", 1) >= 2  # one op per call site, merged across calls
+    code = next(c for c in inv["code"] if c["path"] == "code/run.py")
+    kinds = {f["kind"] for f in code["flags"]}
+    assert {"uncalled_function", "exists_guard", "swallow_except", "listing_expanded"} <= kinds
+    never = next(o for o in inv["ops"] if o["line"] == 13 and o["api"] == "DataFrame.to_file")
+    assert "in_uncalled_function" in never["flags"]
+    assert {u["reason"] for u in inv["unresolved"]} >= {"argv"}
+    broken = next(c for c in inv["code"] if c["path"] == "code/broken.py")
+    assert broken["parse_error"] and broken["status"] == "unknown"
+    assert inv["scan"]["read_only_verified"] is True
+
+
+def test_xls_listed_as_unparsed(tmp_path):
+    leg = tmp_path / "legacy"
+    leg.mkdir()
+    (leg / "old.xls").write_bytes(b"\xd0\xcf\x11\xe0 not really")
+    inv = scan(leg, tmp_path / "migration")
+    assert any(i["kind"] == "unparsed_format" and i["about"] == ["old.xls"] for i in inv["open_items"])
