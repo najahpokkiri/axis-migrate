@@ -404,3 +404,20 @@ def test_uv_missing_is_an_environment_refusal(project, monkeypatch):
     monkeypatch.setattr(rl, "find_uv", lambda: None)
     assert run_local.main([str(project)]) == 13
     assert not (project / "runs").exists() or not any((project / "runs").iterdir())
+
+
+def test_scan_binds_to_the_snapshot(runner, project, monkeypatch, tmp_path):
+    code, man = runner()
+    assert code == 0
+    if rl.CODESCAN.is_file():
+        assert man["scan"]["bound_to_snapshot"] is True and man["scan"]["code_hash"] == man["code"]["code_hash"]
+    # a scanner that sees different code than the snapshot (edited mid-preflight) is refused
+    fake = tmp_path / "codescan.py"
+    target = project / "pipeline" / f"{S02}.py"
+    fake.write_text("import json, sys, pathlib\n"
+                    f"p = pathlib.Path({str(target)!r}); p.write_text(p.read_text() + '\\n# sneaked in\\n')\n"
+                    "print(json.dumps({'findings': []}))\n")
+    monkeypatch.setattr(rl, "CODESCAN", fake)
+    time.sleep(1.05)
+    code, man = runner()
+    assert code == 11 and "SCAN_TARGET_CHANGED:pipeline" in man["reason_codes"] and man["steps"] == []

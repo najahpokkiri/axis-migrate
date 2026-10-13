@@ -72,9 +72,9 @@
    "sha256": "bac89ae635b5794e178261af155b2f02ea14c8617c5f21279317fe6297bfe10e"
   },
   "ds.exposure_by_canton_xlsx": {
-   "content_sha256": "672e67b9f35173f67fc9707c63962aef42fd994f8396d3e78d0cff494ff37c18",
+   "content_sha256": "4b218f13df4cf0784035f0aa6338253fe7811b150bf4ee1fb144d787d5ff80e3",
    "path": "s04_distribute_value/exposure_by_canton.xlsx",
-   "sha256": "5312f4d060bbcb8650d218d800b1252b1bafac32349c5d3bbcd93bad3d93df28"
+   "sha256": "2ef5ab13d08188710f28457c5e5749e6e57a3020bb24b8f13b70f5da5da8acbc"
   },
   "ds.lux_res_exposure_2020": {
    "content_sha256": null,
@@ -141,29 +141,29 @@
   }
  },
  "read_ledger": "strace",
- "run_id": "r20261013T230758Z-e00b3bfa",
+ "run_id": "r20261013T231711Z-e00b3bfa",
  "schema": "axis-migrate.golden-outputs.v1",
  "steps": {
   "m01_cantons_lux_edit": {
-   "duration_s": 1.277,
-   "peak_rss_mb": 221.3
+   "duration_s": 1.289,
+   "peak_rss_mb": 221.1
   },
   "s01_prepare_population": {
-   "duration_s": 1.261,
-   "peak_rss_mb": 238.0
+   "duration_s": 1.256,
+   "peak_rss_mb": 236.3
   },
   "s02_landuse_mask": {
-   "duration_s": 1.827,
+   "duration_s": 1.874,
    "peak_rss_mb": 257.8
   },
   "s03_zonal_population": {
-   "duration_s": 1.237,
+   "duration_s": 1.327,
    "peak_rss_mb": 258.8
   },
   "s04_distribute_value": {
-   "duration_s": 1.35,
-   "peak_rss_mb": 252.8
+   "duration_s": 1.432,
+   "peak_rss_mb": 252.3
   }
  },
- "wall_time_s": 9.73
+ "wall_time_s": 10.16
 }

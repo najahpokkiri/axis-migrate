@@ -1008,6 +1008,12 @@ class Run:
             self.scan_record = {"status": "not_run", "reason": "codescan.py is not installed in this plugin"}
             ac.dump_json(out, {"schema": "axis-migrate.scan.v1", **self.scan_record})
             return
+        # codescan needs the real migration layout (S11 resolves the legacy root from it), so it scans the live tree;
+        # the scan binds to the executed code only if the live tree equals the snapshot before and after the scan
+        # and every file the scanner hashed equals its snapshot copy.
+        drift = self._live_vs_snapshot()
+        if drift:
+            raise RunAbort(EXIT["contract"], [f"SCAN_TARGET_CHANGED:{d}" for d in drift])
         cmd = [str(python), str(CODESCAN), "--all", str(self.migration), "--out", str(out), "--json"]
         env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()), "AXIS_MIGRATE_PLUGIN": str(PLUGIN),
                **DETERMINISM_ENV, **STEP_ENV_FIXED}
@@ -1027,10 +1033,48 @@ class Run:
             if stderr:
                 doc.setdefault("stderr", stderr[-4000:])
             ac.dump_json(out, doc)
+        drift = self._live_vs_snapshot() + self._scan_files_vs_snapshot(out)
         self.scan_record = {"status": status, "exit_code": code, "sha256": sha256_file(out),
-                            "path": "verify/scan.json"}
+                            "path": "verify/scan.json", "bound_to_snapshot": not drift,
+                            "code_hash": self.code_hash}
+        if drift:
+            raise RunAbort(EXIT["contract"], [f"SCAN_TARGET_CHANGED:{d}" for d in drift])
         if code != 0:
             raise RunAbort(EXIT["contract"], ["SCAN_BLOCKED" if code == 2 else f"SCAN_ERROR:{code}"])
+
+    def _live_vs_snapshot(self) -> list[str]:
+        """What codescan reads (pipeline/, tests/, params.yaml, tolerances.yaml) must equal the snapshot."""
+        snap = self.dir / "snapshot"
+        bad = []
+        if code_tree_hash(self.migration / "pipeline")[0] != code_tree_hash(snap / "axis_pipeline")[0]:
+            bad.append("pipeline")
+        live_t, snap_t = self.migration / "tests", snap / "tests"
+        if live_t.is_dir() != snap_t.is_dir() or (live_t.is_dir() and ac.tree_hash(live_t) != ac.tree_hash(snap_t)):
+            bad.append("tests")
+        for f in ("params.yaml", "tolerances.yaml"):
+            if hash_or_none(self.migration / f) != hash_or_none(snap / f):
+                bad.append(f)
+        return bad
+
+    def _scan_files_vs_snapshot(self, scan_json: Path) -> list[str]:
+        """Every file hash codescan recorded must be the snapshot's copy of that file."""
+        try:
+            doc = json.loads(scan_json.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []
+        snap = self.dir / "snapshot"
+        bad = []
+        for f in doc.get("files") or []:
+            rel_p, h = f.get("file"), f.get("sha256")
+            if not rel_p or not h:
+                continue
+            if rel_p.startswith("pipeline/"):
+                p = snap / "axis_pipeline" / rel_p[len("pipeline/"):]
+            else:
+                p = snap / rel_p
+            if hash_or_none(p) != h:
+                bad.append(rel_p)
+        return bad
 
     def run_smoke_tests(self, python: Path = VENV_PY) -> None:
         out = self.dir / "verify" / "tests.json"
