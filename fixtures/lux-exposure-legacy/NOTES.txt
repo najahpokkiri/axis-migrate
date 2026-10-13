@@ -1,0 +1,32 @@
+LUX residential exposure - notes
+================================
+
+what: residential value per 100m cell for LU. canton value = pop x value per capita (xlsx),
+spread over residential cells pro rata pop. sums per canton should come back to the canton total.
+
+run order (qgis python, from the project folder):
+  02_SCRIPTS/01_prepare_population.py
+  02_SCRIPTS/02_landuse_mask.py
+  02_SCRIPTS/03_zonal_population.py
+  02_SCRIPTS/04_distribute_value.py
+  python = /home/migrate/micromamba/envs/qgis  (micromamba run -n qgis python ...)
+  03b_zonal_arcpy_OLD.py is the old arcgis version of 03, don't run.
+
+manual step (NOT in the scripts):
+  canton names in geoBoundaries ADM1 don't match the xlsx. opened geoBoundaries-LUX-ADM1.geojson,
+  added field "canton" in the attribute table: dropped the "Canton " prefix, and
+  Esch-sur-Alzette -> Esch/Alzette (that's how it is in the xlsx). saved as 03_INPUT/cantons_lux_edit.gpkg.
+  if the boundaries get updated this has to be redone by hand.
+
+thresholds:
+  MIN_AREA 2500 m2 (02) - residential polygons below 50x50m dropped. those are mostly single plots
+    / garden sheds tagged residential out in the fields, and with all-touched they light up whole
+    cells with farm population. 2500 was eyeballed on Clervaux/Wiltz, no science.
+  POP_MIN 0.5 (03)
+  all touched on the rasterize (02)
+
+value_per_capita.xlsx is kEUR per inhabitant -> x1000 in 04. outputs are EUR.
+only residential landuse used. industrial/commercial/retail are in the osm extract but not used yet.
+
+outputs 04_FINAL: lux_res_exposure_2020.tif (EUR/cell, nodata outside residential),
+  exposure_by_canton.gpkg/.csv/.xlsx. tmp/ = intermediates, can delete.
