@@ -234,6 +234,7 @@ open({str(log)!r}, 'w').write('\\n'.join([sys.base_prefix, sys.prefix] + opened)
     r = subprocess.run([str(AXPY), "-c", wrapper], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     base, prefix, *opened = log.read_text().splitlines()
+    opened = [p for p in opened if p.startswith("/")]  # '<unknown>' = in-memory code objects
     assert not any(p.endswith(".env") for p in opened)
     allowed = (str(leg), str(out), base, prefix, str(SCAN.parents[2]), "/proc", "/dev", "/etc", "/usr", str(log))
     import os.path as osp

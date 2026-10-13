@@ -3827,9 +3827,9 @@ class Scan:
             did = self.ds_of_ref(lm["ref"])
             if did in self.datasets and lm.get("reason") != "layer_not_given":
                 rec = {"requested": lm["layer"], "actual": lm["actual"],
-                       "ops": sorted(o["id"] for o in self.ops if any(
-                           self.ctx.refs.get(lm["ref"], {}).get("dataset") == x["dataset"] for x in o["reads"] + o["writes"])
-                           and o["file"] in {self.ctx.refs[lm["ref"]].get("file", o["file"])})}
+                       "ops": sorted(raw["id"] for raw in self.ctx.ops.values() if "id" in raw and any(
+                           x.get("ref") == lm["ref"] for x in raw["reads"] + raw["writes"])),
+                       "raw": self.ctx.refs.get(lm["ref"], {}).get("raws", [])[:3]}
                 if rec not in self.datasets[did].setdefault("layer_mismatch", []):
                     self.datasets[did]["layer_mismatch"].append(rec)
 
