@@ -289,7 +289,7 @@ def _metres_per_unit_x(crs, measure_crs, cx: float, cy: float, dx: float) -> tup
 
 
 def _scalebar(ax, crs, measure_crs, extent: tuple[float, float, float, float]) -> str | None:
-    from matplotlib.patches import Rectangle
+    import matplotlib.patheffects as pe
     x0, y0, x1, y1 = extent
     w, h = x1 - x0, y1 - y0
     if w <= 0 or h <= 0:
@@ -301,12 +301,13 @@ def _scalebar(ax, crs, measure_crs, extent: tuple[float, float, float, float]) -
     k = 10 ** math.floor(math.log10(target))
     nice = max(m * k for m in (1, 2, 5) if m * k <= target) if target >= k else k
     length = nice / mpu
-    bx, by = x0 + 0.04 * w, y0 + 0.05 * h
-    ax.add_patch(Rectangle((bx - 0.01 * w, by - 0.025 * h), length + 0.02 * w, 0.085 * h, facecolor="white",
-                           edgecolor="none", alpha=0.8, zorder=9))
-    ax.plot([bx, bx + length], [by, by], color="black", linewidth=2.2, solid_capstyle="butt", zorder=10)
+    bx, by = x0 + 0.04 * w, y0 + 0.04 * h
+    halo = [pe.withStroke(linewidth=4, foreground="white")]
+    ax.plot([bx, bx + length], [by, by], color="black", linewidth=2.2, solid_capstyle="butt", zorder=10,
+            path_effects=halo)
     label = f"{nice / 1000:g} km" if nice >= 1000 else f"{nice:g} m"
-    ax.text(bx + length / 2, by + 0.012 * h, label, ha="center", va="bottom", fontsize=6, zorder=10)
+    ax.text(bx + length / 2, by + 0.015 * h, label, ha="center", va="bottom", fontsize=6, zorder=10,
+            path_effects=[pe.withStroke(linewidth=2.5, foreground="white")])
     return f"{label} ({how})"
 
 
@@ -597,9 +598,9 @@ class RasterPlotter:
                         segs.append(xy)
         return segs, f"zone boundaries ({z}) in green"
 
-    def _draw_zones(self, ax, lw=0.5) -> None:
+    def _draw_zones(self, ax, lw=0.5, zorder=4) -> None:
         if self.zone_segs:
-            _draw_segments(ax, self.zone_segs, colors=C_ZONE, linewidths=lw, alpha=0.9)
+            _draw_segments(ax, self.zone_segs, colors=C_ZONE, linewidths=lw, alpha=0.9, zorder=zorder)
 
     def _mark_over(self, ax, mask: np.ndarray, tr, size=5.0) -> None:
         n = int(mask.sum())
@@ -711,8 +712,10 @@ class RasterPlotter:
             n_over = int(self.over.sum())
             many = n_over > 0.5 * max(int(self.both.sum()), 1)
             segs = _mask_segments(ob > 0, tr) if (n_over and not many) else []
-            if many:
-                ol = "most cells over tolerance (not outlined)"
+            if n_over == 0:
+                ol = "no cell over tolerance"
+            elif many:
+                ol = "most cells over: not outlined"
             elif len(segs) <= MAX_OUTLINE_SEGMENTS:
                 _draw_segments(ax, segs, colors="black", linewidths=0.5)
                 ol = "over-tolerance cells outlined" + (" and ringed" if n_over <= MARK_MAX else "")
@@ -728,7 +731,7 @@ class RasterPlotter:
                     rel += " (float-rounding size)"
             red = f"; {f}×{f}-cell blocks show the largest |d|" if f > 1 else ""
             ax.set_title(f"difference n − l · scale ±{_fmt(self.lim, 3)}{rel}\n{_fmt(n_over)} over tolerance "
-                         f"({tol}); {ol}" + (f"\n{red.lstrip('; ')}" if red else ""), fontsize=6.5)
+                         f"({tol}) · {ol}" + (f"\n{red.lstrip('; ')}" if red else ""), fontsize=6.5)
             notes.append("black = valid in legacy only, dark grey = valid in new only (see mask_diff.png)")
             self._draw_zones(ax)
             if self.zone_label:
@@ -784,6 +787,13 @@ class RasterPlotter:
             ax.imshow(a, extent=(ext[0], ext[2], ext[1], ext[3]), origin="upper", cmap=cmap,
                       norm=BoundaryNorm([-0.5, 0.5, 1.5, 2.5, 3.5], 4), interpolation="nearest", resample=False)
             nl, nn, nb = int(self.xor_l.sum()), int(self.xor_n.sum()), int(self.both.sum())
+            # sparse one-side cells (a one-cell ring, a few blocks) are ~1 px at full extent: outline them thickly in
+            # their own colour, above the zone lines, so a ring along a boundary cannot disappear under it
+            tr = _scaled_tr(self.L.tr, f)
+            for msk, col in ((self.xor_l, C_LEGACY), (self.xor_n, C_NEW)):
+                if 0 < int(msk.sum()) <= 50_000:
+                    mb, _ = _block_reduce(msk.astype("float64"), np.ones_like(msk), f, "any")
+                    _draw_segments(ax, _mask_segments(mb > 0, tr), colors=col, linewidths=1.6, zorder=5)
             title = (f"valid-data masks · both {_fmt(nb)} · legacy only {_fmt(nl)} (blue) · new only {_fmt(nn)} "
                      f"(orange)" + (f"\n{f}×{f}-cell blocks; a block shows legacy/new-only if any cell does"
                                     if f > 1 else " · native resolution"))
@@ -805,9 +815,9 @@ class RasterPlotter:
             ax.set_facecolor("white")
             title = ("valid-data outlines, each on its own grid (grids differ: " + (self.gate_why or "?") + ")\n"
                      + " · ".join(parts) + " · legacy blue solid, new orange dashed")
-        self._draw_zones(ax, lw=0.6)
+        self._draw_zones(ax, lw=0.5, zorder=3)
         if self.zone_label:
-            title += f"\n{self.zone_label}"
+            title += f"\n{self.zone_label} (drawn under the one-side cells)"
         ax.set_title(title, fontsize=7)
         _scalebar(ax, self.crs, self.mcrs, self.extent)
         fig.suptitle(self._title(), fontsize=8, y=0.985)
@@ -819,8 +829,8 @@ class RasterPlotter:
         zt = _check(self.res, "conservation.zone_totals")
         tot = _check(self.res, "conservation.total")
         n = 3 if (zt and zt.get("table")) else 2
-        fig = plt.figure(figsize=(10.4, 4.0))
-        gs = fig.add_gridspec(1, n, wspace=0.3, left=0.06, right=0.985, top=0.8, bottom=0.2)
+        fig = plt.figure(figsize=(10.4, 4.4))
+        gs = fig.add_gridspec(1, n, wspace=0.3, left=0.06, right=0.985, top=0.78, bottom=0.27)
         axes = [fig.add_subplot(gs[0, i]) for i in range(n)]
         panels = [("diff_hist", axes[0]), ("values_hist", axes[1])]
         ax = axes[0]
@@ -881,22 +891,26 @@ class RasterPlotter:
             nv = [float(r.get("new") or 0.0) for r in rows]
             ax.bar(x - 0.2, lv, 0.4, color=C_LEGACY, label="legacy")
             ax.bar(x + 0.2, nv, 0.4, color=C_NEW, label="new")
-            ax.set_xticks(x, [str(r.get("zone")) for r in rows], rotation=70, fontsize=5.5, ha="right")
-            top = max(lv + nv + [0.0])
-            for i, r in enumerate(rows):
+            labs = []
+            for r in rows:
                 rel = r.get("rel")
-                if isinstance(rel, (int, float)) and rel != 0:
-                    ax.text(i, top * 1.02, _fmt(rel, 2), ha="center", va="bottom", fontsize=5, rotation=90,
-                            color="#b2182b")
-            ax.set_ylim(0, top * 1.25 if top > 0 else 1)
+                drift = isinstance(rel, (int, float)) and rel != 0
+                labs.append(f"{r.get('zone')} ({_fmt(rel, 2)})" if drift else str(r.get("zone")))
+            ax.set_xticks(x, labs, rotation=70, fontsize=5.5, ha="right")
+            for t, r in zip(ax.get_xticklabels(), rows):
+                if isinstance(r.get("rel"), (int, float)) and r.get("rel") != 0:
+                    t.set_color("#b2182b")
+            top = max(lv + nv + [0.0])
+            ax.set_ylim(0, top * 1.2 if top > 0 else 1)
             ax.legend(loc="upper left")
             ax.set_title(f"per-zone totals ({zt.get('zones')}, rule {(zt.get('detail') or {}).get('rule')})\n"
-                         f"max rel drift {_fmt(zt.get('value'), 3)} · red = rel drift per zone", fontsize=6.5)
+                         f"max rel drift {_fmt(zt.get('value'), 3)} · red zone names: drift (rel in brackets)",
+                         fontsize=6.5)
             panels.append(("zone_totals", ax))
         sub = ""
         if tot:
             sub = f" · total legacy {_fmt(tot.get('legacy'), 10)} vs new {_fmt(tot.get('new'), 10)} (rel {_fmt(tot.get('value'), 3)})"
-        fig.suptitle(f"{self._title()}{sub}", fontsize=8, y=0.985)
+        fig.suptitle(f"{self._title()}" + (f"\n{sub.lstrip(' ·')}" if sub else ""), fontsize=8, y=0.985)
         return self._png("hist.png", "hist", fig, panels)
 
     # ---------------------------------------------------------------------------------------------- worst tiles
@@ -1379,20 +1393,27 @@ class VectorPlotter:
             polygonal = any(r["ratio"] is not None for r in self.metrics)
             metric = "ratio" if polygonal else "haus"
             mname = "symdiff ratio area(L△N)/area(L)" if polygonal else f"Hausdorff ({getattr(self, 'metric_unit', '')})"
-            edges = [0, 1e-12, 1e-9, 1e-6, 1e-3, 1e-2, 0.1, math.inf]
-            labels = ["0 (equal)", "≤1e-9", "≤1e-6", "≤1e-3", "≤1e-2", "≤0.1", ">0.1"]
-            cols = ["#ffffff", "#fff5eb", "#fdd0a2", "#fdae6b", "#f16913", "#d94801", "#7f2704"]
+            labels = ["0 (equal)", "(0, 1e-9]", "(1e-9, 1e-6]", "(1e-6, 1e-3]", "(1e-3, 1e-2]", "(1e-2, 0.1]",
+                      "> 0.1"]
+            cols = ["#ffffff", "#fee6ce", "#fdd0a2", "#fdae6b", "#f16913", "#d94801", "#7f2704"]
+            edge_of = ["#bdbdbd"] + cols[1:]
+
+            def cls_of(v) -> int:            # 0 only when exactly equal; any difference is at least class 1
+                return 0 if not v else 1 + int(np.digitize([v], [1e-9, 1e-6, 1e-3, 1e-2, 0.1], right=True)[0])
             vals = np.full(len(self.L), np.nan)
             for r in self.metrics:
-                v = r[metric] if r[metric] is not None else 0.0
-                vals[r["li"]] = np.digitize([v], [1e-12, 1e-9, 1e-6, 1e-3, 1e-2, 0.1])[0] if v > 0 else 0
+                vals[r["li"]] = cls_of(r[metric] if r[metric] is not None else 0.0)
             g = self.L.copy()
             g["_cls"] = vals
-            cmap = ListedColormap(cols)
-            norm = BoundaryNorm(np.arange(-0.5, len(cols)), len(cols))
-            m = g[g["_cls"].notna()]
-            if len(m):
-                m.plot(ax=a1, column="_cls", cmap=cmap, norm=norm, edgecolor="#555555", linewidth=0.3)
+            all_cols = cols + ["#6a3d9a", "#cab2d6"]
+            all_edges = edge_of + ["#6a3d9a", "#cab2d6"]
+
+            def paint(ax, col):              # face AND edge coloured: tiny features stay visible at full extent
+                mm = g[g[col].notna()]
+                if len(mm):
+                    mm.plot(ax=ax, color=[all_cols[int(c)] for c in mm[col]],
+                            edgecolor=[all_edges[int(c)] for c in mm[col]], linewidth=0.7)
+            paint(a1, "_cls")
             um = g[g["_cls"].isna()]
             if len(um):
                 um.plot(ax=a1, facecolor="#bdbdbd", edgecolor="#555555", linewidth=0.3, hatch="///")
@@ -1411,15 +1432,12 @@ class VectorPlotter:
                 if r["attr_class"] in ("null_mismatch", "text_mismatch"):
                     acls[r["li"]] = 7 if r["attr_class"] == "null_mismatch" else 8
                 else:
-                    acls[r["li"]] = np.digitize([ar], [1e-12, 1e-9, 1e-6, 1e-3, 1e-2, 0.1])[0] if ar > 0 else 0
+                    acls[r["li"]] = cls_of(ar)
             g["_acls"] = acls
-            acols = cols + ["#6a3d9a", "#cab2d6"]
+            acols = all_cols
             alabels = [x.replace("(equal)", "(all attributes equal)") for x in labels] + \
                 ["null on one side only", "text differs"]
-            m = g[g["_acls"].notna()]
-            if len(m):
-                m.plot(ax=a2, column="_acls", cmap=ListedColormap(acols),
-                       norm=BoundaryNorm(np.arange(-0.5, len(acols)), len(acols)), edgecolor="#555555", linewidth=0.3)
+            paint(a2, "_acls")
             if len(um):
                 um.plot(ax=a2, facecolor="#bdbdbd", edgecolor="#555555", linewidth=0.3, hatch="///")
             a2.legend(handles=[Patch(facecolor=c, edgecolor="#555555", label=l) for c, l in zip(acols, alabels)],
