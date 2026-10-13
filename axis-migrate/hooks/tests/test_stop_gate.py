@@ -1,0 +1,222 @@
+"""H7 Stop gate (08 §5b) and claims.py: G10, G11, unacked edits, 3-block cap, fail behaviour."""
+from __future__ import annotations
+
+import json
+
+import pytest
+from conftest import add_run, payload, run_hook
+
+import claims as cl
+import stop_gate as sg
+
+
+def stop(pr, msg, active=False, session="s-1", env=None):
+    return run_hook("stop_gate.py", payload("Stop", cwd=str(pr.root), last_assistant_message=msg,
+                                            stop_hook_active=active, session_id=session), env=env)
+
+
+def fake_ladder(rung, run_id=None, steps=None):
+    def f(mig):
+        return {"pipeline": {"rung": rung, "counts": {"pass": 3, "fail": 1, "not_compared": 0, "needs_review": 0},
+                             "blockers": [{"code": "FAILED", "step": "s03_final"}]},
+                "steps": steps or {"s01_prep": {"disposition": "VERIFIED"},
+                                   "s03_final": {"disposition": "FAILED", "caps": [{"code": "ROW_COUNT_MISMATCH"}]}},
+                "run_id": run_id, "status_line": f"axis-migrate status: {rung} | run {run_id} | 3 pass, 1 FAIL"}
+    return f
+
+
+def decide(pr, msg, monkeypatch, rung, run_id=None):
+    monkeypatch.setattr(sg, "ladder_status", fake_ladder(rung, run_id))
+    return sg.decide({"last_assistant_message": msg, "cwd": str(pr.root)}, pr.mig)
+
+
+# claims ---------------------------------------------------------------------------------------------------------
+@pytest.mark.parametrize("text,rung", [
+    ("Migration complete, parity achieved.", "reference-verified"),
+    ("All checks pass.", "reference-verified"),
+    ("The new outputs match the legacy outputs exactly; output identical to legacy.", "reference-verified"),
+    ("The pipeline is target-ready.", "target-ready"),
+    ("It is ready to deploy.", "target-ready"),
+    ("Steps validated in the sandbox.", "sandbox-validated"),
+    ("The pipeline ran successfully.", "sandbox-validated"),
+    ("The job is deployed to Databricks.", "deployed"),
+    ("After the chained run, all checks pass.", "reference-verified"),
+    ("When I ran it, the outputs match the legacy files.", "reference-verified"),
+    ("This is production-ready.", "deployed"),
+])
+def test_claim_rungs(text, rung):
+    assert cl.strongest(cl.find_claims(text)).rung == rung
+
+
+@pytest.mark.parametrize("text", [
+    "Migrated, not verified: s02 fails RASTER_TRANSFORM_MISMATCH.",
+    "s03 is not verified yet; I have not finished.",
+    "Nothing is verified until the chained run.",
+    "Which canton naming rule should the pipeline use? Once you answer, step 2 can be done.",
+    "I will run the comparison before the step is verified.",
+    "axis-migrate status: reference-verified | run r1 | 13 pass, 0 FAIL",
+    "The status is UPSTREAM_NOT_VERIFIED for s04.",
+    "It is unverified.",
+    "Code generated; it hasn't been validated.",
+])
+def test_negated_or_absent_claims(text):
+    assert cl.find_claims(text) == [], cl.find_claims(text)
+
+
+def test_target_claim_text_needs_target_ready():
+    found = cl.find_claims("target-ready (Databricks), not deployed.")
+    assert [c.rung for c in found] == ["target-ready"]  # "deployed" is negated, "target-ready" is a claim
+
+
+def test_quoted_claim_still_counts():
+    assert cl.find_claims('I would summarise it as "all checks pass".')
+
+
+# G10 ------------------------------------------------------------------------------------------------------------
+def test_g10_claim_above_rung_blocks(project, monkeypatch):
+    d = decide(project, "Migration complete, parity achieved.", monkeypatch, "sandbox-validated", "r1")
+    assert d is not None and d["rung"] == "sandbox-validated"
+    r = d["reason"]
+    assert r.startswith('axis-migrate Stop gate: your message says "Migration complete, parity achieved"')
+    assert "Status line: axis-migrate status: sandbox-validated" in r
+    assert "First failing step: s03_final FAILED ROW_COUNT_MISMATCH" in r
+    assert "Do not edit tolerances" in r and r.isascii()
+
+
+@pytest.mark.parametrize("msg", [
+    "Migrated, not verified: s02 fails RASTER_TRANSFORM_MISMATCH.",
+    "Which option do you prefer for the canton names?",
+    "axis-migrate status: sandbox-validated | run r1 | 3 pass, 1 FAIL. Step s03_final fails ROW_COUNT_MISMATCH.",
+])
+def test_g10_honest_messages_pass(project, monkeypatch, msg):
+    assert decide(project, msg, monkeypatch, "sandbox-validated", "r1") is None
+
+
+def test_g10_supported_claim_passes(project_run, monkeypatch):
+    rid = next((project_run.mig / "runs").iterdir()).name
+    rd = project_run.mig / "runs" / rid
+    for ds in ("ds.01_mid", "ds.final"):
+        (rd / "verify" / "compare" / f"{ds}.json").write_text("{}")
+    (project_run.mig / "report").mkdir()
+    (project_run.mig / "report" / "index.html").write_text("<html></html>")
+    (project_run.mig / "report" / "REPORT.json").write_text(json.dumps({"evidence_id": "evidence:abc"}))
+    assert decide(project_run, "All checks pass.", monkeypatch, "reference-verified", rid) is None
+
+
+def test_g10_missing_compare_blocks_verified_claim(project_run, monkeypatch):
+    rid = next((project_run.mig / "runs").iterdir()).name
+    d = decide(project_run, "All checks pass.", monkeypatch, "reference-verified", rid)
+    assert d is not None and "NOT_COMPARED" in d["reason"]
+
+
+def test_g10_deployed_claim_always_blocks(project, monkeypatch):
+    assert decide(project, "Deployed to the workspace.", monkeypatch, "target-ready", "r1") is not None
+
+
+# G11 drift ------------------------------------------------------------------------------------------------------
+def _verified_bundle(pr):
+    rid = next((pr.mig / "runs").iterdir()).name
+    rd = pr.mig / "runs" / rid
+    for ds in ("ds.01_mid", "ds.final"):
+        (rd / "verify" / "compare" / f"{ds}.json").write_text("{}")
+    (pr.mig / "report").mkdir(exist_ok=True)
+    (pr.mig / "report" / "index.html").write_text("<html></html>")
+    (pr.mig / "report" / "REPORT.json").write_text(json.dumps({"evidence_id": "evidence:abc"}))
+    return rid
+
+
+def test_g11_tolerance_drift_blocks_verified(project_run, monkeypatch):
+    rid = _verified_bundle(project_run)
+    assert decide(project_run, "Verified.", monkeypatch, "reference-verified", rid) is None
+    t = project_run.mig / "tolerances.yaml"
+    t.write_text(t.read_text().replace("rtol: 1.0e-6", "rtol: 1.0e-3"))
+    d = decide(project_run, "Verified.", monkeypatch, "reference-verified", rid)
+    assert d is not None and "TOLERANCE_CHANGED_AFTER_RUN" in d["reason"]
+
+
+def test_g11_new_aux_xml_in_legacy_blocks(project_run, monkeypatch):
+    rid = _verified_bundle(project_run)
+    (project_run.legacy / "03_INPUT" / "pop.tif.aux.xml").write_text("<PAMDataset/>")
+    d = decide(project_run, "Verified.", monkeypatch, "reference-verified", rid)
+    assert d is not None and "LEGACY_REF_CHANGED" in d["reason"]
+
+
+def test_g11_code_drift(project_run, monkeypatch):
+    rid = _verified_bundle(project_run)
+    project_run.write("pipeline/s01_prep.py", "def run(ctx):\n    pass\n")
+    d = decide(project_run, "Verified.", monkeypatch, "reference-verified", rid)
+    assert d is not None and "CODE_CHANGED_AFTER_RUN" in d["reason"]
+
+
+def test_open_high_impact_question_blocks_claim(project_run, monkeypatch):
+    rid = _verified_bundle(project_run)
+    g = project_run.graph()
+    g["questions"].append({"id": "q02", "status": "open", "impact": {"level": "high"}})
+    project_run.set_graph(g)
+    d = decide(project_run, "All checks pass.", monkeypatch, "reference-verified", rid)
+    assert d is not None and "q02" in d["reason"]
+    assert decide(project_run, "Which option do you prefer?", monkeypatch, "reference-verified", rid) is None
+
+
+# unacked graph edits (DESIGN §4.2) -------------------------------------------------------------------------------
+def test_unacked_user_edits_block_without_claim(project, monkeypatch):
+    (project.mig / "graph-edits.jsonl").write_text(
+        json.dumps({"seq": 4, "rev": 8, "actor": "user", "op": {"type": "add_note", "id": "s01_prep"}}) + "\n")
+    d = decide(project, "Which option do you prefer?", monkeypatch, "generated")
+    assert d is not None and "unacked" in d["reason"]
+    g = project.graph()
+    g["acks"]["agent_seq"] = 4
+    project.set_graph(g)
+    assert decide(project, "Which option do you prefer?", monkeypatch, "generated") is None
+
+
+# subprocess: real ladder, 3-block cap, fail behaviour ---------------------------------------------------------------
+def test_g10_real_ladder_and_three_block_cap(project):
+    msg = "Migration complete, parity achieved."
+    r1 = stop(project, msg)
+    assert r1.rc == 0 and r1.decision == "block" and "computed status is none" in r1.reason
+    r2 = stop(project, msg, active=True)
+    assert r2.decision == "block"
+    r3 = stop(project, msg, active=True)
+    assert r3.rc == 0 and r3.out.get("decision") is None
+    assert "computed status is none" in r3.out["systemMessage"] and r3.out["systemMessage"].isascii()
+    r4 = stop(project, msg, active=False)  # a new turn starts counting again
+    assert r4.decision == "block"
+
+
+def test_no_claim_allows_silently(project):
+    r = stop(project, "Here is the plan for s02. Shall I proceed?")
+    assert r.rc == 0 and r.raw == ""
+
+
+def test_idle_without_migration(tmp_path):
+    r = run_hook("stop_gate.py", payload("Stop", cwd=str(tmp_path), last_assistant_message="All done."))
+    assert r.rc == 0 and r.raw == ""
+
+
+def test_transcript_fallback(project, tmp_path):
+    tp = tmp_path / "t.jsonl"
+    tp.write_text(json.dumps({"type": "assistant", "message": {"content": [{"type": "text",
+                                                                              "text": "All checks pass."}]}}) + "\n")
+    d = payload("Stop", cwd=str(project.root), transcript_path=str(tp), stop_hook_active=False)
+    d.pop("last_assistant_message")
+    assert run_hook("stop_gate.py", d).decision == "block"
+
+
+def test_status_error_with_claim_blocks(project, monkeypatch):
+    def boom(mig):
+        raise RuntimeError("x")
+    monkeypatch.setattr(sg, "unacked", boom)
+    d = sg.decide({"last_assistant_message": "All checks pass.", "cwd": str(project.root)}, project.mig)
+    assert d is not None and "could not be computed" in d["reason"]
+    assert sg.decide({"last_assistant_message": "A question?", "cwd": str(project.root)}, project.mig) is None
+
+
+def test_malformed_input_exits_2():
+    assert run_hook("stop_gate.py", "nope").rc == 2
+
+
+def test_stop_state_is_not_in_sealed_paths(project):
+    stop(project, "All checks pass.")
+    assert (project.mig / ".axis" / "stop_gate.json").is_file()
+    add_run(project, "r20261016T100000Z-00000000")

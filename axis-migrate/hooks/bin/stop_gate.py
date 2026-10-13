@@ -294,10 +294,17 @@ def first_failing(res: dict, g: dict) -> str:
         st = steps.get(sid) or {}
         if st.get("disposition") in bad:
             caps = st.get("caps") or st.get("annotations") or []
-            diag = "; ".join(str(c) for c in caps[:2]) if caps else ""
+            diag = "; ".join(_fmt(c) for c in caps[:2]) if caps else ""
             return f"{sid} {st.get('disposition')} {diag}".strip()
     blockers = (res.get("pipeline") or {}).get("blockers") or []
-    return str(blockers[0]) if blockers else "none recorded"
+    return _fmt(blockers[0]) if blockers else "none recorded"
+
+
+def _fmt(x) -> str:
+    if isinstance(x, dict):
+        parts = [str(x.get(k)) for k in ("step", "dataset", "code", "reason", "detail") if x.get(k)]
+        return " ".join(parts) or json.dumps(x, sort_keys=True)[:120]
+    return str(x)
 
 
 def block_text(quote: str, rung: str, res: dict, g: dict, problems: list[str]) -> str:

@@ -37,13 +37,15 @@ DATABRICKS_RE = re.compile(
 )
 
 # 08 §5b: ignore a match with one of these in the preceding 3 tokens. Extended (deviation, documented in RULES.md)
-# with conditional/future/modal markers so that plans ("once s02 is done", "will be verified") are not claims.
+# with modal/future markers so that plans ("will be verified", "can be done") are not claims.
 NEGATORS = {
-    "not", "no", "never", "nothing", "none", "neither", "nor", "without", "before", "until", "unless",
-    "if", "once", "when", "whether", "after", "will", "would", "should", "could", "can", "may", "might",
-    "must", "to", "yet", "cannot", "can't", "won't", "isn't", "aren't", "wasn't", "weren't", "hasn't",
-    "haven't", "hadn't", "doesn't", "don't", "didn't",
+    "not", "no", "never", "nothing", "none", "neither", "nor", "without", "yet", "cannot", "can't", "won't",
+    "isn't", "aren't", "wasn't", "weren't", "hasn't", "haven't", "hadn't", "doesn't", "don't", "didn't",
+    "will", "would", "should", "could", "can", "may", "might", "must", "to",
 }
+# Conditional/temporal markers negate the whole clause they open ("before the step is verified", "once s02 is done").
+CLAUSE_MARKERS = {"before", "until", "unless", "if", "once", "whether"}
+CLAUSE_BREAK_RE = re.compile(r"[.;:!?\n,(]")
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z'’-]*")
 STATUS_LINE_RE = re.compile(r"axis-migrate status:[^\n]*", re.I)
 
@@ -84,7 +86,9 @@ def _negated(text: str, start: int) -> bool:
     for t in toks:
         if t in NEGATORS or t.endswith("n't") or t.startswith("un-"):
             return True
-    return False
+    breaks = list(CLAUSE_BREAK_RE.finditer(text, 0, start))
+    clause = text[breaks[-1].end() if breaks else 0:start]
+    return any(t.lower() in CLAUSE_MARKERS for t in TOKEN_RE.findall(clause))
 
 
 def find_claims(text: str) -> list[Claim]:
