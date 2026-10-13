@@ -23,9 +23,9 @@ Rules
 - Comments, docstrings, names and notes are **claims**: re-derive each from code + output metadata. For the parity
   value, the source that produced the reference wins (code + output metadata). A losing source that states an intent
   is listed in `confirm_all` with `flags: [contradiction]`, asked only when parity cannot settle it.
-- A value tuned by eye on part of the data ("eyeballed on two districts") is `flags: [tuned_in_sample]`: kept for
+- A value tuned by eye on part of the data (chosen by inspection on part of the area) is `flags: [tuned_in_sample]`: kept for
   parity, shown in `confirm_all`.
-- Nominal vs real units ("100 m cells" vs a 3-arc-second grid): report both, never rename; parity follows the data.
+- Nominal vs real units (a documented "1 km grid" that is really 30 arc-seconds): report both, never rename; parity follows the data.
 - A hard-coded path, workspace or drive letter is never a parameter to ask about: inputs come from the inventory.
 - Never ask about storage, output paths, error handling or cloud providers; the target platform is one question,
   last.
