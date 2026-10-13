@@ -129,7 +129,8 @@ def main(argv: list[str] | None = None) -> int:
     run = rl.Run(mig, chain=args.chain, executor=executor,
                  steps_filter=[s for s in (args.steps or "").split(",") if s] or None,
                  resume_from=args.resume_from, allow_env_major=args.allow_env_major, run_stamp=args.run_stamp,
-                 read_ledger="strace" if use_strace else "audit+cpl_debug", argv=list(argv or sys.argv[1:]))
+                 read_ledger="strace" if use_strace else "audit+cpl_debug",
+                 argv=["<migration>" if a == args.migration else a for a in (argv or sys.argv[1:])])
     python = refenv_py if executor == "refenv" else rl.VENV_PY
     run.boot_python = python
     code = 0
