@@ -1,0 +1,217 @@
+# Golden lux pipeline parameters (eval material; never shipped in the plugin). Format: 03 §3.1.
+version: 1
+budget:
+  questions: 5
+params:
+  - id: p.canton_name_prefix
+    node: m01_cantons_lux_edit
+    kind: string
+    value: 'Canton '
+    resolution: resolved
+    source: notes
+    status: confirmed
+    evidence:
+      - NOTES.txt:16 dropped the "Canton " prefix
+    used_by:
+      - m01_cantons_lux_edit
+  - id: p.canton_rename_map
+    node: m01_cantons_lux_edit
+    kind: mapping
+    value:
+      Esch-sur-Alzette: Esch/Alzette
+    resolution: resolved
+    source: notes
+    status: confirmed
+    evidence:
+      - NOTES.txt:17 Esch-sur-Alzette -> Esch/Alzette
+    used_by:
+      - m01_cantons_lux_edit
+  - id: p.clip_nodata
+    node: s01_prepare_population
+    kind: nodata
+    value: -99999.0
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - '02_SCRIPTS/01_prepare_population.py:45 ''NODATA'': -99999'
+    used_by:
+      - s01_prepare_population
+  - id: p.area_crs
+    node: s02_landuse_mask
+    kind: crs
+    value: EPSG:2169
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/02_landuse_mask.py:30
+    used_by:
+      - s02_landuse_mask
+  - id: p.landuse_class
+    node: s02_landuse_mask
+    kind: category
+    value: residential
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/02_landuse_mask.py:48
+    used_by:
+      - s02_landuse_mask
+  - id: p.min_area_m2
+    node: s02_landuse_mask
+    kind: threshold
+    unit: m2
+    value: 2500
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/02_landuse_mask.py:11 MIN_AREA = 2500
+    used_by:
+      - s02_landuse_mask
+  - id: p.rasterize_all_touched
+    node: s02_landuse_mask
+    kind: flag
+    value: true
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/02_landuse_mask.py:76 '-at'
+    used_by:
+      - s02_landuse_mask
+  - id: p.mask_nodata
+    node: s02_landuse_mask
+    kind: nodata
+    value: 0
+    resolution: resolved
+    source: reference_metadata
+    status: assumed
+    evidence:
+      - 05_TEMP/02_res_mask.tif nodata=0 (QGIS 4 writes 0 when NODATA is unset)
+    used_by:
+      - s02_landuse_mask
+  - id: p.mask_burn_value
+    node: s02_landuse_mask
+    kind: value
+    value: 1
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - '02_SCRIPTS/02_landuse_mask.py:66 ''BURN'': 1'
+    used_by:
+      - s02_landuse_mask
+  - id: p.pop_min
+    node: s03_zonal_population
+    kind: threshold
+    value: 0.5
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/03_zonal_population.py:13 POP_MIN = 0.5
+    used_by:
+      - s03_zonal_population
+  - id: p.pop_res_nodata
+    node: s03_zonal_population
+    kind: nodata
+    value: -3.4028234663852886e+38
+    resolution: resolved
+    source: reference_metadata
+    status: assumed
+    evidence:
+      - 05_TEMP/03_pop_res.tif nodata (QGIS raster calculator float32 lowest)
+    used_by:
+      - s03_zonal_population
+  - id: p.vpc_sheet
+    node: s04_distribute_value
+    kind: string
+    value: vpc
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/04_distribute_value.py:37
+    used_by:
+      - s04_distribute_value
+  - id: p.vpc_first_row
+    node: s04_distribute_value
+    kind: index
+    value: 5
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/04_distribute_value.py:39 min_row=5
+    used_by:
+      - s04_distribute_value
+  - id: p.vpc_last_row
+    node: s04_distribute_value
+    kind: index
+    value: 16
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/04_distribute_value.py:39 max_row=16
+    used_by:
+      - s04_distribute_value
+  - id: p.vpc_unit_factor
+    node: s04_distribute_value
+    kind: scale
+    unit: EUR per kEUR
+    value: 1000.0
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/04_distribute_value.py:42 * 1000.0
+    used_by:
+      - s04_distribute_value
+  - id: p.factor_nodata
+    node: s04_distribute_value
+    kind: nodata
+    value: 0.0
+    resolution: resolved
+    source: reference_metadata
+    status: assumed
+    evidence:
+      - 05_TEMP/04_factor.tif nodata=0
+    used_by:
+      - s04_distribute_value
+  - id: p.exposure_nodata
+    node: s04_distribute_value
+    kind: nodata
+    value: -9999.0
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - '02_SCRIPTS/04_distribute_value.py:103 ''NO_DATA'': -9999'
+    used_by:
+      - s04_distribute_value
+  - id: p.report_sheet
+    node: s04_distribute_value
+    kind: string
+    value: by_canton
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/04_distribute_value.py:134
+    used_by:
+      - s04_distribute_value
+  - id: p.measure_crs
+    node: null
+    kind: crs
+    value: EPSG:2169
+    resolution: resolved
+    source: code
+    status: confirmed
+    evidence:
+      - 02_SCRIPTS/02_landuse_mask.py:27 LUREF for areas
+    used_by:
+      - verify
