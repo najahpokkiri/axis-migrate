@@ -334,6 +334,7 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
     parity = sorted(drows, key=lambda r: (sev.get(r["disposition"], 99), pos.get(r["step"], 999), r["id"]))
 
     # steps
+    pmap = {p.get("id"): p for p in records.get("params") or []}
     srows = []
     for sid in order:
         e = lad["steps"][sid]
@@ -356,7 +357,10 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
                       "caps": [{**c, "phrase": phrases.say(c["code"])} for c in e["caps"]],
                       "annotations": e["annotations"], "datasets": mine, "first": first,
                       "module": e.get("module"), "legacy_source": (s.get("legacy") or {}).get("source"),
-                      "params": sorted(s.get("params") or [])})
+                      "params": [{"id": pid, "source": (pmap.get(pid) or {}).get("source") or "unknown",
+                                  "status": (pmap.get(pid) or {}).get("status")}
+                                 for pid in sorted(set(s.get("params") or []) |
+                                                   {x for x, v in pmap.items() if v.get("node") == sid})]})
     failing_steps = [r for r in srows if r["disposition"] != "VERIFIED"]
     passing_steps = [r for r in srows if r["disposition"] == "VERIFIED"]
     dropped = sorted(sid for sid, s in steps.items() if ladder.step_class(s) == "drop")

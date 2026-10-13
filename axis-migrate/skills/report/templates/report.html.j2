@@ -158,7 +158,7 @@ footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid va
 <span class="meta">rung: <strong>{{ s.rung or 'n/a' }}</strong> · {{ s.kind }} · scope {{ s.scope }}{% if s.module %} · <code>{{ s.module }}</code>{% endif %}{% if s.legacy_source %} · legacy <code>{{ s.legacy_source }}</code>{% endif %}</span></div>
 {% if s.caps %}<ul class="phr caps">{% for c in s.caps %}<li><code>{{ c.code }}</code> {{ c.phrase }}{% if c.detail %} ({{ c.detail }}){% endif %} → at most {{ c.max }}</li>{% endfor %}</ul>{% endif %}
 {% if s.annotations %}<ul class="phr ann">{% for a in s.annotations %}<li>{{ a.text }}</li>{% endfor %}</ul>{% endif %}
-{% if s.params %}<div class="meta">params: {% for pid in s.params %}<code>{{ pid }}</code>{{ ', ' if not loop.last }}{% endfor %}</div>{% endif %}
+{% if s.params %}<div class="meta">params: {% for pp in s.params %}<code>{{ pp.id }}</code> <span class="badge {{ 'amber' if pp.source in ('assumption','fitted') else ('blue' if pp.source == 'answer' else 'grey') }}">{{ pp.source }}</span>{{ ' ' if not loop.last }}{% endfor %}</div>{% endif %}
 {% for d in s.datasets %}
 <div class="ds" id="ds-{{ d.id|anchor }}">
 <div class="ds-head"><strong><code>{{ d.id }}</code></strong> <span class="meta">{{ d.kind }} · {{ d.role }}</span>
