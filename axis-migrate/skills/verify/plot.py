@@ -707,33 +707,41 @@ class RasterPlotter:
             ov = np.where(xl > 0, 1.0, np.where(xn > 0, 2.0, np.nan))
             ax.imshow(np.ma.masked_invalid(ov), extent=(ext[0], ext[2], ext[1], ext[3]), origin="upper",
                       cmap=ListedColormap([C_LEG_ONLY_DIFF, C_NEW_ONLY_DIFF]), norm=Normalize(0.5, 2.5),
-                      interpolation="nearest", resample=False)
+                      interpolation="nearest", resample=False, zorder=3)
+            for msk, col in ((xl > 0, C_LEG_ONLY_DIFF), (xn > 0, C_NEW_ONLY_DIFF)):
+                if 0 < int(msk.sum()) <= 50_000:        # sparse one-side cells stay visible (above zone lines)
+                    _draw_segments(ax, _mask_segments(msk, tr), colors=col, linewidths=1.0, zorder=5)
             ob, _ = _block_reduce(self.over.astype("float64"), np.ones_like(self.over), f, "any")
             n_over = int(self.over.sum())
             many = n_over > 0.5 * max(int(self.both.sum()), 1)
             segs = _mask_segments(ob > 0, tr) if (n_over and not many) else []
             if n_over == 0:
-                ol = "no cell over tolerance"
+                ol = "none over"
             elif many:
-                ol = "most cells over: not outlined"
+                ol = "most over: not outlined"
             elif len(segs) <= MAX_OUTLINE_SEGMENTS:
                 _draw_segments(ax, segs, colors="black", linewidths=0.5)
-                ol = "over-tolerance cells outlined" + (" and ringed" if n_over <= MARK_MAX else "")
+                ol = "outlined" + (" and ringed" if n_over <= MARK_MAX else "")
                 self._mark_over(ax, self.over, self.L.tr, size=7.0)
             else:
                 ol = f"{_fmt(n_over)} cells over tolerance: too many to outline"
             tol = "exact" if self.exact else f"atol {_fmt(self.atol)} + rtol {_fmt(self.rtol)}·|l|"
             rel = ""
-            if not self.categorical and self.norm.get("vmax"):
+            maxd = float(np.abs(self.d[self.both]).max()) if self.both.any() else 0.0
+            n_one = int(self.xor_l.sum() + self.xor_n.sum())
+            if maxd == 0.0:
+                rel = " (no both-valid cell differs)"
+            elif not self.categorical and self.norm.get("vmax"):
                 span = abs(self.norm["vmax"]) or 1.0
-                rel = f" = {_fmt(self.lim / span, 2)} × legacy-new p98"
+                rel = f" = {_fmt(self.lim / span, 2)} × data p98"
                 if self.lim / span < 1e-6:
-                    rel += " (float-rounding size)"
+                    rel += " (rounding size)"
             red = f"; {f}×{f}-cell blocks show the largest |d|" if f > 1 else ""
-            ax.set_title(f"difference n − l · scale ±{_fmt(self.lim, 3)}{rel}\n{_fmt(n_over)} over tolerance "
-                         f"({tol}) · {ol}" + (f"\n{red.lstrip('; ')}" if red else ""), fontsize=6.5)
+            ax.set_title(f"difference n − l · scale ±{_fmt(self.lim, 3)}{rel}\n{_fmt(n_over)} over tol. "
+                         f"({tol}) · {ol}" + (f" · {_fmt(n_one)} one side only" if n_one else "") +
+                         (f"\n{red.lstrip('; ')}" if red else ""), fontsize=6.5)
             notes.append("black = valid in legacy only, dark grey = valid in new only (see mask_diff.png)")
-            self._draw_zones(ax)
+            self._draw_zones(ax, zorder=2)
             if self.zone_label:
                 notes.append(self.zone_label)
             _scalebar(ax, self.crs, self.mcrs, self.extent)
@@ -1478,6 +1486,13 @@ class VectorPlotter:
         for r in rest:
             cand.append(("differs", r["key"], r["li"], r["ni"], r["ratio"], r["haus"]))
         cand = cand[:4]
+        reference_only = False
+        if not cand and self.metrics:               # nothing differs: show the most detailed features for reference
+            import shapely
+            ranked = sorted(self.metrics, key=lambda r: (-int(shapely.get_num_coordinates(self.L.geometry.iloc[r["li"]])),
+                                                         str(r["key"])))
+            cand = [("equal (reference view)", r["key"], r["li"], r["ni"], 0.0, 0.0) for r in ranked[:4]]
+            reference_only = True
         fig = plt.figure(figsize=(8.0, 8.4))
         gs = fig.add_gridspec(2, 2, wspace=0.25, hspace=0.35, left=0.08, right=0.985, top=0.86, bottom=0.05)
         panels, meta = [], []
@@ -1530,9 +1545,10 @@ class VectorPlotter:
                          "symdiff_ratio": None if ratio is None or not math.isfinite(ratio) else ratio,
                          "hausdorff": None if haus is None or not math.isfinite(haus) else haus,
                          "bbox": [float(x) for x in ext]})
-        fig.suptitle(f"{self._title()}\nworst features: unmatched keys first, then largest symdiff ratio · vertices "
-                     f"drawn (legacy blue o solid, new orange x dashed, red = symmetric difference)", fontsize=7,
-                     y=0.995)
+        head = ("no feature differs in geometry and no key is unmatched: the 4 most detailed features shown for "
+                "reference" if reference_only else "worst features: unmatched keys first, then largest symdiff ratio")
+        fig.suptitle(f"{self._title()}\n{head}\nvertices drawn: legacy blue o solid, new orange x dashed, red = "
+                     f"symmetric difference", fontsize=7, y=0.995)
         return self._png("worst_features.png", "worst_features", fig, panels, self._extent(), {"features": meta})
 
     def render(self) -> list[dict]:
