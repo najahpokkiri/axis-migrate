@@ -1774,10 +1774,13 @@ def diff(migration_dir: str | os.PathLike, *, since_rev: int | None = None, sinc
         if (r.get("effect") or {}).get("requires_confirmation"):
             confirm.append(_target(r["op"]))
     still = sorted(s["id"] for s in g["steps"] if s.get("requires_confirmation"))
+    edits = [r for r in recs if (r.get("op") or {}).get("type") != "submit"]
+    submitted = [{"seq": r["seq"], "rev": r.get("rev"), "message": r["op"].get("message")} for r in recs
+                 if (r.get("op") or {}).get("type") == "submit"]
     revs = [r.get("rev", 0) for r in recs]
     return {"schema": DIFF_SCHEMA, "from_rev": since_rev if since_rev is not None else (min(revs) - 1 if revs else
                                                                                        g["revision"]),
-            "to_rev": g["revision"], "ops": recs, "obligations": obligations,
+            "to_rev": g["revision"], "ops": edits, "submitted": submitted, "obligations": obligations,
             "requires_confirmation": sorted(set(confirm) & set(still)) if still else sorted(set(confirm)),
             "pending_confirmation": still, "ack_seq": recs[-1]["seq"] if recs else None,
             "agent_seq": (g.get("acks") or {}).get("agent_seq", 0)}
