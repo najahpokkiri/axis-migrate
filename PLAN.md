@@ -166,6 +166,7 @@ Each day lists work, then the done-criteria that must hold before the next day s
 
 | Date | Decision |
 |---|---|
+| 13 Oct | Budget change (Najah, via the parent session): **E2B unlimited** — the ~$10/day E2B cap is dropped; use E2B freely for runs and evals. The 30 headless agent runs/day cap still stands |
 | 13 Oct | §12 answers (all yes): `uv` lock; E2B template `axis-geo-migrate-<lock8>` (demo may run local, E2B must work); demo shows a failing first run + a guard firing + live graph edit automating the canton rename; ArcPy 03b migrated as a translation showcase against the QGIS step, 0-vs-NoData recorded as a known difference; Najah signs tolerances/KDs (collected in `migration/SIGN-OFF.md`, unsigned until he signs); reconciled fitted-parameter rule; visual review mandatory; evals fenced as `axis-eval` (≤30 headless runs/day, E2B ≤ ~$10/day); interview budget 8/demo 5, one confirm_all click suffices; Databricks runtime + access mode per 09; PyQGIS gap left (verify catches lux traps); Codex script halves only, last; ship `qgis_algs.json` |
 | 13 Oct | Lux-specific tests live in `devtests/` and the golden pipeline in `evals/golden/`, never inside the plugin dir (the agent under test can read the plugin; D4-14) |
 | 13 Oct | Plugin instead of DSH; Claude Code first, Codex manifest Saturday (first thing to drop) |
