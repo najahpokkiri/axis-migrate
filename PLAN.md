@@ -141,7 +141,14 @@ Generic residential exposure distribution for Luxembourg: canton value = populat
 | Public demo data | Cloudflare R2 public bucket, created once the demo project is frozen (approved; contents shown before going public) |
 | Code | Private repo `najahpokkiri/axis-migrate` (approved); this dev repo stays local, no pushes |
 
-## Schedule
+
+## Build status (live log, newest first)
+
+| When | Status |
+|---|---|
+| 13 Oct, night | Build started (orchestrator session). Founder answered **yes to all 12 questions in DESIGN §12**; day-by-day schedule dropped: build by dependency, as fast as possible. `uv` 0.13.0 installed; `skills/run/env/uv.lock` resolves to the reference versions (Py 3.12.15, numpy 2.5.4, rasterio 1.5.2/GDAL 3.12.2, pyogrio 0.13.0/GDAL 3.12.4, shapely 2.2.0, pyproj 3.8.0/PROJ 9.8.1, geopandas 1.2.0). Cross-module contracts in `docs/CONTRACTS.md`. Unix user `axis-eval` available for fenced evals. |
+
+## Schedule (superseded 13 Oct night: build by dependency, not by day)
 
 Each day lists work, then the done-criteria that must hold before the next day starts. Cut order if late (first cut first): **Codex manifest** → S3 holdout → S4/S2 small cases → `.aprx` reader polish → isolated-mode live demo (show recorded) → E2B live (show recorded manifest) → T0b plot-rubric calibration beyond lux → ablation. Never cut: `compare.py` + its tests, the Stop gate, the read ban, T0 for the lux traps, NC1/NC2/NC4/NC5, the false-success gate.
 
@@ -159,6 +166,8 @@ Each day lists work, then the done-criteria that must hold before the next day s
 
 | Date | Decision |
 |---|---|
+| 13 Oct | §12 answers (all yes): `uv` lock; E2B template `axis-geo-migrate-<lock8>` (demo may run local, E2B must work); demo shows a failing first run + a guard firing + live graph edit automating the canton rename; ArcPy 03b migrated as a translation showcase against the QGIS step, 0-vs-NoData recorded as a known difference; Najah signs tolerances/KDs (collected in `migration/SIGN-OFF.md`, unsigned until he signs); reconciled fitted-parameter rule; visual review mandatory; evals fenced as `axis-eval` (≤30 headless runs/day, E2B ≤ ~$10/day); interview budget 8/demo 5, one confirm_all click suffices; Databricks runtime + access mode per 09; PyQGIS gap left (verify catches lux traps); Codex script halves only, last; ship `qgis_algs.json` |
+| 13 Oct | Lux-specific tests live in `devtests/` and the golden pipeline in `evals/golden/`, never inside the plugin dir (the agent under test can read the plugin; D4-14) |
 | 13 Oct | Plugin instead of DSH; Claude Code first, Codex manifest Saturday (first thing to drop) |
 | 13 Oct | E2B for sandboxes, not Cloudflare |
 | 13 Oct | Demo follows the human-rewrite abstract |

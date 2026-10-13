@@ -1,0 +1,25 @@
+[project]
+name = "axis-migrate-env"
+version = "0.1.0"
+description = "The one pinned environment for axis-migrate tools and generated pipelines (local, E2B, target lock)."
+requires-python = "==3.12.*"
+dependencies = [
+  "numpy==2.5.4",
+  "pandas",
+  "geopandas==1.2.0",
+  "rasterio==1.5.2",
+  "pyogrio==0.13.0",
+  "shapely==2.2.0",
+  "pyproj==3.8.0",
+  "openpyxl",
+  "matplotlib",
+  "pyyaml",
+  "jinja2",
+  "pyarrow",
+  "pytest",
+  "defusedxml",
+  "e2b",
+]
+
+[tool.uv]
+package = false

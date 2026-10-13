@@ -1,0 +1,16 @@
+#!/bin/sh
+# Run a Python script in the one pinned axis-migrate environment (skills/run/env/uv.lock).
+# No installs at run time beyond `uv sync --frozen` of the committed lock.
+PLUGIN="$(cd "$(dirname "$0")/.." && pwd)"
+ENV="$PLUGIN/skills/run/env"
+PY="$ENV/.venv/bin/python"
+MARK="$ENV/.venv/.axis-lock-sha256"
+LOCKSHA="$(sha256sum "$ENV/uv.lock" | cut -d' ' -f1)"
+if [ ! -x "$PY" ] || [ "$(cat "$MARK" 2>/dev/null)" != "$LOCKSHA" ]; then
+  UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
+  if [ ! -x "$UV" ]; then echo "axpy: UV_MISSING (install uv; the runner never falls back to system Python)" >&2; exit 13; fi
+  UV_PYTHON_PREFERENCE=only-managed "$UV" sync --frozen --quiet --project "$ENV" >&2 || exit 13
+  echo "$LOCKSHA" > "$MARK"
+fi
+export GDAL_PAM_ENABLED=NO PYTHONHASHSEED=0 AXIS_MIGRATE_PLUGIN="$PLUGIN"
+exec "$PY" "$@"
