@@ -47,10 +47,11 @@ question (answer → `params.yaml` → `decisions.md`), never a literal in code.
 failure signature survives two distinct patches, or when the cause is not code (input, parameter, environment).
 
 ## 4 After the last step
-Chained run from raw inputs, `run_local.py migration --chain chained`, verified in full (verify skill); only chained
-runs move rungs, and a step that passed isolated but fails chained is upstream drift to report, never to widen. Then
-`params_check.py migration --fill-used-by` and `params_check.py migration --stage wired` (must exit 0). Smoke tests
-in `migration/tests/` on small slices, labelled smoke; never mock geo libraries or the step.
+First `params_check.py migration --fill-used-by`, then `params_check.py migration --stage wired` (must exit 0; any
+edit of `params.yaml` after a run marks that run stale). Then the chained run from raw inputs, `run_local.py migration
+--chain chained`, verified in full (verify skill); only chained runs move rungs, and a step that passed isolated but
+fails chained is upstream drift to report, never to widen. Smoke tests in `migration/tests/` on small slices,
+labelled smoke; never mock geo libraries or the step.
 
 ## 5 Manual steps, bridges, unported and dropped code
 - Manual step (`kind: manual`): the user's answer decides. Port-as-code: rule in `params.yaml`, `set_scope migrate`,

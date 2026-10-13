@@ -40,9 +40,10 @@ anything in it.
    run it in isolation (`run_local.py migration --chain isolated --steps <id>`; exit 12 or a step exit 2 goes to the
    interview, never to a code fix), verify it (`verify` skill: compare, plots, **look at the plots**, review-add),
    repair at most 3 times with spec + current error only, then the next step.
-5. **Chained run and verify** — skill `run` (chained, from raw inputs), skill `verify` (compare every pair, plots,
-   visual review of every compared raster/vector, aggregate). Then `params_check.py migration --fill-used-by` and
-   `params_check.py migration --stage wired` (every answer must reach the code that reads it).
+5. **Chained run and verify** — first `params_check.py migration --fill-used-by`, then `params_check.py migration
+   --stage wired` must exit 0 (every answer reaches the code; params.yaml must not change after the run). Then skill
+   `run` (chained, from raw inputs) and skill `verify` (compare every pair, plots, visual review of every compared
+   raster/vector, aggregate).
 6. **Evidence and report** — skill `report`: seal, ladder, report; give the user `migration/report/index.html`.
 7. **Target** — skill `target` if the user chose Databricks: generate the bundle, run the offline checks and dry run,
    seal the target evidence, re-render the report. Never deploy, authenticate or contact a workspace.
