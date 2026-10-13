@@ -100,7 +100,7 @@ def test_amend_visual_from_amend_folder(proj):
     findings = []
     for ds in ("ds.a_mask", "ds.a_outline", "ds.b_exposure"):
         pj = ac.load_json(r["run_dir"] / "verify" / "plots" / ds / "plots.json")
-        findings.append({"finding_id": f"vf-{ds}", "dataset_id": ds, "question_id": "Q1", "answer": "no",
+        findings.append({"finding_id": f"vf-{ds}", "run_id": r["run_id"], "dataset_id": ds, "question_id": "Q1", "answer": "no",
                          "effect": "none", "category": "none", "plot": f"plots/{ds}/worst_tiles.png",
                          "plot_sha256": pj["png"][1]["sha256"], "note": "nothing visible"})
     assert plots

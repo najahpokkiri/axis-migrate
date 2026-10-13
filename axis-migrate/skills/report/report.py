@@ -80,6 +80,8 @@ def fmt(v) -> str:
         return f"{v:.6g}"
     if isinstance(v, (list, tuple)):
         return "[" + ", ".join(fmt(x) for x in v) + "]"
+    if isinstance(v, dict):
+        return " · ".join(f"{k} {fmt(x)}" for k, x in sorted(v.items()) if x is not None) or "—"
     return str(v)
 
 

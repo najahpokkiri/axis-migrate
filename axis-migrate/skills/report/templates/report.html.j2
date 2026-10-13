@@ -19,7 +19,8 @@ h3{font-size:15px;margin:0}
 code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
 a{color:var(--blue)}
 table{border-collapse:collapse;width:100%}
-th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.scroll{overflow-x:auto;max-width:100%}
 th{background:var(--soft);font-weight:600;font-size:12.5px}
 .ok{--c:var(--ok);--cb:var(--ok-bg)}.bad{--c:var(--bad);--cb:var(--bad-bg)}.amber{--c:var(--amber);--cb:var(--amber-bg)}
 .purple{--c:var(--purple);--cb:var(--purple-bg)}.grey{--c:var(--grey);--cb:var(--grey-bg)}.blue{--c:var(--blue);--cb:var(--blue-bg)}
@@ -193,10 +194,10 @@ footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid va
 
 <section id="parity">
 <h2>Parity table</h2>
-<table class="small"><thead><tr><th>step</th><th>dataset</th><th>family</th><th>legacy path</th><th>new path</th><th>state</th><th>disposition</th><th>reason codes</th><th>key metric</th><th>tolerance</th><th>links</th></tr></thead><tbody>
-{% for r in parity %}<tr><td><a href="#step-{{ r.step }}"><code>{{ r.step }}</code></a></td><td><a href="#ds-{{ r.id|anchor }}"><code>{{ r.id }}</code></a></td><td>{{ r.kind }}</td><td><code>{{ r.legacy_path or '—' }}</code></td><td><code>{{ r.new_path or '—' }}</code></td><td>{% if r.state %}<span class="badge {{ r.state_style[0] }}">{{ r.state_style[1] }} {{ r.state }}</span>{% else %}—{% endif %}</td><td><span class="badge {{ r.disp_style[0] }}">{{ r.disposition }}</span></td><td>{{ r.reason_codes|join(', ') }}</td><td>{{ r.metric }}</td><td>{{ r.tolerances|join(', ') or 'exact' }}</td><td>{% if r.compare_asset %}<a href="{{ r.compare_asset }}">JSON</a>{% endif %}{% for pl in r.plots if pl.ok %} <a href="{{ pl.asset }}">{{ pl.name }}</a>{% endfor %}</td></tr>
+<div class="scroll"><table class="small"><thead><tr><th>step</th><th>dataset</th><th>family</th><th>legacy path</th><th>new path</th><th>state</th><th>disposition</th><th>reason codes</th><th>key metric</th><th>tolerance</th><th>links</th></tr></thead><tbody>
+{% for r in parity %}<tr><td><a href="#step-{{ r.step }}"><code>{{ r.step }}</code></a></td><td><a href="#ds-{{ r.id|anchor }}"><code>{{ r.id }}</code></a></td><td>{{ r.kind }}</td><td><code>{{ r.legacy_path or '—' }}</code></td><td><code>{{ r.new_path or '—' }}</code></td><td>{% if r.state %}<span class="badge {{ r.state_style[0] }}">{{ r.state_style[1] }} {{ r.state }}</span>{% else %}—{% endif %}</td><td><span class="badge {{ r.disp_style[0] }}">{{ r.disposition }}</span></td><td>{{ r.reason_codes|join(', ') }}</td><td>{{ r.metric }}</td><td>{% for t in r.tolerances %}<code>{{ t }}</code>{% if not loop.last %}<br>{% endif %}{% else %}exact{% endfor %}</td><td>{% if r.compare_asset %}<a href="{{ r.compare_asset }}">JSON</a>{% endif %}{% for pl in r.plots if pl.ok %} <a href="{{ pl.asset }}">{{ pl.name }}</a>{% endfor %}</td></tr>
 {% endfor %}
-</tbody></table>
+</tbody></table></div>
 </section>
 
 <section id="passing-steps">

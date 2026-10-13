@@ -505,7 +505,9 @@ def build_evidence(migration: Path, run_id: str) -> tuple[dict, Builder]:
            "started_at": manifest.get("started_at") or manifest.get("created_at"),
            "ended_at": manifest.get("ended_at"), "e2b_template": (env.get("e2b") or {}).get("template"),
            "resumed_from": manifest.get("resumed_from"),
-           "stub_check_passed": (env.get("stub_check") or {}).get("passed"),
+           "stub_check_passed": (None if (env.get("stub_check") or {}).get("passed") is None else
+                                 (env["stub_check"]["passed"] is True and all(
+                                     s.get("stub_check_passed") is not False for s in manifest.get("steps") or []))),
            "worktree_changed_during_run": (manifest.get("code") or {}).get("worktree_changed_during_run"),
            "code_hash": (manifest.get("code") or {}).get("code_hash"), "envrt": env_id,
            "step_results": step_results, "env_comparison": manifest.get("env_comparison") or [],

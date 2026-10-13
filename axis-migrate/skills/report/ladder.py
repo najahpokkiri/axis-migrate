@@ -207,8 +207,15 @@ def is_gated(check: dict) -> bool:
 
 
 def is_kd_check(check: dict) -> bool:
+    """The KD bound check of an accepted_change (compare.py: id `kd:<KD-id>`, `kd_check: true`)."""
     cid = str(check.get("id") or "")
-    return bool(check.get("kd_id") or check.get("known_difference")) or cid.startswith(("kd.", "known_difference."))
+    return bool(check.get("kd_check") or check.get("kd_id") or check.get("known_difference")) or \
+        cid.startswith(("kd:", "kd.", "known_difference."))
+
+
+def check_matches(listed: str, check_id: str) -> bool:
+    """Same rule as compare.py: a KD listing `raster.values` covers `raster.values`, `raster.values:b1`, …"""
+    return check_id == listed or check_id.startswith((listed + ":", listed + ".", listed + "@"))
 
 
 def declared_state(cmp: dict) -> str | None:
@@ -222,8 +229,8 @@ def recompute_state(cmp: dict) -> tuple[str | None, str | None]:
     for ch in cmp.get("checks") or []:
         if not isinstance(ch, dict):
             return None, "check is not an object"
-        if is_gated(ch) or ch.get("diagnostic") is True:
-            continue
+        if is_gated(ch) or ch.get("diagnostic") is True or is_kd_check(ch):
+            continue  # accepted_change bound checks never change the compare state (DESIGN §4.6)
         st = ch.get("state")
         if st not in ac.VERDICTS:
             return None, f"check {ch.get('id')!r} has unknown state {st!r}"
@@ -773,17 +780,22 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
         bind_errs = []
         if cmp.get("run_id") != b.run_id:
             bind_errs.append(f"run_id {cmp.get('run_id')} ≠ {b.run_id}")
-        if outo is None:
-            # no output in this run: only a non-pass result without an out ref is consistent (OUTPUT_MISSING …)
-            if refs.get("out") or declared_state(cmp) in ac.PASS_STATES:
-                bind_errs.append(f"refs.out {refs.get('out')} but this run has no output for {dsid}")
-        elif refs.get("out") != outo["id"]:
-            bind_errs.append(f"refs.out {refs.get('out')} ≠ this run's {outo['id']}")
+        compared = bool(cmp.get("checks")) or declared_state(cmp) in ac.PASS_STATES
         ref_ok_ids = set()
         if refo:
             ref_ok_ids = {refo["id"]} | {f"ref:{hex_of((refo.get('meta') or {}).get('content_sha256'))}"}
-        if refs.get("ref") not in ref_ok_ids:
-            bind_errs.append(f"refs.ref {refs.get('ref')} not the pinned legacy reference")
+        if not compared:
+            # pairing-level result without checks (OUTPUT_MISSING, PAIRING_UNCONFIRMED, …): can never pass, so
+            # null refs are consistent; refs that are present must still point at this run's objects
+            if refs.get("out") and (outo is None or refs.get("out") != outo["id"]):
+                bind_errs.append(f"refs.out {refs.get('out')} is not this run's output")
+            if refs.get("ref") and refs.get("ref") not in ref_ok_ids:
+                bind_errs.append(f"refs.ref {refs.get('ref')} not the pinned legacy reference")
+        else:
+            if outo is None or refs.get("out") != outo["id"]:
+                bind_errs.append(f"refs.out {refs.get('out')} ≠ this run's {outo and outo['id']}")
+            if refs.get("ref") not in ref_ok_ids:
+                bind_errs.append(f"refs.ref {refs.get('ref')} not the pinned legacy reference")
         bad_tol = [t for t in _norm_list(refs.get("tol")) if t not in tol_ids]
         if bad_tol:
             bind_errs.append(f"refs.tol {bad_tol} not in the sealed tolerances")
@@ -811,15 +823,19 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
         if r["kind"] in ("raster", "vector"):
             shas = plot_sha_by_ds.get(dsid, set())
             mine = [f for f in findings if f.get("dataset_id") == dsid]
-            valid = [f for f in mine if hex_of(f.get("plot_sha256")) in shas]
+            # same acceptance rule as compare.py aggregate: this run, closed answer/effect vocabulary, a plot hash
+            # of this run; `cannot_tell` is listed as "not visually assessed" and is not a receipt
+            valid = [f for f in mine if hex_of(f.get("plot_sha256")) in shas and f.get("run_id") == b.run_id
+                     and f.get("answer") in ("yes", "no", "cannot_tell") and f.get("effect") in ("flag", "none")
+                     and not (f.get("effect") == "flag" and f.get("answer") != "yes")]
             invalid = [f for f in mine if f not in valid]
             flags = [f for f in valid if f.get("answer") == "yes" and f.get("effect") == "flag"
                      and f.get("finding_id") not in cleared]
-            r["visual"] = {"receipts": len(valid), "invalid_receipts": len(invalid),
+            r["visual"] = {"receipts": sum(1 for f in valid if f.get("answer") in ("yes", "no")), "invalid_receipts": len(invalid),
                            "flags": [f.get("finding_id") for f in flags],
                            "cleared": sorted(f.get("finding_id") for f in valid if f.get("finding_id") in cleared),
                            "cannot_tell": [f.get("finding_id") for f in valid if f.get("answer") == "cannot_tell"]}
-            if not valid:
+            if not [f for f in valid if f.get("answer") in ("yes", "no")]:
                 if state in ac.PASS_STATES:
                     state = "NEEDS_REVIEW"
                 codes.append("VISUAL_REVIEW_MISSING")
@@ -993,6 +1009,13 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
             rung = rung_cap(rung, c["max"])
         entry["rung"] = rung
         entry["step_ok"] = bool(sr and sr.get("ok"))
+        # first failing reason (for the Stop gate's "First failing step: <step> <code> <diagnostic>")
+        for d in sorted(my_ds, key=lambda x: x["dataset"]):
+            if d["disposition"] not in ("VERIFIED", "NO_REFERENCE", "BRIDGED", None):
+                code = d.get("first_reason") or (d["reason_codes"][0] if d["reason_codes"] else d["disposition"])
+                entry["first_reason"] = {"dataset": d["dataset"], "code": code,
+                                         "diagnostics": (d.get("first_check") or {}).get("diagnostics") or {}}
+                break
     # upstream annotation
     for sid, e in sres.items():
         if e["disposition"] in ("VERIFIED", "ACCEPTED_DIFFERENCE"):
@@ -1087,28 +1110,36 @@ def _scan_blocks(b: Bundle):
     doc = b.read_json_rel(objs[0]["path"])
     if doc is None:
         return None
+    if isinstance(doc, dict) and doc.get("status") in ("not_run", "error", "rule_error") and not doc.get("findings"):
+        return None  # no scanner verdict: generated is not reached
     items = doc if isinstance(doc, list) else (doc.get("findings") or [])
     return [f for f in items if str(f.get("sev") or f.get("severity") or "").lower() in ("block", "error")]
 
 
 def _tests_state(b: Bundle) -> dict:
-    """{'*': True|False|None, '<step>': False} from tests.json (pytest summary written by the runner preflight)."""
+    """{'*': True|False|None, '<step>': False} from verify/tests.json (runner preflight, `axis-migrate.tests.v1`:
+    status passed|failed|error|absent, cases[{name, outcome}]). No smoke tests (`absent`) fails nothing."""
     objs = b.by_kind.get("tests", [])
     if not objs:
         return {"*": None}
     doc = b.read_json_rel(objs[0]["path"]) or {}
-    tests = doc.get("tests") or []
+    cases = doc.get("cases") if isinstance(doc.get("cases"), list) else (
+        doc.get("tests") if isinstance(doc.get("tests"), list) else [])
     out: dict = {}
-    failed = [t for t in tests if str(t.get("outcome")) in ("failed", "error")]
+    failed = [t for t in cases if str(t.get("outcome")) in ("failed", "failure", "error")]
     for t in failed:
-        m = re.search(r"([sm]\d\d[a-z]?_[a-z0-9_]+)", str(t.get("nodeid") or t.get("step") or ""))
+        m = re.search(r"([sm]\d\d[a-z]?_[a-z0-9_]+)", str(t.get("step") or t.get("nodeid") or t.get("name") or ""))
         if t.get("step"):
             out[t["step"]] = False
         elif m:
             out[m.group(1)] = False
+    status = doc.get("status")
     passed = doc.get("passed")
     if passed is None:
-        passed = doc.get("exit_code") in (0, 5) and not failed  # pytest 5 = no tests collected
+        if status is not None:
+            passed = status in ("passed", "absent")
+        else:
+            passed = doc.get("exit_code") in (0, 5) and not failed  # pytest 5 = no tests collected
     if passed:
         out["*"] = True
     else:
@@ -1143,11 +1174,14 @@ def _kd_accepts(cmp: dict, dsid: str, kds: list[dict]) -> tuple[bool, list[dict]
             reasons.append(f"owner {k.get('owner')!r} is not a human")
         if k.get("kind") not in ("accepted_change", "legacy_defect_preserved"):
             reasons.append(f"kind {k.get('kind')} does not accept a difference")
-        bound_check = [c for c in checks if isinstance(c, dict) and (c.get("kd_id") == k.get("id") or
-                       c.get("known_difference") == k.get("id") or c.get("id") in (f"kd.{k.get('id')}",
-                                                                                    f"known_difference.{k.get('id')}"))]
-        held = bool(bound_check) and all(c.get("state") in ac.PASS_STATES for c in bound_check) and \
-            k.get("bound") is not None
+        kid = k.get("id")
+        bound_check = [c for c in checks if isinstance(c, dict) and is_kd_check(c) and (
+            kid in _norm_list(c.get("kd")) or c.get("kd_id") == kid or c.get("known_difference") == kid
+            or c.get("id") in (f"kd:{kid}", f"kd.{kid}", f"known_difference.{kid}"))]
+        held = bool(bound_check) and k.get("bound") is not None and all(
+            (c.get("held") is True if "held" in c else c.get("state") in ac.PASS_STATES)
+            and (c.get("detail") or {}).get("signed", True) is not False
+            and "KD_UNSIGNED" not in _norm_list(c.get("reason_codes")) for c in bound_check)
         if not held:
             reasons.append("bound did not hold" if bound_check else "no bound check in the compare result")
         notes.append({"kd": k.get("id"), "accepted": not reasons, "why_not": reasons, "owner": k.get("owner"),
@@ -1159,8 +1193,8 @@ def _kd_accepts(cmp: dict, dsid: str, kds: list[dict]) -> tuple[bool, list[dict]
     uncovered = []
     for c in fails:
         cid, codes = c.get("id"), set(_norm_list(c.get("reason_codes")))
-        ok = any(cid in _norm_list(k.get("checks")) or (codes and codes <= set(_norm_list(k.get("reason_codes"))))
-                 for k in usable)
+        ok = any(any(check_matches(str(x), str(cid)) for x in _norm_list(k.get("checks")))
+                 or (codes and codes <= set(_norm_list(k.get("reason_codes")))) for k in usable)
         if not ok:
             uncovered.append(cid)
     check_codes = {x for c in checks if isinstance(c, dict) for x in _norm_list(c.get("reason_codes"))}
