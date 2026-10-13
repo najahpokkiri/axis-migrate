@@ -1,0 +1,908 @@
+cases:
+  L12_float64:
+    ds.lux_res_exposure_2020:
+      Q1:
+        answer: 'no'
+        category: none
+        note: speckled +/- noise, no paired stripes
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: 45a28558d35d60e6b1b8240a34aa0089c0b8dfe166296201f807a55ba2f2d7f1
+      Q2:
+        answer: 'no'
+        category: none
+        note: panels identical; diff scale 5.2e-08 x data (rounding size)
+        panel: new
+        plot: overview.png
+        plot_sha256: d91376cc4484f97b5025b901e57fe6c882d66c074e2b20c3966403292e41d30a
+      Q4:
+        answer: 'no'
+        category: none
+        note: 0 one-side cells
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: edc7da24c25c0594f799be86d4d998f19d14e8c0f75ecd371c66565044a24ec8
+      Q5:
+        answer: 'no'
+        category: none
+        note: noise follows high values, no straight seams
+        panel: diff
+        plot: overview.png
+        plot_sha256: d91376cc4484f97b5025b901e57fe6c882d66c074e2b20c3966403292e41d30a
+      Q6:
+        answer: 'no'
+        category: none
+        note: no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: edc7da24c25c0594f799be86d4d998f19d14e8c0f75ecd371c66565044a24ec8
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness as legacy
+        panel: new
+        plot: overview.png
+        plot_sha256: d91376cc4484f97b5025b901e57fe6c882d66c074e2b20c3966403292e41d30a
+  L1_identity:
+    ds.01_pop_lux:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: 2d79c585a65b4983e41c3b99456434dad4b716d0a3d7ab0d41700d5bd143b12e
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 4b01b5a2b4097ba33bee353f4455326afb7907dad24fd622208ac1f496335a6f
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+    ds.02_res_2169:
+      Q1:
+        answer: 'no'
+        category: none
+        note: outlines coincide
+        panel: feature 1
+        plot: worst_features.png
+        plot_sha256: a01a63f82915ddcc96ab61e7fbe36c26e27e876df49d7573651859613cff4682
+      Q3:
+        answer: 'no'
+        category: none
+        note: vertices coincide; no simplification
+        panel: feature 1
+        plot: worst_features.png
+        plot_sha256: a01a63f82915ddcc96ab61e7fbe36c26e27e876df49d7573651859613cff4682
+      Q4:
+        answer: 'no'
+        category: none
+        note: 1512 matched, 0 unmatched
+        panel: overlay
+        plot: overlay.png
+        plot_sha256: d930178b21deb59c56eb461754bc3ebe969d5a4dd74032fbcd05105193341cf5
+    ds.02_res_mask:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: diff
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: af28f283330d60d6ddf0a1233c8e6b06d34998346de0445b7e93fefe5fece8f1
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+    ds.04_canton_factor:
+      Q1: &id001
+        answer: 'no'
+        category: none
+        note: outlines coincide
+        panel: feature 1
+        plot: worst_features.png
+        plot_sha256: 80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2
+      Q3: &id002
+        answer: 'no'
+        category: none
+        note: vertices coincide
+        panel: feature 1
+        plot: worst_features.png
+        plot_sha256: 80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2
+      Q4: &id003
+        answer: 'no'
+        category: none
+        note: 'all keys white: attributes equal'
+        panel: attributes
+        plot: per_feature.png
+        plot_sha256: 5d066b97386f68b1702c6b9492d25336b18c522c28b17431ab774b03e06e6c93
+    ds.04_factor:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: diff
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: bdf6edc23b4f9b4359f0a92a4f4c5b4621784a344052ff35c930fc12188741c0
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+    ds.lux_res_exposure_2020:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: b28625bd750388f61b4d9a91399700a029613ae8f1f296825aaf7086373f38af
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 5c4f30868ed414bfae1cfea9df74580c06f38190fd7714337f08cca76959e5e0
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+  L2_independent:
+    ds.01_pop_lux:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: 2d79c585a65b4983e41c3b99456434dad4b716d0a3d7ab0d41700d5bd143b12e
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 4b01b5a2b4097ba33bee353f4455326afb7907dad24fd622208ac1f496335a6f
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7
+    ds.02_res_2169:
+      Q1:
+        answer: 'no'
+        category: none
+        note: 0 differ in geometry
+        panel: overlay
+        plot: overlay.png
+        plot_sha256: cb962af41b804352094728c7ed324f4e1cab0487592854dad06c9995d35692b8
+      Q3:
+        answer: 'no'
+        category: none
+        note: 'reference view: vertices coincide'
+        panel: feature 1
+        plot: worst_features.png
+        plot_sha256: 91804223c00480a0b5dc2517f85758db1a8d88c73a36357be8205c46406ddf5a
+      Q4:
+        answer: 'no'
+        category: none
+        note: 'all keys in (0,1e-9]: float noise, nothing missing'
+        panel: attributes
+        plot: per_feature.png
+        plot_sha256: 767da11e677bfe9391bc9b23fd04e3c47d218d74357de7b16549f5ca70b7cf42
+    ds.02_res_mask:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: diff
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: af28f283330d60d6ddf0a1233c8e6b06d34998346de0445b7e93fefe5fece8f1
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: 93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c
+    ds.04_canton_factor:
+      Q1: *id001
+      Q3: *id002
+      Q4: *id003
+    ds.04_factor:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: diff
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: bdf6edc23b4f9b4359f0a92a4f4c5b4621784a344052ff35c930fc12188741c0
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: 0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976
+    ds.lux_res_exposure_2020:
+      Q1:
+        answer: 'no'
+        category: none
+        note: diff neutral; no paired stripes
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: b28625bd750388f61b4d9a91399700a029613ae8f1f296825aaf7086373f38af
+      Q2:
+        answer: 'no'
+        category: none
+        note: legacy and new panels identical; no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+      Q4:
+        answer: 'no'
+        category: none
+        note: every legacy region present in new
+        panel: new
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight stripes or blocks in the diff
+        panel: diff
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+      Q6:
+        answer: 'no'
+        category: none
+        note: 0 legacy-only / 0 new-only cells; no ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 5c4f30868ed414bfae1cfea9df74580c06f38190fd7714337f08cca76959e5e0
+      Q7:
+        answer: 'no'
+        category: none
+        note: both panels same brightness under the shared scale
+        panel: new
+        plot: overview.png
+        plot_sha256: e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3
+  L3_tap_shift:
+    ds.01_pop_lux:
+      Q1:
+        answer: 'yes'
+        category: whole_offset
+        note: orange (new) grid and valid outline offset ~half a cell NW of blue at every edge; corner 0.71 px
+        panel: edge overlay west
+        plot: worst_tiles.png
+        plot_sha256: a6dbf04bcabd645f398666adae161b89075d31f28536b0926f93db624bbb2b66
+      Q2:
+        answer: 'no'
+        category: none
+        note: panels look alike; diff not computed (grid gate)
+        panel: new
+        plot: overview.png
+        plot_sha256: 80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347
+      Q4:
+        answer: 'no'
+        category: none
+        note: no region missing
+        panel: new
+        plot: overview.png
+        plot_sha256: 80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347
+      Q5:
+        answer: cannot_tell
+        category: none
+        note: 'difference not computed: grids differ'
+        panel: diff
+        plot: overview.png
+        plot_sha256: 80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347
+      Q6:
+        answer: 'no'
+        category: none
+        note: outlines differ by a uniform shift, not a ring
+        panel: edge overlay west
+        plot: worst_tiles.png
+        plot_sha256: a6dbf04bcabd645f398666adae161b89075d31f28536b0926f93db624bbb2b66
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness
+        panel: new
+        plot: overview.png
+        plot_sha256: 80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347
+  L5_bilinear:
+    ds.01_pop_lux:
+      Q1:
+        answer: 'no'
+        category: none
+        note: +/- rims around peaks, not a uniform offset
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: f0ca220ac0bbbb4f998d03e25dce906526d35e98562e7409920ba71576c5e108
+      Q2:
+        answer: 'yes'
+        category: smoothed_blurred
+        note: 'new tiles blurred: cell detail of legacy lost, purple cores with orange halos in diff'
+        panel: tile 1 new
+        plot: worst_tiles.png
+        plot_sha256: f0ca220ac0bbbb4f998d03e25dce906526d35e98562e7409920ba71576c5e108
+      Q4:
+        answer: 'no'
+        category: none
+        note: no region missing
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 32cf8db6fa014c02fe3482514b5d30a33e30ff49142d5195cc6ad5f515fed45a
+      Q5:
+        answer: 'no'
+        category: none
+        note: no straight seams
+        panel: diff
+        plot: overview.png
+        plot_sha256: b5c5da7039585e92e439f13afe58f5fc33f89a1d1e566880eabd239c6472bc70
+      Q6:
+        answer: 'yes'
+        category: boundary_stripes
+        note: one-cell blue/orange ring along the whole outer data edge (2,343 / 2,332)
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 32cf8db6fa014c02fe3482514b5d30a33e30ff49142d5195cc6ad5f515fed45a
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness
+        panel: new
+        plot: overview.png
+        plot_sha256: b5c5da7039585e92e439f13afe58f5fc33f89a1d1e566880eabd239c6472bc70
+  L7_factor_all_touched:
+    ds.04_factor:
+      Q1:
+        answer: 'no'
+        category: none
+        note: one-sided lines, no paired offset
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: 836a2fba0c9cfa6e5b28641397c82a598fb08800f025bea68b7c79a8710fc52a
+      Q2:
+        answer: 'no'
+        category: none
+        note: no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81
+      Q4:
+        answer: 'no'
+        category: none
+        note: no region missing
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 784926aaaa8b8d88d8197d58ddaec25392e27090665eb9ce2c30980f35db665f
+      Q5:
+        answer: 'no'
+        category: none
+        note: lines follow zones, not tiles
+        panel: diff
+        plot: overview.png
+        plot_sha256: f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81
+      Q6:
+        answer: 'yes'
+        category: boundary_stripes
+        note: one-cell lines along every zone boundary plus a new-only ring on the outer edge
+        panel: diff
+        plot: overview.png
+        plot_sha256: f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness
+        panel: new
+        plot: overview.png
+        plot_sha256: f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81
+    ds.lux_res_exposure_2020:
+      Q1:
+        answer: 'no'
+        category: none
+        note: single-sided cells on zone lines, not paired
+        panel: tile 2 diff
+        plot: worst_tiles.png
+        plot_sha256: a3bfa906ef6681192d0800999059ab996db021b0d2ad3733a1d1219a8b97274a
+      Q2:
+        answer: 'no'
+        category: none
+        note: no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: d0a2e51081504b188aa19484de73b55a77ded87cd03414a442acb1d70e256870
+      Q4:
+        answer: 'no'
+        category: none
+        note: no region missing
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 0a74f2f6b93b495a837d2e64723386240ee9d2553de8be35a52f250007a8ecba
+      Q5:
+        answer: 'no'
+        category: none
+        note: no seams
+        panel: diff
+        plot: overview.png
+        plot_sha256: d0a2e51081504b188aa19484de73b55a77ded87cd03414a442acb1d70e256870
+      Q6:
+        answer: 'yes'
+        category: boundary_stripes
+        note: every over-tolerance cell sits on a green zone boundary; interiors equal
+        panel: tile 2 diff
+        plot: worst_tiles.png
+        plot_sha256: a3bfa906ef6681192d0800999059ab996db021b0d2ad3733a1d1219a8b97274a
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness
+        panel: new
+        plot: overview.png
+        plot_sha256: d0a2e51081504b188aa19484de73b55a77ded87cd03414a442acb1d70e256870
+  L7b_clip_all_touched:
+    ds.01_pop_lux:
+      Q1:
+        answer: 'no'
+        category: none
+        note: one-side cells only outside the edge, not paired
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: 42e064aa6f964ad665beb78b2fcce546d8736c3a0b06d47896ca14d84996b8ef
+      Q2:
+        answer: 'no'
+        category: none
+        note: no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: c53ad9e0c659e723cfe59e4647d70bf5fdc49308a33f94e3e264031c3e60f467
+      Q4:
+        answer: 'no'
+        category: none
+        note: no region missing
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 567f1e18f5c24b4c780448ed82dbcb80de217a7d94c3c98533a44fde412ed654
+      Q5:
+        answer: 'no'
+        category: none
+        note: no seams
+        panel: diff
+        plot: overview.png
+        plot_sha256: c53ad9e0c659e723cfe59e4647d70bf5fdc49308a33f94e3e264031c3e60f467
+      Q6:
+        answer: 'yes'
+        category: boundary_stripes
+        note: one-cell orange new-only ring hugging the outer boundary (1,074 cells)
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 567f1e18f5c24b4c780448ed82dbcb80de217a7d94c3c98533a44fde412ed654
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness
+        panel: new
+        plot: overview.png
+        plot_sha256: c53ad9e0c659e723cfe59e4647d70bf5fdc49308a33f94e3e264031c3e60f467
+  L8_wiltz_unmatched:
+    ds.04_canton_factor:
+      Q1:
+        answer: 'no'
+        category: none
+        note: outlines coincide
+        panel: overlay
+        plot: overlay.png
+        plot_sha256: d3fcbb6bfb11d2b5e2030cc59ddcf6bc1184053f5a0cc583a8876477ea709831
+      Q3:
+        answer: 'no'
+        category: none
+        note: no simplification
+        panel: overlay
+        plot: overlay.png
+        plot_sha256: d3fcbb6bfb11d2b5e2030cc59ddcf6bc1184053f5a0cc583a8876477ea709831
+      Q4:
+        answer: 'yes'
+        category: missing_region
+        note: one canton (labelled) has nulls on one side only
+        panel: attributes
+        plot: per_feature.png
+        plot_sha256: 282342bc1c41d05ccbffce7602676312ab4acc69dc7a72d55d1e40ca18456e0c
+    ds.lux_res_exposure_2020:
+      Q1:
+        answer: 'no'
+        category: none
+        note: no stripes
+        panel: diff
+        plot: overview.png
+        plot_sha256: 0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3
+      Q2:
+        answer: 'no'
+        category: none
+        note: no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: 0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3
+      Q4:
+        answer: 'yes'
+        category: missing_region
+        note: all data of one north-west zone is legacy-only (3,290 cells blue)
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 2c827a199915d8f5e7ad09819f35efcdb006eb70c4e8e16bad339b3cacf0f1da
+      Q5:
+        answer: 'no'
+        category: none
+        note: no seams
+        panel: diff
+        plot: overview.png
+        plot_sha256: 0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3
+      Q6:
+        answer: 'no'
+        category: none
+        note: difference is a whole zone, not a ring
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 2c827a199915d8f5e7ad09819f35efcdb006eb70c4e8e16bad339b3cacf0f1da
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness elsewhere
+        panel: new
+        plot: overview.png
+        plot_sha256: 0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3
+  L9_kEUR_not_scaled:
+    ds.lux_res_exposure_2020:
+      Q1:
+        answer: 'no'
+        category: none
+        note: smooth purple, no stripes
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: b950d993e04df2a925d4c732acc95afb7e327001bc44e7eb770cb5d07b36c586
+      Q2:
+        answer: 'no'
+        category: none
+        note: pattern kept, only darker
+        panel: tile 1 new
+        plot: worst_tiles.png
+        plot_sha256: b950d993e04df2a925d4c732acc95afb7e327001bc44e7eb770cb5d07b36c586
+      Q4:
+        answer: 'no'
+        category: none
+        note: all regions present, just dim
+        panel: new
+        plot: overview.png
+        plot_sha256: 3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df
+      Q5:
+        answer: 'no'
+        category: none
+        note: no seams
+        panel: diff
+        plot: overview.png
+        plot_sha256: 3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df
+      Q6:
+        answer: 'no'
+        category: none
+        note: no ring
+        panel: diff
+        plot: overview.png
+        plot_sha256: 3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df
+      Q7:
+        answer: 'yes'
+        category: uniform_scale
+        note: new panel uniformly at the bottom colour while legacy shows the full pattern
+        panel: new
+        plot: overview.png
+        plot_sha256: 3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df
+  S_simplify10:
+    ds.02_res_2169:
+      Q1:
+        answer: 'no'
+        category: none
+        note: no uniform displacement
+        panel: overlay
+        plot: overlay.png
+        plot_sha256: 167f070f5d8264ff5ccdea26493a696ba19fc035975aab49183d39245d2d049c
+      Q3:
+        answer: 'yes'
+        category: angular_outline
+        note: new outlines are few long straight segments cutting off legacy vertices; red wedges
+        panel: feature 1
+        plot: worst_features.png
+        plot_sha256: 8e3f80f8d6fc78bd5396205760b29ebc80084bda9e828ed7538ecf9f9b8c0fe0
+      Q4:
+        answer: 'no'
+        category: none
+        note: 0 unmatched keys
+        panel: overlay
+        plot: overlay.png
+        plot_sha256: 167f070f5d8264ff5ccdea26493a696ba19fc035975aab49183d39245d2d049c
+  T1b_factor_shift1:
+    ds.04_factor:
+      Q1:
+        answer: 'yes'
+        category: whole_offset
+        note: 'black legacy-only column on one side, grey new-only on the other: data moved one cell'
+        panel: tile 2 diff
+        plot: worst_tiles.png
+        plot_sha256: 94f3db36ea34ed01266496748f89866cce9c253a3d1747e28bb275cf743c8d20
+      Q2:
+        answer: 'no'
+        category: none
+        note: no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: 2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df
+      Q4:
+        answer: 'no'
+        category: none
+        note: no region missing
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 5c416029136ffccf56a24d242dec546495325a2f6c013711c01a7378f038d549
+      Q5:
+        answer: 'no'
+        category: none
+        note: lines follow zones
+        panel: diff
+        plot: overview.png
+        plot_sha256: 2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df
+      Q6:
+        answer: 'yes'
+        category: boundary_stripes
+        note: lines on all zone boundaries and outer edge
+        panel: diff
+        plot: overview.png
+        plot_sha256: 2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness
+        panel: new
+        plot: overview.png
+        plot_sha256: 2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df
+    ds.lux_res_exposure_2020:
+      Q1:
+        answer: 'no'
+        category: none
+        note: not visibly paired at this scale
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: ab3ade46f259f4d78976a35f08d8102c65b4542d06d905c9d69957f13c98f545
+      Q2:
+        answer: 'no'
+        category: none
+        note: no softening
+        panel: new
+        plot: overview.png
+        plot_sha256: 7f6f74f0f106119605fe0fc93e4770911f1bae6c992474f73b274f0ba372a64b
+      Q4:
+        answer: 'no'
+        category: none
+        note: no region missing
+        panel: mask
+        plot: mask_diff.png
+        plot_sha256: 8140ba8d599998962aa2ed60fe77a9df39c091f3d0339e1753bd77ffe4b006dd
+      Q5:
+        answer: 'no'
+        category: none
+        note: no seams
+        panel: diff
+        plot: overview.png
+        plot_sha256: 7f6f74f0f106119605fe0fc93e4770911f1bae6c992474f73b274f0ba372a64b
+      Q6:
+        answer: 'yes'
+        category: boundary_stripes
+        note: differing cells confined to green zone boundaries
+        panel: tile 1 diff
+        plot: worst_tiles.png
+        plot_sha256: ab3ade46f259f4d78976a35f08d8102c65b4542d06d905c9d69957f13c98f545
+      Q7:
+        answer: 'no'
+        category: none
+        note: same brightness
+        panel: new
+        plot: overview.png
+        plot_sha256: 7f6f74f0f106119605fe0fc93e4770911f1bae6c992474f73b274f0ba372a64b
+fixed_plot_blind:
+- "L5 bilinear: all four worst tiles landed on the valid-mask edge (one-side cells ranked first, ties by row), so the smoothing of the peaks was never at native resolution; plot.py now alternates tiles between the largest |d| and the densest one-side clusters"
+- "L7 / T1b: differences on zone boundaries could not be attributed to zones; plot.py now draws the declared zone boundaries (graph compare.zones) on diff, mask_diff and tiles, and rings over-tolerance cells in the overview when there are at most 600"
+- "T1b: the saturated ends of PuOr are near-black and read as 'valid in legacy only' (black); the diff colormap is now PuOr_r truncated to [0.12, 0.88]"
+- "L7b / L5: a one-cell one-side ring along the outer edge was ~1 px at full extent and hidden under the zone line; one-side cells are now outlined thickly above the zone lines in mask_diff and the overview diff"
+- "per-feature: tiny non-zero symdiff/attribute differences were binned as 'equal' (white) and small features vanished; white is now exact zero only and features are drawn with coloured edges"
+observed_at: '2026-10-13'
+reviewer: claude-opus-5-5 (plot.py builder; opened each cited PNG)

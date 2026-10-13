@@ -1,0 +1,1944 @@
+{
+ "cases": {
+  "L12_float64": {
+   "control": true,
+   "datasets": {
+    "ds.lux_res_exposure_2020": {
+     "png": {
+      "hist.png": "ee4fc7698c01d4acdca86517f1f3fad2eac8e77626e412a19db4f66eeb015d57",
+      "mask_diff.png": "edc7da24c25c0594f799be86d4d998f19d14e8c0f75ecd371c66565044a24ec8",
+      "overview.png": "d91376cc4484f97b5025b901e57fe6c882d66c074e2b20c3966403292e41d30a",
+      "worst_tiles.png": "45a28558d35d60e6b1b8240a34aa0089c0b8dfe166296201f807a55ba2f2d7f1"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "speckled +/- noise, no paired stripes",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "45a28558d35d60e6b1b8240a34aa0089c0b8dfe166296201f807a55ba2f2d7f1",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "panels identical; diff scale 5.2e-08 x data (rounding size)",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d91376cc4484f97b5025b901e57fe6c882d66c074e2b20c3966403292e41d30a",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 one-side cells",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "edc7da24c25c0594f799be86d4d998f19d14e8c0f75ecd371c66565044a24ec8",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "noise follows high values, no straight seams",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "d91376cc4484f97b5025b901e57fe6c882d66c074e2b20c3966403292e41d30a",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "edc7da24c25c0594f799be86d4d998f19d14e8c0f75ecd371c66565044a24ec8",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "same brightness as legacy",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d91376cc4484f97b5025b901e57fe6c882d66c074e2b20c3966403292e41d30a",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "DTYPE_MISMATCH",
+      "RASTER_VALUE_MISMATCH",
+      "TOTAL_DRIFT",
+      "ZONE_TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": []
+    }
+   },
+   "variant": "A3_float64_exposure",
+   "what": "exposure written float64 (legitimate with a dtype_widening KD)"
+  },
+  "L1_identity": {
+   "control": true,
+   "datasets": {
+    "ds.01_pop_lux": {
+     "png": {
+      "hist.png": "7def332da08efb44b1ccb288d53a56cd4dd33763bdb3fddefa110cbcfd53a862",
+      "mask_diff.png": "4b01b5a2b4097ba33bee353f4455326afb7907dad24fd622208ac1f496335a6f",
+      "overview.png": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+      "worst_tiles.png": "2d79c585a65b4983e41c3b99456434dad4b716d0a3d7ab0d41700d5bd143b12e"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "2d79c585a65b4983e41c3b99456434dad4b716d0a3d7ab0d41700d5bd143b12e",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "4b01b5a2b4097ba33bee353f4455326afb7907dad24fd622208ac1f496335a6f",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.02_res_2169": {
+     "png": {
+      "overlay.png": "d930178b21deb59c56eb461754bc3ebe969d5a4dd74032fbcd05105193341cf5",
+      "per_feature.png": "cd68b5d2a6ce18a8945902f0f844f6cebd0df386b96e12a87bde8b6894c23188",
+      "worst_features.png": "a01a63f82915ddcc96ab61e7fbe36c26e27e876df49d7573651859613cff4682"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "outlines coincide",
+       "observed": "no",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "a01a63f82915ddcc96ab61e7fbe36c26e27e876df49d7573651859613cff4682",
+       "stale": false
+      },
+      "Q3": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "vertices coincide; no simplification",
+       "observed": "no",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "a01a63f82915ddcc96ab61e7fbe36c26e27e876df49d7573651859613cff4682",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "1512 matched, 0 unmatched",
+       "observed": "no",
+       "panel": "overlay",
+       "plot": "overlay.png",
+       "plot_sha256": "d930178b21deb59c56eb461754bc3ebe969d5a4dd74032fbcd05105193341cf5",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.02_res_mask": {
+     "png": {
+      "hist.png": "0ceaba2fb5129c9a521e1cc1947a2b526d6780d95493a9b17455f5e54a7eef1b",
+      "mask_diff.png": "af28f283330d60d6ddf0a1233c8e6b06d34998346de0445b7e93fefe5fece8f1",
+      "overview.png": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+      "worst_tiles.png": "7eba3100630c73fc578a3f71d065ff85faf8bcb7c56893c2a7b8007b6097e2ba"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "af28f283330d60d6ddf0a1233c8e6b06d34998346de0445b7e93fefe5fece8f1",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.04_canton_factor": {
+     "png": {
+      "overlay.png": "46eda1eb0dc5e845b9cf147541de70b2f1892bbf67a1a91f8865a0d804919cb6",
+      "per_feature.png": "5d066b97386f68b1702c6b9492d25336b18c522c28b17431ab774b03e06e6c93",
+      "worst_features.png": "80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "outlines coincide",
+       "observed": "no",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2",
+       "stale": false
+      },
+      "Q3": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "vertices coincide",
+       "observed": "no",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "all keys white: attributes equal",
+       "observed": "no",
+       "panel": "attributes",
+       "plot": "per_feature.png",
+       "plot_sha256": "5d066b97386f68b1702c6b9492d25336b18c522c28b17431ab774b03e06e6c93",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.04_factor": {
+     "png": {
+      "hist.png": "814a1f90860d96557c7f65ba0fb7f283affe880ac7bdbf30bada79b1acf34ffb",
+      "mask_diff.png": "bdf6edc23b4f9b4359f0a92a4f4c5b4621784a344052ff35c930fc12188741c0",
+      "overview.png": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+      "worst_tiles.png": "c47bf9be2175264ad83371b42497f4e77ee18572ff6ec36e2a16949bafc78312"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "bdf6edc23b4f9b4359f0a92a4f4c5b4621784a344052ff35c930fc12188741c0",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.lux_res_exposure_2020": {
+     "png": {
+      "hist.png": "eb326617199b27799b499c99526b4f8a389667e45519689903995aa9e8e077a3",
+      "mask_diff.png": "5c4f30868ed414bfae1cfea9df74580c06f38190fd7714337f08cca76959e5e0",
+      "overview.png": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+      "worst_tiles.png": "b28625bd750388f61b4d9a91399700a029613ae8f1f296825aaf7086373f38af"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "b28625bd750388f61b4d9a91399700a029613ae8f1f296825aaf7086373f38af",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "5c4f30868ed414bfae1cfea9df74580c06f38190fd7714337f08cca76959e5e0",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    }
+   },
+   "variant": "legacy_copies",
+   "what": "legacy files copied as the new outputs"
+  },
+  "L2_independent": {
+   "control": true,
+   "datasets": {
+    "ds.01_pop_lux": {
+     "png": {
+      "hist.png": "7def332da08efb44b1ccb288d53a56cd4dd33763bdb3fddefa110cbcfd53a862",
+      "mask_diff.png": "4b01b5a2b4097ba33bee353f4455326afb7907dad24fd622208ac1f496335a6f",
+      "overview.png": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+      "worst_tiles.png": "2d79c585a65b4983e41c3b99456434dad4b716d0a3d7ab0d41700d5bd143b12e"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "2d79c585a65b4983e41c3b99456434dad4b716d0a3d7ab0d41700d5bd143b12e",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "4b01b5a2b4097ba33bee353f4455326afb7907dad24fd622208ac1f496335a6f",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d6e7f95b4b9c4e570a3047330d494e61bb6dfb4e2e76d36dfd1e4a9c1d2236b7",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.02_res_2169": {
+     "png": {
+      "overlay.png": "cb962af41b804352094728c7ed324f4e1cab0487592854dad06c9995d35692b8",
+      "per_feature.png": "767da11e677bfe9391bc9b23fd04e3c47d218d74357de7b16549f5ca70b7cf42",
+      "worst_features.png": "91804223c00480a0b5dc2517f85758db1a8d88c73a36357be8205c46406ddf5a"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 differ in geometry",
+       "observed": "no",
+       "panel": "overlay",
+       "plot": "overlay.png",
+       "plot_sha256": "cb962af41b804352094728c7ed324f4e1cab0487592854dad06c9995d35692b8",
+       "stale": false
+      },
+      "Q3": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "reference view: vertices coincide",
+       "observed": "no",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "91804223c00480a0b5dc2517f85758db1a8d88c73a36357be8205c46406ddf5a",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "all keys in (0,1e-9]: float noise, nothing missing",
+       "observed": "no",
+       "panel": "attributes",
+       "plot": "per_feature.png",
+       "plot_sha256": "767da11e677bfe9391bc9b23fd04e3c47d218d74357de7b16549f5ca70b7cf42",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "ATTRIBUTE_VALUE_MISMATCH"
+     ],
+     "verdict": "FAIL",
+     "yes": []
+    },
+    "ds.02_res_mask": {
+     "png": {
+      "hist.png": "0ceaba2fb5129c9a521e1cc1947a2b526d6780d95493a9b17455f5e54a7eef1b",
+      "mask_diff.png": "af28f283330d60d6ddf0a1233c8e6b06d34998346de0445b7e93fefe5fece8f1",
+      "overview.png": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+      "worst_tiles.png": "7eba3100630c73fc578a3f71d065ff85faf8bcb7c56893c2a7b8007b6097e2ba"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "af28f283330d60d6ddf0a1233c8e6b06d34998346de0445b7e93fefe5fece8f1",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "93feb158113a8328fa35e86701d11525030684641151ee70d1a3f6083087472c",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.04_canton_factor": {
+     "png": {
+      "overlay.png": "46eda1eb0dc5e845b9cf147541de70b2f1892bbf67a1a91f8865a0d804919cb6",
+      "per_feature.png": "5d066b97386f68b1702c6b9492d25336b18c522c28b17431ab774b03e06e6c93",
+      "worst_features.png": "80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "outlines coincide",
+       "observed": "no",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2",
+       "stale": false
+      },
+      "Q3": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "vertices coincide",
+       "observed": "no",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "80baa861b886b8df2cb7a4cc1d21d493362e60db4a5d9071720dd9389eb278c2",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "all keys white: attributes equal",
+       "observed": "no",
+       "panel": "attributes",
+       "plot": "per_feature.png",
+       "plot_sha256": "5d066b97386f68b1702c6b9492d25336b18c522c28b17431ab774b03e06e6c93",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.04_factor": {
+     "png": {
+      "hist.png": "814a1f90860d96557c7f65ba0fb7f283affe880ac7bdbf30bada79b1acf34ffb",
+      "mask_diff.png": "bdf6edc23b4f9b4359f0a92a4f4c5b4621784a344052ff35c930fc12188741c0",
+      "overview.png": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+      "worst_tiles.png": "c47bf9be2175264ad83371b42497f4e77ee18572ff6ec36e2a16949bafc78312"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "bdf6edc23b4f9b4359f0a92a4f4c5b4621784a344052ff35c930fc12188741c0",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0abfa6d636446392ddc66093b815dde47b3c59305269d482b489e811bf9d2976",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    },
+    "ds.lux_res_exposure_2020": {
+     "png": {
+      "hist.png": "eb326617199b27799b499c99526b4f8a389667e45519689903995aa9e8e077a3",
+      "mask_diff.png": "5c4f30868ed414bfae1cfea9df74580c06f38190fd7714337f08cca76959e5e0",
+      "overview.png": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+      "worst_tiles.png": "b28625bd750388f61b4d9a91399700a029613ae8f1f296825aaf7086373f38af"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "diff neutral; no paired stripes",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "b28625bd750388f61b4d9a91399700a029613ae8f1f296825aaf7086373f38af",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "legacy and new panels identical; no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "every legacy region present in new",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      },
+      "Q5": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "no straight stripes or blocks in the diff",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "0 legacy-only / 0 new-only cells; no ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "5c4f30868ed414bfae1cfea9df74580c06f38190fd7714337f08cca76959e5e0",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "none",
+       "expected": "no",
+       "expected_category": null,
+       "note": "both panels same brightness under the shared scale",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "e5275cc1e9e8e4bbe5f97ee7aff71060c57e23cf0aa4b73afb37d97db95387f3",
+       "stale": false
+      }
+     },
+     "reason_codes": [],
+     "verdict": "PASS_EXACT",
+     "yes": []
+    }
+   },
+   "variant": "A1_clean",
+   "what": "independent rasterio/geopandas implementation"
+  },
+  "L3_tap_shift": {
+   "control": false,
+   "datasets": {
+    "ds.01_pop_lux": {
+     "png": {
+      "hist.png": "2b112977ffbf214937b8f0be1e5f13dbb866782fb389ed76a2ba6ff1732be964",
+      "mask_diff.png": "aa02ac88aa6443ab5c3048aa65f348abdc2bce58eca216d8a8b0946d684e0644",
+      "overview.png": "80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347",
+      "worst_tiles.png": "a6dbf04bcabd645f398666adae161b89075d31f28536b0926f93db624bbb2b66"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "whole_offset",
+       "expected": "yes",
+       "expected_category": "whole_offset",
+       "note": "orange (new) grid and valid outline offset ~half a cell NW of blue at every edge; corner 0.71 px",
+       "observed": "yes",
+       "panel": "edge overlay west",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "a6dbf04bcabd645f398666adae161b89075d31f28536b0926f93db624bbb2b66",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "panels look alike; diff not computed (grid gate)",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no region missing",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "difference not computed: grids differ",
+       "observed": "cannot_tell",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347",
+       "stale": false
+      },
+      "Q6": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "outlines differ by a uniform shift, not a ring",
+       "observed": "no",
+       "panel": "edge overlay west",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "a6dbf04bcabd645f398666adae161b89075d31f28536b0926f93db624bbb2b66",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "80c2a967d9d871f9a421bc072b3dc9e470de9032655e09ddb7fc0098a7f56347",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "RASTER_TRANSFORM_MISMATCH",
+      "ZONE_TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q1"
+     ]
+    }
+   },
+   "variant": "W_s01_tap",
+   "what": "-tap half-cell snap of s01 (values 1:1)"
+  },
+  "L5_bilinear": {
+   "control": false,
+   "datasets": {
+    "ds.01_pop_lux": {
+     "png": {
+      "hist.png": "354fa79813ada0023fc34abac9db7eca7f60e8564356af342647a8e8d3c8934a",
+      "mask_diff.png": "32cf8db6fa014c02fe3482514b5d30a33e30ff49142d5195cc6ad5f515fed45a",
+      "overview.png": "b5c5da7039585e92e439f13afe58f5fc33f89a1d1e566880eabd239c6472bc70",
+      "worst_tiles.png": "f0ca220ac0bbbb4f998d03e25dce906526d35e98562e7409920ba71576c5e108"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "+/- rims around peaks, not a uniform offset",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "f0ca220ac0bbbb4f998d03e25dce906526d35e98562e7409920ba71576c5e108",
+       "stale": false
+      },
+      "Q2": {
+       "agree": true,
+       "category": "smoothed_blurred",
+       "expected": "yes",
+       "expected_category": "smoothed_blurred",
+       "note": "new tiles blurred: cell detail of legacy lost, purple cores with orange halos in diff",
+       "observed": "yes",
+       "panel": "tile 1 new",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "f0ca220ac0bbbb4f998d03e25dce906526d35e98562e7409920ba71576c5e108",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no region missing",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "32cf8db6fa014c02fe3482514b5d30a33e30ff49142d5195cc6ad5f515fed45a",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no straight seams",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "b5c5da7039585e92e439f13afe58f5fc33f89a1d1e566880eabd239c6472bc70",
+       "stale": false
+      },
+      "Q6": {
+       "category": "boundary_stripes",
+       "expected": null,
+       "expected_category": null,
+       "note": "one-cell blue/orange ring along the whole outer data edge (2,343 / 2,332)",
+       "observed": "yes",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "32cf8db6fa014c02fe3482514b5d30a33e30ff49142d5195cc6ad5f515fed45a",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "b5c5da7039585e92e439f13afe58f5fc33f89a1d1e566880eabd239c6472bc70",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "NODATA_MASK_MISMATCH",
+      "RASTER_VALUE_MISMATCH",
+      "TOTAL_DRIFT",
+      "ZONE_TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q2",
+      "Q6"
+     ]
+    }
+   },
+   "variant": "W_s01_bilinear",
+   "what": "bilinear round trip of population, same grid"
+  },
+  "L7_factor_all_touched": {
+   "control": false,
+   "datasets": {
+    "ds.04_factor": {
+     "png": {
+      "hist.png": "427fbe5d8180152109f3cc63938be6f9b952747fbf1db295a22664ac99441253",
+      "mask_diff.png": "784926aaaa8b8d88d8197d58ddaec25392e27090665eb9ce2c30980f35db665f",
+      "overview.png": "f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81",
+      "worst_tiles.png": "836a2fba0c9cfa6e5b28641397c82a598fb08800f025bea68b7c79a8710fc52a"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "one-sided lines, no paired offset",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "836a2fba0c9cfa6e5b28641397c82a598fb08800f025bea68b7c79a8710fc52a",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no region missing",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "784926aaaa8b8d88d8197d58ddaec25392e27090665eb9ce2c30980f35db665f",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "lines follow zones, not tiles",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "boundary_stripes",
+       "expected": "yes",
+       "expected_category": "boundary_stripes",
+       "note": "one-cell lines along every zone boundary plus a new-only ring on the outer edge",
+       "observed": "yes",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "f07c3d5d18d0dfc30fd9f0bd829b22a05c150b400bc0b80037cad5e995b54b81",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "NODATA_MASK_MISMATCH",
+      "RASTER_VALUE_MISMATCH"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q6"
+     ]
+    },
+    "ds.lux_res_exposure_2020": {
+     "png": {
+      "hist.png": "ab3681337935d4730b79430a86b3d8547d39b3f8f95c77976d22bc447863ca21",
+      "mask_diff.png": "0a74f2f6b93b495a837d2e64723386240ee9d2553de8be35a52f250007a8ecba",
+      "overview.png": "d0a2e51081504b188aa19484de73b55a77ded87cd03414a442acb1d70e256870",
+      "worst_tiles.png": "a3bfa906ef6681192d0800999059ab996db021b0d2ad3733a1d1219a8b97274a"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "single-sided cells on zone lines, not paired",
+       "observed": "no",
+       "panel": "tile 2 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "a3bfa906ef6681192d0800999059ab996db021b0d2ad3733a1d1219a8b97274a",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d0a2e51081504b188aa19484de73b55a77ded87cd03414a442acb1d70e256870",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no region missing",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "0a74f2f6b93b495a837d2e64723386240ee9d2553de8be35a52f250007a8ecba",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no seams",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "d0a2e51081504b188aa19484de73b55a77ded87cd03414a442acb1d70e256870",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "boundary_stripes",
+       "expected": "yes",
+       "expected_category": "boundary_stripes",
+       "note": "every over-tolerance cell sits on a green zone boundary; interiors equal",
+       "observed": "yes",
+       "panel": "tile 2 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "a3bfa906ef6681192d0800999059ab996db021b0d2ad3733a1d1219a8b97274a",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "d0a2e51081504b188aa19484de73b55a77ded87cd03414a442acb1d70e256870",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "RASTER_VALUE_MISMATCH",
+      "TOTAL_DRIFT",
+      "ZONE_TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q6"
+     ]
+    }
+   },
+   "variant": "W_s04_factor_all_touched",
+   "what": "factor rasterised all_touched"
+  },
+  "L7b_clip_all_touched": {
+   "control": false,
+   "datasets": {
+    "ds.01_pop_lux": {
+     "png": {
+      "hist.png": "25bf0d65fcec9f32e651f9ffbd32ac311f6da2f9b411aa263e62744ba7a1da4d",
+      "mask_diff.png": "567f1e18f5c24b4c780448ed82dbcb80de217a7d94c3c98533a44fde412ed654",
+      "overview.png": "c53ad9e0c659e723cfe59e4647d70bf5fdc49308a33f94e3e264031c3e60f467",
+      "worst_tiles.png": "42e064aa6f964ad665beb78b2fcce546d8736c3a0b06d47896ca14d84996b8ef"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "one-side cells only outside the edge, not paired",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "42e064aa6f964ad665beb78b2fcce546d8736c3a0b06d47896ca14d84996b8ef",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "c53ad9e0c659e723cfe59e4647d70bf5fdc49308a33f94e3e264031c3e60f467",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no region missing",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "567f1e18f5c24b4c780448ed82dbcb80de217a7d94c3c98533a44fde412ed654",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no seams",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "c53ad9e0c659e723cfe59e4647d70bf5fdc49308a33f94e3e264031c3e60f467",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "boundary_stripes",
+       "expected": "yes",
+       "expected_category": "boundary_stripes",
+       "note": "one-cell orange new-only ring hugging the outer boundary (1,074 cells)",
+       "observed": "yes",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "567f1e18f5c24b4c780448ed82dbcb80de217a7d94c3c98533a44fde412ed654",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "c53ad9e0c659e723cfe59e4647d70bf5fdc49308a33f94e3e264031c3e60f467",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "NODATA_MASK_MISMATCH",
+      "TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q6"
+     ]
+    }
+   },
+   "variant": "W_s01_clip_all_touched",
+   "what": "s01 clip with all_touched"
+  },
+  "L8_wiltz_unmatched": {
+   "control": false,
+   "datasets": {
+    "ds.04_canton_factor": {
+     "png": {
+      "overlay.png": "d3fcbb6bfb11d2b5e2030cc59ddcf6bc1184053f5a0cc583a8876477ea709831",
+      "per_feature.png": "282342bc1c41d05ccbffce7602676312ab4acc69dc7a72d55d1e40ca18456e0c",
+      "worst_features.png": "3a199e7fb43fa997cd87a8027e98d49216f05112834fd8919e3e01481704f58b"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "outlines coincide",
+       "observed": "no",
+       "panel": "overlay",
+       "plot": "overlay.png",
+       "plot_sha256": "d3fcbb6bfb11d2b5e2030cc59ddcf6bc1184053f5a0cc583a8876477ea709831",
+       "stale": false
+      },
+      "Q3": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no simplification",
+       "observed": "no",
+       "panel": "overlay",
+       "plot": "overlay.png",
+       "plot_sha256": "d3fcbb6bfb11d2b5e2030cc59ddcf6bc1184053f5a0cc583a8876477ea709831",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "missing_region",
+       "expected": "yes",
+       "expected_category": "missing_region",
+       "note": "one canton (labelled) has nulls on one side only",
+       "observed": "yes",
+       "panel": "attributes",
+       "plot": "per_feature.png",
+       "plot_sha256": "282342bc1c41d05ccbffce7602676312ab4acc69dc7a72d55d1e40ca18456e0c",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "NULL_PATTERN_MISMATCH"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q4"
+     ]
+    },
+    "ds.lux_res_exposure_2020": {
+     "png": {
+      "hist.png": "d4f9cfbcf1e516d261be9c218a391aefaa143251f792842e61ee80927eef3386",
+      "mask_diff.png": "2c827a199915d8f5e7ad09819f35efcdb006eb70c4e8e16bad339b3cacf0f1da",
+      "overview.png": "0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3",
+      "worst_tiles.png": "6f08aad6adf309f1478e00a4e45d2025e3f3efae1b3b224aa8e4e4227014f4ff"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no stripes",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3",
+       "stale": false
+      },
+      "Q4": {
+       "agree": true,
+       "category": "missing_region",
+       "expected": "yes",
+       "expected_category": "missing_region",
+       "note": "all data of one north-west zone is legacy-only (3,290 cells blue)",
+       "observed": "yes",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "2c827a199915d8f5e7ad09819f35efcdb006eb70c4e8e16bad339b3cacf0f1da",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no seams",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3",
+       "stale": false
+      },
+      "Q6": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "difference is a whole zone, not a ring",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "2c827a199915d8f5e7ad09819f35efcdb006eb70c4e8e16bad339b3cacf0f1da",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness elsewhere",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "0fbe9964f1f3a89af531dfbdc5965c0c36af91bac88efbf1d708a4f9ddc260e3",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "NODATA_MASK_MISMATCH",
+      "TOTAL_DRIFT",
+      "ZONE_TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q4"
+     ]
+    }
+   },
+   "variant": "W_s04_nostrip",
+   "what": "canton names not stripped: Wiltz unmatched"
+  },
+  "L9_kEUR_not_scaled": {
+   "control": false,
+   "datasets": {
+    "ds.lux_res_exposure_2020": {
+     "png": {
+      "hist.png": "a68b510fc0d6ab01967e2b839fc240f35e5511b257aa4c2d324323cc20e477de",
+      "mask_diff.png": "0a74f2f6b93b495a837d2e64723386240ee9d2553de8be35a52f250007a8ecba",
+      "overview.png": "3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df",
+      "worst_tiles.png": "b950d993e04df2a925d4c732acc95afb7e327001bc44e7eb770cb5d07b36c586"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "smooth purple, no stripes",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "b950d993e04df2a925d4c732acc95afb7e327001bc44e7eb770cb5d07b36c586",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "pattern kept, only darker",
+       "observed": "no",
+       "panel": "tile 1 new",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "b950d993e04df2a925d4c732acc95afb7e327001bc44e7eb770cb5d07b36c586",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "all regions present, just dim",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no seams",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df",
+       "stale": false
+      },
+      "Q6": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no ring",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df",
+       "stale": false
+      },
+      "Q7": {
+       "agree": true,
+       "category": "uniform_scale",
+       "expected": "yes",
+       "expected_category": "uniform_scale",
+       "note": "new panel uniformly at the bottom colour while legacy shows the full pattern",
+       "observed": "yes",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "3013e6b0d82b27aa9ffb72f18feb80280acbebd96070136729d3429d12eaa1df",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "RASTER_VALUE_MISMATCH",
+      "TOTAL_DRIFT",
+      "ZONE_TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q7"
+     ]
+    }
+   },
+   "variant": "W_s04_noscale",
+   "what": "kEUR not ×1000 (×1/1000)"
+  },
+  "S_simplify10": {
+   "control": false,
+   "datasets": {
+    "ds.02_res_2169": {
+     "png": {
+      "overlay.png": "167f070f5d8264ff5ccdea26493a696ba19fc035975aab49183d39245d2d049c",
+      "per_feature.png": "c9b06d68e2764bdbcfb517aedfc2e95602d79cf9f62986ee0548811c42897e57",
+      "worst_features.png": "8e3f80f8d6fc78bd5396205760b29ebc80084bda9e828ed7538ecf9f9b8c0fe0"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no uniform displacement",
+       "observed": "no",
+       "panel": "overlay",
+       "plot": "overlay.png",
+       "plot_sha256": "167f070f5d8264ff5ccdea26493a696ba19fc035975aab49183d39245d2d049c",
+       "stale": false
+      },
+      "Q3": {
+       "agree": true,
+       "category": "angular_outline",
+       "expected": "yes",
+       "expected_category": "angular_outline",
+       "note": "new outlines are few long straight segments cutting off legacy vertices; red wedges",
+       "observed": "yes",
+       "panel": "feature 1",
+       "plot": "worst_features.png",
+       "plot_sha256": "8e3f80f8d6fc78bd5396205760b29ebc80084bda9e828ed7538ecf9f9b8c0fe0",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "0 unmatched keys",
+       "observed": "no",
+       "panel": "overlay",
+       "plot": "overlay.png",
+       "plot_sha256": "167f070f5d8264ff5ccdea26493a696ba19fc035975aab49183d39245d2d049c",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q3"
+     ]
+    }
+   },
+   "variant": "W_s02_simplify10",
+   "what": "residential polygons simplified 10 m"
+  },
+  "T1b_factor_shift1": {
+   "control": false,
+   "datasets": {
+    "ds.04_factor": {
+     "png": {
+      "hist.png": "d4a2322540adb4fa6c1f2bd153e6410591c5883c24fac8a4ac6a441186695292",
+      "mask_diff.png": "5c416029136ffccf56a24d242dec546495325a2f6c013711c01a7378f038d549",
+      "overview.png": "2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df",
+      "worst_tiles.png": "94f3db36ea34ed01266496748f89866cce9c253a3d1747e28bb275cf743c8d20"
+     },
+     "questions": {
+      "Q1": {
+       "agree": true,
+       "category": "whole_offset",
+       "expected": "yes",
+       "expected_category": "whole_offset",
+       "note": "black legacy-only column on one side, grey new-only on the other: data moved one cell",
+       "observed": "yes",
+       "panel": "tile 2 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "94f3db36ea34ed01266496748f89866cce9c253a3d1747e28bb275cf743c8d20",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no region missing",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "5c416029136ffccf56a24d242dec546495325a2f6c013711c01a7378f038d549",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "lines follow zones",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df",
+       "stale": false
+      },
+      "Q6": {
+       "category": "boundary_stripes",
+       "expected": null,
+       "expected_category": null,
+       "note": "lines on all zone boundaries and outer edge",
+       "observed": "yes",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "2a78cdaee7da24a488cdcff2349cc8a8553719d5c8e0eb778e8dfa44404a55df",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "NODATA_MASK_MISMATCH",
+      "RASTER_VALUE_MISMATCH"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q1",
+      "Q6"
+     ]
+    },
+    "ds.lux_res_exposure_2020": {
+     "png": {
+      "hist.png": "078dceeac89aaee6a81af00ce6862530aad3d6e521e17f4268394a96500c8299",
+      "mask_diff.png": "8140ba8d599998962aa2ed60fe77a9df39c091f3d0339e1753bd77ffe4b006dd",
+      "overview.png": "7f6f74f0f106119605fe0fc93e4770911f1bae6c992474f73b274f0ba372a64b",
+      "worst_tiles.png": "ab3ade46f259f4d78976a35f08d8102c65b4542d06d905c9d69957f13c98f545"
+     },
+     "questions": {
+      "Q1": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "not visibly paired at this scale",
+       "observed": "no",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "ab3ade46f259f4d78976a35f08d8102c65b4542d06d905c9d69957f13c98f545",
+       "stale": false
+      },
+      "Q2": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no softening",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "7f6f74f0f106119605fe0fc93e4770911f1bae6c992474f73b274f0ba372a64b",
+       "stale": false
+      },
+      "Q4": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no region missing",
+       "observed": "no",
+       "panel": "mask",
+       "plot": "mask_diff.png",
+       "plot_sha256": "8140ba8d599998962aa2ed60fe77a9df39c091f3d0339e1753bd77ffe4b006dd",
+       "stale": false
+      },
+      "Q5": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "no seams",
+       "observed": "no",
+       "panel": "diff",
+       "plot": "overview.png",
+       "plot_sha256": "7f6f74f0f106119605fe0fc93e4770911f1bae6c992474f73b274f0ba372a64b",
+       "stale": false
+      },
+      "Q6": {
+       "agree": true,
+       "category": "boundary_stripes",
+       "expected": "yes",
+       "expected_category": "boundary_stripes",
+       "note": "differing cells confined to green zone boundaries",
+       "observed": "yes",
+       "panel": "tile 1 diff",
+       "plot": "worst_tiles.png",
+       "plot_sha256": "ab3ade46f259f4d78976a35f08d8102c65b4542d06d905c9d69957f13c98f545",
+       "stale": false
+      },
+      "Q7": {
+       "category": "none",
+       "expected": null,
+       "expected_category": null,
+       "note": "same brightness",
+       "observed": "no",
+       "panel": "new",
+       "plot": "overview.png",
+       "plot_sha256": "7f6f74f0f106119605fe0fc93e4770911f1bae6c992474f73b274f0ba372a64b",
+       "stale": false
+      }
+     },
+     "reason_codes": [
+      "NODATA_MASK_MISMATCH",
+      "RASTER_VALUE_MISMATCH",
+      "TOTAL_DRIFT",
+      "ZONE_TOTAL_DRIFT"
+     ],
+     "verdict": "FAIL",
+     "yes": [
+      "Q6"
+     ]
+    }
+   },
+   "variant": "W_s04_factor_shift1",
+   "what": "factor raster one cell east"
+  }
+ },
+ "method": "expected = design must-flag/must-not-flag; observed = a reviewer opened each cited PNG and answered the rubric question; an observation counts only for the PNG sha it cites",
+ "observed_at": "2026-10-13",
+ "plot_sha256": "4eb279888ef736f225f5a433e16d923f7e8cce3cfc021ac47d5a49b75c9e50f8",
+ "plot_version": "1.0.0",
+ "reviewer": "claude-opus-5-5 (plot.py builder; opened each cited PNG)",
+ "rubric_id": "rubric.v1",
+ "rubric_sha256": "e9534a01aee98bc38a38007a1515b240b83364e08a910893b42829659ef27d50",
+ "schema": "axis-migrate.rubric-calibration.v1",
+ "summary": {
+  "agree": 77,
+  "fixed_plot_blind": [
+   "L5 bilinear: all four worst tiles landed on the valid-mask edge (one-side cells ranked first, ties by row), so the smoothing of the peaks was never at native resolution; plot.py now alternates tiles between the largest |d| and the densest one-side clusters",
+   "L7 / T1b: differences on zone boundaries could not be attributed to zones; plot.py now draws the declared zone boundaries (graph compare.zones) on diff, mask_diff and tiles, and rings over-tolerance cells in the overview when there are at most 600",
+   "T1b: the saturated ends of PuOr are near-black and read as 'valid in legacy only' (black); the diff colormap is now PuOr_r truncated to [0.12, 0.88]",
+   "L7b / L5: a one-cell one-side ring along the outer edge was ~1 px at full extent and hidden under the zone line; one-side cells are now outlined thickly above the zone lines in mask_diff and the overview diff",
+   "per-feature: tiny non-zero symdiff/attribute differences were binned as 'equal' (white) and small features vanished; white is now exact zero only and features are drawn with coloured edges"
+  ],
+  "flag_on_control": [],
+  "graded": 77,
+  "missed_must_flag": [],
+  "missing": 0,
+  "stale": 0
+ }
+}
