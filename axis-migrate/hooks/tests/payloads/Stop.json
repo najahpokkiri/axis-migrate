@@ -1,0 +1,16 @@
+{
+ "background_tasks": [],
+ "cwd": "/WORK",
+ "effort": {
+  "level": "medium"
+ },
+ "hook_event_name": "Stop",
+ "last_assistant_message": "Steps 1\u201313 ran in order, one call each. Most of the hook-blocked steps failed; the Grep and Glob tools were not available in this session.\n\n| Step | Result | Hook or feedback message (verbatim) |\n|---|---|---|\n| 1. Write hm1-deny.txt | Blocked | `PreToolUse:Write hook error: HM1 DENY REASON 7731` |\n| 2. Bash echo HM1DENY > hm1.out | Blocked | `PreToolUse:Bash hook error: HM1 DENY REASON 7731` |\n| 3. Bash echo HM2ASK > hm2.out | Blocked | `HM2 ASK REASON 5520` |\n| 4. Write hm2-ask.txt | Blocked | `HM2 ASK REASON 5520` |\n| 5. Bash echo HM4CRASH > hm4crash.out | Blocked (hook crashed) | `PreToolUse:Bash hook error: [python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/probe.py\" pre]: failed; blocking because onFailure is \"block\"`, followed by traceback ending `RuntimeError: HM4 deliberate crash` |\n| 6. Bash echo HM4TIMEOUT > hm4timeout.out | Blocked (hook timed out) | `PreToolUse:Bash hook error: [python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/probe.py\" pre]: timed out; blocking because onFailure is \"block\"` |\n| 7. Bash echo HM4CONTROL > hm4control.out | Not blocked; command completed with no output. I did not read the file back to confirm it. | None |\n| 8. Bash echo env=\u2026 > hm5.out; cat | Not blocked. Output: `env=hm5-env-ok pam=` (HM5_TOKEN is set, GDAL_PAM_ENABLED is empty) | None |\n| 9. Write hm3-post.txt containing y | Not blocked (file created), but the post-hook returned an error | `PostToolUse:Write hook blocking error from command: \"python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/probe.py\" post\": HM3 POST BLOCK TOKEN ZEBRA-4412` |\n| 10. Edit y \u2192 z in hm3-post.txt | Not blocked (edit applied, so the file now holds z), with the same post-hook error | `PostToolUse:Edit hook blocking error from command: \"python3 -I \"${CLAUDE_PLUGIN_ROOT}/hooks/probe.py\" post\": HM3 POST BLOCK TOKEN ZEBRA-4412` |\n| 11. Read hm5.out | Not blocked. Content: `env=hm5-env-ok pam=` | None |\n| 12. Grep for \"env\" | Not run. The Grep tool is unavailable: `No such tool available: Grep. Grep is not available in this session \u2014 search file contents with \\`grep\\` via the Bash tool instead.` | (tool unavailable) |\n| 13. Glob *.out | Not run. The Glob tool is unavailable: `No such tool available: Glob. Glob is not available in this session \u2014 find files with \\`find\\` via the Bash tool instead.` | (tool unavailable) |\n\nI did not retry any blocked step or work around a block.\n\nSecret word from the session context: **PELICAN**. It came from the SessionStart hook text in my context, which reads `HM-SESSION-CONTEXT: the secret word is PELICAN.`",
+ "permission_mode": "bypassPermissions",
+ "prompt_id": "db3d80af-4a6c-4bc5-98dc-a4d2990ba311",
+ "scratchpad_dir": "/tmp/claude-uid/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b/scratchpad",
+ "session_crons": [],
+ "session_id": "7e6b66d4-6be1-4451-8c26-66590462d97b",
+ "stop_hook_active": false,
+ "transcript_path": "/CLAUDE_CONFIG/projects/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b.jsonl"
+}

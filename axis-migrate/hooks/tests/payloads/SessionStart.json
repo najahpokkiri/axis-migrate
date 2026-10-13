@@ -1,0 +1,8 @@
+{
+ "cwd": "/WORK",
+ "hook_event_name": "SessionStart",
+ "scratchpad_dir": "/tmp/claude-uid/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b/scratchpad",
+ "session_id": "7e6b66d4-6be1-4451-8c26-66590462d97b",
+ "source": "startup",
+ "transcript_path": "/CLAUDE_CONFIG/projects/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b.jsonl"
+}

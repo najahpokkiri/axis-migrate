@@ -1,0 +1,26 @@
+{
+ "cwd": "/WORK",
+ "duration_ms": 43,
+ "effort": {
+  "level": "medium"
+ },
+ "hook_event_name": "PostToolUse",
+ "permission_mode": "bypassPermissions",
+ "prompt_id": "db3d80af-4a6c-4bc5-98dc-a4d2990ba311",
+ "scratchpad_dir": "/tmp/claude-uid/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b/scratchpad",
+ "session_id": "7e6b66d4-6be1-4451-8c26-66590462d97b",
+ "tool_input": {
+  "command": "echo HM4CONTROL > hm4control.out",
+  "description": "Write HM4CONTROL marker to hm4control.out"
+ },
+ "tool_name": "Bash",
+ "tool_response": {
+  "interrupted": false,
+  "isImage": false,
+  "noOutputExpected": false,
+  "stderr": "",
+  "stdout": ""
+ },
+ "tool_use_id": "toolu_01TDcQK1C3xFLfA4Mf6iQZbM",
+ "transcript_path": "/CLAUDE_CONFIG/projects/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b.jsonl"
+}

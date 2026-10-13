@@ -1,0 +1,27 @@
+{
+ "cwd": "/WORK",
+ "duration_ms": 7,
+ "effort": {
+  "level": "medium"
+ },
+ "hook_event_name": "PostToolUse",
+ "permission_mode": "bypassPermissions",
+ "prompt_id": "db3d80af-4a6c-4bc5-98dc-a4d2990ba311",
+ "scratchpad_dir": "/tmp/claude-uid/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b/scratchpad",
+ "session_id": "7e6b66d4-6be1-4451-8c26-66590462d97b",
+ "tool_input": {
+  "content": "y",
+  "file_path": "/WORK/hm3-post.txt"
+ },
+ "tool_name": "Write",
+ "tool_response": {
+  "content": "y",
+  "filePath": "/WORK/hm3-post.txt",
+  "originalFile": null,
+  "structuredPatch": [],
+  "type": "create",
+  "userModified": false
+ },
+ "tool_use_id": "toolu_01Nmk4wCScbmypcuYZ9LvEvB",
+ "transcript_path": "/CLAUDE_CONFIG/projects/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b.jsonl"
+}

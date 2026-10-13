@@ -1,0 +1,10 @@
+{
+ "cwd": "/WORK",
+ "hook_event_name": "UserPromptSubmit",
+ "permission_mode": "bypassPermissions",
+ "prompt": "This is an automated hook-mechanics test in a scratch folder. Do these steps exactly, one tool call per step, in order. Continue even if a step is blocked, denied or errors; never retry a step and never work around a block.\n1. Write tool: create file hm1-deny.txt containing x\n2. Bash: echo HM1DENY > hm1.out\n3. Bash: echo HM2ASK > hm2.out\n4. Write tool: create file hm2-ask.txt containing x\n5. Bash: echo HM4CRASH > hm4crash.out\n6. Bash: echo HM4TIMEOUT > hm4timeout.out\n7. Bash: echo HM4CONTROL > hm4control.out\n8. Bash: echo \"env=$HM5_TOKEN pam=$GDAL_PAM_ENABLED\" > hm5.out; cat hm5.out\n9. Write tool: create file hm3-post.txt containing y\n10. Edit tool: in hm3-post.txt replace y with z\n11. Read tool: read hm5.out\n12. Grep tool: search for env in the current folder\n13. Glob tool: pattern *.out\nThen reply with a short report: for each step, blocked/denied or not, and quote verbatim any hook or feedback message you received. Also state the secret word from your session context, if you were given one.",
+ "prompt_id": "db3d80af-4a6c-4bc5-98dc-a4d2990ba311",
+ "scratchpad_dir": "/tmp/claude-uid/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b/scratchpad",
+ "session_id": "7e6b66d4-6be1-4451-8c26-66590462d97b",
+ "transcript_path": "/CLAUDE_CONFIG/projects/-WORK/7e6b66d4-6be1-4451-8c26-66590462d97b.jsonl"
+}

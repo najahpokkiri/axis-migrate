@@ -1,0 +1,315 @@
+"""Shared fixtures for the hook and guard tests: a synthetic legacy project (no fixture facts) and a hook runner.
+
+Payloads in payloads/*.json are real stdin captures from Claude Code 2.1.296 (headless, sanitised paths); tests copy
+them and override cwd / tool_input, so field names and shapes stay the real ones (D8-4).
+"""
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+import pytest
+
+PLUGIN = Path(__file__).resolve().parents[2]
+BIN = PLUGIN / "hooks" / "bin"
+GUARD = PLUGIN / "skills" / "guard"
+PAYLOADS = Path(__file__).resolve().parent / "payloads"
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+SYS_PY = "/usr/bin/python3" if os.path.exists("/usr/bin/python3") else (shutil.which("python3") or sys.executable)
+
+for p in (GUARD, PLUGIN / "lib", BIN):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
+
+def payload(name: str, **over) -> dict:
+    d = json.loads((PAYLOADS / f"{name}.json").read_text())
+    d = copy.deepcopy(d)
+    for k, v in over.items():
+        d[k] = v
+    return d
+
+
+def tool_payload(event: str, tool: str, cwd, tool_input: dict, **extra) -> dict:
+    name = f"{event}_{tool}"
+    if not (PAYLOADS / f"{name}.json").exists():
+        name = f"{event}_Write" if event == "PreToolUse" and tool in ("MultiEdit", "NotebookEdit", "Grep", "Glob") \
+            else f"{event}_Bash"
+    d = payload(name, cwd=str(cwd), tool_name=tool, tool_input=tool_input)
+    d.update(extra)
+    return d
+
+
+@dataclass
+class HookResult:
+    rc: int
+    out: dict | None
+    raw: str
+    err: str
+    ms: float
+
+    @property
+    def decision(self) -> str | None:
+        if not self.out:
+            return None
+        hso = self.out.get("hookSpecificOutput") or {}
+        return hso.get("permissionDecision") or self.out.get("decision")
+
+    @property
+    def reason(self) -> str:
+        if not self.out:
+            return self.err
+        hso = self.out.get("hookSpecificOutput") or {}
+        return hso.get("permissionDecisionReason") or self.out.get("reason") or hso.get("additionalContext") or ""
+
+
+def run_hook(script: str, data, env: dict | None = None, timeout: float = 30) -> HookResult:
+    e = {k: v for k, v in os.environ.items() if not k.startswith(("AXIS_MIGRATE_HIDDEN", "AXIS_MIGRATE_CODESCAN"))}
+    e["PYTHONIOENCODING"] = "utf-8"
+    e.update(env or {})
+    stdin = data if isinstance(data, str) else json.dumps(data)
+    cwd = data.get("cwd") if isinstance(data, dict) else None
+    cwd = cwd if cwd and os.path.isdir(cwd) else "/"
+    t0 = time.perf_counter()
+    cp = subprocess.run([SYS_PY, "-I", str(BIN / script)], input=stdin, capture_output=True, text=True, env=e,
+                        timeout=timeout, cwd=cwd)
+    ms = (time.perf_counter() - t0) * 1000
+    out = json.loads(cp.stdout) if cp.stdout.strip() else None
+    return HookResult(cp.returncode, out, cp.stdout, cp.stderr, ms)
+
+
+def sha(p: Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Synthetic project
+# ---------------------------------------------------------------------------------------------------------------
+@dataclass
+class Project:
+    root: Path
+    mig: Path
+    legacy: Path
+
+    def write(self, rel: str, text: str) -> Path:
+        p = self.mig / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text)
+        return p
+
+    def graph(self) -> dict:
+        return json.loads((self.mig / "graph.json").read_text())
+
+    def set_graph(self, g: dict) -> None:
+        (self.mig / "graph.json").write_text(json.dumps(g, indent=1, sort_keys=True))
+
+
+LEGACY_FILES = {
+    "03_INPUT/pop.tif": b"II*\x00synthetic-input-raster",
+    "03_INPUT/zones.gpkg": b"SQLite format 3\x00synthetic",
+    "05_TEMP/01_mid.tif": b"II*\x00synthetic-intermediate",
+    "05_TEMP/01_mid.tif.aux.xml": b"<PAMDataset/>",
+    "04_FINAL/final.csv": b"zone,value\na,1\n",
+    "02_SCRIPTS/s01_prep.py": b"# legacy script\n",
+    "NOTES.txt": b"notes\n",
+}
+
+DECISIONS = """# Decisions
+
+## D-001 · Zones from the input file · 2026-10-14T10:00:00Z
+```yaml
+id: D-001
+question: q01
+kind: answer
+answer: derive
+by: user (AskUserQuestion)
+params: [p.min_area]
+nodes: [s01_prep]
+changes: {}
+supersedes: null
+evidence: ["NOTES.txt:1"]
+```
+"""
+
+KDS = """# Known differences
+
+## KD-001 · Float widening
+```yaml
+id: KD-001
+kind: normalisation
+datasets: [ds.final]
+checks: [table.attr:value]
+rule: dtype widening
+bound: null
+reason: float32 vs float64
+evidence: none
+owner: agent
+decided_at: 2026-10-14
+decision_ref: null
+status: proposed
+```
+"""
+
+TOLERANCES = """version: 1
+defaults:
+  raster.values: {metric: abs+rel, atol: 0, rtol: 0, max_mismatch: 0}
+records:
+- id: tol.final.values.v1
+  dataset: ds.final
+  check: table.attr:value
+  metric: abs+rel
+  atol: 0
+  rtol: 1.0e-6
+  correct_spread: {value: 0.0, how: independent, evidence: x}
+  nearest_wrong: {value: 1.0e-3, metric: rel, variant: y, evidence: z}
+  agreed_by: null
+  agreed_at: null
+"""
+
+PARAMS = """version: 1
+budget: {max_questions: 8, asked: 1}
+params:
+  - id: p.min_area
+    node: s01_prep
+    kind: threshold
+    value: 2500
+    unit: m2
+    resolution: resolved
+    source: code
+    evidence:
+      - {ref: "02_SCRIPTS/s01_prep.py:1", quote: "MIN_AREA = 2500"}
+    status: confirmed
+  - id: p.threshold
+    node: s01_prep
+    kind: threshold
+    value: 0.5
+    resolution: inferred
+    source: fitted
+    fitted_against: ds.01_mid
+    status: assumed
+  - id: p.zones_path
+    node: s01_prep
+    kind: other
+    value: "03_INPUT/zones.gpkg"
+    resolution: resolved
+    source: code
+    status: confirmed
+"""
+
+
+def make_graph() -> dict:
+    def ds(i, role, path, step=None, verdict=None, kind="raster", side=None):
+        return {"id": i, "title": i, "kind": kind, "role": role,
+                "legacy": {"path": path, "layer": None, "exists": True, "sidecars": side or []},
+                "produced_by": {"step": step, "op": None} if step else None, "consumed_by": [],
+                "reference": {"source": "legacy" if role != "input" else "none", "match_method": "lineage"},
+                "verify": {"verdict": verdict}, "new": {"path": f"{step}/{Path(path).name}"} if step else None}
+
+    approved = {"by": "user", "at": "2026-10-14T10:00:00Z", "channel": "interview", "verbatim": "go"}
+    return {
+        "schema": "axis-migrate.graph.v1", "revision": 7,
+        "project": {"name": "legacy-demo", "legacy_root": "../legacy-demo", "legacy_tree_sha256": "x",
+                    "plugin_version": "0.1.0", "created_at": "2026-10-14T09:00:00Z"},
+        "acks": {"agent_seq": 3}, "updated": {"rev": 7, "by": "agent", "at": "2026-10-14T10:00:00Z"},
+        "steps": [
+            {"id": "s01_prep", "kind": "script", "scope": "migrate", "plan": {"approved": approved},
+             "new": {"module": "pipeline/s01_prep.py"}, "verify": {"verdict": "PASS_EXACT"}},
+            {"id": "s02_mask", "kind": "script", "scope": "migrate", "plan": {"approved": {"by": None, "at": None}},
+             "new": {"module": "pipeline/s02_mask.py"}, "verify": {"verdict": None}},
+            {"id": "s03_final", "kind": "script", "scope": "migrate", "plan": {"approved": approved},
+             "new": {"module": "pipeline/s03_final.py"}, "verify": {"verdict": "FAIL"}},
+            {"id": "s04_bridge", "kind": "bridge", "scope": "keep_legacy", "plan": {"approved": approved},
+             "new": {"module": "pipeline/s04_bridge.py"}, "verify": {"verdict": None}},
+        ],
+        "datasets": [
+            ds("ds.pop", "input", "03_INPUT/pop.tif"),
+            ds("ds.zones", "input", "03_INPUT/zones.gpkg", kind="vector"),
+            ds("ds.01_mid", "intermediate", "05_TEMP/01_mid.tif", "s01_prep", "PASS_EXACT",
+               side=["05_TEMP/01_mid.tif.aux.xml"]),
+            ds("ds.final", "final", "04_FINAL/final.csv", "s03_final", "FAIL", kind="table"),
+        ],
+        "edges": [], "questions": [
+            {"id": "q01", "status": "answered", "impact": {"level": "high"}},
+        ],
+        "invariants": [], "legacy_output_dirs": ["04_FINAL", "05_TEMP"],
+    }
+
+
+def make_project(base: Path, *, runs: bool = False) -> Project:
+    root = base / "proj"
+    legacy = root / "legacy-demo"
+    mig = root / "migration"
+    for rel, data in LEGACY_FILES.items():
+        p = legacy / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data)
+    (root / "legacy-demo.PROVENANCE.md").write_text("grader answers\n")
+    (root / "legacy-demo.build").mkdir()
+    (root / "legacy-demo.build" / "build.py").write_text("print('build')\n")
+    mig.mkdir(parents=True)
+    pr = Project(root, mig, legacy)
+    pr.set_graph(make_graph())
+    inv = {
+        "schema": "axis-migrate.inventory.v1", "legacy_root": "../legacy-demo",
+        "scan": {"read_only_verified": True, "legacy_roots": ["."]},
+        "files": [{"path": rel, "size": len(data), "sha256": hashlib.sha256(data).hexdigest(),
+                   "sidecar_of": "05_TEMP/01_mid.tif" if rel.endswith(".aux.xml") else None}
+                  for rel, data in sorted(LEGACY_FILES.items())],
+        "datasets": [
+            {"id": "ds.pop", "legacy_path": "03_INPUT/pop.tif", "role": "input", "reference_candidate": False},
+            {"id": "ds.zones", "legacy_path": "03_INPUT/zones.gpkg", "role": "input", "reference_candidate": False},
+            {"id": "ds.01_mid", "legacy_path": "05_TEMP/01_mid.tif", "role": "intermediate",
+             "reference_candidate": True},
+            {"id": "ds.final", "legacy_path": "04_FINAL/final.csv", "role": "final", "reference_candidate": True},
+        ],
+    }
+    (mig / "inventory.json").write_text(json.dumps(inv, indent=1, sort_keys=True))
+    pr.write("params.yaml", PARAMS)
+    pr.write("decisions.md", DECISIONS)
+    pr.write("known-differences.md", KDS)
+    pr.write("tolerances.yaml", TOLERANCES)
+    pr.write("pipeline/__init__.py", "")
+    (mig / "tests").mkdir()
+    (mig / "analysis").mkdir()
+    if runs:
+        add_run(pr, "r20261014T100000Z-abcdef12")
+    return pr
+
+
+def add_run(pr: Project, run_id: str, *, sealed: bool = True) -> Path:
+    rd = pr.mig / "runs" / run_id
+    snap = rd / "snapshot"
+    (snap / "axis_pipeline").mkdir(parents=True)
+    for name in ("params.yaml", "tolerances.yaml", "known-differences.md", "decisions.md", "graph.json"):
+        shutil.copy(pr.mig / name, snap / name)
+    for p in (pr.mig / "pipeline").glob("*.py"):
+        shutil.copy(p, snap / "axis_pipeline" / p.name)
+    man = {"run_id": run_id, "chain": "chained", "executor": "local", "status": "succeeded",
+           "tolerances": {"sha256": sha(pr.mig / "tolerances.yaml")}, "params": {"sha256": sha(pr.mig / "params.yaml")},
+           "outputs": []}
+    (rd / "manifest.json").write_text(json.dumps(man))
+    (rd / "verify" / "compare").mkdir(parents=True)
+    if sealed:
+        (rd / "verify" / "EVIDENCE_ID").write_text("evidence:abc\n")
+    with open(pr.mig / "runs" / "index.jsonl", "a") as fh:
+        fh.write(json.dumps({"run_id": run_id, "chain": "chained", "status": "succeeded",
+                             "evidence_id": "evidence:abc" if sealed else None}) + "\n")
+    return rd
+
+
+@pytest.fixture
+def project(tmp_path) -> Project:
+    return make_project(tmp_path / "a")
+
+
+@pytest.fixture
+def project_run(tmp_path) -> Project:
+    return make_project(tmp_path / "b", runs=True)
