@@ -4,7 +4,8 @@
     axpy dryrun.py <migration> --run <run_id> --evidence <dir> [--keep] [--no-strace] [--json]
 
 Normally called by target_check.py. What it does:
-  1. a FRESH venv (uv) with the runtime manifest's Python (exact version when uv finds it without downloading; else
+  1. a FRESH venv (uv; packages from the uv cache offline first, PyPI only if a pin is not cached and
+     AXIS_TARGET_OFFLINE is not 1) with the runtime manifest's Python (exact version when uv finds it without downloading; else
      the lock's 3.12, recorded as a deviation), populated from requirements-target.lock with the runtime's declared
      versions as constraints (so the runtime-provided packages' own dependencies resolve inside the runtime's declared
      set), then the committed wheel with --no-deps; `uv pip check` and a freeze are recorded;
@@ -123,14 +124,22 @@ def make_venv(tmp: Path, runtime: dict, lock_file: Path, wheel: Path, log: list)
     cons = tmp / "runtime-constraints.txt"
     cons.write_text("".join(f"{k}=={v}\n" for k, v in sorted((runtime.get("python_packages") or {}).items())),
                     encoding="utf-8")
-    cp = subprocess.run([uv, "pip", "install", "--quiet", "--python", str(py), "-r", str(lock_file),
-                         "--constraint", str(cons)], capture_output=True, text=True, env=env)
-    log.append({"cmd": "uv pip install -r requirements-target.lock --constraint <runtime declared>",
-                "rc": cp.returncode, "stderr": cp.stderr[-3000:]})
-    if cp.returncode != 0:
+    # offline first (uv cache); PyPI only when the cache lacks a pin and offline mode is not forced
+    modes = [("uv cache (offline)", dict(env, UV_OFFLINE="1"))]
+    if os.environ.get("AXIS_TARGET_OFFLINE") != "1":
+        modes.append(("PyPI download", env))
+    for label, menv in modes:
+        cp = subprocess.run([uv, "pip", "install", "--quiet", "--python", str(py), "-r", str(lock_file),
+                             "--constraint", str(cons)], capture_output=True, text=True, env=menv)
+        log.append({"cmd": f"uv pip install -r requirements-target.lock --constraint <runtime declared> [{label}]",
+                    "rc": cp.returncode, "stderr": cp.stderr[-3000:]})
+        if cp.returncode == 0:
+            info["packages_from"] = label
+            break
+    else:
         info["error"] = "INSTALL_FAILED"
         return info
-    cp = subprocess.run([uv, "pip", "install", "--quiet", "--no-deps", "--python", str(py), str(wheel)],
+    cp = subprocess.run([uv, "pip", "install", "--quiet", "--offline", "--no-deps", "--python", str(py), str(wheel)],
                         capture_output=True, text=True, env=env)
     log.append({"cmd": f"uv pip install --no-deps {wheel.name}", "rc": cp.returncode, "stderr": cp.stderr[-3000:]})
     if cp.returncode != 0:
@@ -335,10 +344,11 @@ def analyse_trace(calls: list[dict], vol_root: str, fake_root: str, task: str) -
                 if wr:
                     counts["write_opens_on_volume"] += 1
             low = p.lower()
-            if ok and "O_RDWR" in flags and low.endswith(SQLITE_SUFFIXES):
-                add("TC_SQLITE_ON_VOLUME", "sqlite_rdwr_open", c, p)
-            if ok and "O_CREAT" in flags and low.endswith(SQLITE_SIDE):
-                add("TC_SQLITE_ON_VOLUME", "sqlite_side_file", c, p)
+            # an attempt counts too: a failed O_RDWR open still shows SQLite reaching for the Volume
+            if "O_RDWR" in flags and low.endswith(SQLITE_SUFFIXES):
+                add("TC_SQLITE_ON_VOLUME", "sqlite_rdwr_open" + ("" if ok else "_attempt"), c, p)
+            if "O_CREAT" in flags and low.endswith(SQLITE_SIDE):
+                add("TC_SQLITE_ON_VOLUME", "sqlite_side_file" + ("" if ok else "_attempt"), c, p)
         elif call == "lseek":
             fd = args[0].split("<", 1)[0]
             if mode.get((fd, p)) and not (len(args) >= 3 and args[1] == "0" and args[2] == "SEEK_CUR"):
