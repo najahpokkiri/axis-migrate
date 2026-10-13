@@ -270,3 +270,37 @@ is inside the project.
 Library (stdlib, importable by hooks): `graph.unacked_user_edits(migration_dir) -> [edit records]`,
 `graph.hook_summary(migration_dir) -> str`, `graph.plan_approved(graph, step_id) -> bool`,
 `graph.apply(migration_dir, ops, actor, base_revision, *, channel=None, verbatim=None, rebase=False)`.
+
+## 6 Projections written by verify and derive
+
+`graph.py ingest-verify <migration> --run <run_id>` (actor `verify`) reads `runs/<id>/verify/compare/*.json`,
+`verdict.json` (optional) and `visual-review.json` (optional) and sets, per compared dataset,
+`verify = {run_id, verdict, reason_codes, report: "runs/<id>/verify/compare/<ds>.json", report_sha256,
+plots: [paths relative to migration/], visual_flag: null | {finding_ids, categories, question_ids}, blame:
+null | "origin" | "inherited", waiver (kept)}`; per step with compared datasets or a `verdict.json` entry,
+`verify = {run_id, verdict, reason_codes, blame: null | own | inherited | accumulated | compensating, datasets,
+mode}` (verdict.json wins; otherwise worst of its datasets, blame from topology). Dataset blame: a non-pass dataset is
+`inherited` when an upstream dataset is non-pass in the same run or it carries `INHERITED_FROM:*`, else `origin`.
+Plots come from `plots/<ds>/plots.json` (`{"png": [{"name", …}]}`) or `plots/<ds>/*.png`. Datasets not in this run's
+compare dir are left as they were. Unknown dataset ids or a foreign `run_id` refuse the whole ingest (exit 2).
+
+`graph.py derive <migration>` (actor `derive`) records `steps[].new.code_sha256` (sha256 of `migration/<module>`) and,
+when `skills/report/ladder.py` imports, `ladder = {project, suffix, blocking, counts, run_id, status_line,
+derived_rev}` and `steps[].ladder = {rung, disposition, caps, annotations, run_id}` from `ladder.compute()`. It is
+idempotent and never invents a rung: without ladder.py the projection is left untouched.
+
+## 7 graph_server.py
+
+`axpy graph_server.py serve <migration> [--port 0]` prints `http://127.0.0.1:<port>/?t=<token>` (give the user this
+line; run it in the background). API (token in `X-Axis-Token` or `?t=`; POSTs need a same-origin `Origin` and JSON):
+`GET /api/graph` → `{revision, graph, layout, params|null, edits{unacked, unsent, submitted_waiting}}` ·
+`GET /api/events?after=<rev>` (long poll ≤ 25 s) → `{revision, changed}` · `POST /api/ops {base_rev, ops}` → 200
+`{revision, seqs, results}` | 409 `{revision, conflicting_seqs, conflicting_ops}` (user ops are rebased automatically
+when they touch other (node, field) keys than the edits since `base_rev`) | 400/403 `{error, message}` ·
+`POST /api/submit {message}` → `{revision, seq}` · `POST /api/layout {positions{id:{x,y}}, reset?}` (only
+`.graph/layout.json`) · `GET /files/<path>` (only under `migration/`, resolved and prefix-checked).
+`axpy graph_server.py wait <migration> [--timeout 540]` blocks until a user `submit` newer than `acks.agent_seq`
+(file-based; works without the server), prints `{schema, from_rev, to_rev, ops[], submitted[], obligations[],
+requires_confirmation[], pending_confirmation[], ack_seq, agent_seq}` and exits 0; exit 2 on timeout with
+`{timeout: true, unsent_edits}`. Use `run_in_background` in Claude Code; act on every obligation, then
+`graph.py ack <ack_seq>`.
