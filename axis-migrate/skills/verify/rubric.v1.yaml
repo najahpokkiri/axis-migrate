@@ -1,0 +1,149 @@
+# axis-migrate visual-review rubric v1 (06 §4h, DESIGN §4.6, 10 D10-7).
+# The sha256 of this file is stored in every receipt; any change needs recalibration (devtests/verify/
+# calibrate_rubric.py) and a new run. Plots are evidence about verdicts, never inputs to them.
+id: rubric.v1
+version: 1
+answers: ["yes", "no", cannot_tell]
+yes_means: "defect present"
+effects:
+  flag: "answer yes: moves a PASS_* dataset to NEEDS_REVIEW (reason VISUAL_FLAG); on any other state a note only"
+  none: "answer no or cannot_tell; cannot_tell is listed as 'not visually assessed' and is not a receipt"
+limits:
+  - "A reviewer may only flag. Nothing here moves a verdict up, sets a tolerance, owns a difference or edits a compare result."
+  - "Shifts and sub-cell defects are code's job: Q1 complements the grid gate and DATA_OFFSET_SUSPECTED, never replaces them."
+  - "A flag is cleared only by a human decision in decisions.md or by a new run whose plot no longer shows it."
+  - "Answer from what the plot shows, not from the compare verdict printed in its title."
+categories: [whole_offset, boundary_stripes, missing_region, uniform_scale, smoothed_blurred, angular_outline,
+             shrunken_features, class_missing, holes, none]
+colour_convention: >-
+  legacy = blue, new = orange in every plot. Difference n - l: orange = new larger, purple = legacy larger,
+  near-white = equal, light grey = no data; in difference panels black = valid in legacy only, dark grey = valid in
+  new only. Legacy and new value panels share ONE colour scale (p2/p98 of both sides; arrows = beyond).
+plots:
+  raster:
+    overview: "legacy | new | difference panels (panels: legacy, new, diff); larger rasters are block-reduced, the diff keeps the largest |d| per block"
+    mask_diff: "valid-data masks: both grey, legacy-only blue, new-only orange (panel: mask)"
+    hist: "difference histogram with tolerance lines, value distributions, per-zone totals for extensive data (panels: diff_hist, values_hist, zone_totals)"
+    worst_tiles: "4 tiles of 48x48 cells at native resolution with the cell grid (panels: tile N legacy|new|diff); if the grid gate failed, both grids and valid-mask outlines in map space (panels: corner overlay, edge overlay north|west|east)"
+  vector:
+    overlay: "legacy blue solid, new orange dashed, symmetric difference red, unmatched keys labelled (panel: overlay)"
+    per_feature: "per-key geometry metric and attribute agreement on legacy geometries (panels: geometry, attributes)"
+    worst_features: "the 4 worst keys zoomed, vertices drawn (panels: feature N)"
+  table:
+    residuals: "per-key relative residuals for up to 6 numeric columns and new-vs-legacy scatter (panels: residuals <col>, scatter)"
+all_none:
+  question_id: Q-all
+  meaning: "I opened every plot of this dataset and every applicable question is answered no."
+  shape: {question_id: Q-all, answer: "no", effect: none, category: none, panel: all,
+          plot: "one of the plots", plot_sha256: "its sha", plots_seen: "[{plot, plot_sha256}] for EVERY png in plots.json"}
+  rule: "Use it only when no question is yes or cannot_tell; otherwise record one finding per question."
+how_to_look: >-
+  Read every PNG listed in verify/plots/<ds>/plots.json. First compare the legacy and new panels as pictures under
+  the shared scale, then read the difference panel and its scale (the title states the scale and how it compares
+  with the data range: a tiny scale means tiny differences drawn large), then the worst tiles or worst features at
+  native resolution, then mask_diff and hist. Locate what you report: give the bbox in the plot's map coordinates
+  (tile and feature titles print their bbox; the axes carry map coordinates).
+questions:
+  - id: Q1
+    families: [raster, vector]
+    required: true
+    plots: {raster: [overview, worst_tiles], vector: [overlay, worst_features]}
+    text: >-
+      Is there a uniform offset of about one cell (or half a cell) — visible as paired positive/negative stripes on
+      opposite sides of features, as one grid drawn shifted against the other, or as new outlines displaced in one
+      direction everywhere?
+    yes_means: "a systematic displacement of the new data against legacy (whole grid or along feature edges)"
+    categories: [whole_offset, boundary_stripes]
+    category_guide:
+      whole_offset: "the whole raster or layer is displaced (grid-overlay view shows two grids offset; outlines all moved the same way)"
+      boundary_stripes: "one-cell stripes of opposite sign along feature or zone edges while interiors agree"
+    look: >-
+      worst_tiles diff panels: a one-cell-wide orange line on one side of a feature and a purple (or black/grey)
+      line on the opposite side. In grid_overlay mode the blue and orange grids/outlines do not coincide.
+      Overview diff: thin paired lines tracing every edge. Vector overlay: dashed orange outlines parallel to blue
+      ones, all displaced the same way.
+  - id: Q2
+    families: [raster]
+    required: true
+    plots: {raster: [overview, worst_tiles, hist]}
+    text: >-
+      Do the new values look smoothed or blurred compared with legacy — peaks lower, edges softer, halos of small
+      values around populated cells, or a narrower value distribution?
+    yes_means: "new looks like a low-pass filtered version of legacy"
+    categories: [smoothed_blurred]
+    look: >-
+      worst_tiles legacy vs new: crisp single-cell peaks in legacy become spread blobs in new; new has valid cells
+      just outside the legacy data edge. Overview diff: purple centres with orange rims (peaks moved to neighbours).
+      hist values panel: the new curve lacks the high tail and has more mid values.
+  - id: Q3
+    families: [vector]
+    required: true
+    plots: {vector: [overlay, worst_features, per_feature]}
+    text: >-
+      Are new buffers or polygons angular, triangular, collapsed, or uniformly smaller/larger where legacy is smooth
+      or larger?
+    yes_means: "new geometries are simplified, collapsed or systematically shrunk/grown"
+    categories: [angular_outline, shrunken_features]
+    category_guide:
+      angular_outline: "few straight segments, triangles or spikes where legacy has many vertices or round arcs"
+      shrunken_features: "every new outline sits inside (or outside) the legacy one by a similar margin"
+    look: >-
+      worst_features: compare vertex markers (legacy o, new x); red slivers along the whole outline mean a
+      systematic size change; red wedges between few new vertices mean simplification. per_feature geometry panel:
+      many keys coloured instead of white.
+  - id: Q4
+    families: [raster, vector, table]
+    required: true
+    plots: {raster: [overview, mask_diff, hist], vector: [overlay, per_feature], table: [residuals]}
+    text: >-
+      Is a region (a zone, tile, strip or class of features) missing, empty or constant in new but present in legacy
+      — or present in new but absent in legacy?
+    yes_means: "a contiguous region, zone, key or class is absent, null or flat on one side"
+    categories: [missing_region, class_missing, holes]
+    category_guide:
+      missing_region: "a contiguous area (zone, strip, tile) without data or with constant values on one side"
+      class_missing: "one class/type of features or categories absent in new"
+      holes: "scattered gaps inside otherwise valid areas"
+    look: >-
+      mask_diff: a large blue (legacy-only) or orange (new-only) patch. Overview new panel: an area with no colour
+      where legacy has data. hist zone_totals: a zone whose new bar is missing or far off. Vector overlay/per_feature:
+      labelled unmatched keys, keys coloured 'null on one side only'. Table residuals: X markers, keys listed as
+      legacy-only.
+  - id: Q5
+    families: [raster]
+    required: true
+    plots: {raster: [overview]}
+    text: >-
+      Are there straight stripes or block patterns in the difference aligned with tile, chunk or window boundaries
+      (regular rows/columns, rectangles) rather than with features?
+    yes_means: "differences follow a processing grid (chunk edges, block seams), not the data"
+    categories: [boundary_stripes, missing_region]
+    look: >-
+      overview diff: perfectly straight horizontal/vertical lines or rectangles of differences at regular spacing,
+      crossing features. Do not confuse with the raster's own outer edge or with zone boundaries (Q6).
+  - id: Q6
+    families: [raster]
+    required: true
+    plots: {raster: [mask_diff, overview, worst_tiles]}
+    text: >-
+      Is there a thin line or ring of differences along a boundary — the outer data edge, the nodata edge, or the
+      boundaries between zones — while interiors agree?
+    yes_means: "differences confined to cells that touch a boundary (clip rule, all_touched, zone assignment)"
+    categories: [boundary_stripes]
+    look: >-
+      mask_diff: a one-cell blue or orange ring tracing the outline of the data. Overview diff: thin lines that trace
+      zone or outline borders (not paired opposite stripes: that is Q1). worst_tiles: the differing cells sit
+      exactly on a boundary in the legacy/new panels.
+  - id: Q7
+    families: [raster, table]
+    required: true
+    plots: {raster: [overview, hist], table: [residuals]}
+    text: >-
+      Under the shared scale, does one value panel (usually new) saturate or look empty/dim while the other does not
+      — the same pattern at a very different magnitude?
+    yes_means: "a constant factor or unit change (e.g. x1000, /1000) between new and legacy"
+    categories: [uniform_scale]
+    look: >-
+      overview: one panel almost uniformly dark (lowest colour) or almost uniformly bright (arrows), the other
+      showing the normal pattern. hist values panel: two curves of the same shape, shifted along a log x axis.
+      Table scatter: points on a line parallel to y = x but far from it, or residuals all near the same value.
