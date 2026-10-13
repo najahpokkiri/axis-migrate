@@ -46,6 +46,7 @@ NEGATORS = {
 # Conditional/temporal markers negate the whole clause they open ("before the step is verified", "once s02 is done").
 CLAUSE_MARKERS = {"before", "until", "unless", "if", "once", "whether"}
 CLAUSE_BREAK_RE = re.compile(r"[.;:!?\n,(]")
+QUOTE_RE = re.compile("\"[^\"\\n]{1,300}\"|\u201c[^\u201d\\n]{1,300}\u201d|`[^`\\n]{1,300}`|'[^'\\n]{4,300}'")
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z'’-]*")
 STATUS_LINE_RE = re.compile(r"axis-migrate status:[^\n]*", re.I)
 
@@ -97,10 +98,15 @@ def find_claims(text: str) -> list[Claim]:
         return []
     spans = [(m.start(), m.end()) for m in STATUS_LINE_RE.finditer(text)]
     clean = _blank(text, spans)
+    quotes = [(m.start(), m.end()) for m in QUOTE_RE.finditer(clean)]
     out: list[Claim] = []
     for rx in (CLAIM_RE, DATABRICKS_RE):
         for m in rx.finditer(clean):
             if _negated(clean, m.start()):
+                continue
+            # a quoted claim is judged with the words before the quote too ('I did not write "all checks pass"')
+            q = next((a for a, b in quotes if a < m.start() < b), None)
+            if q is not None and _negated(clean, q):
                 continue
             out.append(Claim(phrase=text[m.start():m.end()], rung=phrase_rung(m.group(0)), start=m.start(),
                              end=m.end()))

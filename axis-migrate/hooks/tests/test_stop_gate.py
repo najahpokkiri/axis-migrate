@@ -58,6 +58,8 @@ def test_claim_rungs(text, rung):
     "The status is UPSTREAM_NOT_VERIFIED for s04.",
     "It is unverified.",
     "Code generated; it hasn't been validated.",
+    'I did not end with "Migration complete, parity achieved." because the status is none.',
+    "I will not write `all checks pass` here.",
 ])
 def test_negated_or_absent_claims(text):
     assert cl.find_claims(text) == [], cl.find_claims(text)
