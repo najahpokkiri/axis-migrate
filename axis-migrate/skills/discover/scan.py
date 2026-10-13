@@ -414,8 +414,13 @@ class Resolver:
                 k = self._known(rel)
                 if k:
                     return self._finish(k, "relative", None)
-            # not on disk: relative to the code dir if it was given (outputs not written yet)
+            # not on disk (an output not written yet): the candidate whose folder exists, else the code dir
             c = cands[0]
+            for cc in cands:
+                parent = "/".join(p for p in cc[:-1] if p != "..")
+                if ".." not in cc and (not parent or parent.lower() in self.dirs_ci):
+                    c = cc
+                    break
             norm = []
             for p in c:
                 if p == "..":
@@ -3119,6 +3124,8 @@ class Scan:
         rel = e["path"]
         sid = self.step_of[rel]
         base_dir = rel.rsplit("/", 1)[0] if "/" in rel else ""
+        if base_dir.split("/")[-1] == ".ipynb_checkpoints":  # a checkpoint runs in its notebook's folder
+            base_dir = base_dir.rsplit("/", 1)[0] if "/" in base_dir else ""
         an = PyAnalyzer(self.ctx, rel, "code." + sid, base_dir)
         full = self.root / rel
         if rel.endswith(".ipynb"):
