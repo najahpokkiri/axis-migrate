@@ -8,10 +8,11 @@ BASE = "/home/migrate/axis-migrate-dev/fixtures/lux-exposure-legacy"
 QGIS_PREFIX = "/home/migrate/micromamba/envs/qgis"
 
 VPC_XLSX = BASE + "/03_INPUT/value_per_capita.xlsx"
-TMP = BASE + "/04_FINAL/tmp"
+TMP = BASE + "/05_TEMP"
 OUT = BASE + "/04_FINAL"
-CANTON_POP = TMP + "/canton_pop.gpkg|layername=canton_pop"
-POP_RES = TMP + "/pop_res.tif"
+CANTON_POP = TMP + "/03_canton_pop.gpkg|layername=03_canton_pop"
+CANTON_FAC = TMP + "/04_canton_factor.gpkg"
+POP_RES = TMP + "/03_pop_res.tif"
 
 OUT_TIF = OUT + "/lux_res_exposure_2020.tif"
 OUT_GPKG = OUT + "/exposure_by_canton.gpkg"
@@ -41,7 +42,9 @@ for row in ws.iter_rows(min_row=5, max_row=16, values_only=True):
     vpc[row[0].strip()] = float(row[1]) * 1000.0   # -> EUR
 print(vpc)
 
-lyr = QgsVectorLayer(CANTON_POP, "canton_pop", "ogr")
+# work on a copy, keep 03 result as is
+processing.run("native:savefeatures", {'INPUT': CANTON_POP, 'OUTPUT': CANTON_FAC, 'LAYER_NAME': 'canton_factor'})
+lyr = QgsVectorLayer(CANTON_FAC + "|layername=canton_factor", "canton_factor", "ogr")
 pr = lyr.dataProvider()
 for fname in ["vpc_eur", "tot_value", "factor"]:
     if lyr.fields().indexOf(fname) == -1:
@@ -74,7 +77,7 @@ popres = QgsRasterLayer(POP_RES, "pop_res")
 ext = popres.extent()
 extent = "%.12f,%.12f,%.12f,%.12f [EPSG:4326]" % (ext.xMinimum(), ext.xMaximum(), ext.yMinimum(), ext.yMaximum())
 processing.run("gdal:rasterize", {
-    'INPUT': CANTON_POP,
+    'INPUT': CANTON_FAC + "|layername=canton_factor",
     'FIELD': 'factor',
     'BURN': 0,
     'USE_Z': False,
@@ -88,12 +91,12 @@ processing.run("gdal:rasterize", {
     'INIT': 0,
     'INVERT': False,
     'EXTRA': '',
-    'OUTPUT': TMP + "/factor.tif"})
+    'OUTPUT': TMP + "/04_factor.tif"})
 
 # exposure = residential pop x factor (EUR per cell)
 processing.run("gdal:rastercalculator", {
     'INPUT_A': POP_RES, 'BAND_A': 1,
-    'INPUT_B': TMP + "/factor.tif", 'BAND_B': 1,
+    'INPUT_B': TMP + "/04_factor.tif", 'BAND_B': 1,
     'FORMULA': 'A*B',
     'NO_DATA': -9999,
     'EXTENT_OPT': 0,
@@ -104,7 +107,7 @@ processing.run("gdal:rastercalculator", {
 
 # check: sum back per canton
 processing.run("native:zonalstatisticsfb", {
-    'INPUT': CANTON_POP,
+    'INPUT': CANTON_FAC + "|layername=canton_factor",
     'INPUT_RASTER': OUT_TIF,
     'RASTER_BAND': 1,
     'COLUMN_PREFIX': 'exp_',

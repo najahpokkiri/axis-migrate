@@ -10,7 +10,7 @@ QGIS_PREFIX = "/home/migrate/micromamba/envs/qgis"
 
 IN_POP = BASE + "/03_INPUT/lux_ppp_2020.tif"
 IN_CANTONS = BASE + "/03_INPUT/cantons_lux_edit.gpkg|layername=cantons"
-TMP = BASE + "/04_FINAL/tmp"
+TMP = BASE + "/05_TEMP"
 
 # --- qgis standalone boilerplate ---
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -32,11 +32,11 @@ outline = processing.run("native:dissolve", {
     'INPUT': IN_CANTONS,
     'FIELD': [],
     'SEPARATE_DISJOINT': False,
-    'OUTPUT': TMP + "/lux_outline.gpkg"})['OUTPUT']
+    'OUTPUT': TMP + "/01_lux_outline.gpkg"})['OUTPUT']
 
 # clip pop. keep the worldpop grid, don't resample!!
-# NB crop_to_cutline / keep resolution OFF - with either on gdal snaps to a different grid
-# (half a cell off) and you lose ~5000 people. checked 04/23
+# NB crop_to_cutline / keep resolution OFF - keep res puts it on a grid half a cell off worldpop,
+# crop changes the extent. then the mask/zones don't sit on the worldpop cells anymore. checked 04/23
 processing.run("gdal:cliprasterbymasklayer", {
     'INPUT': IN_POP,
     'MASK': outline,
@@ -51,7 +51,7 @@ processing.run("gdal:cliprasterbymasklayer", {
     'CREATION_OPTIONS': 'COMPRESS=LZW',
     'DATA_TYPE': 0,
     'EXTRA': '',
-    'OUTPUT': TMP + "/pop_lux.tif"})
+    'OUTPUT': TMP + "/01_pop_lux.tif"})
 
 print("done 01")
 qgs.exitQgis()

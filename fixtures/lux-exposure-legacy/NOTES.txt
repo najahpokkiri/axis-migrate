@@ -29,4 +29,5 @@ value_per_capita.xlsx is kEUR per inhabitant -> x1000 in 04. outputs are EUR.
 only residential landuse used. industrial/commercial/retail are in the osm extract but not used yet.
 
 outputs 04_FINAL: lux_res_exposure_2020.tif (EUR/cell, nodata outside residential),
-  exposure_by_canton.gpkg/.csv/.xlsx. tmp/ = intermediates, can delete.
+  exposure_by_canton.gpkg/.csv/.xlsx.
+05_TEMP = intermediates, prefix = script that wrote it. keep them, needed to check steps.

@@ -6,8 +6,8 @@ BASE = "/home/migrate/axis-migrate-dev/fixtures/lux-exposure-legacy"
 QGIS_PREFIX = "/home/migrate/micromamba/envs/qgis"
 
 IN_LANDUSE = BASE + "/03_INPUT/osm_landuse_lux.gpkg|layername=landuse"
-TMP = BASE + "/04_FINAL/tmp"
-POP = TMP + "/pop_lux.tif"
+TMP = BASE + "/05_TEMP"
+POP = TMP + "/01_pop_lux.tif"
 
 MIN_AREA = 2500   # m2
 
@@ -45,13 +45,13 @@ lu = processing.run("native:fieldcalculator", {
 processing.run("native:extractbyexpression", {
     'INPUT': lu,
     'EXPRESSION': "\"landuse\" = 'residential' AND \"area_m2\" >= %d" % MIN_AREA,
-    'OUTPUT': TMP + "/res_2169.gpkg"})
+    'OUTPUT': TMP + "/02_res_2169.gpkg"})
 
 # back to 4326 so it sits on the worldpop grid
 res4326 = processing.run("native:reprojectlayer", {
-    'INPUT': TMP + "/res_2169.gpkg",
+    'INPUT': TMP + "/02_res_2169.gpkg",
     'TARGET_CRS': 'EPSG:4326',
-    'OUTPUT': TMP + "/res_4326.gpkg"})['OUTPUT']
+    'OUTPUT': TMP + "/02_res_4326.gpkg"})['OUTPUT']
 
 pop = QgsRasterLayer(POP, "pop")
 ext = pop.extent()
@@ -73,7 +73,7 @@ processing.run("gdal:rasterize", {
     'INIT': 0,
     'INVERT': False,
     'EXTRA': '-at',      # all touched, otherwise lose the thin village strips
-    'OUTPUT': TMP + "/res_mask.tif"})
+    'OUTPUT': TMP + "/02_res_mask.tif"})
 
 print("done 02")
 qgs.exitQgis()

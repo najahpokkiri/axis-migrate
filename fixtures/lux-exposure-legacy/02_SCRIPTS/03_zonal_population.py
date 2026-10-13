@@ -6,9 +6,9 @@ BASE = "/home/migrate/axis-migrate-dev/fixtures/lux-exposure-legacy"
 QGIS_PREFIX = "/home/migrate/micromamba/envs/qgis"
 
 IN_CANTONS = BASE + "/03_INPUT/cantons_lux_edit.gpkg|layername=cantons"   # hand fixed names, see NOTES
-TMP = BASE + "/04_FINAL/tmp"
-POP = TMP + "/pop_lux.tif"
-MASK = TMP + "/res_mask.tif"
+TMP = BASE + "/05_TEMP"
+POP = TMP + "/01_pop_lux.tif"
+MASK = TMP + "/02_res_mask.tif"
 
 POP_MIN = 0.5   # ignore crumbs (worldpop puts 0.0x people everywhere)
 
@@ -34,7 +34,7 @@ processing.run("native:rastercalc", {
     'EXTENT': None,
     'CELL_SIZE': None,
     'CRS': None,
-    'OUTPUT': TMP + "/pop_res.tif"})
+    'OUTPUT': TMP + "/03_pop_res.tif"})
 
 # total pop per canton
 z1 = processing.run("native:zonalstatisticsfb", {
@@ -48,11 +48,11 @@ z1 = processing.run("native:zonalstatisticsfb", {
 # residential pop per canton
 processing.run("native:zonalstatisticsfb", {
     'INPUT': z1,
-    'INPUT_RASTER': TMP + "/pop_res.tif",
+    'INPUT_RASTER': TMP + "/03_pop_res.tif",
     'RASTER_BAND': 1,
     'COLUMN_PREFIX': 'res_',
     'STATISTICS': [0, 1],
-    'OUTPUT': TMP + "/canton_pop.gpkg"})
+    'OUTPUT': TMP + "/03_canton_pop.gpkg"})
 
 print("done 03")
 qgs.exitQgis()
