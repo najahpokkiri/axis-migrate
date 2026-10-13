@@ -434,12 +434,16 @@ class Lineage:
         for d in self.inv["datasets"]:
             if d.get("layer_missing"):
                 C["failed"].append({"check": "b_layer_exists", "dataset": d["id"], "layer": d["layer"]})
+            for lm in d.get("layer_mismatch", []):
+                C["failed"].append({"check": "b_layer_exists", "dataset": d["id"], "layer": lm["requested"],
+                                    "actual": lm["actual"], "ops": lm["ops"]})
         for o in self.inv["ops"]:
             if o["id"] not in sid_of:
                 continue
             for r in o["reads"] + o["writes"]:
                 d = self.ds.get(r["dataset"])
-                if d and d["exists"] and d.get("layer") and d["kind"] == "vector" and not d.get("layer_missing"):
+                if d and d["exists"] and d.get("layer") and d["kind"] == "vector" and not d.get("layer_missing") \
+                        and not d.get("layer_mismatch"):
                     C["passed"].append({"check": "b_layer_exists", "dataset": d["id"], "layer": d["layer"],
                                         "op": o["id"]})
         # (c) fields read by a consumer exist in the file's schema
@@ -603,7 +607,8 @@ class Lineage:
                    {"value": "file", "label": "The file's grid", "description": "Reproduce the legacy grid"},
                    dont_know])
             elif f["check"] in ("b_layer_exists",):
-                users = [o for o in self.inv["ops"] if any(r["dataset"] == f["dataset"] for r in o["reads"] + o["writes"])]
+                users = [self.ops[o] for o in f.get("ops", []) if o in self.ops] or \
+                    [o for o in self.inv["ops"] if any(r["dataset"] == f["dataset"] for r in o["reads"] + o["writes"])]
                 o = users[0] if users else None
                 q("lineage", f["dataset"], [f["dataset"]], "Layer not found",
                   f"Code asks for layer {f.get('layer')!r} of {self.ds[f['dataset']]['legacy_path']}"

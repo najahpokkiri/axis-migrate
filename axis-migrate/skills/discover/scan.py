@@ -2761,7 +2761,9 @@ def profile_raster(full: Path) -> dict:
         if "approximate" in emb:
             emb["approximate"] = str(emb["approximate"]).upper() == "YES"
         sidecar = aux_xml_stats(full)
-        prof["embedded_stats"] = {"tags": emb or None, "aux_xml": sidecar}
+        prof["embedded_stats"] = {"tags": emb or None, "aux_xml": sidecar,
+                                  "approximate": bool((emb or {}).get("approximate") or (sidecar or {}).get("approximate")),
+                                  "trusted": False, "note": "recorded only; every statistic used is computed"}
         # computed statistics (float64 accumulators over block windows; strided above 2 GB)
         big = full.stat().st_size > 2 * 1024 ** 3
         windows = [w for _, w in src.block_windows(1)] if src.count else []
@@ -3821,6 +3823,15 @@ class Scan:
                     ds["kind"] = "table"
                     break
         self.all_readers, self.all_writers = all_readers, all_writers
+        for lm in self.layer_mismatch:
+            did = self.ds_of_ref(lm["ref"])
+            if did in self.datasets and lm.get("reason") != "layer_not_given":
+                rec = {"requested": lm["layer"], "actual": lm["actual"],
+                       "ops": sorted(o["id"] for o in self.ops if any(
+                           self.ctx.refs.get(lm["ref"], {}).get("dataset") == x["dataset"] for x in o["reads"] + o["writes"])
+                           and o["file"] in {self.ctx.refs[lm["ref"]].get("file", o["file"])})}
+                if rec not in self.datasets[did].setdefault("layer_mismatch", []):
+                    self.datasets[did]["layer_mismatch"].append(rec)
 
     def format_of(self, rel: str, en: dict) -> str:
         prof = self.profiles.get(rel, {})
@@ -4158,7 +4169,8 @@ class Scan:
         for d in self.docs:
             lines = [m for m in d["manual"] if not m.get("header")]
             if lines and any(any(n in m["text"].lower() for n in names) for m in d["manual"]):
-                evidence.append({"kind": "doc_mention", "file": d["path"], "line": lines[0]["line"],
+                head = next((m for m in d["manual"] if m.get("header") and m["line"] < lines[0]["line"]), lines[0])
+                evidence.append({"kind": "doc_mention", "file": d["path"], "line": head["line"],
                                  "end_line": lines[-1]["line"]})
         return {"source": src["id"], "target": dst["id"], "count": len(kd["wkb"]), "wkb_equal": len(pairs),
                 "schema": {"added": added, "removed": removed, "kept": sorted(set(s_cols) & set(d_cols))},
@@ -4543,6 +4555,21 @@ class Scan:
         for u in self.ctx.unresolved:
             if u["reason"] in ("outside_root",):
                 continue
+        # a project layer's subset filter that equals a code filter corroborates it (01 AT-14)
+        for p in self.projects:
+            for l in p.get("layers", []):
+                if not l.get("subset_parsed") or not l.get("path"):
+                    continue
+                did = next((d for d, x in self.datasets.items() if x["legacy_path"] == l["path"]
+                            and (l.get("layer") in (None, x["layer"]))), None)
+                hits = []
+                for o in self.ops:
+                    for pname, pv in o["params"].items():
+                        val = pv.get("value") if isinstance(pv, dict) else None
+                        if isinstance(val, str) and pname in ("EXPRESSION", "where_clause", "SQL", "query") and \
+                                did in self.origin_datasets(o) and all(c in parse_subset(val) for c in l["subset_parsed"]):
+                            hits.append({"op": o["id"], "file": o["file"], "line": pv.get("arg_line") or o["line"]})
+                l["corroborates"] = hits
         items.sort(key=lambda i: (i["kind"], json.dumps(i["about"]), json.dumps(i["evidence"], sort_keys=True)))
         for n, it in enumerate(items, start=1):
             it["id"] = f"OI-{n:02d}"
