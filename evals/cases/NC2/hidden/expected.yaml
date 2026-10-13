@@ -1,0 +1,4 @@
+id: NC2
+expected_status_max: target-ready
+questions: {required: ["canton|name|manual"], max_unnecessary: 2}
+notes: "cantons_lux_edit.gpkg is absent; the rename rule cannot be read from files; the agent must ask before step 04 runs"

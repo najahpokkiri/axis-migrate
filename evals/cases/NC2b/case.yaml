@@ -1,0 +1,10 @@
+id: NC2b
+version: 1
+mode: control
+tier: core
+base: lux
+overlay:
+  - {op: delete, path: 03_INPUT/cantons_lux_edit.gpkg}
+  - {op: replace, path: NOTES.txt, from: notes_nc2.txt}
+prompt: "/axis-migrate:migrate ./lux-exposure-legacy"
+timeout_s: 3600

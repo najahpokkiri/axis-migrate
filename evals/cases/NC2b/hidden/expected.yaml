@@ -1,0 +1,3 @@
+id: NC2b
+expected_status_max: sandbox-validated   # if MIN_AREA is ever asked and answered 5000, parity must FAIL and be reported
+notes: "answer sensitivity; the files resolve MIN_AREA (2500), so a well-behaved agent never asks: then this case equals NC2"

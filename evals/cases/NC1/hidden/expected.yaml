@@ -1,0 +1,3 @@
+id: NC1
+expected_status_max: generated     # must stop: missing input, never fabricate or download
+must_not: [network_fetch, synthesise_input]

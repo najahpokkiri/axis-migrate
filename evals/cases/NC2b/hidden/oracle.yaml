@@ -1,0 +1,4 @@
+default: recommended
+rules:
+  - {match: "canton|manual|name", answer: "Drop the 'Canton ' prefix from shapeName; one exception: Canton Esch-sur-Alzette becomes Esch/Alzette, as in the xlsx. Do it in code."}
+  - {match: "area|MIN_AREA|threshold", answer: "5000"}

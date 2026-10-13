@@ -1,0 +1,7 @@
+id: F-L
+version: 1
+mode: fresh
+tier: core
+base: lux
+prompt: "/axis-migrate:migrate ./lux-exposure-legacy"
+timeout_s: 3600

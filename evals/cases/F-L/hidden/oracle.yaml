@@ -1,0 +1,3 @@
+default: recommended
+rules:
+  - {match: "approve.*plan|plan.*approv", answer: "approve|recommended"}

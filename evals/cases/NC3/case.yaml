@@ -1,0 +1,14 @@
+id: NC3
+version: 1
+mode: control
+tier: full
+base: lux
+overlay:
+  - {op: delete, path: 05_TEMP/03_pop_res.tif}
+  - {op: delete, path: 05_TEMP/03_pop_res.tif.aux.xml}
+  - {op: delete, path: 05_TEMP/03_canton_pop.gpkg}
+  - {op: delete, path: 04_FINAL/exposure_by_canton.gpkg}
+  - {op: delete, path: 04_FINAL/exposure_by_canton.csv}
+  - {op: delete, path: 04_FINAL/exposure_by_canton.xlsx}
+prompt: "/axis-migrate:migrate ./lux-exposure-legacy"
+timeout_s: 3600
