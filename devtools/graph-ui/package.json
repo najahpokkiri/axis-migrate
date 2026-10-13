@@ -1,0 +1,20 @@
+{
+  "name": "axis-graph-ui",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Dev build of axis-migrate's workflow graph editor (skills/discover/graph.bundle.js). Built once, vendored.",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check"
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "3.1.1",
+    "@xyflow/react": "12.12.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright-core": "^1.64.0"
+  }
+}
