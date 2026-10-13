@@ -1920,7 +1920,7 @@
  },
  "method": "expected = design must-flag/must-not-flag; observed = a reviewer opened each cited PNG and answered the rubric question; an observation counts only for the PNG sha it cites",
  "observed_at": "2026-10-13",
- "plot_sha256": "4eb279888ef736f225f5a433e16d923f7e8cce3cfc021ac47d5a49b75c9e50f8",
+ "plot_sha256": "cc95a037de91ca955beeedf08f9c5e7d9bab6cdcbee0fb6dfcfaf2030a34afa8",
  "plot_version": "1.0.0",
  "reviewer": "claude-opus-5-5 (plot.py builder; opened each cited PNG)",
  "rubric_id": "rubric.v1",

@@ -926,7 +926,7 @@ class RasterPlotter:
         """Up to K non-overlapping tiles. Two candidate orders are interleaved so that both kinds of defect get a
         tile: cells with the largest |d| (valid on both sides) and the densest clusters of cells valid on one side
         only. Ranking mask cells first (by row order on ties) put every tile on one data edge and hid value defects
-        such as smoothing at the peaks (calibration L5)."""
+        such as smoothing at the peaks (found in the rubric calibration)."""
         H, W = self.L.shape
         th, tw = min(TILE, H), min(TILE, W)
         dval = np.where(self.over if self.over is not None else self.both, np.abs(self.d), 0.0)
