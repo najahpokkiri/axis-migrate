@@ -366,8 +366,8 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
     step_codes = set(ac.DISPOSITIONS)
     pipe_items = []
     for b in lad["pipeline"]["blockers"]:
-        if b.get("step") or b.get("code") in step_codes:
-            continue
+        if b.get("step") or b.get("code") in step_codes or b.get("target"):
+            continue  # steps are listed above; target reasons live in the target panel
         pipe_items.append({"code": b.get("code"), "phrase": phrases.say(b.get("code")),
                            "detail": b.get("detail") or b.get("dataset") or ""})
 
