@@ -55,6 +55,7 @@ DENY = [
     "cat ~/.config/axis-migrate/secrets.env",                               # secrets
     "set -a; . ~/.config/axis-migrate/secrets.env; set +a; env",
     "graph.py apply migration --actor verify --base-rev 7 --ops ops.json",
+    "echo x > migration/.graph/rev/9.json",
 ]
 
 ALLOW = [
@@ -72,6 +73,7 @@ ALLOW = [
     "graph.py apply migration --actor agent --base-rev 7 --ops ops_q.json",
     "cat > migration/analysis/x.py <<'EOF'\nrm -rf legacy-demo\nEOF",
     "git status",
+    "graph_server.py serve migration > migration/.graph_server.log 2>&1 &",   # not the .graph/ dir
 ]
 
 
@@ -170,3 +172,4 @@ def test_g13_idle(tmp_path):
 def test_g12_malformed(project):
     r = run_hook("guard_bash.py", "[1, 2]")
     assert r.rc == 2 and r.err.isascii()
+

@@ -173,9 +173,9 @@ class Ctx:
             return None
         if rel == "runs" or rel.startswith("runs/"):
             return "migration/runs/ is written only by the runner and seal.py"
-        if rel in ("graph.json", "graph-edits.jsonl") or rel.startswith(".graph"):
+        if rel in ("graph.json", "graph-edits.jsonl", ".graph") or rel.startswith(".graph/"):
             return "graph.json is written only through graph.py apply"
-        if rel.startswith(".axis") or rel == "inventory.json" or rel.startswith("report/") or rel == "report":
+        if rel == ".axis" or rel.startswith(".axis/") or rel == "inventory.json" or rel.startswith("report/") or rel == "report":
             return f"migration/{rel} is written only by the plugin scripts"
         if rel in ("decisions.md", "known-differences.md") and not append:
             return f"{rel} is append-only (use >> or tee -a, or the Edit tool)"
