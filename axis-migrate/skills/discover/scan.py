@@ -816,6 +816,11 @@ class PyAnalyzer:
 
     def st_For(self, st):
         it = self.ev(st.iter)
+        if it.k == "obj" and it.v in ("features", "cursor"):
+            self.assign_to(st.target, V("obj", "feature", layer=it.x.get("layer", it)), st.lineno)
+            self.exec_body(st.body)
+            self.exec_body(st.orelse)
+            return
         items = self.loop_items(it)
         if items:
             before = dict(self.env)
@@ -1109,6 +1114,9 @@ class PyAnalyzer:
     def ev_Subscript(self, node):
         base = self.ev(node.value)
         idx = self.ev(node.slice)
+        if base.k == "obj" and base.v == "feature" and is_str(idx):
+            self.field_read(base.x.get("layer"), idx.v, node.lineno, "feature[]")
+            return V("unknown", "field_value")
         if base.k == "toolres" and idx.k == "const":
             out = base.x.get("outputs", {}).get(str(idx.v))
             return out if out is not None else V("unknown", "tool_output")
@@ -1303,6 +1311,8 @@ class PyAnalyzer:
                 return self.h_excelwriter
             return None
         if base is not None and method:
+            if base.k == "obj" and base.v == "feature" and method == "attribute":
+                return self.h_feature_attr
             if base.k == "layer":
                 return self.h_layer_method
             if base.k == "obj" and base.v in ("provider", "cursor", "editlayer"):
@@ -1895,6 +1905,7 @@ class PyAnalyzer:
         spec = self.ctx.algs.get(alg) if alg else None
         io_source = "qgis_algs.json" if spec else "name_rule"
         reads, writes, grid, params, outputs = list(fr.reads), list(fr.writes), list(fr.reads_grid), {}, {}
+        fields: list[dict] = []
         mem_out = None
         items = pv.v if pv.k == "dict" else {}
         lines = pv.x.get("lines", {}) if pv.k == "dict" else {}
@@ -1930,6 +1941,12 @@ class PyAnalyzer:
                         self.unresolved(node, r["reason"], expr=str(r["unresolved"]))
             g = self.grid_refs(val, pname, line)
             grid.extend(g)
+            if ptype == "field":
+                vals = [val] if is_str(val) else (val.v if val.k == "list" else [])
+                for fv in vals:
+                    if is_str(fv) and fv.v:
+                        for f in fv.v.split(";"):
+                            fields.append({"field": f, "param": pname, "line": line, "of_param": "INPUT"})
             params[pname] = self.pjson(val, line, nodes.get(pname), refs if (is_dest or layerish) else None)
             if is_dest and mem_out and any("memory" in r for r in refs):
                 params[pname]["value"] = {"memory": mem_out}
@@ -1941,6 +1958,14 @@ class PyAnalyzer:
             for n in fr.nested:
                 if n not in op["nested"]:
                     op["nested"].append(n)
+        if key and fields:
+            src = next((r for r in reads if r.get("param") == "INPUT" and r.get("ref")), None)
+            if src:
+                lst = self.ctx.ops[key].setdefault("fields_read", [])
+                for f in fields:
+                    rec = {"ref": src["ref"], "field": f["field"], "line": f["line"], "param": f["param"]}
+                    if rec not in lst:
+                        lst.append(rec)
         out = {}
         for k, v in outputs.items():
             out[k] = v
@@ -1977,11 +2002,23 @@ class PyAnalyzer:
             return V("derived", "res_of", ref=ref)
         if method == "dataProvider":
             return V("obj", "provider", layer=base)
+        if method in ("getFeatures", "selectedFeatures", "getFeature"):
+            return V("obj", "features", layer=base)
         if method in ("startEditing", "commitChanges", "changeAttributeValue", "addFeature", "deleteFeature",
                       "updateFeature", "addAttribute", "deleteAttribute", "changeGeometry"):
             self.fold_into(base, node, method)
             return V("unknown", "edit")
         return V("unknown", "layer." + method)
+
+    def field_read(self, layer_v: V | None, field: str, line: int, how: str) -> None:
+        if layer_v is None or field.endswith("@"):
+            return
+        op = self.ctx.ops.get(layer_v.x.get("op")) if layer_v.x.get("op") else None
+        if op is None or not layer_v.x.get("ref"):
+            return
+        rec = {"ref": layer_v.x["ref"], "field": field, "line": line, "param": how}
+        if rec not in op.setdefault("fields_read", []):
+            op["fields_read"].append(rec)
 
     def fold_into(self, layer_v: V, node, method):
         key = layer_v.x.get("op")
@@ -1994,6 +2031,12 @@ class PyAnalyzer:
         op["end_line"] = max(op["end_line"], getattr(node, "end_lineno", node.lineno))
         if method not in op["nested"]:
             op["nested"].append(method)
+
+    def h_feature_attr(self, node, dotted, base, method):
+        args = [self.ev(a) for a in node.args]
+        if args and is_str(args[0]):
+            self.field_read(base.x.get("layer"), args[0].v, node.lineno, "feature.attribute")
+        return V("unknown", "field_value")
 
     def h_fold_method(self, node, dotted, base, method):
         for a in node.args:
@@ -2116,6 +2159,14 @@ class PyAnalyzer:
             params = {k: self.pjson(v[0], v[1], v[2], refs if k == first else None) for k, v in b.items()}
             key = self.emit(node, f"arcpy.{name}", name, "arcpy", "arcpy_tools.json", reads=reads, writes=writes,
                             params=params)
+            fn = b.get("field_names") or b.get("fields")
+            if key and fn and reads:
+                vals = fn[0].v if fn[0].k == "list" else [fn[0]]
+                for fv in vals:
+                    if is_str(fv) and not fv.v.endswith("@") and fv.v != "*":
+                        rec = {"ref": reads[0]["ref"], "field": fv.v, "line": fn[1], "param": "field_names"}
+                        if rec not in self.ctx.ops[key].setdefault("fields_read", []):
+                            self.ctx.ops[key]["fields_read"].append(rec)
             return V("obj", "cursor", ref=refs[0].get("ref") if refs else None, op=key)
         if name.startswith(("List",)):
             for a in node.args:
@@ -2185,6 +2236,16 @@ class PyAnalyzer:
         mem_out = f"{self.mem_id(node.lineno)}:{node.col_offset}" if spec.get("returns") == "Raster" else None
         key = self.emit(node, api, name, "arcpy", "arcpy_tools.json", reads=reads, writes=writes,
                         params=params, mem_out=mem_out)
+        creates_fields = name in ("management.AddField", "management.AddFields", "management.CalculateField",
+                                  "management.CalculateFields", "management.AlterField", "management.DeleteField")
+        first_in = next((r for r in reads if r.get("ref")), None)
+        if key and first_in and not creates_fields:
+            for pname, (v, line, n) in b.items():
+                if re.search(r"(^|_)fields?$", pname) and is_str(v) and v.v:
+                    for f in v.v.split(";"):
+                        rec = {"ref": first_in["ref"], "field": f.strip(), "line": line, "param": pname}
+                        if rec not in self.ctx.ops[key].setdefault("fields_read", []):
+                            self.ctx.ops[key]["fields_read"].append(rec)
         if key and fr.nested:
             op = self.ctx.ops[key]
             for n in fr.nested:
@@ -3374,6 +3435,11 @@ class Scan:
                     if d not in grid:
                         grid.append(d)
                 params = conv(op["params"])
+                fields_read = []
+                for f in op.get("fields_read", []):
+                    d = {"dataset": self.ds_of_ref(f["ref"]), "field": f["field"], "line": f["line"], "param": f["param"]}
+                    if d not in fields_read:
+                        fields_read.append(d)
                 comments = []
                 if an is not None:
                     cell = op["cell"]
@@ -3388,7 +3454,7 @@ class Scan:
                 rec = {"id": op["id"], "code": op["code"], "file": op["file"], "line": op["line"],
                        "end_line": op["end_line"], "api": op["api"], "tool": op["tool"], "family": op["family"],
                        "io_source": op["io_source"], "params": params, "reads": reads, "writes": writes,
-                       "reads_grid": grid, "memory_reads": mreads,
+                       "reads_grid": grid, "memory_reads": mreads, "fields_read": fields_read,
                        "memory_out": mem_final.get(op["memory_out"]) if op["memory_out"] else None,
                        "comments": comments, "flags": sorted(set(op["flags"])), "nested": op["nested"],
                        "state": op["state"]}
@@ -3734,12 +3800,19 @@ class Scan:
         for did, ds in self.datasets.items():
             if ds["exists"] or ds["kind"] not in (None, "vector") or ds["persistence"] != "gdb":
                 continue
-            hints = " ".join(f"{x.get('param', '')} {o['api']}" for o in self.ops for x in o["reads"] + o["writes"]
-                             if x["dataset"] == did)
-            if re.search(r"raster|Raster\.save", hints):
-                ds["kind"] = "raster"
-            elif re.search(r"table", hints, re.I):
-                ds["kind"] = "table"
+            prod = [(o, x) for o in self.ops for x in o["writes"] if x["dataset"] == did and x["mode"] == "create"]
+            uses = prod + [(o, x) for o in self.ops for x in o["reads"] if x["dataset"] == did]
+            for o, x in uses:
+                pn = (x.get("param") or "").lower()
+                if o["api"] == "arcpy.Raster.save" or "raster" in pn:
+                    ds["kind"] = "raster"
+                    break
+                if "feature" in pn or pn.endswith("_fc"):
+                    ds["kind"] = "vector"
+                    break
+                if "table" in pn and (o, x) in prod:
+                    ds["kind"] = "table"
+                    break
         self.all_readers, self.all_writers = all_readers, all_writers
 
     def format_of(self, rel: str, en: dict) -> str:
