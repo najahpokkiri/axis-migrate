@@ -1284,7 +1284,10 @@ class VectorPlotter:
 
     def _title(self) -> str:
         codes = ", ".join(self.res.get("reason_codes") or []) or "—"
-        return f"{self.ds} · compare verdict {self.res.get('verdict')} ({codes})"
+        t = f"{self.ds} · compare verdict {self.res.get('verdict')} ({codes})"
+        if len(t) > 100:                           # vector figures are 8 in wide: keep the codes readable
+            t = f"{self.ds} · compare verdict {self.res.get('verdict')}\n({codes})"
+        return t
 
     def _extent(self):
         bs = [g.total_bounds for g in (self.L, self.N) if g is not None and len(g) and g.geometry.notna().any()]
