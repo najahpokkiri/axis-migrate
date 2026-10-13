@@ -1,0 +1,8 @@
+{
+  "name": "axis-migrate",
+  "version": "0.1.0",
+  "description": "Migrate a messy legacy GIS project (PyQGIS, ArcPy, notebooks, Excel) to a geopandas/rasterio pipeline and prove per-step parity against the legacy run's own intermediates and finals, with computed, honest status.",
+  "author": {"name": "Axis Spatial"},
+  "license": "UNLICENSED",
+  "keywords": ["gis", "migration", "geopandas", "rasterio", "parity", "qgis", "arcpy"]
+}
