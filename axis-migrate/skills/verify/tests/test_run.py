@@ -257,3 +257,28 @@ def test_missing_run_files(tmp_path, missing):
     (run / missing).unlink()
     p = run_cli("run", "--run", run)
     assert p.returncode == 2 and "EVALUATOR_ERROR" in (p.stdout + p.stderr)
+
+
+def test_by_construction_flag_from_reference_metadata_param(tmp_path):
+    params = ("version: 1\nparams:\n- {id: p.measure_crs, node: s1, kind: crs, value: 'EPSG:32632', source: answer}\n"
+              "- {id: p.a_nodata, node: s1, kind: nodata, value: -9999, source: reference_metadata}\n")
+    run = project(tmp_path, params=params)
+    results, _ = compare.run_compare(run)
+    c = next(x for x in results["ds.a"]["checks"] if x["id"] == "raster.nodata_value")
+    assert c["by_construction"] is True and c["by_construction_param"] == "p.a_nodata"
+    assert not next(x for x in results["ds.b"]["checks"] if x["id"] == "raster.nodata_value")["by_construction"]
+
+
+def test_multiband_check_ids(tmp_path):
+    from conftest import spec, pair
+    a = legacy_raster_array()
+    leg = write_raster(tmp_path / "l.tif", a, count=2)
+    import rasterio
+    with rasterio.open(leg) as ds:
+        prof, data = ds.profile, ds.read()
+    data[1, 10, 10] += 1
+    with rasterio.open(tmp_path / "n.tif", "w", **prof) as o:
+        o.write(data)
+    r = pair(leg, tmp_path / "n.tif", spec("raster"))
+    ids = {c["id"]: c["state"] for c in r["checks"]}
+    assert ids["raster.values"] == "PASS_EXACT" and ids["raster.values:b2"] == "FAIL"

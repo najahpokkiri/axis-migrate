@@ -523,13 +523,11 @@ def apply_tol(c: dict, res: TolRes, passes: Callable[[Rule], bool], any_diff: bo
         c["detail"]["tolerance_error"] = res.error[1]
         return
     rule = res.rule
-    c["tolerance_id"] = rule.id or f"default.{c['id'].split('@')[0]}.exact"
+    c["tolerance_id"] = rule.id or f"default.{c['id']}.exact"
     if metric_desc:
         c["detail"]["rule"] = rule.describe()
     if passes(rule):
         set_state(c, "PASS_WITHIN_TOLERANCE" if (any_diff and not rule.exact) else "PASS_EXACT")
-        if c["state"] == "PASS_EXACT" and any_diff and rule.exact:
-            set_state(c, "PASS_EXACT")
         return
     if res.proposed is not None and passes(res.proposed):
         set_state(c, "NEEDS_DECISION", "TOLERANCE_UNSIGNED")
@@ -1237,9 +1235,9 @@ def _numeric_diagnostics(c: dict, l: np.ndarray, n: np.ndarray, over: np.ndarray
 
 def _raster_diagnostics(ctx: "PairCtx", lds, nds, band: int, checks: list[dict]) -> None:
     """Diagnostics on FAIL only; never change a state (06 §4b.7)."""
-    vchk = next((c for c in checks if c["id"].startswith("raster.values") and not c["id"].startswith("raster.values@")
-                 or c["id"] == f"raster.values@b{band}"), None)
-    mchk = next((c for c in checks if c["id"].split("@")[0] == "raster.mask"), None)
+    sfx = "" if band == 1 else f":b{band}"
+    vchk = next((c for c in checks if c["id"] == f"raster.values{sfx}"), None)
+    mchk = next((c for c in checks if c["id"] == f"raster.mask{sfx}"), None)
     target = vchk if (vchk and vchk["state"] == "FAIL") else (mchk if (mchk and mchk["state"] == "FAIL") else None)
     if target is None:
         return
@@ -1348,7 +1346,7 @@ def compare_raster(ctx: "PairCtx") -> list[dict]:
         # S1 dtype / S2 nodata (hard, never gate)
         nb = min(lds.count, nds.count)
         for b in range(1, nb + 1):
-            sfx = "" if b == 1 else f"@b{b}"
+            sfx = "" if b == 1 else f":b{b}"
             s1 = new_check(f"raster.dtype{sfx}", 5)
             ldt, ndt = lds.dtypes[b - 1], nds.dtypes[b - 1]
             s1.update(metric="dtype", legacy=ldt, new=ndt)
@@ -1380,7 +1378,7 @@ def compare_raster(ctx: "PairCtx") -> list[dict]:
             ctx.raster_pair_arrays = lambda: (_full_arrays(lds, 1), _full_arrays(nds, 1))
 
             def values_for(chk: str):
-                if not chk.startswith("raster.values"):
+                if not chk.startswith("raster.values") or lds.width * lds.height > DIAG_MAX_CELLS:
                     return None
                 (L, Lm), (Nn, Nm) = _full_arrays(lds, 1), _full_arrays(nds, 1)
                 both = Lm & Nm
@@ -2117,7 +2115,7 @@ def compare_vector(ctx: "PairCtx") -> list[dict]:
         checks.append(gt)
         bad = [c["id"] for c in (cc, gt) if c["state"] != "PASS_EXACT"]
         gate = bad[0] if bad else None
-    fchecks, m = _compare_frames(ctx, L, N, "vector", 4)
+    fchecks, m = _compare_frames(ctx, L, N, ctx.prefix_override or "vector", 4)
     checks.extend(fchecks)
     if L.geoms is not None:
         checks.extend(_geometry_checks(ctx, L, N, m, gate, 60))
@@ -2413,7 +2411,7 @@ def finalise(result: dict, *, verdict: str | None = None, codes: Iterable[str] =
     nulls: list[str] = []
     clean = _sanitise(result, nulls)
     if nulls:
-        clean["null_values"] = sorted(set(clean.get("null_values", []) + nulls))
+        clean["null_values"] = [{"path": p, "reason": "NOT_FINITE"} for p in sorted(set(nulls))]
     body = {k: v for k, v in clean.items() if k not in ("result_id",)}
     clean["result_id"] = ac.object_id("cmp", body)
     return clean
@@ -2995,10 +2993,9 @@ def run_compare(run_dir: str | os.PathLike, datasets: list[str] | None = None) -
                          "contract_hash": contract["contract_hash"], "global_errors": [list(x) for x in gerrs],
                          "pairs": sorted(keep + pairing_rows, key=lambda p: p["dataset_id"]),
                          "not_considered": excluded_scope, "notes": sweep(rc)})
-    ok = all(r["verdict"] in PASS for r in results.values()) and (bool(results) or bool(datasets) is False)
-    if datasets:
-        ok = ok and all(d in results and results[d]["verdict"] in PASS for d in datasets)
-    return results, (EXIT_PASS if ok and results else EXIT_NOT_PASS)
+    requested = list(datasets) if datasets else list(results)
+    ok = bool(requested) and all(d in results and results[d]["verdict"] in PASS for d in requested)
+    return results, (EXIT_PASS if ok else EXIT_NOT_PASS)
 
 
 # =================================================================================================================
@@ -3145,7 +3142,7 @@ def aggregate(run_dir: str | os.PathLike, isolation_runs: Iterable[str | os.Path
             if rc.chain == "isolated" and sid not in rc.m_steps:
                 continue
             step_v[sid] = "NOT_COMPARED"
-            step_codes[sid] = ["NO_COMPARED_DATASET"]
+            step_codes[sid] = ["NO_REFERENCE"]
             continue
         step_v[sid] = ac.worst(final_ds[d]["verdict"] for d in ds)
         codes = []
@@ -3221,11 +3218,8 @@ def aggregate(run_dir: str | os.PathLike, isolation_runs: Iterable[str | os.Path
             pv.append("NOT_COMPARED")
             if "UNPAIRED_LEGACY" not in pcodes:
                 pcodes.append("UNPAIRED_LEGACY")
-    for d, x in final_ds.items():
-        if x["role"] == "final" and x["compare_verdict"] == "NOT_COMPARED":
-            pv.append("NOT_COMPARED")
-            if "FINAL_NOT_COMPARED" not in pcodes:
-                pcodes.append("FINAL_NOT_COMPARED")
+    # a role: final dataset is never excluded (KD exclusions and waivers do not apply to finals), so any final that
+    # was not compared is already NOT_COMPARED inside its step verdict
     v["pipeline"] = {"verdict": ac.worst(pv) or "NOT_COMPARED", "reason_codes": pcodes,
                      "counts": dict(collections.Counter(x["verdict"] for x in final_ds.values()))}
     if rc.chain != "chained":
