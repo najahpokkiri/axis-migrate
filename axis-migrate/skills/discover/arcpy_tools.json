@@ -1,0 +1,2486 @@
+{
+ "env": {
+  "canonical": {
+   "cellSize": "cellSize",
+   "extent": "extent",
+   "mask": "mask",
+   "nodata": "nodata",
+   "outputCoordinateSystem": "outputCoordinateSystem",
+   "resamplingMethod": "resampling",
+   "snapRaster": "snapRaster",
+   "workspace": "workspace"
+  },
+  "default_unset_report": [
+   "snapRaster",
+   "cellSize",
+   "extent",
+   "outputCoordinateSystem",
+   "mask"
+  ],
+  "grid": [
+   "snapRaster",
+   "cellSize",
+   "extent",
+   "outputCoordinateSystem",
+   "mask",
+   "resamplingMethod",
+   "geographicTransformations",
+   "cellAlignment",
+   "pyramid",
+   "compression",
+   "nodata"
+  ],
+  "other": [
+   "overwriteOutput",
+   "parallelProcessingFactor",
+   "XYTolerance",
+   "XYResolution",
+   "outputZFlag",
+   "outputMFlag",
+   "qualifiedFieldNames"
+  ],
+  "workspace": [
+   "workspace",
+   "scratchWorkspace"
+  ]
+ },
+ "naming": {
+  "legacy": "arcpy.<Tool>_<toolbox>",
+  "modern": "arcpy.<toolbox>.<Tool>",
+  "sa_star_import": "from arcpy.sa import * binds every sa.<Tool> as a bare name",
+  "toolbox_aliases": {
+   "analysis": "analysis",
+   "conversion": "conversion",
+   "da": "da",
+   "ddd": "ddd",
+   "management": "management",
+   "sa": "sa"
+  }
+ },
+ "objects": {
+  "Describe": {
+   "kind": "metadata_read",
+   "note": "Describe(x).spatialReference / extent / meanCellWidth -> derived values",
+   "params": [
+    "value",
+    "datatype"
+   ]
+  },
+  "EnvManager": {
+   "kind": "env_scope",
+   "params": []
+  },
+  "Exists": {
+   "kind": "exists_check",
+   "params": [
+    "dataset"
+   ]
+  },
+  "InsertCursor": {
+   "kind": "append",
+   "params": [
+    "dataset",
+    "spatial_reference"
+   ]
+  },
+  "ListFeatureClasses": {
+   "kind": "listing",
+   "params": [
+    "wild_card",
+    "feature_type",
+    "feature_dataset"
+   ]
+  },
+  "ListRasters": {
+   "kind": "listing",
+   "params": [
+    "wild_card",
+    "raster_type"
+   ]
+  },
+  "ListTables": {
+   "kind": "listing",
+   "params": [
+    "wild_card",
+    "table_type"
+   ]
+  },
+  "Raster": {
+   "kind": "read",
+   "note": "Raster(path) reads; r.save(path) writes a persisted dataset",
+   "params": [
+    "inRaster"
+   ]
+  },
+  "SearchCursor": {
+   "kind": "read",
+   "params": [
+    "dataset",
+    "where_clause",
+    "spatial_reference",
+    "fields",
+    "sort_fields"
+   ]
+  },
+  "UpdateCursor": {
+   "kind": "in_place",
+   "params": [
+    "dataset",
+    "where_clause",
+    "spatial_reference",
+    "fields",
+    "sort_fields"
+   ]
+  },
+  "da.InsertCursor": {
+   "kind": "append",
+   "params": [
+    "in_table",
+    "field_names"
+   ]
+  },
+  "da.SearchCursor": {
+   "kind": "read",
+   "params": [
+    "in_table",
+    "field_names",
+    "where_clause",
+    "spatial_reference",
+    "explode_to_points",
+    "sql_clause"
+   ]
+  },
+  "da.UpdateCursor": {
+   "kind": "in_place",
+   "params": [
+    "in_table",
+    "field_names",
+    "where_clause",
+    "spatial_reference",
+    "explode_to_points",
+    "sql_clause"
+   ]
+  }
+ },
+ "schema": "axis-migrate.arcpy-tools.v1",
+ "source": "lifted from legacy data_flow_tracer.py:55-75 (16 tools, legacy Tool_toolbox names) and extended by hand from the ArcGIS Pro tool reference parameter orders",
+ "tools": {
+  "analysis.Buffer": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "buffer_distance_or_field",
+    "line_side",
+    "line_end_type",
+    "dissolve_option",
+    "dissolve_field",
+    "method"
+   ]
+  },
+  "analysis.Clip": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "clip_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "clip_features",
+    "out_feature_class",
+    "cluster_tolerance"
+   ]
+  },
+  "analysis.Erase": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "erase_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "erase_features",
+    "out_feature_class",
+    "cluster_tolerance"
+   ]
+  },
+  "analysis.Frequency": {
+   "in_place": [],
+   "inputs": [
+    "in_table"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_table",
+    "out_table",
+    "frequency_fields",
+    "summary_fields"
+   ]
+  },
+  "analysis.GenerateNearTable": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "near_features"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_features",
+    "near_features",
+    "out_table",
+    "search_radius",
+    "location",
+    "angle",
+    "closest",
+    "closest_count",
+    "method",
+    "distance_unit"
+   ]
+  },
+  "analysis.Identity": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "identity_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "identity_features",
+    "out_feature_class",
+    "join_attributes",
+    "cluster_tolerance",
+    "relationship"
+   ]
+  },
+  "analysis.Intersect": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "multi_inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "join_attributes",
+    "cluster_tolerance",
+    "output_type"
+   ]
+  },
+  "analysis.Near": {
+   "in_place": [
+    "in_features"
+   ],
+   "inputs": [
+    "near_features"
+   ],
+   "multi_inputs": [
+    "near_features"
+   ],
+   "outputs": [],
+   "params": [
+    "in_features",
+    "near_features",
+    "search_radius",
+    "location",
+    "angle",
+    "method",
+    "field_names",
+    "distance_unit"
+   ]
+  },
+  "analysis.PairwiseBuffer": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "buffer_distance_or_field",
+    "dissolve_option",
+    "dissolve_field",
+    "method",
+    "max_deviation"
+   ]
+  },
+  "analysis.PairwiseClip": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "clip_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "clip_features",
+    "out_feature_class",
+    "cluster_tolerance"
+   ]
+  },
+  "analysis.PairwiseDissolve": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "dissolve_field",
+    "statistics_fields",
+    "multi_part",
+    "concatenation_separator"
+   ]
+  },
+  "analysis.PairwiseErase": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "erase_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "erase_features",
+    "out_feature_class",
+    "cluster_tolerance"
+   ]
+  },
+  "analysis.PairwiseIntersect": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "multi_inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "join_attributes",
+    "cluster_tolerance",
+    "output_type"
+   ]
+  },
+  "analysis.Select": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "where_clause"
+   ]
+  },
+  "analysis.SpatialJoin": {
+   "in_place": [],
+   "inputs": [
+    "target_features",
+    "join_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "target_features",
+    "join_features",
+    "out_feature_class",
+    "join_operation",
+    "join_type",
+    "field_mapping",
+    "match_option",
+    "search_radius",
+    "distance_field_name"
+   ]
+  },
+  "analysis.Split": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "split_features"
+   ],
+   "outputs": [
+    "out_workspace"
+   ],
+   "params": [
+    "in_features",
+    "split_features",
+    "split_field",
+    "out_workspace",
+    "cluster_tolerance"
+   ]
+  },
+  "analysis.Statistics": {
+   "in_place": [],
+   "inputs": [
+    "in_table"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_table",
+    "out_table",
+    "statistics_fields",
+    "case_field",
+    "concatenation_separator"
+   ]
+  },
+  "analysis.SummarizeWithin": {
+   "in_place": [],
+   "inputs": [
+    "in_polygons",
+    "in_sum_features"
+   ],
+   "outputs": [
+    "out_feature_class",
+    "out_group_table"
+   ],
+   "params": [
+    "in_polygons",
+    "in_sum_features",
+    "out_feature_class",
+    "keep_all_polygons",
+    "sum_fields",
+    "sum_shape",
+    "shape_unit",
+    "group_field",
+    "add_min_maj",
+    "add_group_percent",
+    "out_group_table"
+   ]
+  },
+  "analysis.SymDiff": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "update_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "update_features",
+    "out_feature_class",
+    "join_attributes",
+    "cluster_tolerance"
+   ]
+  },
+  "analysis.TabulateIntersection": {
+   "in_place": [],
+   "inputs": [
+    "in_zone_features",
+    "in_class_features"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_zone_features",
+    "zone_fields",
+    "in_class_features",
+    "out_table",
+    "class_fields",
+    "sum_fields",
+    "xy_tolerance",
+    "out_units"
+   ]
+  },
+  "analysis.Union": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "multi_inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "join_attributes",
+    "cluster_tolerance",
+    "gaps"
+   ]
+  },
+  "analysis.Update": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "update_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "update_features",
+    "out_feature_class",
+    "keep_borders",
+    "cluster_tolerance"
+   ]
+  },
+  "conversion.ExcelToTable": {
+   "in_place": [],
+   "inputs": [
+    "Input_Excel_File"
+   ],
+   "outputs": [
+    "Output_Table"
+   ],
+   "params": [
+    "Input_Excel_File",
+    "Output_Table",
+    "Sheet",
+    "field_names_row",
+    "cell_range"
+   ]
+  },
+  "conversion.ExportFeatures": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_features"
+   ],
+   "params": [
+    "in_features",
+    "out_features",
+    "where_clause",
+    "use_field_alias_as_name",
+    "field_mapping",
+    "sort_field"
+   ]
+  },
+  "conversion.ExportTable": {
+   "in_place": [],
+   "inputs": [
+    "in_table"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_table",
+    "out_table",
+    "where_clause",
+    "use_field_alias_as_name",
+    "field_mapping",
+    "sort_field"
+   ]
+  },
+  "conversion.FeatureClassToFeatureClass": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "note": "output = out_path/out_name",
+   "outputs": [],
+   "params": [
+    "in_features",
+    "out_path",
+    "out_name",
+    "where_clause",
+    "field_mapping",
+    "config_keyword"
+   ]
+  },
+  "conversion.FeatureClassToGeodatabase": {
+   "in_place": [],
+   "inputs": [
+    "Input_Features"
+   ],
+   "multi_inputs": [
+    "Input_Features"
+   ],
+   "outputs": [
+    "Output_Geodatabase"
+   ],
+   "params": [
+    "Input_Features",
+    "Output_Geodatabase"
+   ]
+  },
+  "conversion.FeatureToRaster": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_raster"
+   ],
+   "params": [
+    "in_features",
+    "field",
+    "out_raster",
+    "cell_size"
+   ]
+  },
+  "conversion.FeaturesToJSON": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_json_file"
+   ],
+   "params": [
+    "in_features",
+    "out_json_file",
+    "format_json",
+    "include_z_values",
+    "include_m_values",
+    "geoJSON",
+    "outputToWGS84",
+    "use_field_alias"
+   ]
+  },
+  "conversion.JSONToFeatures": {
+   "in_place": [],
+   "inputs": [
+    "in_json_file"
+   ],
+   "outputs": [
+    "out_features"
+   ],
+   "params": [
+    "in_json_file",
+    "out_features",
+    "geometry_type"
+   ]
+  },
+  "conversion.PointToRaster": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_rasterdataset"
+   ],
+   "params": [
+    "in_features",
+    "value_field",
+    "out_rasterdataset",
+    "cell_assignment",
+    "priority_field",
+    "cellsize",
+    "build_rat"
+   ]
+  },
+  "conversion.PolygonToRaster": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_rasterdataset"
+   ],
+   "params": [
+    "in_features",
+    "value_field",
+    "out_rasterdataset",
+    "cell_assignment",
+    "priority_field",
+    "cellsize",
+    "build_rat"
+   ]
+  },
+  "conversion.PolylineToRaster": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_rasterdataset"
+   ],
+   "params": [
+    "in_features",
+    "value_field",
+    "out_rasterdataset",
+    "cell_assignment",
+    "priority_field",
+    "cellsize",
+    "build_rat"
+   ]
+  },
+  "conversion.RasterToOtherFormat": {
+   "in_place": [],
+   "inputs": [
+    "Input_Rasters"
+   ],
+   "multi_inputs": [
+    "Input_Rasters"
+   ],
+   "outputs": [
+    "Output_Workspace"
+   ],
+   "params": [
+    "Input_Rasters",
+    "Output_Workspace",
+    "Raster_Format"
+   ]
+  },
+  "conversion.RasterToPoint": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [
+    "out_point_features"
+   ],
+   "params": [
+    "in_raster",
+    "out_point_features",
+    "raster_field"
+   ]
+  },
+  "conversion.RasterToPolygon": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [
+    "out_polygon_features"
+   ],
+   "params": [
+    "in_raster",
+    "out_polygon_features",
+    "simplify",
+    "raster_field",
+    "create_multipart_features",
+    "max_vertices_per_feature"
+   ]
+  },
+  "conversion.TableToExcel": {
+   "in_place": [],
+   "inputs": [
+    "Input_Table"
+   ],
+   "multi_inputs": [
+    "Input_Table"
+   ],
+   "outputs": [
+    "Output_Excel_File"
+   ],
+   "params": [
+    "Input_Table",
+    "Output_Excel_File",
+    "Use_field_alias_as_column_header",
+    "Use_domain_and_subtype_description"
+   ]
+  },
+  "conversion.TableToGeodatabase": {
+   "in_place": [],
+   "inputs": [
+    "Input_Table"
+   ],
+   "multi_inputs": [
+    "Input_Table"
+   ],
+   "outputs": [
+    "Output_Geodatabase"
+   ],
+   "params": [
+    "Input_Table",
+    "Output_Geodatabase"
+   ]
+  },
+  "conversion.TableToTable": {
+   "in_place": [],
+   "inputs": [
+    "in_rows"
+   ],
+   "note": "output = out_path/out_name",
+   "outputs": [],
+   "params": [
+    "in_rows",
+    "out_path",
+    "out_name",
+    "where_clause",
+    "field_mapping",
+    "config_keyword"
+   ]
+  },
+  "ddd.Slope": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [
+    "out_raster"
+   ],
+   "params": [
+    "in_raster",
+    "out_raster",
+    "output_measurement",
+    "z_factor",
+    "method",
+    "z_unit",
+    "analysis_target_device"
+   ]
+  },
+  "ddd.SurfaceVolume": {
+   "in_place": [],
+   "inputs": [
+    "in_surface"
+   ],
+   "outputs": [
+    "out_text_file"
+   ],
+   "params": [
+    "in_surface",
+    "out_text_file",
+    "reference_plane",
+    "base_z",
+    "z_factor",
+    "pyramid_level_resolution"
+   ]
+  },
+  "management.AddField": {
+   "in_place": [
+    "in_table"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_table",
+    "field_name",
+    "field_type",
+    "field_precision",
+    "field_scale",
+    "field_length",
+    "field_alias",
+    "field_is_nullable",
+    "field_is_required",
+    "field_domain"
+   ]
+  },
+  "management.AddFields": {
+   "in_place": [
+    "in_table"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_table",
+    "field_description",
+    "template"
+   ]
+  },
+  "management.AddGeometryAttributes": {
+   "in_place": [
+    "Input_Features"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "Input_Features",
+    "Geometry_Properties",
+    "Length_Unit",
+    "Area_Unit",
+    "Coordinate_System"
+   ]
+  },
+  "management.AddJoin": {
+   "in_place": [],
+   "inputs": [
+    "in_layer_or_view",
+    "join_table"
+   ],
+   "note": "layer join: output is the joined layer (memory)",
+   "outputs": [
+    "in_layer_or_view"
+   ],
+   "params": [
+    "in_layer_or_view",
+    "in_field",
+    "join_table",
+    "join_field",
+    "join_type",
+    "index_join_fields",
+    "rebuild_index",
+    "join_operation"
+   ]
+  },
+  "management.AlterField": {
+   "in_place": [
+    "in_table"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_table",
+    "field",
+    "new_field_name",
+    "new_field_alias",
+    "field_type",
+    "field_length",
+    "field_is_nullable",
+    "clear_field_alias"
+   ]
+  },
+  "management.Append": {
+   "in_place": [
+    "target"
+   ],
+   "inputs": [
+    "inputs"
+   ],
+   "multi_inputs": [
+    "inputs"
+   ],
+   "outputs": [],
+   "params": [
+    "inputs",
+    "target",
+    "schema_type",
+    "field_mapping",
+    "subtype",
+    "expression",
+    "match_fields",
+    "update_geometry"
+   ]
+  },
+  "management.BuildPyramids": {
+   "in_place": [
+    "in_raster_dataset"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_raster_dataset",
+    "pyramid_level",
+    "SKIP_FIRST",
+    "resample_technique",
+    "compression_type",
+    "compression_quality",
+    "skip_existing"
+   ]
+  },
+  "management.CalculateField": {
+   "in_place": [
+    "in_table"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_table",
+    "field",
+    "expression",
+    "expression_type",
+    "code_block",
+    "field_type",
+    "enforce_domains"
+   ]
+  },
+  "management.CalculateFields": {
+   "in_place": [
+    "in_table"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_table",
+    "expression_type",
+    "fields",
+    "code_block",
+    "enforce_domains"
+   ]
+  },
+  "management.CalculateGeometryAttributes": {
+   "in_place": [
+    "in_features"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_features",
+    "geometry_property",
+    "length_unit",
+    "area_unit",
+    "coordinate_system",
+    "coordinate_format"
+   ]
+  },
+  "management.CalculateStatistics": {
+   "in_place": [
+    "in_raster_dataset"
+   ],
+   "inputs": [],
+   "note": "writes statistics into the raster (PAM/aux)",
+   "outputs": [],
+   "params": [
+    "in_raster_dataset",
+    "x_skip_factor",
+    "y_skip_factor",
+    "ignore_values",
+    "skip_existing",
+    "area_of_interest"
+   ]
+  },
+  "management.Clip": {
+   "in_place": [],
+   "inputs": [
+    "in_raster",
+    "in_template_dataset"
+   ],
+   "outputs": [
+    "out_raster"
+   ],
+   "params": [
+    "in_raster",
+    "rectangle",
+    "out_raster",
+    "in_template_dataset",
+    "nodata_value",
+    "clipping_geometry",
+    "maintain_clipping_extent"
+   ]
+  },
+  "management.CompositeBands": {
+   "in_place": [],
+   "inputs": [
+    "in_rasters"
+   ],
+   "multi_inputs": [
+    "in_rasters"
+   ],
+   "outputs": [
+    "out_raster"
+   ],
+   "params": [
+    "in_rasters",
+    "out_raster"
+   ]
+  },
+  "management.Copy": {
+   "in_place": [],
+   "inputs": [
+    "in_data"
+   ],
+   "outputs": [
+    "out_data"
+   ],
+   "params": [
+    "in_data",
+    "out_data",
+    "data_type",
+    "associated_data"
+   ]
+  },
+  "management.CopyFeatures": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "config_keyword",
+    "spatial_grid_1",
+    "spatial_grid_2",
+    "spatial_grid_3"
+   ]
+  },
+  "management.CopyRaster": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [
+    "out_rasterdataset"
+   ],
+   "params": [
+    "in_raster",
+    "out_rasterdataset",
+    "config_keyword",
+    "background_value",
+    "nodata_value",
+    "onebit_to_eightbit",
+    "colormap_to_RGB",
+    "pixel_type",
+    "scale_pixel_value",
+    "RGB_to_Colormap",
+    "format",
+    "transform",
+    "process_as_multidimensional",
+    "build_multidimensional_transpose"
+   ]
+  },
+  "management.CopyRows": {
+   "in_place": [],
+   "inputs": [
+    "in_rows"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_rows",
+    "out_table",
+    "config_keyword"
+   ]
+  },
+  "management.CreateFeatureclass": {
+   "in_place": [],
+   "inputs": [
+    "template"
+   ],
+   "note": "output = out_path/out_name",
+   "outputs": [],
+   "params": [
+    "out_path",
+    "out_name",
+    "geometry_type",
+    "template",
+    "has_m",
+    "has_z",
+    "spatial_reference",
+    "config_keyword",
+    "spatial_grid_1",
+    "spatial_grid_2",
+    "spatial_grid_3",
+    "out_alias"
+   ]
+  },
+  "management.CreateFileGDB": {
+   "in_place": [],
+   "inputs": [],
+   "note": "creates a workspace",
+   "outputs": [],
+   "params": [
+    "out_folder_path",
+    "out_name",
+    "out_version"
+   ]
+  },
+  "management.CreateTable": {
+   "in_place": [],
+   "inputs": [
+    "template"
+   ],
+   "note": "output = out_path/out_name",
+   "outputs": [],
+   "params": [
+    "out_path",
+    "out_name",
+    "template",
+    "config_keyword",
+    "out_alias"
+   ]
+  },
+  "management.DefineProjection": {
+   "in_place": [
+    "in_dataset"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_dataset",
+    "coor_system"
+   ]
+  },
+  "management.Delete": {
+   "in_place": [
+    "in_data"
+   ],
+   "inputs": [],
+   "note": "deletes the dataset",
+   "outputs": [],
+   "params": [
+    "in_data",
+    "data_type"
+   ]
+  },
+  "management.DeleteField": {
+   "in_place": [
+    "in_table"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_table",
+    "drop_field",
+    "method"
+   ]
+  },
+  "management.Dissolve": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "dissolve_field",
+    "statistics_fields",
+    "multi_part",
+    "unsplit_lines",
+    "concatenation_separator"
+   ]
+  },
+  "management.Eliminate": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "ex_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "selection",
+    "ex_where_clause",
+    "ex_features"
+   ]
+  },
+  "management.FeatureToLine": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "multi_inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "cluster_tolerance",
+    "attributes"
+   ]
+  },
+  "management.FeatureToPoint": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "point_location"
+   ]
+  },
+  "management.FeatureToPolygon": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "label_features"
+   ],
+   "multi_inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class",
+    "cluster_tolerance",
+    "attributes",
+    "label_features"
+   ]
+  },
+  "management.GetCount": {
+   "in_place": [],
+   "inputs": [
+    "in_rows"
+   ],
+   "outputs": [],
+   "params": [
+    "in_rows"
+   ]
+  },
+  "management.GetRasterProperties": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "property_type",
+    "band_index"
+   ]
+  },
+  "management.Integrate": {
+   "in_place": [
+    "in_features"
+   ],
+   "inputs": [],
+   "multi_inputs": [
+    "in_features"
+   ],
+   "outputs": [],
+   "params": [
+    "in_features",
+    "cluster_tolerance"
+   ]
+  },
+  "management.JoinField": {
+   "in_place": [
+    "in_data"
+   ],
+   "inputs": [
+    "join_table"
+   ],
+   "outputs": [],
+   "params": [
+    "in_data",
+    "in_field",
+    "join_table",
+    "join_field",
+    "fields",
+    "fm_option",
+    "field_mapping",
+    "index_join_fields"
+   ]
+  },
+  "management.MakeFeatureLayer": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "note": "out_layer is an in-memory layer name",
+   "outputs": [],
+   "params": [
+    "in_features",
+    "out_layer",
+    "where_clause",
+    "workspace",
+    "field_info"
+   ]
+  },
+  "management.MakeRasterLayer": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "note": "in-memory layer",
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "out_rasterlayer",
+    "where_clause",
+    "envelope",
+    "band_index"
+   ]
+  },
+  "management.MakeTableView": {
+   "in_place": [],
+   "inputs": [
+    "in_table"
+   ],
+   "note": "out_view is an in-memory view name",
+   "outputs": [],
+   "params": [
+    "in_table",
+    "out_view",
+    "where_clause",
+    "workspace",
+    "field_info"
+   ]
+  },
+  "management.Merge": {
+   "in_place": [],
+   "inputs": [
+    "inputs"
+   ],
+   "multi_inputs": [
+    "inputs"
+   ],
+   "outputs": [
+    "output"
+   ],
+   "params": [
+    "inputs",
+    "output",
+    "field_mappings",
+    "add_source",
+    "field_match_mode"
+   ]
+  },
+  "management.Mosaic": {
+   "in_place": [
+    "target"
+   ],
+   "inputs": [
+    "inputs"
+   ],
+   "multi_inputs": [
+    "inputs"
+   ],
+   "outputs": [],
+   "params": [
+    "inputs",
+    "target",
+    "mosaic_type",
+    "colormap",
+    "background_value",
+    "nodata_value",
+    "onebit_to_eightbit",
+    "mosaicking_tolerance",
+    "MatchingMethod"
+   ]
+  },
+  "management.MosaicToNewRaster": {
+   "in_place": [],
+   "inputs": [
+    "input_rasters"
+   ],
+   "multi_inputs": [
+    "input_rasters"
+   ],
+   "note": "output = output_location/raster_dataset_name_with_extension",
+   "outputs": [],
+   "params": [
+    "input_rasters",
+    "output_location",
+    "raster_dataset_name_with_extension",
+    "coordinate_system_for_the_raster",
+    "pixel_type",
+    "cellsize",
+    "number_of_bands",
+    "mosaic_method",
+    "mosaic_colormap_mode"
+   ]
+  },
+  "management.MultipartToSinglepart": {
+   "in_place": [],
+   "inputs": [
+    "in_features"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_features",
+    "out_feature_class"
+   ]
+  },
+  "management.Project": {
+   "in_place": [],
+   "inputs": [
+    "in_dataset"
+   ],
+   "outputs": [
+    "out_dataset"
+   ],
+   "params": [
+    "in_dataset",
+    "out_dataset",
+    "out_coor_system",
+    "transform_method",
+    "in_coor_system",
+    "preserve_shape",
+    "max_deviation",
+    "vertical"
+   ]
+  },
+  "management.ProjectRaster": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [
+    "out_raster"
+   ],
+   "params": [
+    "in_raster",
+    "out_raster",
+    "out_coor_system",
+    "resampling_type",
+    "cell_size",
+    "geographic_transform",
+    "Registration_Point",
+    "in_coor_system",
+    "vertical"
+   ]
+  },
+  "management.Rename": {
+   "in_place": [],
+   "inputs": [
+    "in_data"
+   ],
+   "outputs": [
+    "out_data"
+   ],
+   "params": [
+    "in_data",
+    "out_data",
+    "data_type"
+   ]
+  },
+  "management.RepairGeometry": {
+   "in_place": [
+    "in_features"
+   ],
+   "inputs": [],
+   "outputs": [],
+   "params": [
+    "in_features",
+    "delete_null",
+    "validation_method"
+   ]
+  },
+  "management.Resample": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [
+    "out_raster"
+   ],
+   "params": [
+    "in_raster",
+    "out_raster",
+    "cell_size",
+    "resampling_type"
+   ]
+  },
+  "management.SelectLayerByAttribute": {
+   "in_place": [],
+   "inputs": [
+    "in_layer_or_view"
+   ],
+   "outputs": [],
+   "params": [
+    "in_layer_or_view",
+    "selection_type",
+    "where_clause",
+    "invert_where_clause"
+   ]
+  },
+  "management.SelectLayerByLocation": {
+   "in_place": [],
+   "inputs": [
+    "in_layer",
+    "select_features"
+   ],
+   "outputs": [],
+   "params": [
+    "in_layer",
+    "overlap_type",
+    "select_features",
+    "search_distance",
+    "selection_type",
+    "invert_spatial_relationship"
+   ]
+  },
+  "management.Sort": {
+   "in_place": [],
+   "inputs": [
+    "in_dataset"
+   ],
+   "outputs": [
+    "out_dataset"
+   ],
+   "params": [
+    "in_dataset",
+    "out_dataset",
+    "sort_field",
+    "spatial_sort_method"
+   ]
+  },
+  "management.SplitByAttributes": {
+   "in_place": [],
+   "inputs": [
+    "Input_Table"
+   ],
+   "outputs": [
+    "Target_Workspace"
+   ],
+   "params": [
+    "Input_Table",
+    "Target_Workspace",
+    "Split_Fields"
+   ]
+  },
+  "management.XYTableToPoint": {
+   "in_place": [],
+   "inputs": [
+    "in_table"
+   ],
+   "outputs": [
+    "out_feature_class"
+   ],
+   "params": [
+    "in_table",
+    "out_feature_class",
+    "x_field",
+    "y_field",
+    "z_field",
+    "coordinate_system"
+   ]
+  },
+  "sa.Abs": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Aggregate": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "cell_factor",
+    "aggregation_type",
+    "extent_handling",
+    "ignore_nodata"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Aspect": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "method",
+    "z_unit",
+    "project_geodesic_azimuths",
+    "analysis_target_device"
+   ],
+   "returns": "Raster"
+  },
+  "sa.BlockStatistics": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "neighborhood",
+    "statistics_type",
+    "ignore_nodata"
+   ],
+   "returns": "Raster"
+  },
+  "sa.BooleanAnd": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.BooleanNot": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.BooleanOr": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.CellStatistics": {
+   "in_place": [],
+   "inputs": [
+    "in_rasters_or_constants"
+   ],
+   "multi_inputs": [
+    "in_rasters_or_constants"
+   ],
+   "outputs": [],
+   "params": [
+    "in_rasters_or_constants",
+    "statistics_type",
+    "ignore_nodata",
+    "process_as_multidimensional",
+    "percentile_value",
+    "percentile_interpolation_type"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Combine": {
+   "in_place": [],
+   "inputs": [
+    "in_rasters"
+   ],
+   "multi_inputs": [
+    "in_rasters"
+   ],
+   "outputs": [],
+   "params": [
+    "in_rasters"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Con": {
+   "in_place": [],
+   "inputs": [
+    "in_conditional_raster",
+    "in_true_raster_or_constant",
+    "in_false_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_conditional_raster",
+    "in_true_raster_or_constant",
+    "in_false_raster_or_constant",
+    "where_clause"
+   ],
+   "returns": "Raster"
+  },
+  "sa.DistanceAccumulation": {
+   "in_place": [],
+   "inputs": [
+    "in_source_data",
+    "in_barrier_data",
+    "in_surface_raster",
+    "in_cost_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_source_data",
+    "in_barrier_data",
+    "in_surface_raster",
+    "in_cost_raster"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Divide": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.EqualTo": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.EucDistance": {
+   "in_place": [],
+   "inputs": [
+    "in_source_data",
+    "in_barrier_data"
+   ],
+   "outputs": [
+    "out_direction_raster",
+    "out_back_direction_raster"
+   ],
+   "params": [
+    "in_source_data",
+    "maximum_distance",
+    "cell_size",
+    "out_direction_raster",
+    "distance_method",
+    "in_barrier_data",
+    "out_back_direction_raster"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Exp": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Expand": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "number_cells",
+    "zone_values",
+    "expand_method"
+   ],
+   "returns": "Raster"
+  },
+  "sa.ExtractByAttributes": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "where_clause"
+   ],
+   "returns": "Raster"
+  },
+  "sa.ExtractByMask": {
+   "in_place": [],
+   "inputs": [
+    "in_raster",
+    "in_mask_data"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "in_mask_data",
+    "extraction_area",
+    "analysis_extent"
+   ],
+   "returns": "Raster"
+  },
+  "sa.ExtractByRectangle": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "extent",
+    "extraction_area"
+   ],
+   "returns": "Raster"
+  },
+  "sa.ExtractMultiValuesToPoints": {
+   "in_place": [
+    "in_point_features"
+   ],
+   "inputs": [
+    "in_rasters"
+   ],
+   "multi_inputs": [
+    "in_rasters"
+   ],
+   "outputs": [],
+   "params": [
+    "in_point_features",
+    "in_rasters",
+    "bilinear_interpolate_values"
+   ]
+  },
+  "sa.ExtractValuesToPoints": {
+   "in_place": [],
+   "inputs": [
+    "in_point_features",
+    "in_raster"
+   ],
+   "outputs": [
+    "out_point_features"
+   ],
+   "params": [
+    "in_point_features",
+    "in_raster",
+    "out_point_features",
+    "interpolate_values",
+    "add_attributes"
+   ]
+  },
+  "sa.Float": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.FocalStatistics": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "neighborhood",
+    "statistics_type",
+    "ignore_nodata",
+    "percentile_value"
+   ],
+   "returns": "Raster"
+  },
+  "sa.GreaterThan": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.GreaterThanEqual": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Hillshade": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "azimuth",
+    "altitude",
+    "model_shadows",
+    "z_factor"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Int": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.IsNull": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster"
+   ],
+   "returns": "Raster"
+  },
+  "sa.KernelDensity": {
+   "in_place": [],
+   "inputs": [
+    "in_features",
+    "in_barriers"
+   ],
+   "outputs": [],
+   "params": [
+    "in_features",
+    "population_field",
+    "cell_size",
+    "search_radius",
+    "area_unit_scale_factor",
+    "out_cell_values",
+    "method",
+    "in_barriers"
+   ],
+   "returns": "Raster"
+  },
+  "sa.LessThan": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.LessThanEqual": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Ln": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Log10": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Lookup": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "lookup_field"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Minus": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Nibble": {
+   "in_place": [],
+   "inputs": [
+    "in_raster",
+    "in_mask_raster",
+    "in_zone_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "in_mask_raster",
+    "nibble_values",
+    "nibble_nodata",
+    "in_zone_raster"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Plus": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.PointDensity": {
+   "in_place": [],
+   "inputs": [
+    "in_point_features"
+   ],
+   "outputs": [],
+   "params": [
+    "in_point_features",
+    "population_field",
+    "cell_size",
+    "neighborhood",
+    "area_unit_scale_factor"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Power": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.RasterCalculator": {
+   "in_place": [],
+   "inputs": [
+    "rasters"
+   ],
+   "multi_inputs": [
+    "rasters"
+   ],
+   "outputs": [],
+   "params": [
+    "rasters",
+    "input_names",
+    "expression"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Reclassify": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "reclass_field",
+    "remap",
+    "missing_values"
+   ],
+   "returns": "Raster"
+  },
+  "sa.RegionGroup": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "number_neighbors",
+    "zone_connectivity",
+    "add_link",
+    "excluded_value"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Resample": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "resampling_type",
+    "input_cellsize",
+    "output_cellsize"
+   ],
+   "returns": "Raster"
+  },
+  "sa.RoundDown": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.RoundUp": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Sample": {
+   "in_place": [],
+   "inputs": [
+    "in_rasters",
+    "in_location_data"
+   ],
+   "multi_inputs": [
+    "in_rasters"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_rasters",
+    "in_location_data",
+    "out_table",
+    "resampling_type",
+    "unique_id_field",
+    "process_as_multidimensional",
+    "acquisition_definition",
+    "statistics_type",
+    "percentile_value",
+    "buffer_distance",
+    "layout",
+    "generate_feature_class"
+   ]
+  },
+  "sa.SetNull": {
+   "in_place": [],
+   "inputs": [
+    "in_conditional_raster",
+    "in_false_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_conditional_raster",
+    "in_false_raster_or_constant",
+    "where_clause"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Shrink": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "number_cells",
+    "zone_values",
+    "shrink_method"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Slope": {
+   "in_place": [],
+   "inputs": [
+    "in_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster",
+    "output_measurement",
+    "z_factor",
+    "method",
+    "z_unit",
+    "analysis_target_device"
+   ],
+   "returns": "Raster"
+  },
+  "sa.Square": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.SquareRoot": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant"
+   ],
+   "returns": "Raster"
+  },
+  "sa.TabulateArea": {
+   "in_place": [],
+   "inputs": [
+    "in_zone_data",
+    "in_class_data"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_zone_data",
+    "zone_field",
+    "in_class_data",
+    "class_field",
+    "out_table",
+    "processing_cell_size",
+    "classes_as_rows"
+   ]
+  },
+  "sa.Times": {
+   "in_place": [],
+   "inputs": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "outputs": [],
+   "params": [
+    "in_raster_or_constant1",
+    "in_raster_or_constant2"
+   ],
+   "returns": "Raster"
+  },
+  "sa.ZonalHistogram": {
+   "in_place": [],
+   "inputs": [
+    "in_zone_data",
+    "in_value_raster"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_zone_data",
+    "zone_field",
+    "in_value_raster",
+    "out_table",
+    "out_graph",
+    "zones_as_rows"
+   ]
+  },
+  "sa.ZonalStatistics": {
+   "in_place": [],
+   "inputs": [
+    "in_zone_data",
+    "in_value_raster"
+   ],
+   "outputs": [],
+   "params": [
+    "in_zone_data",
+    "zone_field",
+    "in_value_raster",
+    "statistics_type",
+    "ignore_nodata",
+    "process_as_multidimensional",
+    "percentile_value",
+    "percentile_interpolation_type",
+    "circular_calculation",
+    "circular_wrap_value"
+   ],
+   "returns": "Raster"
+  },
+  "sa.ZonalStatisticsAsTable": {
+   "in_place": [],
+   "inputs": [
+    "in_zone_data",
+    "in_value_raster"
+   ],
+   "outputs": [
+    "out_table"
+   ],
+   "params": [
+    "in_zone_data",
+    "zone_field",
+    "in_value_raster",
+    "out_table",
+    "ignore_nodata",
+    "statistics_type",
+    "process_as_multidimensional",
+    "percentile_values",
+    "percentile_interpolation_type",
+    "circular_calculation",
+    "circular_wrap_value",
+    "out_join_layer"
+   ]
+  }
+ }
+}
