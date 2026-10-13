@@ -173,12 +173,12 @@ class Lineage:
                 role = "unused"
             prof = self.profile(did)
             hints = d.get("compare_hints") or {}
+            # facts the files show; measure/key/zones/tolerances are proposed by investigation (DESIGN §9)
             compare = {"measure": None, "count": None, "categorical": hints.get("categorical"), "key": None,
                        "match": None, "layer": d.get("layer"), "zones": None, "zone_rule": None, "ignore": [],
-                       "rename": {}, "measure_crs_param": None, "may_be_empty": False}
-            if hints.get("sheet"):
-                compare.update({"sheet": hints.get("sheet"), "header_row": hints.get("header_row"),
-                                "data_rows": hints.get("data_rows"), "total_row": None})
+                       "rename": {}, "sheet": hints.get("sheet"), "header_row": hints.get("header_row"),
+                       "data_rows": hints.get("data_rows"), "total_row": None, "measure_crs_param": None,
+                       "may_be_empty": False}
             leg = {"path": d["legacy_path"], "layer": d.get("layer"), "sheet": hints.get("sheet"),
                    "exists": d["exists"], "sha256": d.get("sha256"), "content_sha256": d.get("content_sha256"),
                    "profile": d.get("profile_ref"), "sidecars": d.get("sidecars", []),

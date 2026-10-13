@@ -2837,12 +2837,24 @@ def profile_vector(full: Path, keep_values: dict, key: str) -> dict:
     import pyogrio
     import shapely
     from pyproj import CRS, Transformer
-    layers = [(str(n), str(g)) for n, g in pyogrio.list_layers(full)]
+    immutable = full.suffix.lower() in (".gpkg", ".sqlite")
+    if full.suffix.lower() == ".gpkg":
+        # list layers through SQLite opened immutable: GDAL never opens a legacy GeoPackage writable
+        import sqlite3
+        con = sqlite3.connect("file:" + str(full.resolve()) + "?mode=ro&immutable=1", uri=True)
+        try:
+            gcols = dict(con.execute("SELECT table_name, geometry_type_name FROM gpkg_geometry_columns").fetchall())
+            layers = [(str(t), str(gcols.get(t, "None"))) for (t,) in con.execute(
+                "SELECT table_name FROM gpkg_contents WHERE data_type IN ('features', 'attributes') ORDER BY table_name")]
+        finally:
+            con.close()
+    else:
+        layers = [(str(n), str(g)) for n, g in pyogrio.list_layers(full)]
     out = {"driver": None, "layers": []}
     for lname, gtype in layers:
         rec: dict[str, Any] = {"name": lname, "declared_geometry": gtype}
         try:
-            info = pyogrio.read_info(full, layer=lname)
+            info = pyogrio.read_info(full, layer=lname, **({"IMMUTABLE": "YES"} if immutable else {}))
             out["driver"] = info.get("driver")
             df = read_layer(full, lname)
         except Exception as exc:  # noqa: BLE001
