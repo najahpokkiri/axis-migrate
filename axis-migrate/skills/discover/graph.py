@@ -1862,16 +1862,22 @@ def derive(migration_dir: str | os.PathLike) -> dict:
                 ops.append({"type": "set_field", "id": s["id"], "field": "new.code_sha256", "value": sha})
         if res is not None:
             pipe = res.get("pipeline") or {}
-            ops.append({"type": "set_ladder", "id": "graph", "ladder": {
+            lad = json.loads(json.dumps({
                 "project": pipe.get("rung"), "suffix": pipe.get("suffix"), "blocking": pipe.get("blockers", []),
-                "counts": pipe.get("counts"), "run_id": res.get("run_id"), "status_line": res.get("status_line")}})
+                "counts": pipe.get("counts"), "run_id": res.get("run_id"), "status_line": res.get("status_line")},
+                default=str))
+            cur = {k: v for k, v in (g.get("ladder") or {}).items() if k != "derived_rev"}
+            if cur != lad:
+                ops.append({"type": "set_ladder", "id": "graph", "ladder": lad})
             steps = res.get("steps") or {}
             for s in g["steps"]:
                 st = steps.get(s["id"])
                 if st is not None:
-                    ops.append({"type": "set_ladder", "id": s["id"], "ladder": {
+                    sl = json.loads(json.dumps({
                         "rung": st.get("rung"), "disposition": st.get("disposition"), "caps": st.get("caps", []),
-                        "annotations": st.get("annotations", []), "run_id": res.get("run_id")}})
+                        "annotations": st.get("annotations", []), "run_id": res.get("run_id")}, default=str))
+                    if s.get("ladder") != sl:
+                        ops.append({"type": "set_ladder", "id": s["id"], "ladder": sl})
         return ops
 
     g = load_graph(mdir)
@@ -1920,10 +1926,10 @@ def ingest_verify(migration_dir: str | os.PathLike, run_id: str) -> dict:
                     doc = ac.load_json(pjp)
                 except Exception:
                     doc = {}
-                items = doc.get("plots", doc) if isinstance(doc, dict) else doc
+                items = (doc.get("png") or doc.get("plots") or []) if isinstance(doc, dict) else doc
                 for it in items if isinstance(items, list) else []:
-                    name = it if isinstance(it, str) else (it.get("path") or it.get("file") if isinstance(it, dict)
-                                                           else None)
+                    name = it if isinstance(it, str) else ((it.get("name") or it.get("path") or it.get("file"))
+                                                           if isinstance(it, dict) else None)
                     if isinstance(name, str) and name.endswith(".png"):
                         cand = [pjp.parent / name, vdir / name, mdir / name]
                         hit = next((x for x in cand if x.is_file()), None)

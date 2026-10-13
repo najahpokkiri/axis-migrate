@@ -33,7 +33,7 @@ def run_dir(tmp_path: Path):
         pdir = v / "plots" / ds
         pdir.mkdir(parents=True)
         (pdir / "triptych.png").write_bytes(b"\x89PNG")
-        (pdir / "plots.json").write_text(json.dumps({"plots": [{"path": "triptych.png", "kind": "triptych"}]}))
+        (pdir / "plots.json").write_text(json.dumps({"png": [{"name": "triptych.png", "sha256": "x"}]}))
     (v / "compare" / "ds.b_mask.mismatches.parquet").write_bytes(b"PAR1")
     (v / "verdict.json").write_text(json.dumps({
         "run_id": RUN, "mode": "chained", "pipeline": {"verdict": "FAIL", "reason_codes": []},

@@ -393,6 +393,8 @@ def test_derive_without_ladder_and_with_fake(mdir: Path, monkeypatch):
     assert g["ladder"]["project"] == "generated" and g["ladder"]["derived_rev"] == g["revision"]
     assert node(mdir, "s01_clip")["ladder"]["rung"] == "generated"
     assert G.read_edits(mdir)[-1]["actor"] == "derive"
+    before = G.load_graph(mdir)["revision"]
+    assert G.derive(mdir)["changed"] is False and G.load_graph(mdir)["revision"] == before  # idempotent
 
 
 # ------------------------------------------------------------------------------------------------ edits, ack, diff
