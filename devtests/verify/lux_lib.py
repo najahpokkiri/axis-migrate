@@ -84,17 +84,28 @@ def copy_fixture(dst_root: Path) -> Path:
     return leg
 
 
-def lux_graph(*, drop_new=(), invariants=()):
+M01_DATASET = ("vector", "intermediate", "03_INPUT/cantons_lux_edit.gpkg", "cantons", "m01_cantons_lux_edit",
+               {"key": ["canton"], "measure_crs_param": "p.measure_crs"})
+
+
+def lux_graph(*, drop_new=(), invariants=(), migrate_m01=False):
+    """migrate_m01: the manual canton rename is ported as code (q01 'automate'): ds.cantons_lux_edit becomes the
+    output of m01 and its hand-made file the reference (14 pairs, 02 T-pair-2)."""
     steps = [rb.step(s) for s in STEPS] + [rb.step("s03b_zonal_arcpy_old", scope="drop"),
-                                           rb.step("m01_cantons_lux_edit", scope="keep_legacy", kind="manual")]
+                                           rb.step("m01_cantons_lux_edit", scope="migrate" if migrate_m01
+                                                   else "keep_legacy", kind="manual")]
     dsets = []
-    for did, (kind, role, path, layer, prod, cmp_) in DATASETS.items():
+    table = dict(DATASETS)
+    if migrate_m01:
+        table["ds.cantons_lux_edit"] = M01_DATASET
+    for did, (kind, role, path, layer, prod, cmp_) in table.items():
         d = rb.dataset(did, kind, role, path, layer=layer, produced_by=prod, compare=dict(cmp_),
                        sheet=cmp_.get("sheet"))
         if did in drop_new:
             d["new"] = None
         dsets.append(d)
-    g = rb.graph(steps, dsets, reads=READS, invariants=invariants, legacy_output_dirs=["04_FINAL", "05_TEMP"],
+    reads = READS + ([("m01_cantons_lux_edit", "ds.geoboundaries_lux_adm1")] if migrate_m01 else [])
+    g = rb.graph(steps, dsets, reads=reads, invariants=invariants, legacy_output_dirs=["04_FINAL", "05_TEMP"],
                  legacy_name=LEGACY_NAME)
     return g
 
@@ -115,10 +126,14 @@ def legacy_copies(legacy_root: Path, which=None) -> dict:
 
 
 def build_run(root: Path, outputs: dict, *, tolerances=None, kd=None, chain="chained", step_status=None,
-              run_id="r20261016T100000Z-luxlux01", drop_new=(), invariants=(), started_at=rb.STARTED_AT) -> Path:
-    g = lux_graph(drop_new=drop_new, invariants=invariants)
+              run_id="r20261016T100000Z-luxlux01", drop_new=(), invariants=(), started_at=rb.STARTED_AT,
+              migrate_m01=False) -> Path:
+    g = lux_graph(drop_new=drop_new, invariants=invariants, migrate_m01=migrate_m01)
+    # the scan sees cantons_lux_edit.gpkg in 03_INPUT: role input in the inventory, whatever the graph derives
+    roles = {"03_INPUT/cantons_lux_edit.gpkg": "input"} if migrate_m01 else None
     return rb.build(Path(root), g, outputs=outputs, tolerances=tolerances, kd=kd, params=PARAMS, run_id=run_id,
-                    chain=chain, step_status=step_status, legacy_name=LEGACY_NAME, started_at=started_at)
+                    chain=chain, step_status=step_status, legacy_name=LEGACY_NAME, started_at=started_at,
+                    inventory_roles=roles)
 
 
 def pair_spec(did: str, *, tolerances=None, kds=None, legacy_root: Path = FIXTURE) -> dict:

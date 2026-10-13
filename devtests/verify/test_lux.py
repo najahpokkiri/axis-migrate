@@ -455,3 +455,24 @@ def test_invariant_from_graph_in_run_mode(tmp_path):
     c = chk(results["ds.lux_res_exposure_2020"], f"invariant:{L.INVARIANT_ID}")
     assert c["state"] == "PASS_WITHIN_TOLERANCE" and abs(c["legacy"] - 1.566e-9) < 1e-11
     assert rc == 0
+
+
+# ======================================================== 14th pair: the manual canton rename ported as code (q01)
+def test_m01_ported_gives_14_pairs(tmp_path):
+    golden = L.REPO / "evals" / "golden" / "lux" / "out"
+    gm01 = golden / "m01_cantons_lux_edit" / "cantons_lux_edit.gpkg"
+    if not gm01.exists():
+        pytest.skip("golden m01 output not built")
+    leg = L.copy_fixture(tmp_path)
+    outs = L.legacy_copies(leg)
+    outs["ds.cantons_lux_edit"] = gm01
+    run = lux_run(tmp_path, outs, tolerances=signed_proposals_text(), migrate_m01=True)
+    results, rc = compare.run_compare(run)
+    assert len(results) == 14
+    r = results["ds.cantons_lux_edit"]
+    assert r["verdict"] in ("PASS_EXACT", "PASS_WITHIN_TOLERANCE"), (r["reason_codes"], r.get("detail"))
+    assert r["pairing"]["reference_kind"] == "manual_step_artefact" and r["step_id"] == "m01_cantons_lux_edit"
+    assert rc == 0
+    # not ported (keep_legacy): the same file stays an input and is never compared
+    run2 = lux_run(tmp_path / "kept", L.legacy_copies(leg))
+    assert "ds.cantons_lux_edit" not in compare.run_compare(run2)[0]

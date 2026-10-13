@@ -106,3 +106,21 @@ def test_shapefile_truncation_with_rename_kd_is_listed(tmp_path):
     assert check(r, "vector.schema")["kd"] == ["KD-001"]
     assert CRS_M  # synthetic CRS only
     json.dumps(r, allow_nan=False)
+
+
+def test_ported_manual_step_artefact_is_a_reference(tmp_path):
+    """A hand-made file in the input folder is the reference of the step that now automates it (14th lux pair)."""
+    legacy = tmp_path / "legacy"
+    write_raster(legacy / "in" / "src.tif", legacy_raster_array())
+    write_raster(legacy / "in" / "edited.tif", legacy_raster_array())
+    steps = [rb.step("m1", kind="manual"), rb.step("s1")]
+    dsets = [rb.dataset("ds.src", "raster", "input", "in/src.tif"),
+             rb.dataset("ds.edited", "raster", "intermediate", "in/edited.tif", produced_by="m1")]
+    g = rb.graph(steps, dsets, reads=[("m1", "ds.src"), ("s1", "ds.edited")], legacy_output_dirs=["out"])
+    run = rb.build(tmp_path, g, outputs={"ds.edited": legacy / "in" / "edited.tif"},
+                   inventory_roles={"in/edited.tif": "input"})
+    results, rc = compare.run_compare(run)
+    assert results["ds.edited"]["verdict"] == "PASS_EXACT", results["ds.edited"]["reason_codes"]
+    assert results["ds.edited"]["pairing"]["reference_kind"] == "manual_step_artefact"
+    assert rc == 0
+    # the existing test_legacy_input_offered_as_reference_is_refused keeps refusing a file owned by an input dataset

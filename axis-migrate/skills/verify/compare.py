@@ -2847,11 +2847,19 @@ def _pair_one(rc: RunContext, dsid: str, contract: dict, book: ToleranceBook, ge
         return early("NOT_COMPARED", "PAIRING_UNCONFIRMED",
                      detail=f"no evidence that {prod} writes {L_path} (no stem/position fallback)")
     base["pairing"]["state"] = "confirmed"
-    inv_roles = {x.get("legacy_path"): x.get("role") for x in (rc.inventory or {}).get("datasets", [])
-                 if x.get("role") == "input"}
-    if L_path in inv_roles:
-        return early("EVALUATOR_ERROR", "REFERENCE_NOT_INDEPENDENT",
-                     detail=f"{L_path} is a legacy input; inputs are never references")
+    inv_inputs = {x.get("legacy_path") for x in (rc.inventory or {}).get("datasets", []) if x.get("role") == "input"}
+    if L_path in inv_inputs:
+        # A legacy input file may be a reference only for a ported manual step: the graph dataset is produced_by a
+        # step with scope migrate (so its graph role is not input) and no graph *input* dataset owns the same file
+        # (the hand-made artefact IS the reference, DESIGN §8 / 02 T-pair-2). Anything else stays refused.
+        owned_as_input = [x["id"] for x in rc.graph.get("datasets", []) if x.get("role") == "input"
+                          and (x.get("legacy") or {}).get("path") == L_path]
+        ported_manual = step is not None and step.get("scope") == "migrate" and role != "input" and not owned_as_input
+        if not ported_manual:
+            return early("EVALUATOR_ERROR", "REFERENCE_NOT_INDEPENDENT",
+                         detail=f"{L_path} is a legacy input; inputs are never references"
+                                + (f" (owned by input dataset {owned_as_input})" if owned_as_input else ""))
+        base["pairing"]["reference_kind"] = "manual_step_artefact"
     pin = contract["references"].get(L_path) or {}
     lpath = Path(legacy_abs)
     if not pin.get("sha256"):
