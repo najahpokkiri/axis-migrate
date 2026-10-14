@@ -989,7 +989,7 @@ def infer_kind(path: Path) -> str:
 def _vendored_identical(path: Path) -> bool:
     if path.name not in ("_axis_runtime.py", "__main__.py"):
         return False
-    src = HERE.parents[0] / "build" / "runtime" / path.name
+    src = HERE.parents[0] / "migrate" / "runtime" / path.name
     try:
         return src.is_file() and ac.sha256_file(src) == ac.sha256_file(path)
     except OSError:

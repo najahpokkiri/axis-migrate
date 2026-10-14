@@ -51,10 +51,10 @@ own pane; never ask them to open a browser or copy a URL.
 2. **Investigate and interview** — skill `interview`: fill `params.yaml` for every output-changing parameter with
    citations; run `params_check.py`; ask the few remaining questions one at a time (AskUserQuestion, recommended
    option first, explicit "Don't know"); `confirm_all` then the target question last.
-3. **Plan** — skill `build` §Plan: one `plan` block per step, `graph.py render-plan`, one approval question.
+3. **Plan** — skill `migrate` §Plan: one `plan` block per step, `graph.py render-plan`, one approval question.
    No `pipeline/` file may exist before approval. Plans cite reference-entry ids (`G-1`, `N-2`, …) in `risks[]`.
    After approval, once: `run_local.py migration --vendor-runtime` (never edit the vendored runtime).
-4. **Migrate step by step** — skill `build`: in topological order write one step module, let the scanner check it,
+4. **Migrate step by step** — skill `migrate`: in topological order write one step module, let the scanner check it,
    run it in isolation (`run_local.py migration --chain isolated --steps <id>`; exit 12 or a step exit 2 goes to the
    interview, never to a code fix), verify it (`verify` skill: compare, plots, **look at the plots**, review-add),
    repair at most 3 times with spec + current error only, then the next step.
