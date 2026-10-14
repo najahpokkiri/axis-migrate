@@ -4,8 +4,8 @@
     axpy make_lux_project.py --assemble DEST [--pipeline DIR] [--params FILE]
         # DEST/lux-exposure-legacy (copy of the fixture) + DEST/migration/{graph,inventory,params,pipeline,…}
 
-graph.json is a hand-written test fixture following CONTRACTS §2/§4 ids exactly (lineage.py will produce the real
-graph later). inventory.json carries only what the runner consumes: file pins (sha256, content_sha256) including the
+graph.json is a hand-written lineage *draft* following CONTRACTS §2/§4 ids exactly; `--assemble` turns it into
+migration/graph.json through `graph.py init` (the single writer), so graph integrity holds. inventory.json carries only what the runner consumes: file pins (sha256, content_sha256) including the
 pre-existing QGIS `.aux.xml` sidecars, and per-dataset roles.
 """
 from __future__ import annotations
@@ -29,7 +29,7 @@ LEGACY_NAME = "lux-exposure-legacy"
 
 def _ds(i, path, kind, role, *, layer=None, sheet=None, new=None, compare=None, exists=True, title=None):
     return {"id": i, "title": title or i[3:], "kind": kind, "role": role,
-            "persistence": "persisted" if exists else "legacy_container_item",
+            "persistence": "file" if exists else "gdb",
             "legacy": {"path": path, "layer": layer, "sheet": sheet, "exists": exists},
             "new": new, "reference": {"source": "legacy" if role in ("intermediate", "final") and exists else "none",
                                       "match_method": "lineage", "via_dataset": None, "confirmed_by": None},
@@ -39,7 +39,7 @@ def _ds(i, path, kind, role, *, layer=None, sheet=None, new=None, compare=None, 
                         "header_row": None, "data_rows": None, "total_row": None,
                         "measure_crs_param": "p.measure_crs" if kind == "vector" else None,
                         "may_be_empty": False, **(compare or {})},
-            "evidence": [], "provenance": "devtests/run/lux_project fixture"}
+            "evidence": []}
 
 
 def _new(step, name, layer=None):
@@ -48,10 +48,11 @@ def _new(step, name, layer=None):
 
 def _step(i, title, kind, tool, scope, src, lines, ops, params, inputs, outputs, *, module=True, reason=None):
     return {"id": i, "title": title, "kind": kind, "tool": tool, "scope": scope, "scope_reason": reason,
-            "review": None, "legacy": {"source": src, "lines": lines, "executed": scope != "drop"},
+            "review": "confirmed", "legacy": {"source": src, "lines": lines, "executed": scope != "drop"},
             "ops": ops, "params": sorted(params), "inputs": sorted(inputs), "outputs": sorted(outputs),
             "new": {"module": f"pipeline/{i}.py" if module else None, "function": "run", "code_sha256": None},
-            "plan": None, "timeout_s": 120, "ladder": None, "verify": None, "provenance": "fixture"}
+            "plan": {"approved": {"by": "user:fixture", "at": "2026-10-13T00:00:00Z", "channel": "fixture",
+                                  "verbatim": "approved"}} if scope == "migrate" else None, "timeout_s": 120, "ladder": None, "verify": None}
 
 
 def graph_doc() -> dict:
@@ -171,14 +172,11 @@ def graph_doc() -> dict:
         for i in s["inputs"]:
             edges.append({"id": f"e.{i}->{s['id']}", "from": i, "to": s["id"], "kind": "reads", "op": None,
                           "lines": s["legacy"]["lines"], "state": "structurally_inferred", "conflict": False,
-                          "review": None, "evidence": ev(s, i, "reads")})
+                          "review": "confirmed", "evidence": ev(s, i, "reads")})
         for o in s["outputs"]:
             edges.append({"id": f"e.{s['id']}->{o}", "from": s["id"], "to": o, "kind": "writes", "op": None,
                           "lines": s["legacy"]["lines"], "state": "structurally_inferred", "conflict": False,
-                          "review": None, "evidence": ev(s, o, "writes")})
-    edges.append({"id": f"e.{S03B}~{S03}", "from": S03B, "to": S03, "kind": "equivalent_to", "op": None, "lines": [],
-                  "state": "documented", "conflict": False, "review": None,
-                  "evidence": [{"state": "documented", "ref": "NOTES.txt:12", "summary": "old ArcGIS version of 03"}]})
+                          "review": "confirmed", "evidence": ev(s, o, "writes")})
     edges.sort(key=lambda e: e["id"])
     return {"schema": "axis-migrate.graph.v1",
             "project": {"name": LEGACY_NAME, "legacy_root": f"../{LEGACY_NAME}", "legacy_tree_sha256": None,
@@ -225,7 +223,9 @@ def assemble(dest: Path, pipeline: Path | None = None, params: Path | None = Non
     shutil.copytree(FIXTURE, dest / LEGACY_NAME)
     mig = dest / "migration"
     mig.mkdir()
-    shutil.copyfile(HERE / "graph.json", mig / "graph.json")
+    sys.path.insert(0, str(PLUGIN / "skills" / "discover"))
+    import graph as graph_py
+    graph_py.init(mig, json.loads((HERE / "graph.json").read_text()))   # only graph.py writes graph.json
     shutil.copyfile(HERE / "inventory.json", mig / "inventory.json")
     shutil.copyfile(params or GOLDEN / "params.yaml", mig / "params.yaml")
     shutil.copytree(pipeline or GOLDEN / "pipeline", mig / "pipeline",

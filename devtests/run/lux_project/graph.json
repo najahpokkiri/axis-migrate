@@ -38,9 +38,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -84,9 +83,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -128,9 +126,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -180,12 +177,11 @@
     "path": "m01_cantons_lux_edit/cantons_lux_edit.gpkg"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "m01_cantons_lux_edit"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -229,9 +225,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -278,9 +273,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -325,12 +319,11 @@
     "path": "s01_prepare_population/01_lux_outline.gpkg"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s01_prepare_population"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -378,12 +371,11 @@
     "path": "s01_prepare_population/01_pop_lux.tif"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s01_prepare_population"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -431,12 +423,11 @@
     "path": "s02_landuse_mask/02_res_2169.gpkg"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s02_landuse_mask"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -484,12 +475,11 @@
     "path": "s02_landuse_mask/02_res_4326.gpkg"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s02_landuse_mask"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -536,12 +526,11 @@
     "path": "s02_landuse_mask/02_res_mask.tif"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s02_landuse_mask"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -588,12 +577,11 @@
     "path": "s03_zonal_population/03_pop_res.tif"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s03_zonal_population"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -642,12 +630,11 @@
     "path": "s03_zonal_population/03_canton_pop.gpkg"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s03_zonal_population"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -694,12 +681,11 @@
     "path": "s04_distribute_value/04_canton_factor.gpkg"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s04_distribute_value"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -744,12 +730,11 @@
     "path": "s04_distribute_value/04_factor.tif"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s04_distribute_value"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -794,12 +779,11 @@
     "path": "s04_distribute_value/lux_res_exposure_2020.tif"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s04_distribute_value"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -846,12 +830,11 @@
     "path": "s04_distribute_value/exposure_by_canton.gpkg"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s04_distribute_value"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -898,12 +881,11 @@
     "path": "s04_distribute_value/exposure_by_canton.csv"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s04_distribute_value"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -953,12 +935,11 @@
     "path": "s04_distribute_value/exposure_by_canton.xlsx"
    },
    "no_reference_reason": null,
-   "persistence": "persisted",
+   "persistence": "file",
    "produced_by": {
     "op": null,
     "step": "s04_distribute_value"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1000,9 +981,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "legacy_container_item",
+   "persistence": "gdb",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1044,9 +1024,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "legacy_container_item",
+   "persistence": "gdb",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1088,12 +1067,11 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "legacy_container_item",
+   "persistence": "gdb",
    "produced_by": {
     "op": null,
     "step": "s03b_zonal_arcpy_old"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1135,12 +1113,11 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "legacy_container_item",
+   "persistence": "gdb",
    "produced_by": {
     "op": null,
     "step": "s03b_zonal_arcpy_old"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1182,9 +1159,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "legacy_container_item",
+   "persistence": "gdb",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1226,9 +1202,8 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "legacy_container_item",
+   "persistence": "gdb",
    "produced_by": null,
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1270,12 +1245,11 @@
    "legacy_in_memory": false,
    "new": null,
    "no_reference_reason": null,
-   "persistence": "legacy_container_item",
+   "persistence": "gdb",
    "produced_by": {
     "op": null,
     "step": "s03b_zonal_arcpy_old"
    },
-   "provenance": "devtests/run/lux_project fixture",
    "reference": {
     "confirmed_by": null,
     "match_method": "lineage",
@@ -1308,7 +1282,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s02_landuse_mask"
   },
@@ -1333,7 +1307,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s03_zonal_population"
   },
@@ -1358,7 +1332,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s03_zonal_population"
   },
@@ -1383,7 +1357,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s04_distribute_value"
   },
@@ -1408,7 +1382,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s04_distribute_value"
   },
@@ -1433,7 +1407,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s01_prepare_population"
   },
@@ -1458,7 +1432,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s03_zonal_population"
   },
@@ -1483,7 +1457,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "m01_cantons_lux_edit"
   },
@@ -1508,7 +1482,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s01_prepare_population"
   },
@@ -1533,7 +1507,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s03b_zonal_arcpy_old"
   },
@@ -1558,7 +1532,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s02_landuse_mask"
   },
@@ -1583,7 +1557,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "s04_distribute_value"
   },
@@ -1608,7 +1582,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.cantons_lux_edit"
   },
@@ -1633,7 +1607,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.01_lux_outline"
   },
@@ -1658,7 +1632,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.01_pop_lux"
   },
@@ -1683,7 +1657,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.02_res_2169"
   },
@@ -1708,7 +1682,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.02_res_4326"
   },
@@ -1733,7 +1707,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.02_res_mask"
   },
@@ -1758,7 +1732,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.03_canton_pop"
   },
@@ -1783,7 +1757,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.03_pop_res"
   },
@@ -1808,7 +1782,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.work__canton_pop"
   },
@@ -1833,7 +1807,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.work__pop_lux"
   },
@@ -1858,27 +1832,9 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.work__pop_res"
-  },
-  {
-   "conflict": false,
-   "evidence": [
-    {
-     "ref": "NOTES.txt:12",
-     "state": "documented",
-     "summary": "old ArcGIS version of 03"
-    }
-   ],
-   "from": "s03b_zonal_arcpy_old",
-   "id": "e.s03b_zonal_arcpy_old~s03_zonal_population",
-   "kind": "equivalent_to",
-   "lines": [],
-   "op": null,
-   "review": null,
-   "state": "documented",
-   "to": "s03_zonal_population"
   },
   {
    "conflict": false,
@@ -1901,7 +1857,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.04_canton_factor"
   },
@@ -1926,7 +1882,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.04_factor"
   },
@@ -1951,7 +1907,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.exposure_by_canton_csv"
   },
@@ -1976,7 +1932,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.exposure_by_canton_gpkg"
   },
@@ -2001,7 +1957,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.exposure_by_canton_xlsx"
   },
@@ -2026,7 +1982,7 @@
     ]
    ],
    "op": null,
-   "review": null,
+   "review": "confirmed",
    "state": "structurally_inferred",
    "to": "ds.lux_res_exposure_2020"
   }
@@ -2088,9 +2044,15 @@
     "p.canton_name_prefix",
     "p.canton_rename_map"
    ],
-   "plan": null,
-   "provenance": "fixture",
-   "review": null,
+   "plan": {
+    "approved": {
+     "at": "2026-10-13T00:00:00Z",
+     "by": "user:fixture",
+     "channel": "fixture",
+     "verbatim": "approved"
+    }
+   },
+   "review": "confirmed",
    "scope": "migrate",
    "scope_reason": null,
    "timeout_s": 120,
@@ -2140,9 +2102,15 @@
    "params": [
     "p.clip_nodata"
    ],
-   "plan": null,
-   "provenance": "fixture",
-   "review": null,
+   "plan": {
+    "approved": {
+     "at": "2026-10-13T00:00:00Z",
+     "by": "user:fixture",
+     "channel": "fixture",
+     "verbatim": "approved"
+    }
+   },
+   "review": "confirmed",
    "scope": "migrate",
    "scope_reason": null,
    "timeout_s": 120,
@@ -2218,9 +2186,15 @@
     "p.min_area_m2",
     "p.rasterize_all_touched"
    ],
-   "plan": null,
-   "provenance": "fixture",
-   "review": null,
+   "plan": {
+    "approved": {
+     "at": "2026-10-13T00:00:00Z",
+     "by": "user:fixture",
+     "channel": "fixture",
+     "verbatim": "approved"
+    }
+   },
+   "review": "confirmed",
    "scope": "migrate",
    "scope_reason": null,
    "timeout_s": 120,
@@ -2277,9 +2251,15 @@
     "p.pop_min",
     "p.pop_res_nodata"
    ],
-   "plan": null,
-   "provenance": "fixture",
-   "review": null,
+   "plan": {
+    "approved": {
+     "at": "2026-10-13T00:00:00Z",
+     "by": "user:fixture",
+     "channel": "fixture",
+     "verbatim": "approved"
+    }
+   },
+   "review": "confirmed",
    "scope": "migrate",
    "scope_reason": null,
    "timeout_s": 120,
@@ -2323,8 +2303,7 @@
    ],
    "params": [],
    "plan": null,
-   "provenance": "fixture",
-   "review": null,
+   "review": "confirmed",
    "scope": "drop",
    "scope_reason": "alternative_impl",
    "timeout_s": 120,
@@ -2415,9 +2394,15 @@
     "p.vpc_sheet",
     "p.vpc_unit_factor"
    ],
-   "plan": null,
-   "provenance": "fixture",
-   "review": null,
+   "plan": {
+    "approved": {
+     "at": "2026-10-13T00:00:00Z",
+     "by": "user:fixture",
+     "channel": "fixture",
+     "verbatim": "approved"
+    }
+   },
+   "review": "confirmed",
    "scope": "migrate",
    "scope_reason": null,
    "timeout_s": 120,

@@ -19,9 +19,7 @@ S01, S02 = "s01_clip_population", "s02_zonal_sum"
 
 
 def _graph_edit(mig: Path, fn) -> None:
-    g = json.loads((mig / "graph.json").read_text())
-    fn(g)
-    (mig / "graph.json").write_text(json.dumps(g, indent=1, sort_keys=True))
+    synth.edit_graph(mig, fn)
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -436,3 +434,35 @@ def test_tolerance_proposals_are_snapshotted_but_optional(runner, project):
     assert code == 0 and man["tolerances_proposed"] == {"sha256": rl.sha256_file(prop)}
     assert (runner.run_dir(man) / "snapshot" / "tolerances.proposed.yaml").read_bytes() == prop.read_bytes()
     assert man["code"]["worktree_changed_during_run"] is False
+
+
+def test_unapproved_plan_is_refused(runner, project):
+    _graph_edit(project, lambda g: next(s for s in g["steps"] if s["id"] == S02).update(plan=None))
+    code, man = runner()
+    assert code == 11 and man["reason_codes"] == [f"PLAN_NOT_APPROVED:{S02}"] and man["steps"] == []
+    assert man["preflight"]["plan_approval"] == {"status": "refused", "checked": [S01, S02], "unapproved": [S02]}
+    # only steps this run executes need approval: an isolated run of s01 is fine
+    time.sleep(1.05)
+    code, man = runner("--chain", "isolated", "--steps", S01)
+    assert code == 0 and man["preflight"]["plan_approval"]["status"] == "ok"
+
+
+def test_graph_integrity_failure_refuses(runner, project, monkeypatch, tmp_path):
+    code, man = runner()
+    assert code == 0 and man["preflight"]["graph_integrity"]["status"] in ("ok", "not_available")
+    if man["preflight"]["graph_integrity"]["status"] == "ok":   # the real check: a direct write is refused
+        g = json.loads((project / "graph.json").read_text())
+        g["steps"][0]["timeout_s"] = 61
+        (project / "graph.json").write_text(json.dumps(g))
+        time.sleep(1.05)
+        code, man = runner()
+        assert code == 11 and man["reason_codes"] == ["GRAPH_EDITED_OUTSIDE_APPLY"] and man["steps"] == []
+    fake = tmp_path / "graph.py"
+    fake.write_text("import sys\nif '--help' in sys.argv:\n    print('usage: graph.py {check-integrity,apply}')\n"
+                    "    sys.exit(0)\nprint('graph.json sha differs from the last apply revision')\nsys.exit(3)\n")
+    monkeypatch.setattr(rl, "GRAPH_PY", fake)
+    time.sleep(1.05)
+    code, man = runner()
+    assert code == 11 and man["reason_codes"] == ["GRAPH_EDITED_OUTSIDE_APPLY"] and man["steps"] == []
+    gi = man["preflight"]["graph_integrity"]
+    assert gi["status"] == "failed" and gi["exit_code"] == 3 and "differs" in gi["output_tail"]

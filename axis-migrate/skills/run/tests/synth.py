@@ -114,7 +114,7 @@ def legacy_outputs(pop: np.ndarray, zones, min_value: float = 0.5):
 
 def graph_doc() -> dict:
     def ds(i, path, layer, kind, role, produced_by=None, consumed_by=(), new=None):
-        return {"id": i, "title": i[3:], "kind": kind, "role": role, "persistence": "persisted",
+        return {"id": i, "title": i[3:], "kind": kind, "role": role, "persistence": "file",
                 "legacy": {"path": path, "layer": layer, "sheet": None, "exists": True},
                 "new": new, "produced_by": produced_by, "consumed_by": list(consumed_by),
                 "reference": {"source": "legacy" if role != "input" else "none", "match_method": "lineage"},
@@ -150,6 +150,9 @@ def graph_doc() -> dict:
             edges.append({"id": f"e.{i}->{s['id']}", "from": i, "to": s["id"], "kind": "reads", "state": "verified"})
         for o in s["outputs"]:
             edges.append({"id": f"e.{s['id']}->{o}", "from": s["id"], "to": o, "kind": "writes", "state": "verified"})
+    for s in steps:
+        s["plan"] = {"approved": {"by": "user:synthetic", "at": "2026-10-13T00:00:00Z", "channel": "test",
+                                  "verbatim": "approve"}}
     return {"schema": "axis-migrate.graph.v1",
             "project": {"name": "synth", "legacy_root": f"../{LEGACY}", "legacy_tree_sha256": None,
                         "plugin_version": ac.PLUGIN_VERSION, "created_at": "2026-10-13T00:00:00Z"},
@@ -212,7 +215,7 @@ def build_project(root: Path) -> Path:
     (pipe / "s02_zonal_sum.py").write_text(S02)
     (mig / "tests").mkdir()
     (mig / "tests" / "test_smoke.py").write_text(SMOKE_TEST)
-    (mig / "graph.json").write_text(json.dumps(graph_doc(), indent=1, sort_keys=True))
+    graph_py().init(mig, graph_doc())          # graph.json is only ever written by graph.py
     (mig / "params.yaml").write_text(PARAMS_YAML)
     (mig / "tolerances.yaml").write_text("version: 1\ndefaults: {}\nrecords: []\n")
     (mig / "decisions.md").write_text("# decisions\n")
@@ -226,6 +229,23 @@ def build_project(root: Path) -> Path:
     (mig / "inventory.json").write_text(json.dumps({"schema": "axis-migrate.inventory.v1",
                                                     "legacy_root": f"../{LEGACY}", "files": files}, indent=1))
     return mig
+
+
+def graph_py():
+    sys.path.insert(0, str(PLUGIN / "skills" / "discover"))
+    import graph
+    return graph
+
+
+def edit_graph(mig: Path, fn) -> None:
+    """Test-only: change graph.json the way graph.py writes it (lock, write, head record), so integrity holds."""
+    g_mod = graph_py()
+    with g_mod.locked(mig):
+        g = json.loads((mig / "graph.json").read_text())
+        fn(g)
+        g["revision"] = int(g.get("revision", 1)) + 1
+        g_mod._write_graph(mig, g)
+        g_mod._record_head(mig, g["revision"])
 
 
 def set_step(mig: Path, step_id: str, source: str) -> None:

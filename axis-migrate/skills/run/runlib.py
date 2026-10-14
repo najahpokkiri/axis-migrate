@@ -43,6 +43,7 @@ AXIS_BOOT = RUN_DIR / "axis_boot.py"
 RUNTIME_SRC = PLUGIN / "skills" / "migrate" / "runtime"
 RUNTIME_FILES = ("_axis_runtime.py", "__main__.py")
 CODESCAN = PLUGIN / "skills" / "guard" / "codescan.py"
+GRAPH_PY = PLUGIN / "skills" / "discover" / "graph.py"
 REFENV_PY = Path(os.environ.get("AXIS_REFENV_PYTHON", str(Path.home() / "micromamba/envs/qgis/bin/python")))
 
 MANIFEST_SCHEMA = "axis-migrate.run-manifest.v1"
@@ -624,6 +625,7 @@ class Run:
         self.code_hash, self.code_files = code_tree_hash(self.migration / "pipeline")
         self.snapshot_hashes: dict = {}
         self.exec_root: str | None = None     # where the run dir lives for the step process (None = here)
+        self.preflight: dict = {"plan_approval": {"status": "not_run"}, "graph_integrity": {"status": "not_run"}}
         self.e2b_record: dict | None = None
 
     # ---- allocation, snapshot --------------------------------------------------------------------------------
@@ -904,6 +906,48 @@ class Run:
         src = "reused" if planned[p].action == "reuse" else ("bridge" if planned[p].action == "bridge" else "run")
         return {"source": src, "producer": p, "layer": spec["layer"], "kind": spec["kind"], "format": spec["format"],
                 "path": str(self.dir / spec["rel"])}
+
+    # ---- preflight: graph integrity and plan approval (script halves of the Claude Code hooks; Codex has none) --
+    def preflight_graph(self, python: Path | None = None) -> None:
+        """graph.py check-integrity (graph.json only ever written by graph.py apply), then: every step this run
+        executes has an approved plan. Both refuse with exit 11 and are recorded in manifest.preflight."""
+        python = python or VENV_PY
+        gi: dict = {"status": "not_available", "tool": "graph.py check-integrity"}
+        env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()), "AXIS_MIGRATE_PLUGIN": str(PLUGIN),
+               **DETERMINISM_ENV, **STEP_ENV_FIXED}
+        if GRAPH_PY.is_file():
+            hp = subprocess.run([str(python), str(GRAPH_PY), "--help"], capture_output=True, text=True, env=env,
+                                timeout=60)
+            if "check-integrity" in hp.stdout + hp.stderr:
+                cp = subprocess.run([str(python), str(GRAPH_PY), "check-integrity", str(self.migration)],
+                                    capture_output=True, text=True, env=env, timeout=300)
+                gi = {"status": "ok" if cp.returncode == 0 else "failed", "tool": "graph.py check-integrity",
+                      "exit_code": cp.returncode, "output_tail": (cp.stdout + cp.stderr)[-2000:]}
+            else:
+                gi["note"] = "graph.py has no check-integrity subcommand yet; skipped (runs once present)"
+        else:
+            gi["note"] = "graph.py not installed; skipped"
+        live = hash_or_none(self.migration / "graph.json")
+        if self.snapshot_hashes and live != self.snapshot_hashes.get("graph.json"):
+            gi["snapshot_matches_live"] = False
+        self.preflight["graph_integrity"] = gi
+        if gi["status"] == "failed":
+            raise RunAbort(EXIT["contract"], ["GRAPH_EDITED_OUTSIDE_APPLY"])
+        if gi.get("snapshot_matches_live") is False:
+            raise RunAbort(EXIT["contract"], ["GRAPH_CHANGED_DURING_PREFLIGHT"])
+        by_id = {st["id"]: st for st in self.graph.get("steps", [])}
+        unapproved = []
+        for ps in self.plan:
+            if ps.action != "execute":
+                continue
+            appr = ((by_id.get(ps.id) or {}).get("plan") or {}).get("approved") or {}
+            if not appr.get("by") or not appr.get("at"):
+                unapproved.append(ps.id)
+        self.preflight["plan_approval"] = {"status": "refused" if unapproved else "ok",
+                                           "checked": [p.id for p in self.plan if p.action == "execute"],
+                                           "unapproved": unapproved}
+        if unapproved:
+            raise RunAbort(EXIT["contract"], [f"PLAN_NOT_APPROVED:{s}" for s in unapproved])
 
     # ---- preflight: inputs, feeds ---------------------------------------------------------------------------
     def _inventory_file(self, legacy_rel: str) -> dict | None:
@@ -1530,7 +1574,7 @@ class Run:
             "env": self.env_record, "reference_env": self.reference_env, "env_comparison": self.env_cmp,
             "inputs": self.inputs_records, "legacy_feeds": self.feeds_records,
             "steps": self.steps_records, "outputs": sorted(self.outputs_records, key=lambda o: o["dataset_id"]),
-            "scan": self.scan_record, "tests": self.tests_record,
+            "scan": self.scan_record, "tests": self.tests_record, "preflight": self.preflight,
             "plan": [{"step_id": p.id, "action": p.action, "timeout_s": p.timeout_s} for p in self.plan],
             "legacy_root": os.path.relpath(self.legacy_root, self.migration),
             "sealed": True, "checksums": "checksums.sha256",

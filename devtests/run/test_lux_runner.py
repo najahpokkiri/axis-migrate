@@ -122,16 +122,17 @@ def test_at13_isolated_s03_reads_staged_legacy_feeds(lux):
     assert code == 0, man["reason_codes"]
     assert man["chain"] == "isolated" and man["eligible_for"] == "none" and man["full"] is False
     feeds = {f["legacy_path"]: f for f in man["legacy_feeds"]}
-    assert sorted(feeds) == ["05_TEMP/01_pop_lux.tif", "05_TEMP/02_res_mask.tif"]
+    # graph.py derives ds.cantons_lux_edit as an intermediate (m01 produces it), so its legacy copy is a feed too
+    assert sorted(feeds) == ["03_INPUT/cantons_lux_edit.gpkg", "05_TEMP/01_pop_lux.tif", "05_TEMP/02_res_mask.tif"]
     for p, f in feeds.items():
         assert f["sha256"] == before[p] and f["fed_to"] == ["s03_zonal_population"]
         assert f["staged"] == f"stage/legacy_ro/{p}" and f["unchanged_after_run"] is True
     s3 = step(man, "s03_zonal_population")
-    assert s3["fed_from"] == {"ds.01_pop_lux": "legacy", "ds.02_res_mask": "legacy", "ds.cantons_lux_edit": "input"}
+    assert s3["fed_from"] == {"ds.01_pop_lux": "legacy", "ds.02_res_mask": "legacy", "ds.cantons_lux_edit": "legacy"}
     rd = lux / "runs" / man["run_id"]
     staged = {p.relative_to(rd / "stage").as_posix() for p in (rd / "stage").rglob("*") if p.is_file()}
     assert staged == {"legacy_ro/05_TEMP/01_pop_lux.tif", "legacy_ro/05_TEMP/02_res_mask.tif",
-                      "inputs/03_INPUT/cantons_lux_edit.gpkg"}           # never 04_FINAL, never its own outputs
+                      "legacy_ro/03_INPUT/cantons_lux_edit.gpkg"}           # never 04_FINAL, never its own outputs
     assert not os.access(rd / "stage" / "legacy_ro" / "05_TEMP" / "01_pop_lux.tif", os.W_OK)
     after = {p.relative_to(legacy).as_posix(): rl.sha256_file(p) for p in legacy.rglob("*") if p.is_file()}
     assert after == before

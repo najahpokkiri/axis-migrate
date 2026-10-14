@@ -141,14 +141,11 @@ def test_isolated_uploads_only_the_needed_legacy_feed(project, fake_e2b):
 def test_step_timeout_is_resumable_in_a_new_sandbox(project, fake_e2b):
     synth.set_step(project, S02, synth.S02.replace("def run(ctx):\n", "def run(ctx):\n    import time\n"
                                                                        "    time.sleep(6)\n"))
-    g = json.loads((project / "graph.json").read_text())
-    next(s for s in g["steps"] if s["id"] == S02)["timeout_s"] = 3
-    (project / "graph.json").write_text(json.dumps(g))
+    synth.edit_graph(project, lambda g: next(s for s in g["steps"] if s["id"] == S02).update(timeout_s=3))
     code, man = e2b_run(project, "--confirm-upload")
     assert code == 14 and man["status"] == "timed_out" and man["steps_succeeded"] == 1
     assert (project / "runs" / man["run_id"] / "outputs" / S01).is_dir()      # earlier output already on the host
-    next(s for s in g["steps"] if s["id"] == S02)["timeout_s"] = 60
-    (project / "graph.json").write_text(json.dumps(g))
+    synth.edit_graph(project, lambda g: next(s for s in g["steps"] if s["id"] == S02).update(timeout_s=60))
     time.sleep(1.05)
     code, man2 = e2b_run(project, "--confirm-upload", "--resume-from", man["run_id"])
     assert code == 0, man2["reason_codes"]

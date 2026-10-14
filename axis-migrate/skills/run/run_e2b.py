@@ -307,6 +307,7 @@ def main(argv: list[str] | None = None) -> int:
             crs = run.crs_list()
             local_probe = rl.run_probe(rl.VENV_PY, crs)
             run.make_plan()
+            run.preflight_graph()
             run.preflight_inputs()
             run.run_codescan()
             run.run_smoke_tests()

@@ -149,6 +149,7 @@ def main(argv: list[str] | None = None) -> int:
             reference = rl.reference_env_record(refenv_py, crs)
             run.record_environment(probe, reference=reference, executor_python=python)
             run.make_plan()
+            run.preflight_graph()
             run.preflight_inputs()
             run.run_codescan()
             run.run_smoke_tests()
