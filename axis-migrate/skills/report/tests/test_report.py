@@ -307,3 +307,12 @@ def test_secret_in_bundle(proj):
     lad = ladder.compute(proj["migration"])
     assert "SECRET_IN_BUNDLE" in {x["code"] for x in lad["integrity"]}
     assert lad["pipeline"]["incomplete"]
+
+
+def test_transform_phrase_sign():  # rehearsal D6: +y pixels = south on a north-up grid (e < 0)
+    from pathlib import Path as _P
+    ph = report.Phrases(_P(report.__file__).parent / "phrases.v1.yaml")
+    txt = ph.say("RASTER_TRANSFORM_MISMATCH", {"value": 2.0, "threshold": 1e-6,
+                                               "diagnostics": {"shift_px": [1, 2]}})
+    assert "1 px east, 2 px south" in txt
+    assert "north" not in txt.split("(")[0]

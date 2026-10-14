@@ -20,12 +20,15 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
 3. **Seal**: `axpy seal.py migration --run <id> [--json]`. This writes `verify/evidence.json` and `EVIDENCE_ID`, makes
    `verify/` read-only and appends a line to `runs/index.jsonl`. Exit 2 means refused (already sealed, a secret was found,
    or a NaN was found); report the stderr line verbatim. Seal runs once per run.
-4. **Status**: `python3 -I ladder.py migration [--run <id>] [--json]`. Quote its first line (`status_line`)
+4. **Graph projections**: `axpy "$P/skills/discover/graph.py" ingest-verify migration --run <id>`, then
+   `axpy "$P/skills/discover/graph.py" derive migration`. The graph page then colours the steps from this run. These are
+   projections only: they never count as graph drift, and they never change the rung.
+5. **Status**: `python3 -I ladder.py migration [--run <id>] [--json]`. Quote its first line (`status_line`)
    **verbatim**, for example
    `axis-migrate status: sandbox-validated | run r… | 3 pass, 1 FAIL, 0 NOT_COMPARED, 0 needs review | report migration/report/index.html`.
    Never claim a rung above it. The rungs above `target-ready` (deployed, live-target-verified, customer-accepted) are
    never computed, so never claim them.
-5. **Report**: `axpy report.py migration [--run <id>] [--json]`. Give the user `migration/report/index.html`.
+6. **Report**: `axpy report.py migration [--run <id>] [--json]`. Give the user `migration/report/index.html`.
    - exit 0: the report is complete (it may still show failures).
    - exit 2: **EVIDENCE INCOMPLETE, stale (a file changed after the run) or NOTHING VERIFIED.** Say so in your
      first sentence and name the integrity codes from the red bar. Do not hide this, soften it or re-render

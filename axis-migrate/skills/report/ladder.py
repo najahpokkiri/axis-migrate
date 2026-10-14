@@ -403,7 +403,10 @@ def _check_amendment(b: Bundle, parent: dict, child: dict, name: str):
 
 def okey(o: dict) -> str:
     """Identity of an object entry: the same bytes may legitimately sit at two paths (e.g. two empty plots)."""
-    return "|".join([o["id"], o.get("path") or "", o.get("finding_id") or o.get("entry") or ""])
+    # dataset is part of the identity: one legacy file can be the reference of several datasets (an equivalent
+    # pairing shares the QGIS step's file), and each dataset needs its own bound ref object
+    return "|".join([o["id"], o.get("path") or "", o.get("finding_id") or o.get("entry") or "",
+                     o.get("dataset") or ""])
 
 
 def verify_objects(b: Bundle) -> dict[str, bool]:
@@ -569,13 +572,41 @@ def ds_legacy_path(ds: dict) -> str | None:
     return leg.get("path") or ds.get("legacy_path")
 
 
-def ds_has_reference(ds: dict) -> bool:
+def equivalent_via(ds: dict, datasets: dict | None) -> dict | None:
+    """A user-confirmed equivalent pairing (reference.source equivalent, via_dataset, confirmed_by; 06 §4a, DESIGN
+    §4.2 set_reference): the dataset is compared against the via dataset's legacy file. None otherwise."""
+    ref = ds.get("reference") or {}
+    if ref.get("source") != "equivalent" or not ref.get("via_dataset") or not datasets:
+        return None
+    via = datasets.get(ref["via_dataset"])
+    if not via or not ref.get("confirmed_by"):
+        return None
+    vleg = via.get("legacy") or {}
+    if not ds_legacy_path(via) or vleg.get("exists") is False:
+        return None
+    return via
+
+
+def ds_reference_path(ds: dict, datasets: dict | None = None) -> str | None:
+    """The legacy file this dataset is compared against (its own, or the confirmed equivalent's)."""
+    via = equivalent_via(ds, datasets)
+    return ds_legacy_path(via) if via else ds_legacy_path(ds)
+
+
+def ds_has_reference(ds: dict, datasets: dict | None = None) -> bool:
+    if ds.get("role") == "input":
+        return False
+    ref = ds.get("reference") or {}
+    if ref.get("source") == "equivalent" and ref.get("via_dataset"):
+        # a proposed equivalent pairing counts as a reference: unconfirmed, compare reports PAIRING_UNCONFIRMED
+        # (NOT_COMPARED, blocks) — never a silent NO_REFERENCE
+        return datasets is None or ref["via_dataset"] in datasets
     leg = ds.get("legacy") or {}
-    if ds.get("role") == "input" or not ds_legacy_path(ds):
+    if not ds_legacy_path(ds):
         return False
     if leg.get("exists") is False or ds.get("legacy_in_memory"):
         return False
-    if (ds.get("reference") or {}).get("source") == "none" or ds.get("no_reference_reason"):
+    if ref.get("source") == "none" or ds.get("no_reference_reason"):
         return False
     return True
 
@@ -753,10 +784,20 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
         if cls == "drop":
             continue
         r = {"dataset": dsid, "step": prod, "kind": ds_kind(ds), "role": ds.get("role"),
-             "legacy_path": ds_legacy_path(ds), "has_reference": ds_has_reference(ds), "state": None,
+             "legacy_path": ds_reference_path(ds, datasets), "has_reference": ds_has_reference(ds, datasets),
+             "state": None,
              "declared_state": None, "reason_codes": [], "disposition": None, "notes": [], "visual": {},
              "kd": [], "compare": None, "first_reason": None, "first_check": {}}
         dres[dsid] = r
+        via = equivalent_via(ds, datasets)
+        if via is not None:
+            vstep = producer_of(via, steps)
+            tool = str((steps.get(vstep) or {}).get("tool") or (steps.get(vstep) or {}).get("kind") or "")
+            label = "QGIS step" if "qgis" in tool.lower() else "step"
+            r["equivalent"] = {"via_dataset": via["id"], "via_step": vstep,
+                               "confirmed_by": (ds.get("reference") or {}).get("confirmed_by")}
+            r["notes"].append(f"reference from equivalent {label} {vstep or '?'} ({via['id']}), pairing confirmed "
+                              f"by {r['equivalent']['confirmed_by']}")
         if cls == "bridged":
             r["disposition"] = "BRIDGED"
             r["reason_codes"] = ["BRIDGED"]
@@ -867,8 +908,6 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
             if acc and not (set(codes) & {"TOLERANCE_UNSIGNED", "KD_UNSIGNED"}):
                 disp = "ACCEPTED_DIFFERENCE"
         r["disposition"] = disp
-        if (ds.get("reference") or {}).get("source") == "equivalent":
-            r["notes"].append("reference from equivalent step")
 
     # ---------------------------------------------------------------- steps
     params = records.get("params") or []
@@ -1007,9 +1046,9 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
                             "text": f"{p.get('id')} inferred ({p.get('confidence') or 'confidence not stated'})"})
         entry["fitted_unconfirmed"] = sorted(target_block)
         for d in my_ds:
-            if "reference from equivalent step" in d["notes"]:
-                ann.append({"code": "LEGACY_EQUIVALENT_REFERENCE", "dataset": d["dataset"],
-                            "text": "reference from equivalent step"})
+            for n in d["notes"]:
+                if n.startswith("reference from equivalent"):
+                    ann.append({"code": "LEGACY_EQUIVALENT_REFERENCE", "dataset": d["dataset"], "text": n})
         if rv:
             rung = "reference-verified"
         for c in capping_drift:

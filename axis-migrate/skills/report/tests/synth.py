@@ -286,7 +286,8 @@ def make_run(proj: dict, n: int = 1, *, compares: dict | None = None, skip_compa
                 continue
             dst = rd / "outputs" / ds["new"]["path"]
             dst.parent.mkdir(parents=True, exist_ok=True)
-            src = leg / ds["legacy"]["path"]
+            via = (ds.get("reference") or {}).get("via_dataset")
+            src = leg / (gds[via]["legacy"]["path"] if via else ds["legacy"]["path"])
             if shift_new and dsid == "ds.b_exposure":
                 import rasterio
                 with rasterio.open(src) as r:
@@ -335,12 +336,13 @@ def make_run(proj: dict, n: int = 1, *, compares: dict | None = None, skip_compa
     compares = compares or {}
     plot_shas = {}
     for dsid, ds in sorted(gds.items()):
-        if ds["role"] == "input" or dsid in skip_compare or not ladder.ds_has_reference(ds):
+        if ds["role"] == "input" or dsid in skip_compare or not ladder.ds_has_reference(ds, gds):
             continue
         prod = ladder.producer_of(ds, steps)
         if prod is None or ladder.step_class(steps[prod]) != "migrate":
             continue
-        lp = leg / ds["legacy"]["path"]
+        via = (ds.get("reference") or {}).get("via_dataset")
+        lp = leg / (gds[via]["legacy"]["path"] if via else ds["legacy"]["path"])
         o = out_by.get(dsid)
         if dsid in compares:
             state, checks, codes = compares[dsid]
@@ -354,7 +356,7 @@ def make_run(proj: dict, n: int = 1, *, compares: dict | None = None, skip_compa
                "comparator": {"id": "axis-migrate.compare", "version": "1.0.0", "sha256": "0" * 64},
                "run_id": rid, "mode": chain, "isolated_step": None, "contract_hash": "sha256:" + "1" * 64,
                "dataset_id": dsid, "step_id": prod, "family": ds["kind"], "role": ds["role"],
-               "legacy": {"path": f"{LEGACY}/{ds['legacy']['path']}", "layer": ds["legacy"].get("layer"),
+               "legacy": {"path": f"{LEGACY}/{lp.relative_to(leg).as_posix()}", "layer": ds["legacy"].get("layer"),
                           "sha256": ac.sha256_file(lp), "pinned_sha256": ac.sha256_file(lp)},
                "new": {"path": f"migration/runs/{rid}/{o['path']}" if o else None,
                        "sha256": o["sha256"] if o else None, "written_by_step": prod},

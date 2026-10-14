@@ -350,19 +350,26 @@ def build_evidence(migration: Path, run_id: str) -> tuple[dict, Builder]:
     # references
     for dsid in sorted(datasets):
         ds = datasets[dsid]
-        if not ladder.ds_has_reference(ds):
+        if not ladder.ds_has_reference(ds, datasets):
             continue
         prod = ladder.producer_of(ds, steps)
         if prod and ladder.step_class(steps[prod]) in ("drop", "bridged"):
             continue
-        lpath = ladder.ds_legacy_path(ds)
+        via = ladder.equivalent_via(ds, datasets)
+        if (ds.get("reference") or {}).get("source") == "equivalent" and via is None:
+            continue  # unconfirmed equivalent pairing: compare reports PAIRING_UNCONFIRMED, nothing to pin
+        src = via or ds  # an equivalent pairing shares the via dataset's legacy file (one ref object per dataset)
+        lpath = ladder.ds_legacy_path(src)
         lp = legacy / lpath
         pin = inv_files.get(lpath) or {}
-        sha = ladder.hex_of(pin.get("sha256") or (ds.get("legacy") or {}).get("sha256"))
-        meta = {"reference_kind": "legacy_equivalent" if (ds.get("reference") or {}).get("source") == "equivalent"
-                else "legacy_recorded", "independence": "R1", "produced_by": prod,
-                "content_sha256": pin.get("content_sha256") or (ds.get("legacy") or {}).get("content_sha256"),
-                "layer": (ds.get("legacy") or {}).get("layer")}
+        sha = ladder.hex_of(pin.get("sha256") or (src.get("legacy") or {}).get("sha256"))
+        meta = {"reference_kind": "legacy_equivalent" if via else "legacy_recorded", "independence": "R1",
+                "produced_by": ladder.producer_of(src, steps) if via else prod,
+                "via_dataset": via["id"] if via else None,
+                "confirmed_by": (ds.get("reference") or {}).get("confirmed_by") if via else None,
+                "content_sha256": pin.get("content_sha256") or (src.get("legacy") or {}).get("content_sha256"),
+                "layer": (src.get("legacy") or {}).get("layer")}
+        meta = {k: v for k, v in meta.items() if v is not None}
         if lp.is_dir():
             h = ladder.tree_hex(lp)
             bd.add({"id": f"ref:{h}", "kind": "ref", "path": f"{legacy_rel}/{lpath}", "sha256": "sha256:" + h,
@@ -529,7 +536,7 @@ def build_evidence(migration: Path, run_id: str) -> tuple[dict, Builder]:
         prod = ladder.producer_of(ds, steps)
         if prod and ladder.step_class(steps[prod]) in ("drop", "bridged"):
             continue
-        if ladder.ds_has_reference(ds):
+        if ladder.ds_has_reference(ds, datasets):
             with_legacy.append(dsid)
             if dsid in cmp_ids:
                 st = next(o for o in bd.objects.values() if o["id"] == cmp_ids[dsid])["meta"]["state"]

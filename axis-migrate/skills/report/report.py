@@ -410,7 +410,7 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
     # not checked
     sweep = []
     inv = _load(snap / "inventory.json") or {}
-    named = {ladder.ds_legacy_path(d) for d in gds.values()}
+    named = {ladder.ds_reference_path(d, gds) for d in gds.values()} | {ladder.ds_legacy_path(d) for d in gds.values()}
     for f in inv.get("files") or []:
         pth = f.get("path") or ""
         if any(pth.startswith(x.rstrip("/") + "/") for x in graph.get("legacy_output_dirs") or []) and \

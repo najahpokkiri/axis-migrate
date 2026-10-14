@@ -398,3 +398,69 @@ def test_graph_scope_change_after_seal_is_drift(sealed):
     synth.update_graph(sealed["migration"], lambda g: g["steps"][1].update(scope="keep_legacy"))
     res = ladder.compute(sealed["migration"])
     assert "GRAPH_CHANGED_AFTER_RUN" in {x["code"] for x in res["integrity"]}
+
+
+def _add_equivalent_step(mig, confirmed=True):
+    """An alternative implementation (like an old ArcPy step) whose own output never existed on disk, paired by a
+    person with the QGIS step's final via an equivalent reference (DESIGN §4.2 set_reference)."""
+    def add(g):
+        g["steps"].append({"id": "s03_alt_arcpy", "title": "Old ArcPy variant", "kind": "script", "tool": "arcpy",
+                           "scope": "migrate", "inputs": ["ds.a_mask", "ds.pop"], "outputs": ["ds.c_alt"],
+                           "params": [], "new": {"module": "pipeline/s03_alt_arcpy.py", "function": "run"}})
+        g["steps"][1]["tool"] = "qgis"
+        g["datasets"].append({"id": "ds.c_alt", "kind": "raster", "role": "final",
+                              "legacy": {"path": "work.gdb", "layer": "c_alt", "exists": False},
+                              "new": {"path": "s03_alt_arcpy/c_alt.tif"}, "produced_by": {"step": "s03_alt_arcpy"},
+                              "no_reference_reason": "superseded_only",
+                              "reference": {"source": "equivalent", "match_method": "human",
+                                            "via_dataset": "ds.b_exposure",
+                                            "confirmed_by": "user" if confirmed else None}})
+    synth.update_graph(mig, add)
+    (mig / "pipeline" / "s03_alt_arcpy.py").write_text('STEP_ID = "s03_alt_arcpy"\n\ndef run(ctx) -> None:\n'
+                                                       '    raise NotImplementedError\n')
+
+
+def test_equivalent_reference_is_compared_and_bound(proj):  # rehearsal D1
+    _add_equivalent_step(proj["migration"])
+    synth.make_run(proj, 1)
+    res = ladder.compute(proj["migration"])
+    assert res["integrity"] == [], res["integrity"]
+    d = res["datasets"]["ds.c_alt"]
+    assert d["has_reference"] and d["state"] == "PASS_EXACT" and d["legacy_path"] == "final/b_exposure.tif"
+    s = res["steps"]["s03_alt_arcpy"]
+    assert s["disposition"] == "VERIFIED" and s["rung"] == "reference-verified"
+    assert any(a["code"] == "LEGACY_EQUIVALENT_REFERENCE" and "equivalent QGIS step s02_total" in a["text"]
+               for a in s["annotations"])
+    ev = ac.load_json(proj["migration"] / "runs" / synth.run_id_for(1) / "verify" / "evidence.json")
+    refs = [o for o in ev["objects"] if o["kind"] == "ref" and o["path"].endswith("final/b_exposure.tif")]
+    assert sorted(o["dataset"] for o in refs) == ["ds.b_exposure", "ds.c_alt"]  # one shared file, two ref objects
+    assert len({o["id"] for o in refs}) == 1
+
+
+def test_equivalent_reference_with_human_kd_is_accepted_difference(proj):
+    _add_equivalent_step(proj["migration"])
+    kd = KD_TEMPLATE.replace("{owner}", "human:najah").replace("ds.b_exposure", "ds.c_alt") \
+        .replace("[raster.grid.transform]", "[raster.mask]").replace("[RASTER_TRANSFORM_MISMATCH]",
+                                                                     "[NODATA_MASK_MISMATCH]")
+    (proj["migration"] / "known-differences.md").write_text(synth.KD_MD + kd)
+    checks = synth.default_checks({"kind": "raster"})
+    checks[5].update(state="FAIL", reason_codes=["NODATA_MASK_MISMATCH"], value=404, threshold=0)
+    checks.append({"id": "kd:KD-001", "kd_check": True, "kd": ["KD-001"], "order": 9, "state": "PASS_WITHIN_TOLERANCE",
+                   "reason_codes": [], "held": True, "detail": {"signed": True}})
+    synth.make_run(proj, 1, compares={"ds.c_alt": ("FAIL", checks, ["NODATA_MASK_MISMATCH"])})
+    res = ladder.compute(proj["migration"])
+    assert res["integrity"] == [], res["integrity"]
+    assert res["datasets"]["ds.c_alt"]["state"] == "FAIL"
+    assert res["steps"]["s03_alt_arcpy"]["disposition"] == "ACCEPTED_DIFFERENCE"
+    assert res["pipeline"]["counts"]["fail"] == 1  # the parity row stays FAIL in the counts
+
+
+def test_unconfirmed_equivalent_is_not_compared_not_no_reference(proj):
+    _add_equivalent_step(proj["migration"], confirmed=False)
+    r = synth.make_run(proj, 1, compares={"ds.c_alt": ("NOT_COMPARED", [], ["PAIRING_UNCONFIRMED"])}, seal=False)
+    rerun_compare(r["run_dir"], "ds.c_alt", lambda d: d["refs"].update(out=None, ref=None))  # as compare.py writes it
+    sealmod.seal(proj["migration"], r["run_id"])
+    res = ladder.compute(proj["migration"])
+    assert res["datasets"]["ds.c_alt"]["disposition"] == "NOT_COMPARED"
+    assert res["steps"]["s03_alt_arcpy"]["disposition"] == "NOT_COMPARED"
+    assert res["pipeline"]["rung"] == "sandbox-validated"

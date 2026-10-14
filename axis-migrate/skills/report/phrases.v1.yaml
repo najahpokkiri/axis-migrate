@@ -28,7 +28,8 @@ phrases:
   CRS_MISMATCH: "the coordinate reference systems differ"
   RASTER_BAND_COUNT_MISMATCH: "band count differs ({value} vs expected)"
   RASTER_SHAPE_MISMATCH: "raster shape differs ({value})"
-  RASTER_TRANSFORM_MISMATCH: "grid shifted by {shift_px[0]} px east, {shift_px[1]} px north (deviation {value} px, limit {threshold} px)"
+  # shift_px = [(c_new − c_legacy)/a, (f_new − f_legacy)/e]; e < 0 on north-up grids, so +y pixels = south
+  RASTER_TRANSFORM_MISMATCH: "grid shifted by {shift_px[0]} px east, {shift_px[1]} px south (negative = west / north; deviation {value} px, limit {threshold} px)"
   DTYPE_MISMATCH: "data type differs"
   NODATA_VALUE_MISMATCH: "NoData value differs"
   NODATA_MASK_MISMATCH: "{value} cells are valid on one side only (limit {threshold})"
