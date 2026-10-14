@@ -6,6 +6,7 @@ deny : legacy root (read-only), eval-hidden siblings, graph.json / graph-edits.j
        report/** (report.py only), databricks/target-manifest.json|target-check.json (target scripts only),
        pipeline/sNN_*.py before the step's plan is approved in graph.json, any non-append change to
        decisions.md / known-differences.md, an edit of an existing tolerance record after a run recorded the file.
+       tolerances.proposed.yaml content with a signed record (agreed_by/agreed_at non-null).
 ask  : a new tolerance record after a run; a tolerance record carrying agreed_by (only a human signs);
        a new KD block with owner: human:...; a params entry moving from fitted to source: answer.
 """
@@ -85,12 +86,23 @@ def check_tolerances(mig, cur: str, new: str) -> tuple[str, str] | None:
         return None
     no_reason = [i for i in added if not (rp.item_scalar(new_items[i], "reason")
                                           or rp.item_scalar(new_items[i], "decision_ref"))]
-    if no_reason:
-        return ("deny", f"axis-migrate: new tolerance record(s) {', '.join(no_reason)} need a reason "
-                        "(or decision_ref) because a run already used tolerances.yaml.")
+    missing = (f" Record(s) {', '.join(no_reason)} give no reason or decision_ref (08 §5c expects one)."
+               if no_reason else "")
     return ("ask", f"axis-migrate: new tolerance record(s) {', '.join(added)} after run {runs[-1].name}. This widens "
-                   "a tolerance after seeing results; the report will show it as widened and a new run is needed. "
-                   "Approve only if the user agrees.")
+                   "a tolerance after seeing results; the report will show it as widened and a new run is needed."
+                   f"{missing} Approve only if the user agrees.")
+
+
+def check_proposed_tolerances(new: str) -> tuple[str, str] | None:
+    """migration/tolerances.proposed.yaml: unsigned proposals, writable any time; signatures are refused."""
+    signed = []
+    for it in rp.yaml_list_items(new, "records") or []:
+        if rp.item_scalar(it, "agreed_by") or rp.item_scalar(it, "agreed_at"):
+            signed.append(it.id or f"record at line {it.start_line + 1}")
+    if signed:
+        return ("deny", f"axis-migrate: tolerances.proposed.yaml record(s) {', '.join(signed)} carry agreed_by/agreed_at. "
+                        "Only a person signs; proposals stay unsigned (agreed_by: null, agreed_at: null).")
+    return None
 
 
 def check_params(cur: str, new: str) -> tuple[str, str] | None:
@@ -182,7 +194,8 @@ def main() -> int:
     else:
         decision = check_pipeline_module(mig, rel, path)
         if decision is None and tool != "NotebookEdit" and rel in ("decisions.md", "known-differences.md",
-                                                                   "tolerances.yaml", "params.yaml"):
+                                                                   "tolerances.yaml", "params.yaml",
+                                                                   "tolerances.proposed.yaml"):
             pc = proposed(tool, ti, path)
             if pc is not None:
                 cur, new = pc
@@ -190,6 +203,8 @@ def main() -> int:
                     decision = check_append_only(rel, cur, new)
                 elif rel == "tolerances.yaml":
                     decision = check_tolerances(mig, cur, new)
+                elif rel == "tolerances.proposed.yaml":
+                    decision = check_proposed_tolerances(new)
                 else:
                     decision = check_params(cur, new)
     if decision:

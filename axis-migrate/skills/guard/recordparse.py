@@ -289,7 +289,7 @@ def top_level_text(text: str, list_key: str) -> str:
     for line in lines:
         if re.match(rf"^{re.escape(list_key)}\s*:", line):
             in_list = True
-            out.append(line)
+            out.append(f"{list_key}:")  # `records: []` and `records:` + items are the same top level
             continue
         if in_list:
             if line.strip() and not line.startswith((" ", "-", "#")):

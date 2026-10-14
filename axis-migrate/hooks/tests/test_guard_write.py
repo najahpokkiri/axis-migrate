@@ -150,10 +150,74 @@ def test_g4_after_run_new_record_asks(project_run):
     assert r.decision == "ask" and "tol.final.values.v2" in r.reason
 
 
-def test_g4_after_run_new_record_needs_reason(project_run):
+def test_g4_after_run_new_record_without_reason_asks(project_run):
     cur = (project_run.mig / "tolerances.yaml").read_text()
     r = write(project_run, project_run.mig / "tolerances.yaml", cur + NEW_REC.replace("  reason: legit summation order\n", ""))
-    assert r.decision == "deny" and "reason" in r.reason
+    assert r.decision == "ask" and "reason" in r.reason
+
+
+EMPTY_TOL = """version: 1
+defaults:
+  raster.values: {metric: abs+rel, atol: 0, rtol: 0, max_mismatch: 0}
+records: []
+"""
+
+
+def _empty_records_after_run(pr):
+    from conftest import add_run
+    import shutil
+    pr.write("tolerances.yaml", EMPTY_TOL)
+    shutil.rmtree(pr.mig / "runs", ignore_errors=True)
+    add_run(pr, "r20261014T120000Z-0000aaaa")
+
+
+def test_g4_empty_records_first_new_id_asks(project):
+    """e2e finding: `records: []` -> one new record after a run is the new-id case (ask), not a top-level change."""
+    _empty_records_after_run(project)
+    new = EMPTY_TOL.replace("records: []\n", "records:\n" + NEW_REC.replace("tol.final.values.v2", "tol.final.values.v1"))
+    r = write(project, project.mig / "tolerances.yaml", new)
+    assert r.decision == "ask" and "tol.final.values.v1" in r.reason
+    r = edit(project, project.mig / "tolerances.yaml", "records: []",
+             "records:\n- {id: tol.final.values.v1, dataset: ds.final, rtol: 1.0e-5, agreed_by: null}")
+    assert r.decision == "ask"
+
+
+def test_g4_empty_records_defaults_change_still_denied(project):
+    _empty_records_after_run(project)
+    r = edit(project, project.mig / "tolerances.yaml", "max_mismatch: 0}\nrecords: []", "max_mismatch: 3}\nrecords: []")
+    assert r.decision == "deny" and "defaults" in r.reason
+
+
+PROPOSED = """version: 1
+records:
+- id: tol.final.values.v1
+  dataset: ds.final
+  rtol: 1.0e-6
+  correct_spread: {value: 0.0}
+  nearest_wrong: {value: 1.0e-3}
+  agreed_by: null
+  agreed_at: null
+"""
+
+
+def test_g4_proposed_file_unsigned_allowed_any_time(project_run):
+    p = project_run.mig / "tolerances.proposed.yaml"
+    assert write(project_run, p, PROPOSED).out is None
+    p.write_text(PROPOSED)
+    assert edit(project_run, p, "rtol: 1.0e-6", "rtol: 1.0e-5").out is None
+    r = run_hook("guard_bash.py", tool_payload("PreToolUse", "Bash", project_run.root, {
+        "command": "cat migration/analysis/p.yaml > migration/tolerances.proposed.yaml"}))
+    assert r.out is None
+
+
+def test_g4_proposed_file_signed_denied(project):
+    p = project.mig / "tolerances.proposed.yaml"
+    r = write(project, p, PROPOSED.replace("agreed_by: null", "agreed_by: najah"))
+    assert r.decision == "deny" and "Only a person signs" in r.reason
+    p.write_text(PROPOSED)
+    assert edit(project, p, "agreed_at: null", "agreed_at: 2026-10-14").decision == "deny"
+    r = write(project, p, "version: 1\nrecords:\n- {id: tol.x.v1, rtol: 1e-6, agreed_by: najah}\n")
+    assert r.decision == "deny"
 
 
 def test_g4_after_run_defaults_change_denied(project_run):
