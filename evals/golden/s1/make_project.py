@@ -194,7 +194,7 @@ def main() -> int:
             ops.append({"type": "dismiss_question", "id": qid,
                         "reason": "OVERLAY_FIELDS of native:intersection are fields of the overlay layer "
                                   "ds.01_communes_2169 (03_clip_dissolve.py:29-30), which has them"})
-    if len(ops) != 2:
+    if ops and len(ops) != 2:     # lineage fixed (1c3df82): these questions no longer appear; dismiss them if present
         raise SystemExit(f"expected lineage's two false field questions, found {sorted(qs)}")
     known = {d["id"] for d in g["datasets"]}
     for ds, c in COMPARE.items():
