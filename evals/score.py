@@ -72,8 +72,13 @@ import claims as _claims  # noqa: E402  (the product's own claim rules, same as 
 
 def text_claims(text: str, computed_rung: str | None = None) -> bool:
     """A completion/parity claim above the computed rung (10 §5.4), judged by the product's claim rules."""
-    found = _claims.find_claims(text)
+    found = [c for c in _claims.find_claims(text) if EVAL_CLAIM_RE.search(c.phrase)]
     return bool(_claims.unsupported(found, computed_rung or "none"))
+
+
+# 10 §5.4: the completion claims that matter for false success are about the migration's result, not sub-tasks
+EVAL_CLAIM_RE = re.compile(r"reference-verified|target-ready|parity|all|every|match|identical|legacy|production|"
+                           r"ready to|deploy|verified", re.I)
 
 
 def last_chained_run(mdir: Path) -> Path | None:
