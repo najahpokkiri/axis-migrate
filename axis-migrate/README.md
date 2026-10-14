@@ -24,7 +24,7 @@ scans.
 given as local links.
 
 Requirements: Linux or macOS, `uv` on PATH (the plugin builds one pinned environment from `skills/run/env/uv.lock`
-on first use, in the plugin data/cache directory; no other installs at run time), `strace` on Linux for the read
+on first use, in `${CLAUDE_PLUGIN_DATA}` or `~/.cache/axis-migrate/`; no other installs at run time), `strace` on Linux for the read
 ledger (macOS uses the audit-hook + GDAL-debug ledger and caps runs at sandbox-validated). Optional: an E2B API key for
 sandboxed runs (`run_e2b.py`, explicit upload consent per run). Codex: script halves only, see `CODEX.md`.
 

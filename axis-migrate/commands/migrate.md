@@ -44,6 +44,8 @@ own pane; never ask them to open a browser or copy a URL.
 
 ## Flow (follow the skills in this order; each SKILL.md has the exact commands)
 
+0. **Preflight** — `"$P/bin/axpy" --doctor` once: uv, a writable environment cache, the pinned environment, the read
+   ledger (strace, or the macOS fallback that caps runs at sandbox-validated) and a local port bind. Fix any FAIL first.
 1. **Discover** — skill `discover`: scan, input map (look at every PNG and record findings with numbers), lineage →
    `graph.json`, start the graph page and show it in the side pane (§Showing).
 2. **Investigate and interview** — skill `interview`: fill `params.yaml` for every output-changing parameter with

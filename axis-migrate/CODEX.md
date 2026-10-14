@@ -7,8 +7,8 @@ re-enables them, re-measure before anyone trusts them. `skills` lists two roots 
 0.144.4 loads both, but the directory validator wants `skills` only, so this build is for local/Git marketplaces.
 Manifest `.codex-plugin/plugin.json`; local marketplace `.agents/plugins/marketplace.json` (root = this folder).
 Install: `codex plugin marketplace add <clean checkout of this folder>` then `codex plugin add axis-migrate@axis-migrate-local`.
-Install copies the folder into `$CODEX_HOME/plugins/cache/axis-migrate-local/axis-migrate/<version>/`. Use a clean
-checkout: a dev tree with `skills/run/env/.venv` (about 650 MB) is copied whole. Start a session with
+Install copies the folder into `$CODEX_HOME/plugins/cache/axis-migrate-local/axis-migrate/<version>/`. The pinned
+environment is not in the plugin folder: `bin/axpy` builds it in `${CLAUDE_PLUGIN_DATA}` or `~/.cache/axis-migrate/`. Start a session with
 `$axis-migrate:start`, which resolves the plugin root and hands over to `commands/migrate.md`.
 
 ## What still guards the run (script halves; they refuse late, not early)
@@ -45,8 +45,8 @@ checkout: a dev tree with `skills/run/env/.venv` (about 650 MB) is copied whole.
 
 - Whether `strace` (ptrace) works inside Codex's `workspace-write` sandbox. Without it the run uses the weaker
   `audit+cpl_debug` ledger only if `strace` is absent; if it is present but refused, steps fail.
-- The first `bin/axpy` call runs `uv sync --frozen` into `skills/run/env/.venv` inside the plugin cache, outside the
-  workspace, and needs network. Expect to grant both, or pre-build the venv in the cache.
+- The first `bin/axpy` call runs `uv sync --frozen` into `~/.cache/axis-migrate/env-<lock8>`, outside the workspace,
+  and needs network. Expect to grant both, or pre-build it with `bin/axpy --doctor`.
 - How a Codex model follows the skills end to end. Install, listing and skill discovery were checked; a run was not.
 
 Sources (retrieved 14 Oct 2026): https://developers.openai.com/codex/plugins/build ·
