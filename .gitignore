@@ -6,3 +6,6 @@ node_modules/
 /scratch/
 /evals/results/
 /evals/work/
+/demo/*/lux-exposure-legacy/
+/demo/*/migration/*
+!/demo/*/migration/SIGN-OFF.md
