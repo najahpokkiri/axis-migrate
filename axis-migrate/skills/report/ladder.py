@@ -495,6 +495,15 @@ def verify_objects(b: Bundle) -> dict[str, bool]:
 # ------------------------------------------------------------------------------------------------------------------
 # Live checks: drift and legacy tree
 # ------------------------------------------------------------------------------------------------------------------
+def _graph_contract_hex(p: Path) -> str:
+    """Graph drift compares contract views: derive's projections (ladder, verify, revision, …) are not a change.
+    The sealed graph object itself is still checked by raw bytes (verify_objects)."""
+    try:
+        return hex_of(ac.graph_contract_sha256(p))
+    except (OSError, ValueError):
+        return "unreadable:" + ac.sha256_file(p)
+
+
 def drift_findings(b: Bundle) -> list[dict]:
     out = []
     snap = b.run_dir / "snapshot"
@@ -505,10 +514,12 @@ def drift_findings(b: Bundle) -> list[dict]:
     for key, live in sorted(live_paths.items()):
         s = snap / SNAPSHOT_FILES[key]
         code = CAPPING_DRIFT.get(key) or INFO_DRIFT.get(key)
-        sh = ac.sha256_file(s) if s.is_file() else None
-        lh = ac.sha256_file(live) if live.is_file() else None
+        hasher = _graph_contract_hex if key == "graph" else ac.sha256_file
+        sh = hasher(s) if s.is_file() else None
+        lh = hasher(live) if live.is_file() else None
         if sh != lh:
-            out.append({"code": code, "file": key, "sealed": sh and "sha256:" + sh, "live": lh and "sha256:" + lh,
+            prefix = "contract-sha256:" if key == "graph" else "sha256:"
+            out.append({"code": code, "file": key, "sealed": sh and prefix + sh, "live": lh and prefix + lh,
                         "caps": key in CAPPING_DRIFT, "severity": "stale" if key in CAPPING_DRIFT else "info"})
     live_code = b.migration / "pipeline"
     snap_code = snap / "axis_pipeline"

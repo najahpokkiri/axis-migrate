@@ -363,3 +363,38 @@ def test_performance_many_calls(sealed):
     for _ in range(5):
         ladder.compute(sealed["migration"])
     assert (time.time() - t) / 5 < 5.0
+
+
+def test_graph_projection_after_seal_is_not_drift(sealed):
+    """graph.py derive writes ladder/verify projections into graph.json after the run: not GRAPH_CHANGED_AFTER_RUN."""
+    def derive(g):
+        g["revision"] = g.get("revision", 0) + 1
+        g["updated"] = {"rev": g["revision"], "by": "derive", "at": "2026-10-16T15:00:00Z"}
+        g["ladder"] = {"project": "reference-verified", "derived_rev": g["revision"], "blocking": []}
+        for s in g["steps"]:
+            s["ladder"] = {"rung": "reference-verified"}
+            s["verify"] = {"verdict": "PASS_EXACT", "blame": None}
+            s.setdefault("new", {})["code_sha256"] = "f" * 64
+        for d in g["datasets"]:
+            d["verify"] = {"run_id": sealed["run_id"], "verdict": "PASS_EXACT"}
+    synth.update_graph(sealed["migration"], derive)
+    res = ladder.compute(sealed["migration"])
+    assert "GRAPH_CHANGED_AFTER_RUN" not in {x["code"] for x in res["integrity"]}
+    assert res["pipeline"]["rung"] == "reference-verified"
+
+
+def test_graph_contract_change_after_seal_is_drift(sealed):
+    def change(g):
+        for d in g["datasets"]:
+            if d["id"] == "ds.b_by_zone":
+                d.setdefault("compare", {})["key"] = ["zone"]
+    synth.update_graph(sealed["migration"], change)
+    res = ladder.compute(sealed["migration"])
+    assert "GRAPH_CHANGED_AFTER_RUN" in {x["code"] for x in res["integrity"]}
+    assert res["pipeline"]["rung"] == "sandbox-validated"
+
+
+def test_graph_scope_change_after_seal_is_drift(sealed):
+    synth.update_graph(sealed["migration"], lambda g: g["steps"][1].update(scope="keep_legacy"))
+    res = ladder.compute(sealed["migration"])
+    assert "GRAPH_CHANGED_AFTER_RUN" in {x["code"] for x in res["integrity"]}
