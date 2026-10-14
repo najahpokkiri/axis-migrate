@@ -13,7 +13,7 @@ import pytest
 
 import runlib as rl
 import synth
-from conftest import RUN_SKILL, HERE, scanner_blocks, step_rec
+from conftest import LEDGER, NO_STRACE, RUN_SKILL, HERE, scanner_blocks, step_rec
 
 S01, S02 = "s01_clip_population", "s02_zonal_sum"
 
@@ -28,7 +28,10 @@ def test_clean_chained_run_is_sealed_and_complete(runner, project):
     assert code == 0, man["reason_codes"]
     assert man["status"] == "succeeded" and man["full"] is True and man["chain"] == "chained"
     assert man["steps_planned"] == man["steps_succeeded"] == 2
-    assert man["eligible_for"] == "sandbox-validated" and man["read_ledger"] == "strace"
+    # with strace or (macOS) the audit+CPL_DEBUG fallback, a lock-matched chained run may support sandbox-validated;
+    # the fallback records that it can never support more (D5-9)
+    assert man["eligible_for"] == "sandbox-validated" and man["read_ledger"] == LEDGER
+    assert man["read_ledger_rung_cap"] == ("sandbox-validated" if NO_STRACE else None)
     rd = runner.run_dir(man)
     assert man["run_id"].startswith("r") and man["run_id"].endswith(man["code"]["code_hash"].split(":")[1][:8])
     # outputs, hashes, write ledger
@@ -373,15 +376,42 @@ def test_scan_block_stops_before_steps(runner, project, monkeypatch, tmp_path):
     assert scan["findings"] == [{"rule": "S05"}] and scan["exit_code"] == 2
 
 
-def test_audit_fallback_ledger_when_strace_is_missing(runner, project, monkeypatch, no_scan):
+@pytest.mark.parametrize("how", ["python_open", "rasterio_gdal", "pyogrio_gdal", "listdir"])
+def test_audit_fallback_ledger_when_strace_is_missing(runner, project, monkeypatch, no_scan, how):
+    """No strace (macOS): Python-level and GDAL-level forbidden reads are still caught (audit hook, CPL_DEBUG)."""
     import run_local
     monkeypatch.setattr(run_local, "STRACE", None)
-    final = (project.parent / synth.LEGACY / "04_FINAL" / "zone_sum.csv").resolve()
-    synth.set_step(project, S02, synth.S02.replace(
-        "def run(ctx):\n", f"def run(ctx):\n    open({str(final)!r}).read()\n"))
+    legacy = (project.parent / synth.LEGACY).resolve()
+    body = {"python_open": f"    open({str(legacy / '04_FINAL' / 'zone_sum.csv')!r}).read()\n",
+            "rasterio_gdal": f"    import rasterio\n    rasterio.open({str(legacy / '05_TEMP' / '01_pop_clip.tif')!r}).close()\n",
+            "pyogrio_gdal": f"    import pyogrio\n    pyogrio.read_dataframe({str(legacy / '04_FINAL' / 'zone_stats.gpkg')!r})\n",
+            "listdir": f"    import os\n    os.listdir({str(legacy / '04_FINAL')!r})\n"}[how]
+    synth.set_step(project, S02, synth.S02.replace("def run(ctx):\n", "def run(ctx):\n" + body))
     code, man = runner()
     assert man["read_ledger"] == "audit+cpl_debug" and man["eligible_for"] == "none"
     assert code == 11 and f"UNDECLARED_READ:{S02}" in man["reason_codes"]
+
+
+def test_audit_fallback_has_a_write_ledger_and_can_be_sandbox_validated(runner, project, monkeypatch):
+    import run_local
+    monkeypatch.setattr(run_local, "STRACE", None)
+    code, man = runner()
+    assert code == 0 and man["read_ledger"] == "audit+cpl_debug"
+    assert man["eligible_for"] == "sandbox-validated" and man["read_ledger_rung_cap"] == "sandbox-validated"
+    assert step_rec(man, S02)["writes_ledger"] == ["outputs/s02_zonal_sum/zone_stats.gpkg",
+                                                   "outputs/s02_zonal_sum/zone_sum.csv"]
+    assert step_rec(man, S01)["reads"]["declared_opened"] == ["stage/inputs/03_INPUT/pop.tif",
+                                                              "stage/inputs/03_INPUT/zones.gpkg"]
+
+
+def test_a_blind_ledger_refuses(runner, project, monkeypatch):
+    """If the ledger did not see a read the runtime recorded, it cannot vouch for anything: refuse."""
+    import run_local
+    monkeypatch.setattr(run_local, "STRACE", None)
+    real = rl.parse_audit
+    monkeypatch.setattr(rl, "parse_audit", lambda p, e, cwd=None: [x for x in real(p, e, cwd) if not x["path"].endswith("/pop.tif")])
+    code, man = runner()
+    assert code == 11 and "LEDGER_BLIND:ds.pop" in man["reason_codes"]
 
 
 @pytest.mark.skipif(not rl.REFENV_PY.is_file(), reason="reference (QGIS) environment not installed")

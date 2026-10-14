@@ -98,3 +98,18 @@ def scanner_blocks(runner, monkeypatch) -> bool:
     finally:
         monkeypatch.setattr(runlib, "CODESCAN", off)
     return code == 11 and "SCAN_BLOCKED" in man["reason_codes"] and man["steps"] == []
+
+
+# Test-only simulation of a host without strace (macOS): AXIS_TEST_NO_STRACE=1 runs the whole suite on the
+# audit-hook + CPL_DEBUG ledger. Without strace on the host the suite is in that mode anyway.
+import shutil as _shutil  # noqa: E402
+NO_STRACE = bool(os.environ.get("AXIS_TEST_NO_STRACE")) or _shutil.which("strace") is None and \
+    not Path("/usr/bin/strace").is_file()
+LEDGER = "audit+cpl_debug" if NO_STRACE else "strace"
+
+
+@pytest.fixture(autouse=True)
+def _strace_mode(monkeypatch):
+    if NO_STRACE:
+        import run_local
+        monkeypatch.setattr(run_local, "STRACE", None)

@@ -1,16 +1,40 @@
 #!/bin/sh
 # Run a Python script in the one pinned axis-migrate environment (skills/run/env/uv.lock).
-# No installs at run time beyond `uv sync --frozen` of the committed lock.
+# No installs at run time beyond `uv sync --frozen` of the committed lock. The venv lives outside the plugin folder:
+#   ${CLAUDE_PLUGIN_DATA}/env-<lock8>, else ${XDG_CACHE_HOME:-~/.cache}/axis-migrate/env-<lock8>
+# (same rule as lib/axis_common.py env_venv_dir()).
+#   axpy <script.py|-m mod|-c code> …   run in the env (syncing it first when needed)
+#   axpy --print-python                 sync if needed, print the env's python path
+#   axpy --doctor                       preflight checks (stdlib; works before the env exists)
 PLUGIN="$(cd "$(dirname "$0")/.." && pwd)"
 ENV="$PLUGIN/skills/run/env"
-PY="$ENV/.venv/bin/python"
-MARK="$ENV/.venv/.axis-lock-sha256"
-LOCKSHA="$(sha256sum "$ENV/uv.lock" | cut -d' ' -f1)"
+if [ "$1" = "--doctor" ]; then
+  shift
+  PY3="$(command -v python3 || true)"
+  if [ -z "$PY3" ]; then echo "axpy --doctor: no python3 on PATH (needed for the stdlib doctor)" >&2; exit 13; fi
+  exec "$PY3" -I "$PLUGIN/skills/run/doctor.py" "$@"
+fi
+if command -v sha256sum >/dev/null 2>&1; then
+  LOCKSHA="$(sha256sum "$ENV/uv.lock" | cut -d' ' -f1)"
+else
+  LOCKSHA="$(shasum -a 256 "$ENV/uv.lock" | cut -d' ' -f1)"
+fi
+LOCK8="$(printf %s "$LOCKSHA" | cut -c1-8)"
+if [ -n "$CLAUDE_PLUGIN_DATA" ]; then
+  VENV="$CLAUDE_PLUGIN_DATA/env-$LOCK8"
+else
+  VENV="${XDG_CACHE_HOME:-$HOME/.cache}/axis-migrate/env-$LOCK8"
+fi
+PY="$VENV/bin/python"
+MARK="$VENV/.axis-lock-sha256"
 if [ ! -x "$PY" ] || [ "$(cat "$MARK" 2>/dev/null)" != "$LOCKSHA" ]; then
   UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
   if [ ! -x "$UV" ]; then echo "axpy: UV_MISSING (install uv; the runner never falls back to system Python)" >&2; exit 13; fi
-  UV_PYTHON_PREFERENCE=only-managed "$UV" sync --frozen --quiet --project "$ENV" >&2 || exit 13
+  mkdir -p "$(dirname "$VENV")" || { echo "axpy: ENV_CACHE_NOT_WRITABLE: $(dirname "$VENV")" >&2; exit 13; }
+  UV_PROJECT_ENVIRONMENT="$VENV" UV_PYTHON_PREFERENCE=only-managed "$UV" sync --frozen --quiet --project "$ENV" >&2 \
+    || { echo "axpy: ENV_SYNC_FAILED (uv sync --frozen of $ENV into $VENV)" >&2; exit 13; }
   echo "$LOCKSHA" > "$MARK"
 fi
+if [ "$1" = "--print-python" ]; then echo "$PY"; exit 0; fi
 export GDAL_PAM_ENABLED=NO PYTHONHASHSEED=0 AXIS_MIGRATE_PLUGIN="$PLUGIN"
 exec "$PY" "$@"

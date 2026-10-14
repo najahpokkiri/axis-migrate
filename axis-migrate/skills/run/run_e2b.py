@@ -46,6 +46,19 @@ REMOTE = {"root": "/home/user/axis/run", "python": "/opt/axis/env/.venv/bin/pyth
           "strace": "/usr/bin/strace", "tmp": "/home/user/axis"}
 
 
+# Hashing inside the sandbox uses the sandbox's own Python (not GNU sha256sum), so the same commands work in the
+# Debian template and in a local stand-in on BSD/macOS userland.
+_PY_VERIFY = ("import hashlib,sys\n"
+              "bad=[]\n"
+              "for l in open('UPLOAD.sha256',encoding='utf-8').read().splitlines():\n"
+              "    h,p=l.split('  ',1)\n"
+              "    if hashlib.sha256(open(p,'rb').read()).hexdigest()!=h: bad.append(p)\n"
+              "print('\\n'.join(bad)); sys.exit(1 if bad else 0)\n")
+_PY_SHA = ("import hashlib,os,sys\n"
+           "for p in sys.argv[1:]:\n"
+           "    if os.path.isfile(p): print(hashlib.sha256(open(p,'rb').read()).hexdigest()+'  '+p)\n")
+
+
 def default_template() -> str:
     return f"axis-geo-migrate-{rl.sha256_file(rl.LOCK)[:8]}"
 
@@ -191,15 +204,19 @@ def make_executor(rem: Remote, *, t_created: float, use_strace: bool):
                                  started_epoch=started_epoch, ledger_kind="e2b-physical",
                                  extra_reasons=[f"BUDGET_EXHAUSTED_BEFORE:{ps.id}"])
         argv = run.boot_argv(ps, REMOTE["python"], f"{R}/boot/axis_boot.py")
-        ledger_rel, kind = None, "e2b-physical"
+        extra_env = {}
         if use_strace:
             ledger_rel, kind = f"logs/{ps.id}.reads", "e2b-physical+strace"
             argv = [REMOTE["strace"], "-f", "--seccomp-bpf", "-qq", "-y", "-s", "65535", "-e",
                     f"trace={rl.TRACE_SET}", "-o", f"{R}/{ledger_rel}"] + argv
+        else:   # no strace in the sandbox: the same audit + CPL_DEBUG ledger as local macOS
+            ledger_rel, kind = f"logs/{ps.id}.audit", "e2b-physical+audit"
+            argv = argv + ["--audit-ledger", f"{R}/{ledger_rel}"]
+            extra_env = {"CPL_DEBUG": "ON"}
         cmd = (f"cd {R} && " + " ".join(shlex.quote(a) for a in argv)
                + f" > {R}/logs/{ps.id}.stdout 2> {R}/logs/{ps.id}.stderr")
         envs = {"PATH": "/usr/bin:/bin", "HOME": "/home/user", "TMPDIR": f"{R}/scratch/{ps.id}",
-                "MPLCONFIGDIR": f"{R}/scratch/{ps.id}/mpl", **rl.DETERMINISM_ENV, **rl.STEP_ENV_FIXED}
+                "MPLCONFIGDIR": f"{R}/scratch/{ps.id}/mpl", **rl.DETERMINISM_ENV, **rl.STEP_ENV_FIXED, **extra_env}
         timed_out, code = False, None
         try:
             r = rem.sb.commands.run(cmd, timeout=ps.timeout_s, envs=envs, cwd=R)
@@ -208,12 +225,12 @@ def make_executor(rem: Remote, *, t_created: float, use_strace: bool):
             code = exc.exit_code
         except rem.Timeout:
             timed_out = True
-            rem.sh("pkill -KILL -f axis_boot.py || true")
+            rem.sh(f"pkill -KILL -f {shlex.quote(R + '/boot/axis_boot.py')} || true")
         extra: list[str] = []
         # one round trip: R6 hashes of the step's inputs in the sandbox + the files to bring back
         feeds = sorted(ps.feeds.items())
         q = " ".join(shlex.quote(run.x(f["path"])) for _, f in feeds)
-        c, out, _ = rem.sh(f"cd {R} && sha256sum {q} 2>/dev/null; echo '@@'; "
+        c, out, _ = rem.sh(f"cd {R} && {REMOTE['python']} -I -c {shlex.quote(_PY_SHA)} {q}; echo '@@'; "
                            f"find logs -maxdepth 1 -type f -name '{ps.id}.*'; "
                            f"find outputs/{ps.id}.tmp -type f 2>/dev/null", timeout=120)
         hashes_part, _, files_part = out.partition("@@")
@@ -251,7 +268,7 @@ def make_executor(rem: Remote, *, t_created: float, use_strace: bool):
         return rl.ExecResult(exit_code=None if timed_out else code, timed_out=timed_out, started_at=started_at,
                              ended_at=ac.utc_now_iso(), started_epoch=started_epoch,
                              duration_s=time.monotonic() - t0, ledger_kind=kind, ledger_path=ledger_rel,
-                             ledger_root=R if use_strace else None, extra_reasons=extra)
+                             ledger_root=R, extra_reasons=extra)
     return execute
 
 
@@ -342,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
                                    executor_python=REMOTE["python"], lock_mark_value=rprobe.get("_lock_sha256"),
                                    mismatch_reason="TEMPLATE_LOCK_MISMATCH")
             if not rprobe.get("_strace"):
-                run.read_ledger = "e2b-physical"
+                run.read_ledger = "e2b-physical+audit"
             items = upload_set(run) + [{"path": "env/expect.json", "bytes": (run.dir / "env/expect.json").stat().st_size,
                                         "sha256": rl.sha256_file(run.dir / "env/expect.json")}]
             t_up = time.monotonic()
@@ -350,8 +367,9 @@ def main(argv: list[str] | None = None) -> int:
             R = REMOTE["root"]
             rem.sh(f"mkdir -p {R} {REMOTE['tmp']}")
             rem.write(f"{REMOTE['tmp']}/upload.tar.gz", blob)
-            c, out, err = rem.sh(f"cd {R} && tar -xzf {REMOTE['tmp']}/upload.tar.gz && sha256sum -c --quiet "
-                                 f"UPLOAD.sha256 && chmod -R a-w stage && mkdir -p ctx logs outputs scratch", timeout=120)
+            c, out, err = rem.sh(f"cd {R} && tar -xzf {REMOTE['tmp']}/upload.tar.gz && "
+                                 f"{REMOTE['python']} -I -c {shlex.quote(_PY_VERIFY)} && chmod -R a-w stage && "
+                                 f"mkdir -p ctx logs outputs scratch", timeout=120)
             if c != 0:
                 raise rl.RunAbort(rl.EXIT["contract"], ["UPLOAD_HASH_MISMATCH"], err[-500:])
             run.e2b_record["upload_s"] = round(time.monotonic() - t_up, 2)

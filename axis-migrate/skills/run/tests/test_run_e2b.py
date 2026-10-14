@@ -12,7 +12,7 @@ import pytest
 import run_e2b
 import runlib as rl
 import synth
-from conftest import step_rec
+from conftest import NO_STRACE, step_rec
 
 FAKE_KEY = "e2b_test_key_not_real_0123456789"
 S01, S02 = "s01_clip_population", "s02_zonal_sum"
@@ -61,7 +61,8 @@ def fake_e2b(monkeypatch, tmp_path):
     lock_file.write_text(rl.sha256_file(rl.LOCK) + "\n")
     monkeypatch.setattr(run_e2b, "REMOTE", {"root": str(remote / "home/user/axis/run"), "python": str(rl.VENV_PY),
                                             "lock_file": str(lock_file), "probe_boot": str(rl.AXIS_BOOT),
-                                            "strace": "/usr/bin/strace", "tmp": str(remote / "home/user/axis")})
+                                            "strace": "/nonexistent/strace" if NO_STRACE else "/usr/bin/strace",
+                                            "tmp": str(remote / "home/user/axis")})
     FakeSandbox.created, FakeSandbox.killed = [], []
 
     def factory(**kw):
@@ -99,7 +100,8 @@ def test_create_call_is_offline_and_keyless_and_outputs_match_local(project, run
     e = man["env"]["e2b"]
     assert e["sandbox_destroyed"] is True and FakeSandbox.killed == [e["sandbox_id"]]
     assert e["upload_confirmed_by"] == "--confirm-upload" and e["uploaded_bytes"] > 0 and e["downloaded_bytes"] > 0
-    assert man["executor"] == "e2b" and man["read_ledger"] == "e2b-physical+strace"
+    assert man["executor"] == "e2b" and man["read_ledger"] == ("e2b-physical+audit" if NO_STRACE
+                                                               else "e2b-physical+strace")
     assert man["eligible_for"] == "sandbox-validated" and man["full"] is True
     assert step_rec(man, S02)["writes_ledger"] == ["outputs/s02_zonal_sum/zone_stats.gpkg",
                                                    "outputs/s02_zonal_sum/zone_sum.csv"]

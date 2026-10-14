@@ -374,23 +374,67 @@ def _write_result(path: str, result: dict) -> None:
 
 
 def install_audit_ledger(path: str) -> None:
-    """Fallback read ledger where strace is unavailable (macOS): Python `open` audit events as JSON lines.
-    GDAL's C-level opens are invisible here; the runner adds CPL_DEBUG `GDALOpen(...)` lines from stderr."""
+    """Fallback read AND write ledger where strace is unavailable (macOS). JSON lines, absolute paths:
+    * Python audit events: open (mode/flags), os.rename/os.replace, shutil.copyfile, os.link, os.symlink,
+      os.listdir/os.scandir;
+    * GDAL opens made from C: rasterio routes CPL_DEBUG `GDALOpen(<path>, this=…) succeeds as …` to the
+      `rasterio._env` logger (captured here at DEBUG, not echoed); pyogrio prints the same line to stderr, which the
+      runner parses. Requires CPL_DEBUG=ON in the step environment (the runner sets it)."""
+    import logging
+    import re
     fh = open(path, "a", encoding="utf-8", buffering=1)  # noqa: SIM115 - lives for the whole process
     pid = os.getpid()
 
-    def hook(event, hargs):
-        if event != "open" or not hargs:
-            return
-        target = hargs[0]
-        if isinstance(target, int):
-            return
+    def emit(rec: dict) -> None:
         try:
-            fh.write(json.dumps({"pid": pid, "path": os.fsdecode(target), "mode": hargs[1] if len(hargs) > 1 else None,
-                                 "flags": hargs[2] if len(hargs) > 2 else None}) + "\n")
+            fh.write(json.dumps({"pid": pid, **rec}) + "\n")
         except (TypeError, ValueError, OSError):
             return
+
+    def ab(p):
+        if isinstance(p, int) or p is None:
+            return None
+        try:
+            return os.path.abspath(os.fsdecode(p))
+        except (TypeError, ValueError):
+            return None
+
+    def hook(event, a):
+        if event == "open" and a:
+            p = ab(a[0])
+            if p:
+                rec = {"event": "open", "path": p, "mode": a[1] if len(a) > 1 else None,
+                       "flags": a[2] if len(a) > 2 and isinstance(a[2], int) else None}
+                raw = a[0] if isinstance(a[0], (str, bytes)) else None
+                # os.open(name, dir_fd=…) reports only the relative name; it cannot be resolved against cwd.
+                # Relative names that do not exist under cwd are marked; ones that do exist are classified.
+                if raw is not None and not os.path.isabs(os.fsdecode(raw)) and rec["mode"] is None \
+                        and not os.path.exists(p):
+                    rec["unresolved_dir_fd"] = True
+                emit(rec)
+        elif event in ("os.rename", "shutil.copyfile", "os.link", "os.symlink", "shutil.copytree") and len(a) >= 2:
+            src, dst = ab(a[0]), ab(a[1])
+            if src and dst:
+                emit({"event": event, "path": src, "dst": dst})
+        elif event in ("os.listdir", "os.scandir") and a:
+            p = ab(a[0]) if a[0] is not None else os.getcwd()
+            if p:
+                emit({"event": event, "path": p})
     sys.addaudithook(hook)
+    pat = re.compile(r"GDALOpen\((.+?), this=")
+
+    class _GdalOpen(logging.Handler):
+        def emit(self, record):
+            try:
+                m = pat.search(record.getMessage())
+            except Exception:  # noqa: BLE001 - a malformed log record is not an open
+                return
+            if m:
+                emit({"event": "gdal.open", "raw": m.group(1), "cwd": os.getcwd()})
+    lg = logging.getLogger("rasterio._env")
+    lg.setLevel(logging.DEBUG)
+    lg.addHandler(_GdalOpen(level=logging.DEBUG))
+    lg.propagate = False
 
 
 def run_boot(args) -> int:

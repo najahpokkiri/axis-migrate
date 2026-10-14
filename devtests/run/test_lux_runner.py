@@ -47,9 +47,14 @@ def lux(tmp_path):
     _unlock(tmp_path / "proj")
 
 
+NO_STRACE = bool(os.environ.get("AXIS_TEST_NO_STRACE"))   # test-only: simulate a host without strace (macOS)
+_NO_STRACE_RUNNER = ("import sys; sys.path.insert(0, %r); import run_local; run_local.STRACE = None; "
+                     "sys.exit(run_local.main(sys.argv[1:]))" % str(PLUGIN / "skills" / "run"))
+
+
 def run(mig: Path, *args: str) -> tuple[int, dict]:
-    cp = subprocess.run([str(AXPY), str(RUN_LOCAL), str(mig), "--json", *args], capture_output=True, text=True,
-                        timeout=900)
+    head = [str(AXPY), "-c", _NO_STRACE_RUNNER] if NO_STRACE else [str(AXPY), str(RUN_LOCAL)]
+    cp = subprocess.run(head + [str(mig), "--json", *args], capture_output=True, text=True, timeout=900)
     summary = json.loads(cp.stdout.strip().splitlines()[-1])
     man = json.loads((Path(summary["run_dir"]) / "manifest.json").read_text())
     assert cp.returncode == man["exit_code"]
@@ -84,6 +89,8 @@ def test_at5_reading_04_final_by_absolute_path_is_undeclared(lux, monkeypatch):
     sys.path.insert(0, str(PLUGIN / "skills" / "run"))
     import run_local
     monkeypatch.setattr(rl, "CODESCAN", lux / "no-scanner.py")
+    if NO_STRACE:
+        monkeypatch.setattr(run_local, "STRACE", None)
     time.sleep(1.05)
     code = run_local.main([str(lux), "--json"])
     runs = sorted(p for p in (lux / "runs").iterdir() if p.is_dir())

@@ -17,6 +17,10 @@ $PLUGIN/bin/axpy $PLUGIN/skills/run/run_local.py migration --check-sealed <run_i
 ```
 
 ## Before the first run
+- `$PLUGIN/bin/axpy --doctor` checks uv, the environment cache (outside the plugin: `${CLAUDE_PLUGIN_DATA}` or
+  `~/.cache/axis-migrate/env-<lock8>`), the locked env, strace and a local port. Without strace (macOS) the read and
+  write ledger is `audit+cpl_debug` (Python audit hook + GDAL CPL_DEBUG): runs still refuse undeclared reads, and the
+  rung is capped at sandbox-validated (`read_ledger_rung_cap` in the manifest).
 - `--vendor-runtime` copies `_axis_runtime.py`, `__main__.py` (and `__init__.py` if absent) into `pipeline/`.
   Never edit those files: a changed copy stops the run (`RUNTIME_MODIFIED`, exit 11). You write only `sNN_*.py` /
   `mNN_*.py` with `STEP_ID, INPUTS, OUTPUTS, PARAMS` equal to the graph and `def run(ctx)`.
@@ -37,7 +41,7 @@ $PLUGIN/bin/axpy $PLUGIN/skills/run/run_local.py migration --check-sealed <run_i
 |---|---|---|
 | 0 | succeeded | run verify (`compare.py run --run <dir>`) |
 | 10 | a step failed (exception, `STEP_CALLED_EXIT`, contract mismatch) | repair loop: read `logs/<step>.result.json` (`exception.innermost_pipeline_frame`) and `logs/<step>.stderr`; fix only that step module |
-| 11 | contract violation | read `reason_codes` in `manifest.json`: `UNDECLARED_READ` (the step opened a file it did not declare — read it through `ctx`, never legacy outputs), `STUB_DETECTED` (remove the stub/mock), `SCAN_BLOCKED` (fix the finding in `verify/scan.json`), `OUTPUT_MISSING`/`OUTPUT_EMPTY` (the step did not write a declared output), `OUTPUT_NOT_IN_WRITE_LEDGER` (an output appeared without the step writing it — never copy files into place), `UNDECLARED_WRITE` |
+| 11 | contract violation | read `reason_codes` in `manifest.json` (`LEDGER_BLIND`: the ledger missed a read — report it, never work around it): `UNDECLARED_READ` (the step opened a file it did not declare — read it through `ctx`, never legacy outputs), `STUB_DETECTED` (remove the stub/mock), `SCAN_BLOCKED` (fix the finding in `verify/scan.json`), `OUTPUT_MISSING`/`OUTPUT_EMPTY` (the step did not write a declared output), `OUTPUT_NOT_IN_WRITE_LEDGER` (an output appeared without the step writing it — never copy files into place), `UNDECLARED_WRITE` |
 | 12 | blocked: input missing/changed, or a step raised `ParamMissing`/`InputMissing` | stop and ask the user (interview); never fabricate, download or substitute data; never add a default |
 | 13 | blocked: environment (`UV_MISSING`, `FREEZE_MISMATCH`, `ENV_MAJOR_MISMATCH`, `PROJ_NETWORK_ON`, `TEMPLATE_LOCK_MISMATCH`, `UPLOAD_NOT_CONFIRMED`, `E2B_KEY_MISSING`) | report it; do not install anything or edit the lock |
 | 14 | timed out | report; resume with `--resume-from` once the cause is fixed |

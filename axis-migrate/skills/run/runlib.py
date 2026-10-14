@@ -35,12 +35,12 @@ import axis_common as ac  # noqa: E402
 
 RUN_DIR = Path(__file__).resolve().parent
 ENV_DIR = RUN_DIR / "env"
-VENV_PY = ENV_DIR / ".venv" / "bin" / "python"
+VENV_PY = ac.env_python()            # one resolver (lib/axis_common.py), same rule as bin/axpy
 LOCK = ENV_DIR / "uv.lock"
 PYPROJECT = ENV_DIR / "pyproject.toml"
-LOCK_MARK = ENV_DIR / ".venv" / ".axis-lock-sha256"
+LOCK_MARK = ac.env_lock_marker()
 AXIS_BOOT = RUN_DIR / "axis_boot.py"
-RUNTIME_SRC = PLUGIN / "skills" / "migrate" / "runtime"
+RUNTIME_SRC = PLUGIN / "skills" / "build" / "runtime"
 RUNTIME_FILES = ("_axis_runtime.py", "__main__.py")
 CODESCAN = PLUGIN / "skills" / "guard" / "codescan.py"
 GRAPH_PY = PLUGIN / "skills" / "discover" / "graph.py"
@@ -61,7 +61,7 @@ EXIT = ac.EXIT_RUN
 CONTRACT_REASONS = ("STUB_DETECTED", "UNDECLARED_READ", "UNDECLARED_WRITE", "STAGED_INPUT_MODIFIED",
                     "OUTPUT_MISSING", "OUTPUT_EMPTY", "OUTPUT_STALE", "OUTPUT_UNOPENABLE", "RUNTIME_NOT_FROM_SNAPSHOT",
                     "MODULE_MISSING", "RUNTIME_MODIFIED", "CTX_STEP_MISMATCH", "OUTPUT_NOT_IN_WRITE_LEDGER",
-                    "LEDGER_EMPTY", "DOWNLOAD_HASH_MISMATCH")
+                    "LEDGER_EMPTY", "DOWNLOAD_HASH_MISMATCH", "LEDGER_BLIND")
 ENV_REASONS = ("PROJ_NETWORK_ON",)
 SIDECAR_STAGE_SKIP = (".aux.xml", ".lock", "-wal", "-shm", "-journal")
 
@@ -324,6 +324,8 @@ def code_tree_hash(pipeline_dir: Path) -> tuple[str, list[dict]]:
 # strace / audit ledger parsing and classification
 # ---------------------------------------------------------------------------------------------------------------
 TRACE_SET = "openat,?open,?creat,?rename,renameat,renameat2,?link,linkat,?symlink,symlinkat"
+STRACE_KINDS = ("strace", "e2b-physical+strace")
+AUDIT_KINDS = ("audit+cpl_debug", "e2b-physical+audit")
 _STR_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
 _FD_RE = re.compile(r"^\s*(?:AT_FDCWD|-?\d+)<([^>]*)>")
 _CALL_RE = re.compile(r"^(?P<call>\w+)\((?P<args>.*)\)\s+=\s+(?P<ret>-?\d+|\?)(?P<retx>.*)$")
@@ -480,8 +482,35 @@ def parse_strace(path: Path) -> list[dict]:
     return events
 
 
-def parse_audit(path: Path, stderr_path: Path | None) -> list[dict]:
-    """Fallback ledger (no strace): Python audit `open` events + GDAL CPL_DEBUG `GDALOpen(...)` lines."""
+_VSI_ARCHIVE = re.compile(r"^/vsi(?:zip|gzip|tar|7z|rar)/+(.*)$")
+_DRIVER_PREFIX = re.compile(r'^[A-Za-z0-9_]+:"?(/[^"]+?)"?(?::[^/]*)?$')
+
+
+def gdal_name_to_path(raw: str, cwd: str | None) -> str | None:
+    """A GDAL dataset name as a file path: None for in-memory datasets (/vsimem/, MEM:::); archive and driver
+    prefixes unwrapped (`/vsizip//a/b.zip/x` → /a/b.zip, `GPKG:"/a/b.gpkg":layer` → /a/b.gpkg)."""
+    raw = raw.strip()
+    if raw.startswith("/vsimem/") or raw.startswith("MEM:::"):
+        return None
+    m = _VSI_ARCHIVE.match(raw)
+    if m:
+        inner = "/" + m.group(1).lstrip("/")
+        parts = inner.split("/")
+        for i in range(len(parts), 1, -1):          # the archive file is the longest existing prefix
+            cand = "/".join(parts[:i])
+            if os.path.isfile(cand):
+                return cand
+        return inner
+    if raw.startswith("/vsi"):
+        return None                                 # network/other virtual file systems: no local file
+    m = _DRIVER_PREFIX.match(raw)
+    if m and not raw.startswith("/"):
+        return m.group(1)
+    return raw if os.path.isabs(raw) else os.path.normpath(os.path.join(cwd or "/", raw))
+
+
+def parse_audit(path: Path, stderr_path: Path | None, cwd: str | None = None) -> list[dict]:
+    """Fallback ledger (no strace): axis_boot's audit/CPL_DEBUG JSON lines + pyogrio's `GDALOpen(...)` stderr lines."""
     events = []
     if path.is_file():
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -489,15 +518,33 @@ def parse_audit(path: Path, stderr_path: Path | None) -> list[dict]:
                 rec = json.loads(line)
             except ValueError:
                 continue
-            mode = str(rec.get("mode") or "r")
-            acc = "write" if any(c in mode for c in "wax+") or (rec.get("flags") or 0) & (os.O_WRONLY | os.O_RDWR) \
-                else "read"
-            events.append({"pid": str(rec.get("pid", 0)), "call": "audit.open", "access": acc,
-                           "path": os.path.abspath(rec["path"]), "ok": True})
+            ev, p = rec.get("event", "open"), rec.get("path")
+            pid = str(rec.get("pid", 0))
+            if ev == "gdal.open":
+                gp = gdal_name_to_path(rec.get("raw") or "", rec.get("cwd"))
+                if gp:
+                    events.append({"pid": pid, "call": "cpl_debug.GDALOpen", "access": "read", "path": gp, "ok": True})
+                continue
+            if not p or rec.get("unresolved_dir_fd"):
+                continue
+            if ev == "open":
+                mode = str(rec.get("mode") or "r")
+                flags = rec.get("flags") or 0
+                wr = any(c in mode for c in "wax+") or bool(flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT))
+                events.append({"pid": pid, "call": "audit.open", "access": "write" if wr else "read", "path": p,
+                               "ok": True})
+            elif ev in ("os.rename", "shutil.copyfile", "os.link", "os.symlink", "shutil.copytree"):
+                src_acc = {"os.rename": "move_from", "os.link": "link_src", "os.symlink": "symlink_target"}.get(
+                    ev, "read")
+                events.append({"pid": pid, "call": f"audit.{ev}", "access": src_acc, "path": p, "ok": True})
+                events.append({"pid": pid, "call": f"audit.{ev}", "access": "write", "path": rec["dst"], "ok": True})
+            elif ev in ("os.listdir", "os.scandir"):
+                events.append({"pid": pid, "call": f"audit.{ev}", "access": "dir", "path": p, "ok": True})
     if stderr_path is not None and stderr_path.is_file():
         for m in re.finditer(r"GDALOpen\((.+?), this=", stderr_path.read_text(errors="replace")):
-            events.append({"pid": "0", "call": "cpl_debug.GDALOpen", "access": "read",
-                           "path": os.path.abspath(m.group(1)), "ok": True})
+            gp = gdal_name_to_path(m.group(1), cwd)
+            if gp:
+                events.append({"pid": "0", "call": "cpl_debug.GDALOpen", "access": "read", "path": gp, "ok": True})
     return events
 
 
@@ -1282,24 +1329,28 @@ class Run:
         reasons: list[str] = list(er.extra_reasons)
         # ledger
         ledger_rel = er.ledger_path
-        if er.ledger_kind in ("strace", "e2b-physical+strace"):
+        if er.ledger_kind in STRACE_KINDS:
             events = parse_strace(self.dir / ledger_rel) if ledger_rel else []
-            if er.ledger_root:   # remote run root → this run dir, so one policy applies to both
-                root = er.ledger_root.rstrip("/")
-                for e in events:
+        elif er.ledger_kind in AUDIT_KINDS:
+            events = parse_audit(self.dir / ledger_rel, logs / f"{ps.id}.stderr",
+                                 cwd=er.ledger_root or str(self.dir)) if ledger_rel else []
+        else:
+            events = []
+        if er.ledger_root:   # remote run root → this run dir, so one policy applies to both
+            roots = sorted({er.ledger_root.rstrip("/"), os.path.realpath(er.ledger_root).rstrip("/")}, key=len,
+                           reverse=True)
+            for e in events:
+                for root in roots:
                     if e["path"] == root or e["path"].startswith(root + "/"):
                         e["path"] = str(self.dir) + e["path"][len(root):]
                         e["remote"] = True
-        elif er.ledger_kind == "audit+cpl_debug":
-            events = parse_audit(self.dir / ledger_rel, logs / f"{ps.id}.stderr") if ledger_rel else []
-        else:
-            events = []
+                        break
         pol = self.ledger_policy(ps, self.boot_python)
         led = classify_events(events, pol)
         for key in ("undeclared", "attempted_protected"):
             led[key] = [dict(u, path=self.show_path(u["path"])) for u in led[key]]
         led["undeclared_writes"] = [self.show_path(p) for p in led["undeclared_writes"]]
-        if er.ledger_kind in ("strace", "audit+cpl_debug", "e2b-physical+strace") and not events:
+        if er.ledger_kind in STRACE_KINDS + AUDIT_KINDS and not events:
             reasons.append(f"LEDGER_EMPTY:{ps.id}")
         if led["undeclared"]:
             reasons.append(f"UNDECLARED_READ:{ps.id}")
@@ -1348,10 +1399,23 @@ class Run:
             if out_tmp.is_dir() else []
         writes_ledger = sorted({f"outputs/{ps.id}/" + Path(w).relative_to(pol.out_tmp).as_posix()
                                 for w in led["writes"] if _is_under(w, pol.out_tmp) and w != pol.out_tmp})
-        if er.exit_code == 0 and not er.timed_out and er.ledger_kind in ("strace", "e2b-physical+strace"):
+        if er.exit_code == 0 and not er.timed_out and er.ledger_kind in STRACE_KINDS + AUDIT_KINDS:
             for o in outs:
                 if o["path"] not in writes_ledger:
                     reasons.append(f"OUTPUT_NOT_IN_WRITE_LEDGER:{o['dataset_id']}")
+            # the ledger must have SEEN every read the runtime recorded; otherwise it is blind on this platform
+            # and cannot vouch for "no undeclared read" (refuse rather than pass silently)
+            io_p = logs / f"{ps.id}.io.json"
+            if io_p.is_file():
+                try:
+                    io_reads = json.loads(io_p.read_text(encoding="utf-8")).get("reads", [])
+                except ValueError:
+                    io_reads = []
+                seen = set(led["declared_opened"])
+                for r in io_reads:
+                    f = ps.feeds.get(r.get("dataset"))
+                    if f and not r.get("staged_local") and _real(f["path"]) not in seen:
+                        reasons.append(f"LEDGER_BLIND:{r.get('dataset')}")
         code = self._exit_for(reasons, er)
         status = "succeeded" if code == 0 else ("timed_out" if code == 14 else
                                                  ("blocked" if code in (12, 13) else "failed"))
@@ -1547,7 +1611,8 @@ class Run:
         eligible = "none"
         if (self.chain == "chained" and self.executor in ("local", "e2b") and status == "succeeded" and stub_ok
                 and not undeclared and self.env_record.get("freeze_matches_lock") and not self.allow_env_major
-                and self.read_ledger in ("strace", "e2b-physical", "e2b-physical+strace")):
+                and self.read_ledger in ("strace", "e2b-physical", "e2b-physical+strace", "audit+cpl_debug",
+                                         "e2b-physical+audit")):
             eligible = "sandbox-validated"
         man = {
             "schema": MANIFEST_SCHEMA, "run_id": self.run_id, "project": self.graph.get("project", {}).get("name"),
@@ -1558,6 +1623,9 @@ class Run:
             "steps_succeeded": len(succeeded), "steps_filter": self.steps_filter, "full": full,
             "eligible_for": eligible, "eligible_for_note": "informational; never trusted (ladder.py decides)",
             "read_ledger": self.read_ledger, "resumed_from": self.resume_from, "argv": self.argv,
+            # D5-9: without strace (macOS) the ledger is policy-level (audit hook + CPL_DEBUG): a lock-matched
+            # chained run may support sandbox-validated, never more
+            "read_ledger_rung_cap": "sandbox-validated" if self.read_ledger in AUDIT_KINDS else None,
             "code": {"code_hash": self.code_hash, "files": [dict(e, path="pipeline/" + e["path"])
                                                              for e in self.code_files],
                      "worktree_changed_during_run": bool(changes), "worktree_changes": changes},
