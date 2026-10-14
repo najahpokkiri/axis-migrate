@@ -1,0 +1,20 @@
+{
+ "bom": false,
+ "code_like_cols": [],
+ "columns": 5,
+ "dataset": "ds.buffer_area_by_commune_csv",
+ "decimal": ".",
+ "encoding": "utf-8",
+ "format": "csv",
+ "header": [
+  "commune",
+  "shapeID",
+  "buf_km2",
+  "commune_km2",
+  "share_pct"
+ ],
+ "layer": null,
+ "legacy_path": "04_FINAL/buffer_area_by_commune.csv",
+ "rows": 14,
+ "sep": ","
+}

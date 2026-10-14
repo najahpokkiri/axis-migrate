@@ -1,0 +1,3482 @@
+{
+ "acks": {
+  "agent_seq": 0
+ },
+ "datasets": [
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "shapeID"
+    ],
+    "layer": "01_communes_2169",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "01_communes_2169",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s03_clip_dissolve",
+    "s04_area_per_commune"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/01_communes_2169.gpkg",
+    "02_SCRIPTS/01_prepare_inputs.py:41",
+    "02_SCRIPTS/01_prepare_inputs.py:59",
+    "02_SCRIPTS/03_clip_dissolve.py:27",
+    "02_SCRIPTS/04_area_per_commune.py:38",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/01_communes_2169.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s01_prepare_inputs.op2; file exists"
+    }
+   ],
+   "id": "ds.01_communes_2169",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "8ee2a2a056365c576f86ed8bcf542588d5dddfb96ee338fbf080c3432e151ee3",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "01_communes_2169",
+    "path": "05_TEMP/01_communes_2169.gpkg",
+    "profile": "discover/profiles/ds.01_communes_2169.json",
+    "sha256": "f4183c43ec9863782dd3b5e449319a4fce0b059d752119f963aaa9835ccff391",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "01_communes_2169",
+    "path": "s01_prepare_inputs/01_communes_2169.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s01_prepare_inputs.op2",
+    "step": "s01_prepare_inputs"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "01_communes_2169",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "osm_id",
+     "osm_way_id"
+    ],
+    "layer": "01_landuse_2169",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "01_landuse_2169",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s02_buffer_landuse"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/01_landuse_2169.gpkg",
+    "02_SCRIPTS/01_prepare_inputs.py:56",
+    "02_SCRIPTS/02_buffer_landuse.py:38",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/01_landuse_2169.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s01_prepare_inputs.op5; file exists"
+    }
+   ],
+   "id": "ds.01_landuse_2169",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "fcd4cfdac6f64d210c20ee1dedaf07a0c04897a6f48492636043509a2d94fb07",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "01_landuse_2169",
+    "path": "05_TEMP/01_landuse_2169.gpkg",
+    "profile": "discover/profiles/ds.01_landuse_2169.json",
+    "sha256": "c9d1bf16cbd98742c668f20d9613657bb483ec3de5d28e0a8de31ef7f0ebb69f",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "01_landuse_2169",
+    "path": "s01_prepare_inputs/01_landuse_2169.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s01_prepare_inputs.op5",
+    "step": "s01_prepare_inputs"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "01_landuse_2169",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "osm_id",
+     "osm_way_id"
+    ],
+    "layer": "02_buf_industrial",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "02_buf_industrial",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/02_buf_industrial.gpkg",
+    "02_SCRIPTS/02_buffer_landuse.py:42",
+    "02_SCRIPTS/02_buffer_landuse.py:53",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/02_buf_industrial.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s02_buffer_landuse.op2; file exists"
+    }
+   ],
+   "id": "ds.02_buf_industrial",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "f66e784e9e2d13058e9f0f1f382abd364f25ef07d84d7d2259b56eb4bf018f69",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "02_buf_industrial",
+    "path": "05_TEMP/02_buf_industrial.gpkg",
+    "profile": "discover/profiles/ds.02_buf_industrial.json",
+    "sha256": "75be048b07530509faa73f5fbccd894c91dc6b32291421d0b1604f2ea1ace4fc",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "02_buf_industrial",
+    "path": "s02_buffer_landuse/02_buf_industrial.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s02_buffer_landuse.op2",
+    "step": "s02_buffer_landuse"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "02_buf_industrial",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "osm_id",
+     "osm_way_id"
+    ],
+    "layer": "02_buf_other",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "02_buf_other",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/02_buf_other.gpkg",
+    "02_SCRIPTS/02_buffer_landuse.py:42",
+    "02_SCRIPTS/02_buffer_landuse.py:53",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/02_buf_other.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s02_buffer_landuse.op2; file exists"
+    }
+   ],
+   "id": "ds.02_buf_other",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "b997589b51a822cc61a6072029442eb0a39e2204140ba08fb1e0d8c4f47175c6",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "02_buf_other",
+    "path": "05_TEMP/02_buf_other.gpkg",
+    "profile": "discover/profiles/ds.02_buf_other.json",
+    "sha256": "bf0aa802fd32e8529c4886c5288e18b0181efbcf08d351bb4ce79022c9f88e2e",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "02_buf_other",
+    "path": "s02_buffer_landuse/02_buf_other.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s02_buffer_landuse.op2",
+    "step": "s02_buffer_landuse"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "02_buf_other",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "osm_id",
+     "osm_way_id"
+    ],
+    "layer": "02_buffers",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "02_buffers",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s03_clip_dissolve"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/02_buffers.gpkg",
+    "02_SCRIPTS/02_buffer_landuse.py:61",
+    "02_SCRIPTS/03_clip_dissolve.py:26",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/02_buffers.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s02_buffer_landuse.op5; file exists"
+    }
+   ],
+   "id": "ds.02_buffers",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "7c901e2bd3def467e7ed5bea3356c99340b67a2b31f11d66048e9d43c1d85e23",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "02_buffers",
+    "path": "05_TEMP/02_buffers.gpkg",
+    "profile": "discover/profiles/ds.02_buffers.json",
+    "sha256": "e9c557326e0277934c35ccedf757e1a795c6deba1cba707ff42a0ad6bb42713a",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "02_buffers",
+    "path": "s02_buffer_landuse/02_buffers.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s02_buffer_landuse.op5",
+    "step": "s02_buffer_landuse"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "02_buffers",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "shapeID"
+    ],
+    "layer": "03_buf_by_commune",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "03_buf_by_commune",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s04_area_per_commune"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/03_buf_by_commune.gpkg",
+    "02_SCRIPTS/03_clip_dissolve.py:38",
+    "02_SCRIPTS/04_area_per_commune.py:29",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/03_buf_by_commune.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s03_clip_dissolve.op3; file exists"
+    }
+   ],
+   "id": "ds.03_buf_by_commune",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "5aa709c5901c01a3aab13d8df919ef7bf95731d93933cc3902d1a45b800769b0",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "03_buf_by_commune",
+    "path": "05_TEMP/03_buf_by_commune.gpkg",
+    "profile": "discover/profiles/ds.03_buf_by_commune.json",
+    "sha256": "de8271a36d1f3d1ec98b7686636460d1c60e2bbfd970a7647c2529790d053d8e",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "03_buf_by_commune",
+    "path": "s03_clip_dissolve/03_buf_by_commune.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s03_clip_dissolve.op3",
+    "step": "s03_clip_dissolve"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "03_buf_by_commune",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "osm_id",
+     "osm_way_id",
+     "shapeID"
+    ],
+    "layer": "03_buf_x_commune",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "03_buf_x_commune",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/03_buf_x_commune.gpkg",
+    "02_SCRIPTS/03_clip_dissolve.py:25",
+    "02_SCRIPTS/03_clip_dissolve.py:34",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/03_buf_x_commune.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s03_clip_dissolve.op1; file exists"
+    }
+   ],
+   "id": "ds.03_buf_x_commune",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "f68e3a25df7586716d1b2c17a0c310699c5c3357498fd3fa3817cb7e40cfce4f",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "03_buf_x_commune",
+    "path": "05_TEMP/03_buf_x_commune.gpkg",
+    "profile": "discover/profiles/ds.03_buf_x_commune.json",
+    "sha256": "9613ba425b5b365d1e5908c37373b53d988429ffc3f9762e41f9d93e7d6be325",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "03_buf_x_commune",
+    "path": "s03_clip_dissolve/03_buf_x_commune.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s03_clip_dissolve.op1",
+    "step": "s03_clip_dissolve"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "03_buf_x_commune",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": 1,
+    "ignore": [],
+    "key": [
+     "shapeID"
+    ],
+    "layer": null,
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "header_row": 1,
+    "kind": "table",
+    "sep": ",",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:04_FINAL/buffer_area_by_commune.csv",
+    "02_SCRIPTS/04_area_per_commune.py:68",
+    "NOTES.txt:7",
+    {
+     "by": "lineage",
+     "ref": "inventory:04_FINAL/buffer_area_by_commune.csv",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_area_per_commune.op6; file exists"
+    }
+   ],
+   "id": "ds.buffer_area_by_commune_csv",
+   "kind": "table",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "CSV",
+    "layer": null,
+    "path": "04_FINAL/buffer_area_by_commune.csv",
+    "profile": "discover/profiles/ds.buffer_area_by_commune_csv.json",
+    "sha256": "ae02c8b817475ddb4d095f3958794e0a9c432cc4b878bbf4bc59bb4f26da70aa",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s04_area_per_commune/buffer_area_by_commune.csv"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_area_per_commune.op6",
+    "step": "s04_area_per_commune"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "final",
+   "role_lineage": "final",
+   "title": "buffer_area_by_commune",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": [
+     "shapeID"
+    ],
+    "layer": "buffer_area_by_commune",
+    "match": "key",
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": "p.measure_crs",
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID",
+     "buf_km2",
+     "commune_km2",
+     "share_pct"
+    ],
+    "kind": "vector",
+    "layer": "buffer_area_by_commune",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:04_FINAL/buffer_area_by_commune.gpkg",
+    "02_SCRIPTS/04_area_per_commune.py:57",
+    "02_SCRIPTS/04_area_per_commune.py:67",
+    {
+     "by": "lineage",
+     "ref": "inventory:04_FINAL/buffer_area_by_commune.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_area_per_commune.op4; file exists"
+    }
+   ],
+   "id": "ds.buffer_area_by_commune_gpkg",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "bb155694e91e74024c408e6274227c985aedd6b248948bd0abe4eff2da1572aa",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "buffer_area_by_commune",
+    "path": "04_FINAL/buffer_area_by_commune.gpkg",
+    "profile": "discover/profiles/ds.buffer_area_by_commune_gpkg.json",
+    "sha256": "590197a025f037848f2b621644a1c508f9c6c38240df6e78c19c3983dcb29f58",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "buffer_area_by_commune",
+    "path": "s04_area_per_commune/buffer_area_by_commune.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_area_per_commune.op4",
+    "step": "s04_area_per_commune"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "compare"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "final",
+   "role_lineage": "final",
+   "title": "buffer_area_by_commune",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "geoBoundaries-LUX-ADM2",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "geoBoundaries-LUX-ADM2",
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "s01_prepare_inputs"
+   ],
+   "evidence": [
+    "inventory:03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+    "02_SCRIPTS/01_prepare_inputs.py:36",
+    "NOTES.txt:18"
+   ],
+   "id": "ds.geoboundaries_lux_adm2",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GeoJSON",
+    "layer": "geoBoundaries-LUX-ADM2",
+    "path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+    "profile": "discover/profiles/ds.geoboundaries_lux_adm2.json",
+    "sha256": "c885587d4883438e800b910029b54a37a3c9bcb73a45ddf48544e496b7ee265d",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "input",
+   "role_lineage": "input",
+   "title": "geoBoundaries-LUX-ADM2",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "landuse",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "landuse",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s01_prepare_inputs"
+   ],
+   "evidence": [
+    "inventory:03_INPUT/osm_landuse_lux.gpkg",
+    "02_SCRIPTS/01_prepare_inputs.py:48",
+    "NOTES.txt:17"
+   ],
+   "id": "ds.osm_landuse_lux",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "1559f8be4ca6799cf4076a53ba6acb6d096295957eb227f35b314b5c45a7d79d",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "landuse",
+    "path": "03_INPUT/osm_landuse_lux.gpkg",
+    "profile": "discover/profiles/ds.osm_landuse_lux.json",
+    "sha256": "f59f8bca232960e27eede101f658140bd81e03320a587bd99b00eaa159b354f0",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "input",
+   "role_lineage": "input",
+   "title": "osm_landuse_lux",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  }
+ ],
+ "draft_schema": "axis-migrate.graph-draft.v1",
+ "edges": [
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:25-31",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:intersection OVERLAY (line 27)"
+    }
+   ],
+   "from": "ds.01_communes_2169",
+   "id": "e.ds.01_communes_2169>s03_clip_dissolve",
+   "kind": "reads",
+   "lines": [
+    [
+     25,
+     31
+    ]
+   ],
+   "notes": [],
+   "op": "s03_clip_dissolve.op1",
+   "ops": [
+    "s03_clip_dissolve.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03_clip_dissolve"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_area_per_commune.py:37-44",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:fieldcalculator INPUT (line 38)"
+    }
+   ],
+   "from": "ds.01_communes_2169",
+   "id": "e.ds.01_communes_2169>s04_area_per_commune",
+   "kind": "reads",
+   "lines": [
+    [
+     37,
+     44
+    ]
+   ],
+   "notes": [],
+   "op": "s04_area_per_commune.op2",
+   "ops": [
+    "s04_area_per_commune.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s04_area_per_commune"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:37-40",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:extractbyexpression INPUT (line 38)"
+    }
+   ],
+   "from": "ds.01_landuse_2169",
+   "id": "e.ds.01_landuse_2169>s02_buffer_landuse",
+   "kind": "reads",
+   "lines": [
+    [
+     37,
+     40
+    ]
+   ],
+   "notes": [],
+   "op": "s02_buffer_landuse.op1",
+   "ops": [
+    "s02_buffer_landuse.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s02_buffer_landuse"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:25-31",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:intersection INPUT (line 26)"
+    }
+   ],
+   "from": "ds.02_buffers",
+   "id": "e.ds.02_buffers>s03_clip_dissolve",
+   "kind": "reads",
+   "lines": [
+    [
+     25,
+     31
+    ]
+   ],
+   "notes": [],
+   "op": "s03_clip_dissolve.op1",
+   "ops": [
+    "s03_clip_dissolve.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03_clip_dissolve"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_area_per_commune.py:28-35",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:fieldcalculator INPUT (line 29)"
+    }
+   ],
+   "from": "ds.03_buf_by_commune",
+   "id": "e.ds.03_buf_by_commune>s04_area_per_commune",
+   "kind": "reads",
+   "lines": [
+    [
+     28,
+     35
+    ]
+   ],
+   "notes": [],
+   "op": "s04_area_per_commune.op1",
+   "ops": [
+    "s04_area_per_commune.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s04_area_per_commune"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:35-38",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:extractbyexpression INPUT (line 36)"
+    }
+   ],
+   "from": "ds.geoboundaries_lux_adm2",
+   "id": "e.ds.geoboundaries_lux_adm2>s01_prepare_inputs",
+   "kind": "reads",
+   "lines": [
+    [
+     35,
+     38
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_inputs.op1",
+   "ops": [
+    "s01_prepare_inputs.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s01_prepare_inputs"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:47-50",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:reprojectlayer INPUT (line 48)"
+    }
+   ],
+   "from": "ds.osm_landuse_lux",
+   "id": "e.ds.osm_landuse_lux>s01_prepare_inputs",
+   "kind": "reads",
+   "lines": [
+    [
+     47,
+     50
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_inputs.op3",
+   "ops": [
+    "s01_prepare_inputs.op3"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s01_prepare_inputs"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:41-44",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:reprojectlayer OUTPUT (create)"
+    }
+   ],
+   "from": "s01_prepare_inputs",
+   "id": "e.s01_prepare_inputs>ds.01_communes_2169",
+   "kind": "writes",
+   "lines": [
+    [
+     41,
+     44
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_inputs.op2",
+   "ops": [
+    "s01_prepare_inputs.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.01_communes_2169"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:56-60",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:extractbylocation OUTPUT (create)"
+    }
+   ],
+   "from": "s01_prepare_inputs",
+   "id": "e.s01_prepare_inputs>ds.01_landuse_2169",
+   "kind": "writes",
+   "lines": [
+    [
+     56,
+     60
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_inputs.op5",
+   "ops": [
+    "s01_prepare_inputs.op5"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.01_landuse_2169"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:42-51",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:buffer OUTPUT (create)"
+    }
+   ],
+   "from": "s02_buffer_landuse",
+   "id": "e.s02_buffer_landuse>ds.02_buf_industrial",
+   "kind": "writes",
+   "lines": [
+    [
+     42,
+     51
+    ]
+   ],
+   "notes": [],
+   "op": "s02_buffer_landuse.op2",
+   "ops": [
+    "s02_buffer_landuse.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.02_buf_industrial"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:42-51",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:buffer OUTPUT (create)"
+    }
+   ],
+   "from": "s02_buffer_landuse",
+   "id": "e.s02_buffer_landuse>ds.02_buf_other",
+   "kind": "writes",
+   "lines": [
+    [
+     42,
+     51
+    ]
+   ],
+   "notes": [],
+   "op": "s02_buffer_landuse.op2",
+   "ops": [
+    "s02_buffer_landuse.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.02_buf_other"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:61-64",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:deletecolumn OUTPUT (create)"
+    }
+   ],
+   "from": "s02_buffer_landuse",
+   "id": "e.s02_buffer_landuse>ds.02_buffers",
+   "kind": "writes",
+   "lines": [
+    [
+     61,
+     64
+    ]
+   ],
+   "notes": [],
+   "op": "s02_buffer_landuse.op5",
+   "ops": [
+    "s02_buffer_landuse.op5"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.02_buffers"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:38-42",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:dissolve OUTPUT (create)"
+    }
+   ],
+   "from": "s03_clip_dissolve",
+   "id": "e.s03_clip_dissolve>ds.03_buf_by_commune",
+   "kind": "writes",
+   "lines": [
+    [
+     38,
+     42
+    ]
+   ],
+   "notes": [],
+   "op": "s03_clip_dissolve.op3",
+   "ops": [
+    "s03_clip_dissolve.op3"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.03_buf_by_commune"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:25-31",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:intersection OUTPUT (create)"
+    }
+   ],
+   "from": "s03_clip_dissolve",
+   "id": "e.s03_clip_dissolve>ds.03_buf_x_commune",
+   "kind": "writes",
+   "lines": [
+    [
+     25,
+     31
+    ]
+   ],
+   "notes": [],
+   "op": "s03_clip_dissolve.op1",
+   "ops": [
+    "s03_clip_dissolve.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.03_buf_x_commune"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_area_per_commune.py:68",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "open file (create)"
+    }
+   ],
+   "from": "s04_area_per_commune",
+   "id": "e.s04_area_per_commune>ds.buffer_area_by_commune_csv",
+   "kind": "writes",
+   "lines": [
+    [
+     68,
+     68
+    ]
+   ],
+   "notes": [],
+   "op": "s04_area_per_commune.op6",
+   "ops": [
+    "s04_area_per_commune.op6"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.buffer_area_by_commune_csv"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_area_per_commune.py:57-64",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:fieldcalculator OUTPUT (create)"
+    }
+   ],
+   "from": "s04_area_per_commune",
+   "id": "e.s04_area_per_commune>ds.buffer_area_by_commune_gpkg",
+   "kind": "writes",
+   "lines": [
+    [
+     57,
+     64
+    ]
+   ],
+   "notes": [],
+   "op": "s04_area_per_commune.op4",
+   "ops": [
+    "s04_area_per_commune.op4"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.buffer_area_by_commune_gpkg"
+  }
+ ],
+ "intra_step_reads": [
+  {
+   "dataset": "ds.01_communes_2169",
+   "line": 59,
+   "op": "s01_prepare_inputs.op5",
+   "step": "s01_prepare_inputs"
+  },
+  {
+   "dataset": "ds.02_buf_industrial",
+   "line": 53,
+   "op": "s02_buffer_landuse.op3",
+   "step": "s02_buffer_landuse"
+  },
+  {
+   "dataset": "ds.02_buf_other",
+   "line": 53,
+   "op": "s02_buffer_landuse.op3",
+   "step": "s02_buffer_landuse"
+  },
+  {
+   "dataset": "ds.03_buf_x_commune",
+   "line": 34,
+   "op": "s03_clip_dissolve.op2",
+   "step": "s03_clip_dissolve"
+  },
+  {
+   "dataset": "ds.buffer_area_by_commune_gpkg",
+   "line": 67,
+   "op": "s04_area_per_commune.op5",
+   "step": "s04_area_per_commune"
+  }
+ ],
+ "invariants": [],
+ "ladder": null,
+ "legacy_output_dirs": [
+  "04_FINAL",
+  "05_TEMP"
+ ],
+ "lineage_checks": {
+  "failed": [
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.02_buffers",
+    "field": "shapeID",
+    "line": 29,
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.02_buffers",
+    "field": "shapeName",
+    "line": 29,
+    "op": "s03_clip_dissolve.op1"
+   }
+  ],
+  "passed": [
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.01_communes_2169",
+    "op": "s01_prepare_inputs.op2"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.01_landuse_2169",
+    "op": "s01_prepare_inputs.op5"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.02_buf_industrial",
+    "op": "s02_buffer_landuse.op2"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.02_buf_other",
+    "op": "s02_buffer_landuse.op2"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.02_buffers",
+    "op": "s02_buffer_landuse.op5"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.03_buf_by_commune",
+    "op": "s03_clip_dissolve.op3"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.03_buf_x_commune",
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.buffer_area_by_commune_csv",
+    "op": "s04_area_per_commune.op6"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "op": "s04_area_per_commune.op4"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_communes_2169",
+    "layer": "01_communes_2169",
+    "op": "s01_prepare_inputs.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_communes_2169",
+    "layer": "01_communes_2169",
+    "op": "s01_prepare_inputs.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_communes_2169",
+    "layer": "01_communes_2169",
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_communes_2169",
+    "layer": "01_communes_2169",
+    "op": "s04_area_per_commune.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_landuse_2169",
+    "layer": "01_landuse_2169",
+    "op": "s01_prepare_inputs.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_landuse_2169",
+    "layer": "01_landuse_2169",
+    "op": "s02_buffer_landuse.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_buf_industrial",
+    "layer": "02_buf_industrial",
+    "op": "s02_buffer_landuse.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_buf_industrial",
+    "layer": "02_buf_industrial",
+    "op": "s02_buffer_landuse.op3"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_buf_other",
+    "layer": "02_buf_other",
+    "op": "s02_buffer_landuse.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_buf_other",
+    "layer": "02_buf_other",
+    "op": "s02_buffer_landuse.op3"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_buffers",
+    "layer": "02_buffers",
+    "op": "s02_buffer_landuse.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_buffers",
+    "layer": "02_buffers",
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.03_buf_by_commune",
+    "layer": "03_buf_by_commune",
+    "op": "s03_clip_dissolve.op3"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.03_buf_by_commune",
+    "layer": "03_buf_by_commune",
+    "op": "s04_area_per_commune.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.03_buf_x_commune",
+    "layer": "03_buf_x_commune",
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.03_buf_x_commune",
+    "layer": "03_buf_x_commune",
+    "op": "s03_clip_dissolve.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "layer": "buffer_area_by_commune",
+    "op": "s04_area_per_commune.op4"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "layer": "buffer_area_by_commune",
+    "op": "s04_area_per_commune.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.geoboundaries_lux_adm2",
+    "layer": "geoBoundaries-LUX-ADM2",
+    "op": "s01_prepare_inputs.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.osm_landuse_lux",
+    "layer": "landuse",
+    "op": "s01_prepare_inputs.op3"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.02_buffers",
+    "field": "landuse",
+    "line": 28,
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.02_buffers",
+    "field": "osm_id",
+    "line": 28,
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.02_buffers",
+    "field": "osm_way_id",
+    "line": 28,
+    "op": "s03_clip_dissolve.op1"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.03_buf_x_commune",
+    "field": "shapeID",
+    "line": 35,
+    "op": "s03_clip_dissolve.op2"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.03_buf_x_commune",
+    "field": "shapeName",
+    "line": 35,
+    "op": "s03_clip_dissolve.op2"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "field": "buf_km2",
+    "line": 72,
+    "op": "s04_area_per_commune.op5"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "field": "commune_km2",
+    "line": 72,
+    "op": "s04_area_per_commune.op5"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "field": "shapeID",
+    "line": 72,
+    "op": "s04_area_per_commune.op5"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "field": "shapeName",
+    "line": 72,
+    "op": "s04_area_per_commune.op5"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.buffer_area_by_commune_gpkg",
+    "field": "share_pct",
+    "line": 73,
+    "op": "s04_area_per_commune.op5"
+   },
+   {
+    "check": "e_target_crs",
+    "dataset": "ds.01_communes_2169",
+    "declared": "EPSG:2169",
+    "file_epsg": 2169,
+    "op": "s01_prepare_inputs.op2"
+   }
+  ],
+  "warnings": []
+ },
+ "open_items_from_scan": [],
+ "project": {
+  "created_at": "2026-10-13T23:52:03Z",
+  "inventory_manifest_sha256": "sha256:4222cf9a56fce3ca686a8768cd711f7c92333f63af9adb9230b6b2622d3c03bd",
+  "legacy_root": "../s1-buffers-legacy",
+  "legacy_tree_sha256": "sha256:4222cf9a56fce3ca686a8768cd711f7c92333f63af9adb9230b6b2622d3c03bd",
+  "name": "s1-buffers-legacy",
+  "plugin_version": "0.1.0"
+ },
+ "questions": [
+  {
+   "agent_guess": null,
+   "allow_dont_know": true,
+   "allow_other": true,
+   "answer": null,
+   "answered_by": null,
+   "decision": null,
+   "dismissed": {
+    "by": "agent",
+    "reason": "OVERLAY_FIELDS of native:intersection are fields of the overlay layer ds.01_communes_2169 (03_clip_dissolve.py:29-30), which has them",
+    "rev": 2
+   },
+   "evidence": [],
+   "header": "Field not found",
+   "id": "q01",
+   "impact": {
+    "datasets": [
+     "ds.02_buffers",
+     "ds.03_buf_by_commune",
+     "ds.03_buf_x_commune",
+     "ds.buffer_area_by_commune_csv",
+     "ds.buffer_area_by_commune_gpkg"
+    ],
+    "level": "high"
+   },
+   "kind": "lineage",
+   "node": "ds.02_buffers",
+   "nodes": [
+    "s03_clip_dissolve"
+   ],
+   "options": [
+    {
+     "description": "Map it to the closest field",
+     "label": "Field was renamed",
+     "recommended": true,
+     "value": "renamed"
+    },
+    {
+     "description": "Use the recommended option as a visible assumption",
+     "label": "Don't know",
+     "value": "dont_know"
+    }
+   ],
+   "param_ids": [],
+   "priority": {
+    "cost": 2,
+    "impact": 3,
+    "score": 18,
+    "uncertainty": 3
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "status"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "source": "lineage",
+   "status": "dismissed",
+   "text": "s03_clip_dissolve.op1 reads field 'shapeID' of ds.02_buffers (02_SCRIPTS/03_clip_dissolve.py:29), but the file's schema has no such field.",
+   "trigger": {
+    "quote": null,
+    "ref": "02_SCRIPTS/03_clip_dissolve.py:29"
+   },
+   "why": "A missing field means a different producer or version."
+  },
+  {
+   "agent_guess": null,
+   "allow_dont_know": true,
+   "allow_other": true,
+   "answer": null,
+   "answered_by": null,
+   "decision": null,
+   "dismissed": {
+    "by": "agent",
+    "reason": "OVERLAY_FIELDS of native:intersection are fields of the overlay layer ds.01_communes_2169 (03_clip_dissolve.py:29-30), which has them",
+    "rev": 2
+   },
+   "evidence": [],
+   "header": "Field not found",
+   "id": "q02",
+   "impact": {
+    "datasets": [
+     "ds.02_buffers",
+     "ds.03_buf_by_commune",
+     "ds.03_buf_x_commune",
+     "ds.buffer_area_by_commune_csv",
+     "ds.buffer_area_by_commune_gpkg"
+    ],
+    "level": "high"
+   },
+   "kind": "lineage",
+   "node": "ds.02_buffers",
+   "nodes": [
+    "s03_clip_dissolve"
+   ],
+   "options": [
+    {
+     "description": "Map it to the closest field",
+     "label": "Field was renamed",
+     "recommended": true,
+     "value": "renamed"
+    },
+    {
+     "description": "Use the recommended option as a visible assumption",
+     "label": "Don't know",
+     "value": "dont_know"
+    }
+   ],
+   "param_ids": [],
+   "priority": {
+    "cost": 2,
+    "impact": 3,
+    "score": 18,
+    "uncertainty": 3
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "status"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "source": "lineage",
+   "status": "dismissed",
+   "text": "s03_clip_dissolve.op1 reads field 'shapeName' of ds.02_buffers (02_SCRIPTS/03_clip_dissolve.py:29), but the file's schema has no such field.",
+   "trigger": {
+    "quote": null,
+    "ref": "02_SCRIPTS/03_clip_dissolve.py:29"
+   },
+   "why": "A missing field means a different producer or version."
+  },
+  {
+   "agent_guess": {
+    "option": "keep",
+    "why": "code and NOTES agree"
+   },
+   "allow_dont_know": true,
+   "allow_other": true,
+   "answer": {
+    "at": "2026-10-13T23:52:03Z",
+    "by": "user",
+    "channel": "interview",
+    "recorded_by": "agent",
+    "rev": 4,
+    "text": null,
+    "value": "keep",
+    "verbatim": "Yes, industrial 500 m and every other class 200 m, as in the script."
+   },
+   "answered_by": "user (interview)",
+   "decision": null,
+   "evidence": [
+    {
+     "fact": "industrial 500 m, everything else 200 m",
+     "ref": "NOTES.txt:22"
+    }
+   ],
+   "header": "Buffer distances",
+   "id": "q03",
+   "impact": {
+    "datasets": [
+     "ds.02_buffers"
+    ],
+    "level": "high"
+   },
+   "kind": "branch",
+   "node": "s02_buffer_landuse",
+   "nodes": [
+    "ds.02_buf_industrial",
+    "ds.02_buffers"
+   ],
+   "options": [
+    {
+     "description": "as the script",
+     "label": "Keep 500 m / 200 m (Recommended)",
+     "recommended": true,
+     "value": "keep"
+    },
+    {
+     "description": "Use the recommended option as a visible assumption",
+     "label": "Don't know",
+     "value": "dont_know"
+    }
+   ],
+   "param_ids": [
+    "p.buffer_dist_industrial_m",
+    "p.buffer_dist_other_m"
+   ],
+   "priority": {
+    "cost": 1,
+    "impact": 3,
+    "score": 3,
+    "uncertainty": 1
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 3
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "answer"
+      ],
+      "rev": 4
+     }
+    ]
+   },
+   "status": "answered",
+   "text": "Q-3 · 02_buffer_landuse.py:31-36 buffers industrial landuse at 500 m and every other class at 200 m (NOTES.txt:22). Keep exactly this per-class rule?",
+   "trigger": {
+    "quote": "if grp == \"industrial\":",
+    "ref": "02_SCRIPTS/02_buffer_landuse.py:31-36"
+   },
+   "why": "the distance is chosen by an if on the class; both paths must be ported"
+  }
+ ],
+ "revision": 5,
+ "schema": "axis-migrate.graph.v1",
+ "scope_facts": [],
+ "steps": [
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:35-60",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "5 legacy tool calls"
+    }
+   ],
+   "id": "s01_prepare_inputs",
+   "inputs": [
+    "ds.geoboundaries_lux_adm2",
+    "ds.osm_landuse_lux"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:10",
+     "inventory:05_TEMP/01_communes_2169.gpkg",
+     "inventory:05_TEMP/01_landuse_2169.gpkg"
+    ],
+    "lines": [
+     [
+      35,
+      60
+     ]
+    ],
+    "source": "02_SCRIPTS/01_prepare_inputs.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s01_prepare_inputs.py"
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "run",
+     "call": "native:extractbyexpression",
+     "flags": [],
+     "id": "s01_prepare_inputs.op1",
+     "lines": [
+      35,
+      38
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.geoboundaries_lux_adm2"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:35-38",
+     "writes": [
+      "ds.mem.s01_l38"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:reprojectlayer",
+     "flags": [],
+     "id": "s01_prepare_inputs.op2",
+     "lines": [
+      41,
+      44
+     ],
+     "literal_params": {
+      "TARGET_CRS": "EPSG:2169"
+     },
+     "reads": [
+      "ds.mem.s01_l38"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:41-44",
+     "writes": [
+      "ds.01_communes_2169"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:reprojectlayer",
+     "flags": [],
+     "id": "s01_prepare_inputs.op3",
+     "lines": [
+      47,
+      50
+     ],
+     "literal_params": {
+      "TARGET_CRS": "EPSG:2169"
+     },
+     "reads": [
+      "ds.osm_landuse_lux"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:47-50",
+     "writes": [
+      "ds.mem.s01_l50"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:fixgeometries",
+     "flags": [],
+     "id": "s01_prepare_inputs.op4",
+     "lines": [
+      53,
+      54
+     ],
+     "literal_params": {
+      "METHOD": 1
+     },
+     "reads": [
+      "ds.mem.s01_l50"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:53-54",
+     "writes": [
+      "ds.mem.s01_l54"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:extractbylocation",
+     "flags": [],
+     "id": "s01_prepare_inputs.op5",
+     "lines": [
+      56,
+      60
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.01_communes_2169",
+      "ds.mem.s01_l54"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/01_prepare_inputs.py:56-60",
+     "writes": [
+      "ds.01_landuse_2169"
+     ]
+    }
+   ],
+   "order": 1,
+   "outputs": [
+    "ds.01_communes_2169",
+    "ds.01_landuse_2169"
+   ],
+   "params": [
+    "p.study_communes",
+    "p.work_crs"
+   ],
+   "plan": {
+    "approved": {
+     "at": null,
+     "by": null
+    },
+    "isolation": {
+     "legacy_inputs": [],
+     "missing": [],
+     "possible": true
+    },
+    "legacy_ops": [
+     {
+      "ref": "02_SCRIPTS/01_prepare_inputs.py:35-38",
+      "settings": {
+       "expression": "shapeName IN (14 names)"
+      },
+      "tool": "native:extractbyexpression"
+     },
+     {
+      "ref": "02_SCRIPTS/01_prepare_inputs.py:41-44",
+      "settings": {
+       "target_crs": "EPSG:2169"
+      },
+      "tool": "native:reprojectlayer"
+     },
+     {
+      "ref": "02_SCRIPTS/01_prepare_inputs.py:47-50",
+      "settings": {
+       "target_crs": "EPSG:2169"
+      },
+      "tool": "native:reprojectlayer"
+     },
+     {
+      "ref": "02_SCRIPTS/01_prepare_inputs.py:53-54",
+      "settings": {
+       "method": 1
+      },
+      "tool": "native:fixgeometries"
+     },
+     {
+      "ref": "02_SCRIPTS/01_prepare_inputs.py:56-60",
+      "settings": {
+       "predicate": "intersect"
+      },
+      "tool": "native:extractbylocation"
+     }
+    ],
+    "oss": [
+     {
+      "op": "GeoDataFrame filter + to_crs",
+      "skill_refs": [
+       "V-7"
+      ],
+      "why": "attribute filter keeps file order"
+     },
+     {
+      "op": "shapely.make_valid(method='structure')",
+      "skill_refs": [
+       "GV-1"
+      ],
+      "why": "QGIS fix geometries, structure method"
+     },
+     {
+      "op": "STRtree.query(predicate='intersects')",
+      "skill_refs": [
+       "V-5"
+      ],
+      "why": "select by location is a filter"
+     }
+    ],
+    "outputs_checked": [
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.01_communes_2169",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     },
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.01_landuse_2169",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     }
+    ],
+    "params": [
+     "p.study_communes",
+     "p.work_crs"
+    ],
+    "risks": [
+     {
+      "evidence": "02_SCRIPTS/01_prepare_inputs.py:53-54",
+      "risk": "repair method changes geometry",
+      "skill_ref": "GV-1"
+     }
+    ],
+    "summary": "Study communes (name list) and the landuse polygons touching them, both in EPSG:2169; landuse repaired like Fix geometries (structure)."
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "new",
+       "params"
+      ],
+      "rev": 2
+     },
+     {
+      "by": "agent",
+      "fields": [
+       "plan"
+      ],
+      "rev": 5
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "study area (communes of canton Esch) + landuse, both in LUREF",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:37-64",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "5 legacy tool calls"
+    }
+   ],
+   "id": "s02_buffer_landuse",
+   "inputs": [
+    "ds.01_landuse_2169"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:11",
+     "inventory:05_TEMP/02_buf_industrial.gpkg",
+     "inventory:05_TEMP/02_buf_other.gpkg",
+     "inventory:05_TEMP/02_buffers.gpkg"
+    ],
+    "lines": [
+     [
+      37,
+      64
+     ]
+    ],
+    "source": "02_SCRIPTS/02_buffer_landuse.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s02_buffer_landuse.py"
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "run",
+     "call": "native:extractbyexpression",
+     "flags": [],
+     "id": "s02_buffer_landuse.op1",
+     "lines": [
+      37,
+      40
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.01_landuse_2169"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:37-40",
+     "writes": [
+      "ds.mem.s02_l40"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:buffer",
+     "flags": [],
+     "id": "s02_buffer_landuse.op2",
+     "lines": [
+      42,
+      51
+     ],
+     "literal_params": {
+      "DISSOLVE": false,
+      "END_CAP_STYLE": 0,
+      "JOIN_STYLE": 0,
+      "MITER_LIMIT": 2,
+      "SEGMENTS": 5,
+      "SEPARATE_DISJOINT": false
+     },
+     "reads": [
+      "ds.mem.s02_l40"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:42-51",
+     "writes": [
+      "ds.02_buf_industrial",
+      "ds.02_buf_other"
+     ]
+    },
+    {
+     "api": "?.append",
+     "call": "append",
+     "flags": [
+      "name_heuristic"
+     ],
+     "id": "s02_buffer_landuse.op3",
+     "lines": [
+      53,
+      53
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.02_buf_industrial",
+      "ds.02_buf_other"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:53",
+     "writes": []
+    },
+    {
+     "api": "run",
+     "call": "native:mergevectorlayers",
+     "flags": [],
+     "id": "s02_buffer_landuse.op4",
+     "lines": [
+      55,
+      58
+     ],
+     "literal_params": {
+      "CRS": null
+     },
+     "reads": [],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:55-58",
+     "writes": [
+      "ds.mem.s02_l58"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:deletecolumn",
+     "flags": [],
+     "id": "s02_buffer_landuse.op5",
+     "lines": [
+      61,
+      64
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.mem.s02_l58"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_buffer_landuse.py:61-64",
+     "writes": [
+      "ds.02_buffers"
+     ]
+    }
+   ],
+   "order": 2,
+   "outputs": [
+    "ds.02_buf_industrial",
+    "ds.02_buf_other",
+    "ds.02_buffers"
+   ],
+   "params": [
+    "p.industrial_class",
+    "p.buffer_dist_industrial_m",
+    "p.buffer_dist_other_m",
+    "p.buffer_segments"
+   ],
+   "plan": {
+    "approved": {
+     "at": null,
+     "by": null
+    },
+    "isolation": {
+     "legacy_inputs": [
+      "ds.01_landuse_2169"
+     ],
+     "missing": [],
+     "possible": true
+    },
+    "legacy_ops": [
+     {
+      "ref": "02_SCRIPTS/02_buffer_landuse.py:37-40",
+      "settings": {
+       "branch": "if grp == 'industrial' (l.31) / else (l.34)"
+      },
+      "tool": "native:extractbyexpression"
+     },
+     {
+      "ref": "02_SCRIPTS/02_buffer_landuse.py:42-51",
+      "settings": {
+       "dissolve": false,
+       "distance": "500 | 200",
+       "end_cap": "round",
+       "join": "round",
+       "segments": 5
+      },
+      "tool": "native:buffer"
+     },
+     {
+      "ref": "02_SCRIPTS/02_buffer_landuse.py:55-58",
+      "settings": {},
+      "tool": "native:mergevectorlayers"
+     },
+     {
+      "ref": "02_SCRIPTS/02_buffer_landuse.py:61-64",
+      "settings": {
+       "columns": [
+        "fid",
+        "layer",
+        "path"
+       ]
+      },
+      "tool": "native:deletecolumn"
+     }
+    ],
+    "oss": [
+     {
+      "op": "shapely.buffer(quad_segs=5, cap_style=round, join_style=round)",
+      "skill_refs": [
+       "C-2",
+       "GV-3"
+      ],
+      "why": "native:buffer SEGMENTS=5 is GEOS quadrant segments"
+     }
+    ],
+    "outputs_checked": [
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.02_buf_industrial",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     },
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.02_buf_other",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     },
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.02_buffers",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     }
+    ],
+    "params": [
+     "p.industrial_class",
+     "p.buffer_dist_industrial_m",
+     "p.buffer_dist_other_m",
+     "p.buffer_segments"
+    ],
+    "risks": [
+     {
+      "evidence": "02_SCRIPTS/02_buffer_landuse.py:31-36",
+      "risk": "class branch: industrial distance differs",
+      "skill_ref": "L-6"
+     },
+     {
+      "evidence": "NOTES.txt:23",
+      "risk": "buffer distance needs a metric CRS",
+      "skill_ref": "C-2"
+     }
+    ],
+    "summary": "Per-class buffers: industrial at p.buffer_dist_industrial_m, every other class at p.buffer_dist_other_m, in EPSG:2169, 5 segments, round caps/joins; merged industrial first."
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "new",
+       "params"
+      ],
+      "rev": 2
+     },
+     {
+      "by": "agent",
+      "fields": [
+       "plan"
+      ],
+      "rev": 5
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "buffer zones round the landuse polygons",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:24-42",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "3 legacy tool calls"
+    }
+   ],
+   "id": "s03_clip_dissolve",
+   "inputs": [
+    "ds.01_communes_2169",
+    "ds.02_buffers"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:12",
+     "inventory:05_TEMP/03_buf_by_commune.gpkg",
+     "inventory:05_TEMP/03_buf_x_commune.gpkg"
+    ],
+    "lines": [
+     [
+      24,
+      42
+     ]
+    ],
+    "source": "02_SCRIPTS/03_clip_dissolve.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s03_clip_dissolve.py"
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "run",
+     "call": "native:intersection",
+     "flags": [],
+     "id": "s03_clip_dissolve.op1",
+     "lines": [
+      25,
+      31
+     ],
+     "literal_params": {
+      "OVERLAY_FIELDS_PREFIX": ""
+     },
+     "reads": [
+      "ds.02_buffers",
+      "ds.01_communes_2169"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:25-31",
+     "writes": [
+      "ds.03_buf_x_commune"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:retainfields",
+     "flags": [],
+     "id": "s03_clip_dissolve.op2",
+     "lines": [
+      33,
+      36
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.03_buf_x_commune"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:33-36",
+     "writes": [
+      "ds.mem.s03_l36"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:dissolve",
+     "flags": [],
+     "id": "s03_clip_dissolve.op3",
+     "lines": [
+      38,
+      42
+     ],
+     "literal_params": {
+      "SEPARATE_DISJOINT": false
+     },
+     "reads": [
+      "ds.mem.s03_l36"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_clip_dissolve.py:38-42",
+     "writes": [
+      "ds.03_buf_by_commune"
+     ]
+    }
+   ],
+   "order": 3,
+   "outputs": [
+    "ds.03_buf_by_commune",
+    "ds.03_buf_x_commune"
+   ],
+   "params": [
+    "p.commune_key"
+   ],
+   "plan": {
+    "approved": {
+     "at": null,
+     "by": null
+    },
+    "isolation": {
+     "legacy_inputs": [
+      "ds.01_communes_2169",
+      "ds.02_buffers"
+     ],
+     "missing": [],
+     "possible": true
+    },
+    "legacy_ops": [
+     {
+      "ref": "02_SCRIPTS/03_clip_dissolve.py:25-31",
+      "settings": {
+       "input_fields": [
+        "osm_id",
+        "osm_way_id",
+        "landuse"
+       ],
+       "overlay_fields": [
+        "shapeName",
+        "shapeID"
+       ]
+      },
+      "tool": "native:intersection"
+     },
+     {
+      "ref": "02_SCRIPTS/03_clip_dissolve.py:33-36",
+      "settings": {},
+      "tool": "native:retainfields"
+     },
+     {
+      "ref": "02_SCRIPTS/03_clip_dissolve.py:38-42",
+      "settings": {
+       "field": [
+        "shapeID"
+       ]
+      },
+      "tool": "native:dissolve"
+     }
+    ],
+    "oss": [
+     {
+      "op": "shapely.intersection per STRtree pair, polygonal parts only",
+      "skill_refs": [
+       "V-6"
+      ],
+      "why": "QGIS intersection keeps the input geometry type"
+     },
+     {
+      "op": "shapely.union_all per commune",
+      "skill_refs": [
+       "GV-4"
+      ],
+      "why": "dissolve by field"
+     }
+    ],
+    "outputs_checked": [
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.03_buf_x_commune",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     },
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.03_buf_by_commune",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     }
+    ],
+    "params": [
+     "p.commune_key"
+    ],
+    "risks": [
+     {
+      "risk": "none"
+     }
+    ],
+    "summary": "Buffers intersected with the communes (one piece per pair), pieces dissolved per commune."
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "new",
+       "params"
+      ],
+      "rev": 2
+     },
+     {
+      "by": "agent",
+      "fields": [
+       "plan"
+      ],
+      "rev": 5
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "cut the buffers by commune and merge the overlaps per commune",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_area_per_commune.py:27-68",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "6 legacy tool calls"
+    }
+   ],
+   "id": "s04_area_per_commune",
+   "inputs": [
+    "ds.01_communes_2169",
+    "ds.03_buf_by_commune"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:13",
+     "inventory:04_FINAL/buffer_area_by_commune.csv",
+     "inventory:04_FINAL/buffer_area_by_commune.gpkg"
+    ],
+    "lines": [
+     [
+      27,
+      68
+     ]
+    ],
+    "source": "02_SCRIPTS/04_area_per_commune.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": "pipeline/s04_area_per_commune.py"
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "run",
+     "call": "native:fieldcalculator",
+     "flags": [],
+     "id": "s04_area_per_commune.op1",
+     "lines": [
+      28,
+      35
+     ],
+     "literal_params": {
+      "FIELD_LENGTH": 0,
+      "FIELD_NAME": "buf_km2",
+      "FIELD_PRECISION": 0,
+      "FIELD_TYPE": 0,
+      "FORMULA": "area($geometry) / 1000000"
+     },
+     "reads": [
+      "ds.03_buf_by_commune"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_area_per_commune.py:28-35",
+     "writes": [
+      "ds.mem.s04_l35"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:fieldcalculator",
+     "flags": [],
+     "id": "s04_area_per_commune.op2",
+     "lines": [
+      37,
+      44
+     ],
+     "literal_params": {
+      "FIELD_LENGTH": 0,
+      "FIELD_NAME": "commune_km2",
+      "FIELD_PRECISION": 0,
+      "FIELD_TYPE": 0,
+      "FORMULA": "area($geometry) / 1000000"
+     },
+     "reads": [
+      "ds.01_communes_2169"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_area_per_commune.py:37-44",
+     "writes": [
+      "ds.mem.s04_l44"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:joinattributestable",
+     "flags": [],
+     "id": "s04_area_per_commune.op3",
+     "lines": [
+      46,
+      55
+     ],
+     "literal_params": {
+      "DISCARD_NONMATCHING": false,
+      "FIELD": "shapeID",
+      "FIELD_2": "shapeID",
+      "METHOD": 1,
+      "PREFIX": ""
+     },
+     "reads": [
+      "ds.mem.s04_l35",
+      "ds.mem.s04_l44"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_area_per_commune.py:46-55",
+     "writes": [
+      "ds.mem.s04_l55"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:fieldcalculator",
+     "flags": [],
+     "id": "s04_area_per_commune.op4",
+     "lines": [
+      57,
+      64
+     ],
+     "literal_params": {
+      "FIELD_LENGTH": 0,
+      "FIELD_NAME": "share_pct",
+      "FIELD_PRECISION": 0,
+      "FIELD_TYPE": 0,
+      "FORMULA": "100 * \"buf_km2\" / \"commune_km2\""
+     },
+     "reads": [
+      "ds.mem.s04_l55"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_area_per_commune.py:57-64",
+     "writes": [
+      "ds.buffer_area_by_commune_gpkg"
+     ]
+    },
+    {
+     "api": "QgsVectorLayer",
+     "call": "QgsVectorLayer",
+     "flags": [],
+     "id": "s04_area_per_commune.op5",
+     "lines": [
+      67,
+      67
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.buffer_area_by_commune_gpkg"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_area_per_commune.py:67",
+     "writes": []
+    },
+    {
+     "api": "open",
+     "call": "open",
+     "flags": [],
+     "id": "s04_area_per_commune.op6",
+     "lines": [
+      68,
+      68
+     ],
+     "literal_params": {
+      "mode": "w"
+     },
+     "reads": [],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_area_per_commune.py:68",
+     "writes": [
+      "ds.buffer_area_by_commune_csv"
+     ]
+    }
+   ],
+   "order": 4,
+   "outputs": [
+    "ds.buffer_area_by_commune_csv",
+    "ds.buffer_area_by_commune_gpkg"
+   ],
+   "params": [
+    "p.commune_key",
+    "p.area_unit_m2",
+    "p.csv_area_decimals",
+    "p.csv_share_decimals"
+   ],
+   "plan": {
+    "approved": {
+     "at": null,
+     "by": null
+    },
+    "isolation": {
+     "legacy_inputs": [
+      "ds.01_communes_2169",
+      "ds.03_buf_by_commune"
+     ],
+     "missing": [],
+     "possible": true
+    },
+    "legacy_ops": [
+     {
+      "ref": "02_SCRIPTS/04_area_per_commune.py:28-35",
+      "settings": {
+       "formula": "area($geometry) / 1000000"
+      },
+      "tool": "native:fieldcalculator"
+     },
+     {
+      "ref": "02_SCRIPTS/04_area_per_commune.py:46-55",
+      "settings": {
+       "method": 1
+      },
+      "tool": "native:joinattributestable"
+     },
+     {
+      "ref": "02_SCRIPTS/04_area_per_commune.py:68-73",
+      "settings": {
+       "round": [
+        3,
+        3,
+        1
+       ]
+      },
+      "tool": "csv.writer"
+     }
+    ],
+    "oss": [
+     {
+      "op": "GeoSeries.area / p.area_unit_m2",
+      "skill_refs": [
+       "C-2"
+      ],
+      "why": "planar area in the layer CRS"
+     }
+    ],
+    "outputs_checked": [
+     {
+      "checks": [
+       "crs",
+       "geometry_type",
+       "key_set",
+       "attributes",
+       "geometry"
+      ],
+      "dataset": "ds.buffer_area_by_commune_gpkg",
+      "family": "vector",
+      "measure": null,
+      "tolerance_ids": []
+     },
+     {
+      "checks": [
+       "key_set",
+       "attributes"
+      ],
+      "dataset": "ds.buffer_area_by_commune_csv",
+      "family": "table",
+      "measure": null,
+      "tolerance_ids": []
+     }
+    ],
+    "params": [
+     "p.commune_key",
+     "p.area_unit_m2",
+     "p.csv_area_decimals",
+     "p.csv_share_decimals"
+    ],
+    "risks": [
+     {
+      "risk": "none"
+     }
+    ],
+    "summary": "Planar areas in km2, commune area joined on shapeID, share in percent; CSV rounded."
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "new",
+       "params"
+      ],
+      "rev": 2
+     },
+     {
+      "by": "agent",
+      "fields": [
+       "plan"
+      ],
+      "rev": 5
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "buffer area per commune (km2) + share of the commune -> 04_FINAL",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  }
+ ],
+ "updated": {
+  "at": "2026-10-13T23:52:03Z",
+  "by": "agent",
+  "rev": 5
+ }
+}

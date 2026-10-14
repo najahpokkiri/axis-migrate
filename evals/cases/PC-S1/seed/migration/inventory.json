@@ -1,0 +1,3902 @@
+{
+ "annotations": {},
+ "aoi": "ds.geoboundaries_lux_adm2",
+ "code": [
+  {
+   "commented_code": [
+    {
+     "assigns": {
+      "name": "BASE",
+      "value": "D:\\projets\\buffers_sud"
+     },
+     "line": 6,
+     "text": "BASE = r\"D:\\projets\\buffers_sud\""
+    }
+   ],
+   "comments": 10,
+   "entry": "module",
+   "flags": [],
+   "functions": [],
+   "id": "code.s01_prepare_inputs",
+   "imported_by": [],
+   "imports": [
+    {
+     "as": null,
+     "cell": null,
+     "line": 4,
+     "module": "os"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 4,
+     "module": "sys"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 21,
+     "module": "qgis.core",
+     "names": "QgsApplication"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 26,
+     "module": "processing"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 27,
+     "module": "processing.core.Processing",
+     "names": "Processing"
+    }
+   ],
+   "language": "python",
+   "ops": [
+    "s01_prepare_inputs.op1",
+    "s01_prepare_inputs.op2",
+    "s01_prepare_inputs.op3",
+    "s01_prepare_inputs.op4",
+    "s01_prepare_inputs.op5"
+   ],
+   "order": 1,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 10
+    },
+    {
+     "kind": "name_prefix",
+     "value": "01"
+    }
+   ],
+   "parse_error": null,
+   "path": "02_SCRIPTS/01_prepare_inputs.py",
+   "runtime": "pyqgis",
+   "status": "live",
+   "status_evidence": [],
+   "step_id": "s01_prepare_inputs",
+   "twin_of": null
+  },
+  {
+   "commented_code": [
+    {
+     "assigns": {
+      "name": "BASE",
+      "value": "D:\\projets\\buffers_sud"
+     },
+     "line": 6,
+     "text": "BASE = r\"D:\\projets\\buffers_sud\""
+    }
+   ],
+   "comments": 10,
+   "entry": "module",
+   "flags": [],
+   "functions": [],
+   "id": "code.s02_buffer_landuse",
+   "imported_by": [],
+   "imports": [
+    {
+     "as": null,
+     "cell": null,
+     "line": 4,
+     "module": "os"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 4,
+     "module": "sys"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 19,
+     "module": "qgis.core",
+     "names": "QgsApplication"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 24,
+     "module": "processing"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 25,
+     "module": "processing.core.Processing",
+     "names": "Processing"
+    }
+   ],
+   "language": "python",
+   "ops": [
+    "s02_buffer_landuse.op1",
+    "s02_buffer_landuse.op2",
+    "s02_buffer_landuse.op3",
+    "s02_buffer_landuse.op4",
+    "s02_buffer_landuse.op5"
+   ],
+   "order": 2,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 11
+    },
+    {
+     "after": [
+      "code.s01_prepare_inputs"
+     ],
+     "kind": "data_dependency"
+    },
+    {
+     "kind": "name_prefix",
+     "value": "02"
+    }
+   ],
+   "parse_error": null,
+   "path": "02_SCRIPTS/02_buffer_landuse.py",
+   "runtime": "pyqgis",
+   "status": "live",
+   "status_evidence": [],
+   "step_id": "s02_buffer_landuse",
+   "twin_of": null
+  },
+  {
+   "commented_code": [
+    {
+     "assigns": {
+      "name": "BASE",
+      "value": "D:\\projets\\buffers_sud"
+     },
+     "line": 6,
+     "text": "BASE = r\"D:\\projets\\buffers_sud\""
+    }
+   ],
+   "comments": 6,
+   "entry": "module",
+   "flags": [],
+   "functions": [],
+   "id": "code.s03_clip_dissolve",
+   "imported_by": [],
+   "imports": [
+    {
+     "as": null,
+     "cell": null,
+     "line": 4,
+     "module": "os"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 4,
+     "module": "sys"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 14,
+     "module": "qgis.core",
+     "names": "QgsApplication"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 19,
+     "module": "processing"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 20,
+     "module": "processing.core.Processing",
+     "names": "Processing"
+    }
+   ],
+   "language": "python",
+   "ops": [
+    "s03_clip_dissolve.op1",
+    "s03_clip_dissolve.op2",
+    "s03_clip_dissolve.op3"
+   ],
+   "order": 3,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 12
+    },
+    {
+     "after": [
+      "code.s01_prepare_inputs",
+      "code.s02_buffer_landuse"
+     ],
+     "kind": "data_dependency"
+    },
+    {
+     "kind": "name_prefix",
+     "value": "03"
+    }
+   ],
+   "parse_error": null,
+   "path": "02_SCRIPTS/03_clip_dissolve.py",
+   "runtime": "pyqgis",
+   "status": "live",
+   "status_evidence": [],
+   "step_id": "s03_clip_dissolve",
+   "twin_of": null
+  },
+  {
+   "commented_code": [
+    {
+     "assigns": {
+      "name": "BASE",
+      "value": "D:\\projets\\buffers_sud"
+     },
+     "line": 5,
+     "text": "BASE = r\"D:\\projets\\buffers_sud\""
+    }
+   ],
+   "comments": 6,
+   "entry": "module",
+   "flags": [],
+   "functions": [],
+   "id": "code.s04_area_per_commune",
+   "imported_by": [],
+   "imports": [
+    {
+     "as": null,
+     "cell": null,
+     "line": 3,
+     "module": "os"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 3,
+     "module": "sys"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 3,
+     "module": "csv"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 14,
+     "module": "qgis.core",
+     "names": "QgsApplication"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 14,
+     "module": "qgis.core",
+     "names": "QgsVectorLayer"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 19,
+     "module": "processing"
+    },
+    {
+     "as": null,
+     "cell": null,
+     "line": 20,
+     "module": "processing.core.Processing",
+     "names": "Processing"
+    }
+   ],
+   "language": "python",
+   "ops": [
+    "s04_area_per_commune.op1",
+    "s04_area_per_commune.op2",
+    "s04_area_per_commune.op3",
+    "s04_area_per_commune.op4",
+    "s04_area_per_commune.op5",
+    "s04_area_per_commune.op6"
+   ],
+   "order": 4,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 13
+    },
+    {
+     "after": [
+      "code.s01_prepare_inputs",
+      "code.s03_clip_dissolve"
+     ],
+     "kind": "data_dependency"
+    },
+    {
+     "kind": "name_prefix",
+     "value": "04"
+    }
+   ],
+   "parse_error": null,
+   "path": "02_SCRIPTS/04_area_per_commune.py",
+   "runtime": "pyqgis",
+   "status": "live",
+   "status_evidence": [],
+   "step_id": "s04_area_per_commune",
+   "twin_of": null
+  }
+ ],
+ "datasets": [
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "01_communes_2169",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s01_prepare_inputs.op5",
+    "s03_clip_dissolve.op1",
+    "s04_area_per_commune.op2"
+   ],
+   "content_sha256": "8ee2a2a056365c576f86ed8bcf542588d5dddfb96ee338fbf080c3432e151ee3",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.01_communes_2169",
+   "kind": "vector",
+   "layer": "01_communes_2169",
+   "legacy_path": "05_TEMP/01_communes_2169.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s01_prepare_inputs.op2"
+   ],
+   "profile_ref": "discover/profiles/ds.01_communes_2169.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s01_prepare_inputs.op2",
+    "s01_prepare_inputs.op5",
+    "s03_clip_dissolve.op1",
+    "s04_area_per_commune.op2"
+   ],
+   "role": "intermediate",
+   "role_evidence": [
+    {
+     "arg_line": 44,
+     "file": "02_SCRIPTS/01_prepare_inputs.py",
+     "kind": "code_write",
+     "line": 41,
+     "mode": "create",
+     "op": "s01_prepare_inputs.op2"
+    },
+    {
+     "file": "02_SCRIPTS/01_prepare_inputs.py",
+     "kind": "code_read",
+     "line": 59,
+     "op": "s01_prepare_inputs.op5"
+    },
+    {
+     "file": "02_SCRIPTS/03_clip_dissolve.py",
+     "kind": "code_read",
+     "line": 27,
+     "op": "s03_clip_dissolve.op1"
+    },
+    {
+     "file": "02_SCRIPTS/04_area_per_commune.py",
+     "kind": "code_read",
+     "line": 38,
+     "op": "s04_area_per_commune.op2"
+    },
+    {
+     "kind": "folder",
+     "value": "05_TEMP"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "f4183c43ec9863782dd3b5e449319a4fce0b059d752119f963aaa9835ccff391",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "01_landuse_2169",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s02_buffer_landuse.op1"
+   ],
+   "content_sha256": "fcd4cfdac6f64d210c20ee1dedaf07a0c04897a6f48492636043509a2d94fb07",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.01_landuse_2169",
+   "kind": "vector",
+   "layer": "01_landuse_2169",
+   "legacy_path": "05_TEMP/01_landuse_2169.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s01_prepare_inputs.op5"
+   ],
+   "profile_ref": "discover/profiles/ds.01_landuse_2169.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s01_prepare_inputs.op5",
+    "s02_buffer_landuse.op1"
+   ],
+   "role": "intermediate",
+   "role_evidence": [
+    {
+     "arg_line": 60,
+     "file": "02_SCRIPTS/01_prepare_inputs.py",
+     "kind": "code_write",
+     "line": 56,
+     "mode": "create",
+     "op": "s01_prepare_inputs.op5"
+    },
+    {
+     "file": "02_SCRIPTS/02_buffer_landuse.py",
+     "kind": "code_read",
+     "line": 38,
+     "op": "s02_buffer_landuse.op1"
+    },
+    {
+     "kind": "folder",
+     "value": "05_TEMP"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "c9d1bf16cbd98742c668f20d9613657bb483ec3de5d28e0a8de31ef7f0ebb69f",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "02_buf_industrial",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s02_buffer_landuse.op3"
+   ],
+   "content_sha256": "f66e784e9e2d13058e9f0f1f382abd364f25ef07d84d7d2259b56eb4bf018f69",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.02_buf_industrial",
+   "kind": "vector",
+   "layer": "02_buf_industrial",
+   "legacy_path": "05_TEMP/02_buf_industrial.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s02_buffer_landuse.op2"
+   ],
+   "profile_ref": "discover/profiles/ds.02_buf_industrial.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s02_buffer_landuse.op2",
+    "s02_buffer_landuse.op3"
+   ],
+   "role": "intermediate",
+   "role_evidence": [
+    {
+     "arg_line": 51,
+     "file": "02_SCRIPTS/02_buffer_landuse.py",
+     "kind": "code_write",
+     "line": 42,
+     "mode": "create",
+     "op": "s02_buffer_landuse.op2"
+    },
+    {
+     "file": "02_SCRIPTS/02_buffer_landuse.py",
+     "kind": "code_read",
+     "line": 53,
+     "op": "s02_buffer_landuse.op3"
+    },
+    {
+     "kind": "folder",
+     "value": "05_TEMP"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "75be048b07530509faa73f5fbccd894c91dc6b32291421d0b1604f2ea1ace4fc",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "02_buf_other",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s02_buffer_landuse.op3"
+   ],
+   "content_sha256": "b997589b51a822cc61a6072029442eb0a39e2204140ba08fb1e0d8c4f47175c6",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.02_buf_other",
+   "kind": "vector",
+   "layer": "02_buf_other",
+   "legacy_path": "05_TEMP/02_buf_other.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s02_buffer_landuse.op2"
+   ],
+   "profile_ref": "discover/profiles/ds.02_buf_other.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s02_buffer_landuse.op2",
+    "s02_buffer_landuse.op3"
+   ],
+   "role": "intermediate",
+   "role_evidence": [
+    {
+     "arg_line": 51,
+     "file": "02_SCRIPTS/02_buffer_landuse.py",
+     "kind": "code_write",
+     "line": 42,
+     "mode": "create",
+     "op": "s02_buffer_landuse.op2"
+    },
+    {
+     "file": "02_SCRIPTS/02_buffer_landuse.py",
+     "kind": "code_read",
+     "line": 53,
+     "op": "s02_buffer_landuse.op3"
+    },
+    {
+     "kind": "folder",
+     "value": "05_TEMP"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "bf0aa802fd32e8529c4886c5288e18b0181efbcf08d351bb4ce79022c9f88e2e",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "02_buffers",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s03_clip_dissolve.op1"
+   ],
+   "content_sha256": "7c901e2bd3def467e7ed5bea3356c99340b67a2b31f11d66048e9d43c1d85e23",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.02_buffers",
+   "kind": "vector",
+   "layer": "02_buffers",
+   "legacy_path": "05_TEMP/02_buffers.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s02_buffer_landuse.op5"
+   ],
+   "profile_ref": "discover/profiles/ds.02_buffers.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s02_buffer_landuse.op5",
+    "s03_clip_dissolve.op1"
+   ],
+   "role": "intermediate",
+   "role_evidence": [
+    {
+     "arg_line": 64,
+     "file": "02_SCRIPTS/02_buffer_landuse.py",
+     "kind": "code_write",
+     "line": 61,
+     "mode": "create",
+     "op": "s02_buffer_landuse.op5"
+    },
+    {
+     "file": "02_SCRIPTS/03_clip_dissolve.py",
+     "kind": "code_read",
+     "line": 26,
+     "op": "s03_clip_dissolve.op1"
+    },
+    {
+     "kind": "folder",
+     "value": "05_TEMP"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "e9c557326e0277934c35ccedf757e1a795c6deba1cba707ff42a0ad6bb42713a",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "03_buf_by_commune",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s04_area_per_commune.op1"
+   ],
+   "content_sha256": "5aa709c5901c01a3aab13d8df919ef7bf95731d93933cc3902d1a45b800769b0",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.03_buf_by_commune",
+   "kind": "vector",
+   "layer": "03_buf_by_commune",
+   "legacy_path": "05_TEMP/03_buf_by_commune.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s03_clip_dissolve.op3"
+   ],
+   "profile_ref": "discover/profiles/ds.03_buf_by_commune.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s03_clip_dissolve.op3",
+    "s04_area_per_commune.op1"
+   ],
+   "role": "intermediate",
+   "role_evidence": [
+    {
+     "arg_line": 42,
+     "file": "02_SCRIPTS/03_clip_dissolve.py",
+     "kind": "code_write",
+     "line": 38,
+     "mode": "create",
+     "op": "s03_clip_dissolve.op3"
+    },
+    {
+     "file": "02_SCRIPTS/04_area_per_commune.py",
+     "kind": "code_read",
+     "line": 29,
+     "op": "s04_area_per_commune.op1"
+    },
+    {
+     "kind": "folder",
+     "value": "05_TEMP"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "de8271a36d1f3d1ec98b7686636460d1c60e2bbfd970a7647c2529790d053d8e",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "03_buf_x_commune",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s03_clip_dissolve.op2"
+   ],
+   "content_sha256": "f68e3a25df7586716d1b2c17a0c310699c5c3357498fd3fa3817cb7e40cfce4f",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.03_buf_x_commune",
+   "kind": "vector",
+   "layer": "03_buf_x_commune",
+   "legacy_path": "05_TEMP/03_buf_x_commune.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s03_clip_dissolve.op1"
+   ],
+   "profile_ref": "discover/profiles/ds.03_buf_x_commune.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s03_clip_dissolve.op1",
+    "s03_clip_dissolve.op2"
+   ],
+   "role": "intermediate",
+   "role_evidence": [
+    {
+     "arg_line": 31,
+     "file": "02_SCRIPTS/03_clip_dissolve.py",
+     "kind": "code_write",
+     "line": 25,
+     "mode": "create",
+     "op": "s03_clip_dissolve.op1"
+    },
+    {
+     "file": "02_SCRIPTS/03_clip_dissolve.py",
+     "kind": "code_read",
+     "line": 34,
+     "op": "s03_clip_dissolve.op2"
+    },
+    {
+     "kind": "folder",
+     "value": "05_TEMP"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "9613ba425b5b365d1e5908c37373b53d988429ffc3f9762e41f9d93e7d6be325",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "header_row": 1,
+    "kind": "table",
+    "sep": ",",
+    "volatile_bytes": []
+   },
+   "conflict": false,
+   "consumed_by": [],
+   "content_sha256": null,
+   "derived_from": null,
+   "exists": true,
+   "format": "CSV",
+   "grid_id": null,
+   "id": "ds.buffer_area_by_commune_csv",
+   "kind": "table",
+   "layer": null,
+   "legacy_path": "04_FINAL/buffer_area_by_commune.csv",
+   "persistence": "file",
+   "produced_by": [
+    "s04_area_per_commune.op6"
+   ],
+   "profile_ref": "discover/profiles/ds.buffer_area_by_commune_csv.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s04_area_per_commune.op6"
+   ],
+   "role": "final",
+   "role_evidence": [
+    {
+     "arg_line": 68,
+     "file": "02_SCRIPTS/04_area_per_commune.py",
+     "kind": "code_write",
+     "line": 68,
+     "mode": "create",
+     "op": "s04_area_per_commune.op6"
+    },
+    {
+     "kind": "folder",
+     "value": "04_FINAL"
+    },
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_mention",
+     "line": 7
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "ae02c8b817475ddb4d095f3958794e0a9c432cc4b878bbf4bc59bb4f26da70aa",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID",
+     "buf_km2",
+     "commune_km2",
+     "share_pct"
+    ],
+    "kind": "vector",
+    "layer": "buffer_area_by_commune",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s04_area_per_commune.op5"
+   ],
+   "content_sha256": "bb155694e91e74024c408e6274227c985aedd6b248948bd0abe4eff2da1572aa",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.buffer_area_by_commune_gpkg",
+   "kind": "vector",
+   "layer": "buffer_area_by_commune",
+   "legacy_path": "04_FINAL/buffer_area_by_commune.gpkg",
+   "persistence": "file",
+   "produced_by": [
+    "s04_area_per_commune.op4"
+   ],
+   "profile_ref": "discover/profiles/ds.buffer_area_by_commune_gpkg.json",
+   "reference_candidate": true,
+   "referenced_by": [
+    "s04_area_per_commune.op4",
+    "s04_area_per_commune.op5"
+   ],
+   "role": "final",
+   "role_evidence": [
+    {
+     "arg_line": 64,
+     "file": "02_SCRIPTS/04_area_per_commune.py",
+     "kind": "code_write",
+     "line": 57,
+     "mode": "create",
+     "op": "s04_area_per_commune.op4"
+    },
+    {
+     "file": "02_SCRIPTS/04_area_per_commune.py",
+     "kind": "code_read",
+     "line": 67,
+     "op": "s04_area_per_commune.op5"
+    },
+    {
+     "kind": "folder",
+     "value": "04_FINAL"
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "590197a025f037848f2b621644a1c508f9c6c38240df6e78c19c3983dcb29f58",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "geoBoundaries-LUX-ADM2",
+    "volatile_bytes": []
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s01_prepare_inputs.op1"
+   ],
+   "content_sha256": null,
+   "derived_from": null,
+   "exists": true,
+   "format": "GeoJSON",
+   "grid_id": null,
+   "id": "ds.geoboundaries_lux_adm2",
+   "kind": "vector",
+   "layer": "geoBoundaries-LUX-ADM2",
+   "legacy_path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+   "persistence": "file",
+   "produced_by": [],
+   "profile_ref": "discover/profiles/ds.geoboundaries_lux_adm2.json",
+   "reference_candidate": false,
+   "referenced_by": [
+    "s01_prepare_inputs.op1"
+   ],
+   "role": "input",
+   "role_evidence": [
+    {
+     "file": "02_SCRIPTS/01_prepare_inputs.py",
+     "kind": "code_read",
+     "line": 36,
+     "op": "s01_prepare_inputs.op1"
+    },
+    {
+     "kind": "folder",
+     "value": "03_INPUT"
+    },
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_mention",
+     "line": 18
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "c885587d4883438e800b910029b54a37a3c9bcb73a45ddf48544e496b7ee265d",
+   "sidecars": [],
+   "unused_kind": null
+  },
+  {
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "landuse",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "conflict": false,
+   "consumed_by": [
+    "s01_prepare_inputs.op3"
+   ],
+   "content_sha256": "1559f8be4ca6799cf4076a53ba6acb6d096295957eb227f35b314b5c45a7d79d",
+   "derived_from": null,
+   "exists": true,
+   "format": "GPKG",
+   "grid_id": null,
+   "id": "ds.osm_landuse_lux",
+   "kind": "vector",
+   "layer": "landuse",
+   "legacy_path": "03_INPUT/osm_landuse_lux.gpkg",
+   "persistence": "file",
+   "produced_by": [],
+   "profile_ref": "discover/profiles/ds.osm_landuse_lux.json",
+   "reference_candidate": false,
+   "referenced_by": [
+    "s01_prepare_inputs.op3"
+   ],
+   "role": "input",
+   "role_evidence": [
+    {
+     "file": "02_SCRIPTS/01_prepare_inputs.py",
+     "kind": "code_read",
+     "line": 48,
+     "op": "s01_prepare_inputs.op3"
+    },
+    {
+     "kind": "folder",
+     "value": "03_INPUT"
+    },
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_mention",
+     "line": 17
+    }
+   ],
+   "role_state": "structurally_inferred",
+   "sha256": "f59f8bca232960e27eede101f658140bd81e03320a587bd99b00eaa159b354f0",
+   "sidecars": [],
+   "unused_kind": null
+  }
+ ],
+ "derived_copies": [],
+ "docs": [
+  {
+   "cell_sizes": [],
+   "constants": [
+    {
+     "line": 23,
+     "name": "EPSG",
+     "text": "buffers done in LUREF (EPSG:2169) so the distances are metres. segments = 5 (qgis default),",
+     "unit": null,
+     "value": 2169
+    }
+   ],
+   "dont_run": [],
+   "kind": "notes",
+   "lines": 30,
+   "manual": [],
+   "mentions": [
+    {
+     "candidates": [],
+     "line": 7,
+     "resolved": "04_FINAL/buffer_area_by_commune.csv",
+     "text": "04_FINAL/buffer_area_by_commune.csv"
+    },
+    {
+     "candidates": [],
+     "line": 10,
+     "resolved": "02_SCRIPTS/01_prepare_inputs.py",
+     "text": "02_SCRIPTS/01_prepare_inputs.py"
+    },
+    {
+     "candidates": [],
+     "line": 11,
+     "resolved": "02_SCRIPTS/02_buffer_landuse.py",
+     "text": "02_SCRIPTS/02_buffer_landuse.py"
+    },
+    {
+     "candidates": [],
+     "line": 12,
+     "resolved": "02_SCRIPTS/03_clip_dissolve.py",
+     "text": "02_SCRIPTS/03_clip_dissolve.py"
+    },
+    {
+     "candidates": [],
+     "line": 13,
+     "resolved": "02_SCRIPTS/04_area_per_commune.py",
+     "text": "02_SCRIPTS/04_area_per_commune.py"
+    },
+    {
+     "candidates": [],
+     "line": 17,
+     "resolved": "03_INPUT/osm_landuse_lux.gpkg",
+     "text": "osm_landuse_lux.gpkg"
+    },
+    {
+     "candidates": [],
+     "line": 18,
+     "resolved": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+     "text": "geoBoundaries-LUX-ADM2.geojson"
+    }
+   ],
+   "multipliers": [],
+   "outputs": [],
+   "path": "NOTES.txt",
+   "run_order": [
+    {
+     "line": 10,
+     "path": "02_SCRIPTS/01_prepare_inputs.py"
+    },
+    {
+     "line": 11,
+     "path": "02_SCRIPTS/02_buffer_landuse.py"
+    },
+    {
+     "line": 12,
+     "path": "02_SCRIPTS/03_clip_dissolve.py"
+    },
+    {
+     "line": 13,
+     "path": "02_SCRIPTS/04_area_per_commune.py"
+    }
+   ]
+  }
+ ],
+ "extent_relations": [
+  {
+   "a": "ds.osm_landuse_lux",
+   "area_km2": 210.1417,
+   "area_outside_km2": 5.8777,
+   "b": "ds.geoboundaries_lux_adm2",
+   "count": 3879,
+   "features_not_within": 66,
+   "features_outside": 16,
+   "features_outside_by_value": {
+    "landuse": {
+     "industrial": 12,
+     "residential": 4
+    }
+   },
+   "measured_in": "LAEA lat_0=49.7768 lon_0=6.0922",
+   "overlap_pct": 97.203,
+   "relation": "features_vs_aoi",
+   "within": false
+  }
+ ],
+ "files": [
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "code",
+   "mtime": "2026-10-13T23:42:38.126724Z",
+   "path": "02_SCRIPTS/01_prepare_inputs.py",
+   "sha256": "fe6cd2fdf90ce146e47d594a045c902a7fffd4524a91e55ba569fd13868331aa",
+   "sidecars": [],
+   "size": 2262
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "code",
+   "mtime": "2026-10-13T23:42:38.127724Z",
+   "path": "02_SCRIPTS/02_buffer_landuse.py",
+   "sha256": "0cf363c13452e72a2b95848b026f7e77f92e7b17354d6ca1ccb92eff0d82a7b8",
+   "sidecars": [],
+   "size": 2074
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "code",
+   "mtime": "2026-10-13T23:42:38.127724Z",
+   "path": "02_SCRIPTS/03_clip_dissolve.py",
+   "sha256": "575615a797bb0fa86dc28fd9fae0a89d46e5455f9c9d6a6782b56328aa934961",
+   "sidecars": [],
+   "size": 1500
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "code",
+   "mtime": "2026-10-13T23:42:38.127724Z",
+   "path": "02_SCRIPTS/04_area_per_commune.py",
+   "sha256": "9dcf7833bc1f10c98a4eb2b3b79194627cc1731d83d7a1ea903b70d4ffb56ce6",
+   "sidecars": [],
+   "size": 2460
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.geoboundaries_lux_adm2"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:38.251724Z",
+   "path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+   "sha256": "c885587d4883438e800b910029b54a37a3c9bcb73a45ddf48544e496b7ee265d",
+   "sidecars": [],
+   "size": 4770799
+  },
+  {
+   "content_sha256": "1559f8be4ca6799cf4076a53ba6acb6d096295957eb227f35b314b5c45a7d79d",
+   "dataset_ids": [
+    "ds.osm_landuse_lux"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:38.681724Z",
+   "path": "03_INPUT/osm_landuse_lux.gpkg",
+   "sha256": "f59f8bca232960e27eede101f658140bd81e03320a587bd99b00eaa159b354f0",
+   "sidecars": [],
+   "size": 4284416
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [
+    "ds.buffer_area_by_commune_csv"
+   ],
+   "kind": "table",
+   "mtime": "2026-10-13T23:42:58.491729Z",
+   "path": "04_FINAL/buffer_area_by_commune.csv",
+   "sha256": "ae02c8b817475ddb4d095f3958794e0a9c432cc4b878bbf4bc59bb4f26da70aa",
+   "sidecars": [],
+   "size": 799
+  },
+  {
+   "content_sha256": "bb155694e91e74024c408e6274227c985aedd6b248948bd0abe4eff2da1572aa",
+   "dataset_ids": [
+    "ds.buffer_area_by_commune_gpkg"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:58.474729Z",
+   "path": "04_FINAL/buffer_area_by_commune.gpkg",
+   "sha256": "590197a025f037848f2b621644a1c508f9c6c38240df6e78c19c3983dcb29f58",
+   "sidecars": [],
+   "size": 360448
+  },
+  {
+   "content_sha256": "8ee2a2a056365c576f86ed8bcf542588d5dddfb96ee338fbf080c3432e151ee3",
+   "dataset_ids": [
+    "ds.01_communes_2169"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:50.952727Z",
+   "path": "05_TEMP/01_communes_2169.gpkg",
+   "sha256": "f4183c43ec9863782dd3b5e449319a4fce0b059d752119f963aaa9835ccff391",
+   "sidecars": [],
+   "size": 450560
+  },
+  {
+   "content_sha256": "fcd4cfdac6f64d210c20ee1dedaf07a0c04897a6f48492636043509a2d94fb07",
+   "dataset_ids": [
+    "ds.01_landuse_2169"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:51.348727Z",
+   "path": "05_TEMP/01_landuse_2169.gpkg",
+   "sha256": "c9d1bf16cbd98742c668f20d9613657bb483ec3de5d28e0a8de31ef7f0ebb69f",
+   "sidecars": [],
+   "size": 770048
+  },
+  {
+   "content_sha256": "f66e784e9e2d13058e9f0f1f382abd364f25ef07d84d7d2259b56eb4bf018f69",
+   "dataset_ids": [
+    "ds.02_buf_industrial"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:53.413728Z",
+   "path": "05_TEMP/02_buf_industrial.gpkg",
+   "sha256": "75be048b07530509faa73f5fbccd894c91dc6b32291421d0b1604f2ea1ace4fc",
+   "sidecars": [],
+   "size": 237568
+  },
+  {
+   "content_sha256": "b997589b51a822cc61a6072029442eb0a39e2204140ba08fb1e0d8c4f47175c6",
+   "dataset_ids": [
+    "ds.02_buf_other"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:53.801728Z",
+   "path": "05_TEMP/02_buf_other.gpkg",
+   "sha256": "bf0aa802fd32e8529c4886c5288e18b0181efbcf08d351bb4ce79022c9f88e2e",
+   "sidecars": [],
+   "size": 520192
+  },
+  {
+   "content_sha256": "7c901e2bd3def467e7ed5bea3356c99340b67a2b31f11d66048e9d43c1d85e23",
+   "dataset_ids": [
+    "ds.02_buffers"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:53.834728Z",
+   "path": "05_TEMP/02_buffers.gpkg",
+   "sha256": "e9c557326e0277934c35ccedf757e1a795c6deba1cba707ff42a0ad6bb42713a",
+   "sidecars": [],
+   "size": 647168
+  },
+  {
+   "content_sha256": "5aa709c5901c01a3aab13d8df919ef7bf95731d93933cc3902d1a45b800769b0",
+   "dataset_ids": [
+    "ds.03_buf_by_commune"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:56.330728Z",
+   "path": "05_TEMP/03_buf_by_commune.gpkg",
+   "sha256": "de8271a36d1f3d1ec98b7686636460d1c60e2bbfd970a7647c2529790d053d8e",
+   "sidecars": [],
+   "size": 360448
+  },
+  {
+   "content_sha256": "f68e3a25df7586716d1b2c17a0c310699c5c3357498fd3fa3817cb7e40cfce4f",
+   "dataset_ids": [
+    "ds.03_buf_x_commune"
+   ],
+   "kind": "vector",
+   "mtime": "2026-10-13T23:42:56.205728Z",
+   "path": "05_TEMP/03_buf_x_commune.gpkg",
+   "sha256": "9613ba425b5b365d1e5908c37373b53d988429ffc3f9762e41f9d93e7d6be325",
+   "sidecars": [],
+   "size": 1167360
+  },
+  {
+   "content_sha256": null,
+   "dataset_ids": [],
+   "kind": "doc",
+   "mtime": "2026-10-13T23:42:38.123724Z",
+   "path": "NOTES.txt",
+   "sha256": "7f0fd98e7211dce7bc6b44b069ff770e00276236affa0402f092d5c64415b355",
+   "sidecars": [],
+   "size": 1694
+  }
+ ],
+ "grids": [],
+ "join_coverage": [],
+ "legacy_output_dirs": [
+  "04_FINAL",
+  "05_TEMP"
+ ],
+ "legacy_root": "../s1-buffers-legacy",
+ "manual_step_candidates": [],
+ "map": {
+  "findings": [],
+  "pngs": []
+ },
+ "memory_datasets": [
+  {
+   "consumed_by": [
+    "s01_prepare_inputs.op2"
+   ],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "id": "ds.mem.s01_l38",
+   "line": 38,
+   "op": "s01_prepare_inputs.op1"
+  },
+  {
+   "consumed_by": [
+    "s01_prepare_inputs.op4"
+   ],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "id": "ds.mem.s01_l50",
+   "line": 50,
+   "op": "s01_prepare_inputs.op3"
+  },
+  {
+   "consumed_by": [
+    "s01_prepare_inputs.op5"
+   ],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "id": "ds.mem.s01_l54",
+   "line": 54,
+   "op": "s01_prepare_inputs.op4"
+  },
+  {
+   "consumed_by": [
+    "s02_buffer_landuse.op2"
+   ],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "id": "ds.mem.s02_l40",
+   "line": 40,
+   "op": "s02_buffer_landuse.op1"
+  },
+  {
+   "consumed_by": [
+    "s02_buffer_landuse.op5"
+   ],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "id": "ds.mem.s02_l58",
+   "line": 58,
+   "op": "s02_buffer_landuse.op4"
+  },
+  {
+   "consumed_by": [
+    "s03_clip_dissolve.op3"
+   ],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "id": "ds.mem.s03_l36",
+   "line": 36,
+   "op": "s03_clip_dissolve.op2"
+  },
+  {
+   "consumed_by": [
+    "s04_area_per_commune.op3"
+   ],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "id": "ds.mem.s04_l35",
+   "line": 35,
+   "op": "s04_area_per_commune.op1"
+  },
+  {
+   "consumed_by": [
+    "s04_area_per_commune.op3"
+   ],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "id": "ds.mem.s04_l44",
+   "line": 44,
+   "op": "s04_area_per_commune.op2"
+  },
+  {
+   "consumed_by": [
+    "s04_area_per_commune.op4"
+   ],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "id": "ds.mem.s04_l55",
+   "line": 55,
+   "op": "s04_area_per_commune.op3"
+  }
+ ],
+ "open_items": [],
+ "ops": [
+  {
+   "api": "run",
+   "code": "code.s01_prepare_inputs",
+   "comments": [],
+   "end_line": 38,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "id": "s01_prepare_inputs.op1",
+   "io_source": "qgis_algs.json",
+   "line": 35,
+   "memory_out": "ds.mem.s01_l38",
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "EXPRESSION": {
+     "arg_line": 37,
+     "chain": [
+      34
+     ],
+     "expr": "expr",
+     "value": {
+      "template": "\"shapeName\" IN (%s)",
+      "unknown": "fstring_unknown"
+     }
+    },
+    "INPUT": {
+     "arg_line": 36,
+     "chain": [
+      10,
+      7
+     ],
+     "expr": "IN_COMMUNES",
+     "value": {
+      "dataset": "ds.geoboundaries_lux_adm2"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 38,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s01_l38"
+     }
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.geoboundaries_lux_adm2",
+     "line": 36,
+     "param": "INPUT"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/01_prepare_inputs.py:35-38",
+   "state": "directly_observed",
+   "tool": "native:extractbyexpression",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s01_prepare_inputs",
+   "comments": [],
+   "end_line": 44,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "id": "s01_prepare_inputs.op2",
+   "io_source": "qgis_algs.json",
+   "line": 41,
+   "memory_out": null,
+   "memory_reads": [
+    {
+     "line": 42,
+     "memory": "ds.mem.s01_l38",
+     "param": "INPUT"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "INPUT": {
+     "arg_line": 42,
+     "chain": [
+      35
+     ],
+     "expr": "com",
+     "value": {
+      "memory": "ds.mem.s01_l38"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 44,
+     "chain": [
+      12,
+      7
+     ],
+     "expr": "TMP + \"/01_communes_2169.gpkg\"",
+     "value": {
+      "dataset": "ds.01_communes_2169"
+     }
+    },
+    "TARGET_CRS": {
+     "arg_line": 43,
+     "expr": "'EPSG:2169'",
+     "value": "EPSG:2169"
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/01_prepare_inputs.py:41-44",
+   "state": "directly_observed",
+   "tool": "native:reprojectlayer",
+   "writes": [
+    {
+     "dataset": "ds.01_communes_2169",
+     "line": 44,
+     "mode": "create",
+     "param": "OUTPUT"
+    }
+   ]
+  },
+  {
+   "api": "run",
+   "code": "code.s01_prepare_inputs",
+   "comments": [
+    {
+     "line": 46,
+     "text": "landuse: whole country in the export, keep what touches the study area"
+    }
+   ],
+   "end_line": 50,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "id": "s01_prepare_inputs.op3",
+   "io_source": "qgis_algs.json",
+   "line": 47,
+   "memory_out": "ds.mem.s01_l50",
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "INPUT": {
+     "arg_line": 48,
+     "chain": [
+      11,
+      7
+     ],
+     "expr": "IN_LANDUSE",
+     "value": {
+      "dataset": "ds.osm_landuse_lux"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 50,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s01_l50"
+     }
+    },
+    "TARGET_CRS": {
+     "arg_line": 49,
+     "expr": "'EPSG:2169'",
+     "value": "EPSG:2169"
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.osm_landuse_lux",
+     "line": 48,
+     "param": "INPUT"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/01_prepare_inputs.py:47-50",
+   "state": "directly_observed",
+   "tool": "native:reprojectlayer",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s01_prepare_inputs",
+   "comments": [
+    {
+     "line": 52,
+     "text": "a few osm polygons are self-intersecting, buffer chokes on them"
+    }
+   ],
+   "end_line": 54,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "id": "s01_prepare_inputs.op4",
+   "io_source": "qgis_algs.json",
+   "line": 53,
+   "memory_out": "ds.mem.s01_l54",
+   "memory_reads": [
+    {
+     "line": 54,
+     "memory": "ds.mem.s01_l50",
+     "param": "INPUT"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "INPUT": {
+     "arg_line": 54,
+     "chain": [
+      47
+     ],
+     "expr": "lu",
+     "value": {
+      "memory": "ds.mem.s01_l50"
+     }
+    },
+    "METHOD": {
+     "arg_line": 54,
+     "expr": "1",
+     "value": 1
+    },
+    "OUTPUT": {
+     "arg_line": 54,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s01_l54"
+     }
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/01_prepare_inputs.py:53-54",
+   "state": "directly_observed",
+   "tool": "native:fixgeometries",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s01_prepare_inputs",
+   "comments": [
+    {
+     "line": 58,
+     "text": "intersect"
+    }
+   ],
+   "end_line": 60,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "id": "s01_prepare_inputs.op5",
+   "io_source": "qgis_algs.json",
+   "line": 56,
+   "memory_out": null,
+   "memory_reads": [
+    {
+     "line": 57,
+     "memory": "ds.mem.s01_l54",
+     "param": "INPUT"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "INPUT": {
+     "arg_line": 57,
+     "chain": [
+      53
+     ],
+     "expr": "lu",
+     "value": {
+      "memory": "ds.mem.s01_l54"
+     }
+    },
+    "INTERSECT": {
+     "arg_line": 59,
+     "chain": [
+      12,
+      7
+     ],
+     "expr": "TMP + \"/01_communes_2169.gpkg\"",
+     "value": {
+      "dataset": "ds.01_communes_2169"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 60,
+     "chain": [
+      12,
+      7
+     ],
+     "expr": "TMP + \"/01_landuse_2169.gpkg\"",
+     "value": {
+      "dataset": "ds.01_landuse_2169"
+     }
+    },
+    "PREDICATE": {
+     "arg_line": 58,
+     "expr": "[0]",
+     "value": [
+      0
+     ]
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.01_communes_2169",
+     "line": 59,
+     "param": "INTERSECT"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/01_prepare_inputs.py:56-60",
+   "state": "directly_observed",
+   "tool": "native:extractbylocation",
+   "writes": [
+    {
+     "dataset": "ds.01_landuse_2169",
+     "line": 60,
+     "mode": "create",
+     "param": "OUTPUT"
+    }
+   ]
+  },
+  {
+   "api": "run",
+   "code": "code.s02_buffer_landuse",
+   "comments": [],
+   "end_line": 40,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "id": "s02_buffer_landuse.op1",
+   "io_source": "qgis_algs.json",
+   "line": 37,
+   "memory_out": "ds.mem.s02_l40",
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "EXPRESSION": {
+     "arg_line": 39,
+     "expr": "expr",
+     "value": {
+      "phi": [
+       "\"landuse\" = 'industrial'",
+       "\"landuse\" <> 'industrial'"
+      ]
+     }
+    },
+    "INPUT": {
+     "arg_line": 38,
+     "chain": [
+      11,
+      10,
+      7
+     ],
+     "expr": "IN_LU",
+     "value": {
+      "dataset": "ds.01_landuse_2169"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 40,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s02_l40"
+     }
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.01_landuse_2169",
+     "line": 38,
+     "param": "INPUT"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/02_buffer_landuse.py:37-40",
+   "state": "directly_observed",
+   "tool": "native:extractbyexpression",
+   "visits": 2,
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s02_buffer_landuse",
+   "comments": [],
+   "end_line": 51,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "id": "s02_buffer_landuse.op2",
+   "io_source": "qgis_algs.json",
+   "line": 42,
+   "memory_out": null,
+   "memory_reads": [
+    {
+     "line": 43,
+     "memory": "ds.mem.s02_l40",
+     "param": "INPUT"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "DISSOLVE": {
+     "arg_line": 49,
+     "expr": "False",
+     "value": false
+    },
+    "DISTANCE": {
+     "arg_line": 44,
+     "expr": "dist",
+     "value": {
+      "phi": [
+       500,
+       200
+      ]
+     }
+    },
+    "END_CAP_STYLE": {
+     "arg_line": 46,
+     "expr": "0",
+     "value": 0
+    },
+    "INPUT": {
+     "arg_line": 43,
+     "chain": [
+      37
+     ],
+     "expr": "sel",
+     "value": {
+      "memory": "ds.mem.s02_l40"
+     }
+    },
+    "JOIN_STYLE": {
+     "arg_line": 47,
+     "expr": "0",
+     "value": 0
+    },
+    "MITER_LIMIT": {
+     "arg_line": 48,
+     "expr": "2",
+     "value": 2
+    },
+    "OUTPUT": {
+     "arg_line": 51,
+     "chain": [
+      41,
+      10,
+      7,
+      30
+     ],
+     "expr": "out",
+     "value": {
+      "dataset": "ds.02_buf_industrial"
+     }
+    },
+    "SEGMENTS": {
+     "arg_line": 45,
+     "chain": [
+      15
+     ],
+     "expr": "SEGMENTS",
+     "value": 5
+    },
+    "SEPARATE_DISJOINT": {
+     "arg_line": 50,
+     "expr": "False",
+     "value": false
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/02_buffer_landuse.py:42-51",
+   "state": "directly_observed",
+   "tool": "native:buffer",
+   "visits": 2,
+   "writes": [
+    {
+     "dataset": "ds.02_buf_industrial",
+     "line": 51,
+     "mode": "create",
+     "param": "OUTPUT"
+    },
+    {
+     "dataset": "ds.02_buf_other",
+     "line": 51,
+     "mode": "create",
+     "param": "OUTPUT"
+    }
+   ]
+  },
+  {
+   "api": "?.append",
+   "code": "code.s02_buffer_landuse",
+   "comments": [],
+   "end_line": 53,
+   "family": "python",
+   "fields_read": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [
+    "name_heuristic"
+   ],
+   "id": "s02_buffer_landuse.op3",
+   "io_source": "name_heuristic",
+   "line": 53,
+   "memory_out": null,
+   "memory_reads": [],
+   "nested": [],
+   "params": {},
+   "reads": [
+    {
+     "dataset": "ds.02_buf_industrial",
+     "line": 53,
+     "param": "arg0"
+    },
+    {
+     "dataset": "ds.02_buf_other",
+     "line": 53,
+     "param": "arg0"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/02_buffer_landuse.py:53",
+   "state": "structurally_inferred",
+   "tool": "append",
+   "visits": 2,
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s02_buffer_landuse",
+   "comments": [],
+   "end_line": 58,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "id": "s02_buffer_landuse.op4",
+   "io_source": "qgis_algs.json",
+   "line": 55,
+   "memory_out": "ds.mem.s02_l58",
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "CRS": {
+     "arg_line": 57,
+     "expr": "None",
+     "value": null
+    },
+    "LAYERS": {
+     "arg_line": 56,
+     "chain": [
+      29
+     ],
+     "expr": "bufs",
+     "value": []
+    },
+    "OUTPUT": {
+     "arg_line": 58,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s02_l58"
+     }
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/02_buffer_landuse.py:55-58",
+   "state": "directly_observed",
+   "tool": "native:mergevectorlayers",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s02_buffer_landuse",
+   "comments": [
+    {
+     "line": 60,
+     "text": "merge adds \"layer\" and \"path\" columns, not needed (and fid clashes when saving to gpkg)"
+    }
+   ],
+   "end_line": 64,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "id": "s02_buffer_landuse.op5",
+   "io_source": "qgis_algs.json",
+   "line": 61,
+   "memory_out": null,
+   "memory_reads": [
+    {
+     "line": 62,
+     "memory": "ds.mem.s02_l58",
+     "param": "INPUT"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "COLUMN": {
+     "arg_line": 63,
+     "expr": "['fid', 'layer', 'path']",
+     "value": [
+      "fid",
+      "layer",
+      "path"
+     ]
+    },
+    "INPUT": {
+     "arg_line": 62,
+     "chain": [
+      55
+     ],
+     "expr": "merged",
+     "value": {
+      "memory": "ds.mem.s02_l58"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 64,
+     "chain": [
+      10,
+      7
+     ],
+     "expr": "TMP + \"/02_buffers.gpkg\"",
+     "value": {
+      "dataset": "ds.02_buffers"
+     }
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/02_buffer_landuse.py:61-64",
+   "state": "directly_observed",
+   "tool": "native:deletecolumn",
+   "writes": [
+    {
+     "dataset": "ds.02_buffers",
+     "line": 64,
+     "mode": "create",
+     "param": "OUTPUT"
+    }
+   ]
+  },
+  {
+   "api": "run",
+   "code": "code.s03_clip_dissolve",
+   "comments": [
+    {
+     "line": 22,
+     "text": "-----------------------------------"
+    },
+    {
+     "line": 24,
+     "text": "clip = intersection with the communes (keeps the commune name on each piece)"
+    }
+   ],
+   "end_line": 31,
+   "family": "pyqgis",
+   "fields_read": [
+    {
+     "dataset": "ds.02_buffers",
+     "field": "osm_id",
+     "line": 28,
+     "param": "INPUT_FIELDS"
+    },
+    {
+     "dataset": "ds.02_buffers",
+     "field": "osm_way_id",
+     "line": 28,
+     "param": "INPUT_FIELDS"
+    },
+    {
+     "dataset": "ds.02_buffers",
+     "field": "landuse",
+     "line": 28,
+     "param": "INPUT_FIELDS"
+    },
+    {
+     "dataset": "ds.02_buffers",
+     "field": "shapeName",
+     "line": 29,
+     "param": "OVERLAY_FIELDS"
+    },
+    {
+     "dataset": "ds.02_buffers",
+     "field": "shapeID",
+     "line": 29,
+     "param": "OVERLAY_FIELDS"
+    }
+   ],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "flags": [],
+   "id": "s03_clip_dissolve.op1",
+   "io_source": "qgis_algs.json",
+   "line": 25,
+   "memory_out": null,
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "INPUT": {
+     "arg_line": 26,
+     "chain": [
+      10,
+      7
+     ],
+     "expr": "TMP + \"/02_buffers.gpkg\"",
+     "value": {
+      "dataset": "ds.02_buffers"
+     }
+    },
+    "INPUT_FIELDS": {
+     "arg_line": 28,
+     "expr": "['osm_id', 'osm_way_id', 'landuse']",
+     "value": [
+      "osm_id",
+      "osm_way_id",
+      "landuse"
+     ]
+    },
+    "OUTPUT": {
+     "arg_line": 31,
+     "chain": [
+      10,
+      7
+     ],
+     "expr": "TMP + \"/03_buf_x_commune.gpkg\"",
+     "value": {
+      "dataset": "ds.03_buf_x_commune"
+     }
+    },
+    "OVERLAY": {
+     "arg_line": 27,
+     "chain": [
+      10,
+      7
+     ],
+     "expr": "TMP + \"/01_communes_2169.gpkg\"",
+     "value": {
+      "dataset": "ds.01_communes_2169"
+     }
+    },
+    "OVERLAY_FIELDS": {
+     "arg_line": 29,
+     "expr": "['shapeName', 'shapeID']",
+     "value": [
+      "shapeName",
+      "shapeID"
+     ]
+    },
+    "OVERLAY_FIELDS_PREFIX": {
+     "arg_line": 30,
+     "expr": "''",
+     "value": ""
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.02_buffers",
+     "line": 26,
+     "param": "INPUT"
+    },
+    {
+     "dataset": "ds.01_communes_2169",
+     "line": 27,
+     "param": "OVERLAY"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/03_clip_dissolve.py:25-31",
+   "state": "directly_observed",
+   "tool": "native:intersection",
+   "writes": [
+    {
+     "dataset": "ds.03_buf_x_commune",
+     "line": 31,
+     "mode": "create",
+     "param": "OUTPUT"
+    }
+   ]
+  },
+  {
+   "api": "run",
+   "code": "code.s03_clip_dissolve",
+   "comments": [],
+   "end_line": 36,
+   "family": "pyqgis",
+   "fields_read": [
+    {
+     "dataset": "ds.03_buf_x_commune",
+     "field": "shapeName",
+     "line": 35,
+     "param": "FIELDS"
+    },
+    {
+     "dataset": "ds.03_buf_x_commune",
+     "field": "shapeID",
+     "line": 35,
+     "param": "FIELDS"
+    }
+   ],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "flags": [],
+   "id": "s03_clip_dissolve.op2",
+   "io_source": "qgis_algs.json",
+   "line": 33,
+   "memory_out": "ds.mem.s03_l36",
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "FIELDS": {
+     "arg_line": 35,
+     "expr": "['shapeName', 'shapeID']",
+     "value": [
+      "shapeName",
+      "shapeID"
+     ]
+    },
+    "INPUT": {
+     "arg_line": 34,
+     "chain": [
+      10,
+      7
+     ],
+     "expr": "TMP + \"/03_buf_x_commune.gpkg\"",
+     "value": {
+      "dataset": "ds.03_buf_x_commune"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 36,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s03_l36"
+     }
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.03_buf_x_commune",
+     "line": 34,
+     "param": "INPUT"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/03_clip_dissolve.py:33-36",
+   "state": "directly_observed",
+   "tool": "native:retainfields",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s03_clip_dissolve",
+   "comments": [],
+   "end_line": 42,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "flags": [],
+   "id": "s03_clip_dissolve.op3",
+   "io_source": "qgis_algs.json",
+   "line": 38,
+   "memory_out": null,
+   "memory_reads": [
+    {
+     "line": 39,
+     "memory": "ds.mem.s03_l36",
+     "param": "INPUT"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "FIELD": {
+     "arg_line": 40,
+     "expr": "['shapeID']",
+     "value": [
+      "shapeID"
+     ]
+    },
+    "INPUT": {
+     "arg_line": 39,
+     "chain": [
+      33
+     ],
+     "expr": "keep",
+     "value": {
+      "memory": "ds.mem.s03_l36"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 42,
+     "chain": [
+      10,
+      7
+     ],
+     "expr": "TMP + \"/03_buf_by_commune.gpkg\"",
+     "value": {
+      "dataset": "ds.03_buf_by_commune"
+     }
+    },
+    "SEPARATE_DISJOINT": {
+     "arg_line": 41,
+     "expr": "False",
+     "value": false
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/03_clip_dissolve.py:38-42",
+   "state": "directly_observed",
+   "tool": "native:dissolve",
+   "writes": [
+    {
+     "dataset": "ds.03_buf_by_commune",
+     "line": 42,
+     "mode": "create",
+     "param": "OUTPUT"
+    }
+   ]
+  },
+  {
+   "api": "run",
+   "code": "code.s04_area_per_commune",
+   "comments": [
+    {
+     "line": 27,
+     "text": "planar areas in LUREF (not $area, that one is ellipsoidal)"
+    }
+   ],
+   "end_line": 35,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "id": "s04_area_per_commune.op1",
+   "io_source": "qgis_algs.json",
+   "line": 28,
+   "memory_out": "ds.mem.s04_l35",
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "FIELD_LENGTH": {
+     "arg_line": 32,
+     "expr": "0",
+     "value": 0
+    },
+    "FIELD_NAME": {
+     "arg_line": 30,
+     "expr": "'buf_km2'",
+     "value": "buf_km2"
+    },
+    "FIELD_PRECISION": {
+     "arg_line": 33,
+     "expr": "0",
+     "value": 0
+    },
+    "FIELD_TYPE": {
+     "arg_line": 31,
+     "expr": "0",
+     "value": 0
+    },
+    "FORMULA": {
+     "arg_line": 34,
+     "expr": "'area($geometry) / 1000000'",
+     "value": "area($geometry) / 1000000"
+    },
+    "INPUT": {
+     "arg_line": 29,
+     "chain": [
+      9,
+      6
+     ],
+     "expr": "TMP + \"/03_buf_by_commune.gpkg\"",
+     "value": {
+      "dataset": "ds.03_buf_by_commune"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 35,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s04_l35"
+     }
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.03_buf_by_commune",
+     "line": 29,
+     "param": "INPUT"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/04_area_per_commune.py:28-35",
+   "state": "directly_observed",
+   "tool": "native:fieldcalculator",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s04_area_per_commune",
+   "comments": [],
+   "end_line": 44,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "id": "s04_area_per_commune.op2",
+   "io_source": "qgis_algs.json",
+   "line": 37,
+   "memory_out": "ds.mem.s04_l44",
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "FIELD_LENGTH": {
+     "arg_line": 41,
+     "expr": "0",
+     "value": 0
+    },
+    "FIELD_NAME": {
+     "arg_line": 39,
+     "expr": "'commune_km2'",
+     "value": "commune_km2"
+    },
+    "FIELD_PRECISION": {
+     "arg_line": 42,
+     "expr": "0",
+     "value": 0
+    },
+    "FIELD_TYPE": {
+     "arg_line": 40,
+     "expr": "0",
+     "value": 0
+    },
+    "FORMULA": {
+     "arg_line": 43,
+     "expr": "'area($geometry) / 1000000'",
+     "value": "area($geometry) / 1000000"
+    },
+    "INPUT": {
+     "arg_line": 38,
+     "chain": [
+      9,
+      6
+     ],
+     "expr": "TMP + \"/01_communes_2169.gpkg\"",
+     "value": {
+      "dataset": "ds.01_communes_2169"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 44,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s04_l44"
+     }
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.01_communes_2169",
+     "line": 38,
+     "param": "INPUT"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/04_area_per_commune.py:37-44",
+   "state": "directly_observed",
+   "tool": "native:fieldcalculator",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s04_area_per_commune",
+   "comments": [],
+   "end_line": 55,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "id": "s04_area_per_commune.op3",
+   "io_source": "qgis_algs.json",
+   "line": 46,
+   "memory_out": "ds.mem.s04_l55",
+   "memory_reads": [
+    {
+     "line": 47,
+     "memory": "ds.mem.s04_l35",
+     "param": "INPUT"
+    },
+    {
+     "line": 49,
+     "memory": "ds.mem.s04_l44",
+     "param": "INPUT_2"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "DISCARD_NONMATCHING": {
+     "arg_line": 53,
+     "expr": "False",
+     "value": false
+    },
+    "FIELD": {
+     "arg_line": 48,
+     "expr": "'shapeID'",
+     "value": "shapeID"
+    },
+    "FIELDS_TO_COPY": {
+     "arg_line": 51,
+     "expr": "['commune_km2']",
+     "value": [
+      "commune_km2"
+     ]
+    },
+    "FIELD_2": {
+     "arg_line": 50,
+     "expr": "'shapeID'",
+     "value": "shapeID"
+    },
+    "INPUT": {
+     "arg_line": 47,
+     "chain": [
+      28
+     ],
+     "expr": "buf",
+     "value": {
+      "memory": "ds.mem.s04_l35"
+     }
+    },
+    "INPUT_2": {
+     "arg_line": 49,
+     "chain": [
+      37
+     ],
+     "expr": "com",
+     "value": {
+      "memory": "ds.mem.s04_l44"
+     }
+    },
+    "METHOD": {
+     "arg_line": 52,
+     "expr": "1",
+     "value": 1
+    },
+    "OUTPUT": {
+     "arg_line": 55,
+     "expr": "'memory:'",
+     "value": {
+      "memory": "ds.mem.s04_l55"
+     }
+    },
+    "PREFIX": {
+     "arg_line": 54,
+     "expr": "''",
+     "value": ""
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/04_area_per_commune.py:46-55",
+   "state": "directly_observed",
+   "tool": "native:joinattributestable",
+   "writes": []
+  },
+  {
+   "api": "run",
+   "code": "code.s04_area_per_commune",
+   "comments": [],
+   "end_line": 64,
+   "family": "pyqgis",
+   "fields_read": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "id": "s04_area_per_commune.op4",
+   "io_source": "qgis_algs.json",
+   "line": 57,
+   "memory_out": null,
+   "memory_reads": [
+    {
+     "line": 58,
+     "memory": "ds.mem.s04_l55",
+     "param": "INPUT"
+    }
+   ],
+   "nested": [],
+   "params": {
+    "FIELD_LENGTH": {
+     "arg_line": 61,
+     "expr": "0",
+     "value": 0
+    },
+    "FIELD_NAME": {
+     "arg_line": 59,
+     "expr": "'share_pct'",
+     "value": "share_pct"
+    },
+    "FIELD_PRECISION": {
+     "arg_line": 62,
+     "expr": "0",
+     "value": 0
+    },
+    "FIELD_TYPE": {
+     "arg_line": 60,
+     "expr": "0",
+     "value": 0
+    },
+    "FORMULA": {
+     "arg_line": 63,
+     "expr": "'100 * \"buf_km2\" / \"commune_km2\"'",
+     "value": "100 * \"buf_km2\" / \"commune_km2\""
+    },
+    "INPUT": {
+     "arg_line": 58,
+     "chain": [
+      46
+     ],
+     "expr": "j",
+     "value": {
+      "memory": "ds.mem.s04_l55"
+     }
+    },
+    "OUTPUT": {
+     "arg_line": 64,
+     "chain": [
+      10,
+      6
+     ],
+     "expr": "OUT + \"/buffer_area_by_commune.gpkg\"",
+     "value": {
+      "dataset": "ds.buffer_area_by_commune_gpkg"
+     }
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/04_area_per_commune.py:57-64",
+   "state": "directly_observed",
+   "tool": "native:fieldcalculator",
+   "writes": [
+    {
+     "dataset": "ds.buffer_area_by_commune_gpkg",
+     "line": 64,
+     "mode": "create",
+     "param": "OUTPUT"
+    }
+   ]
+  },
+  {
+   "api": "QgsVectorLayer",
+   "code": "code.s04_area_per_commune",
+   "comments": [
+    {
+     "line": 66,
+     "text": "table for the report (rounded)"
+    }
+   ],
+   "end_line": 67,
+   "family": "pyqgis",
+   "fields_read": [
+    {
+     "dataset": "ds.buffer_area_by_commune_gpkg",
+     "field": "shapeName",
+     "line": 72,
+     "param": "feature[]"
+    },
+    {
+     "dataset": "ds.buffer_area_by_commune_gpkg",
+     "field": "shapeID",
+     "line": 72,
+     "param": "feature[]"
+    },
+    {
+     "dataset": "ds.buffer_area_by_commune_gpkg",
+     "field": "buf_km2",
+     "line": 72,
+     "param": "feature[]"
+    },
+    {
+     "dataset": "ds.buffer_area_by_commune_gpkg",
+     "field": "commune_km2",
+     "line": 72,
+     "param": "feature[]"
+    },
+    {
+     "dataset": "ds.buffer_area_by_commune_gpkg",
+     "field": "share_pct",
+     "line": 73,
+     "param": "feature[]"
+    }
+   ],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "id": "s04_area_per_commune.op5",
+   "io_source": "pyqgis_api",
+   "line": 67,
+   "memory_out": null,
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "path": {
+     "arg_line": 67,
+     "chain": [
+      10,
+      6
+     ],
+     "expr": "OUT + \"/buffer_area_by_commune.gpkg\"",
+     "value": {
+      "dataset": "ds.buffer_area_by_commune_gpkg"
+     }
+    }
+   },
+   "reads": [
+    {
+     "dataset": "ds.buffer_area_by_commune_gpkg",
+     "line": 67,
+     "param": "path"
+    }
+   ],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/04_area_per_commune.py:67",
+   "state": "directly_observed",
+   "tool": "QgsVectorLayer",
+   "writes": []
+  },
+  {
+   "api": "open",
+   "code": "code.s04_area_per_commune",
+   "comments": [],
+   "end_line": 68,
+   "family": "python",
+   "fields_read": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "id": "s04_area_per_commune.op6",
+   "io_source": "python_io",
+   "line": 68,
+   "memory_out": null,
+   "memory_reads": [],
+   "nested": [],
+   "params": {
+    "file": {
+     "arg_line": 68,
+     "chain": [
+      10,
+      6
+     ],
+     "expr": "OUT + \"/buffer_area_by_commune.csv\"",
+     "value": {
+      "dataset": "ds.buffer_area_by_commune_csv"
+     }
+    },
+    "mode": {
+     "value": "w"
+    }
+   },
+   "reads": [],
+   "reads_grid": [],
+   "ref": "02_SCRIPTS/04_area_per_commune.py:68",
+   "state": "directly_observed",
+   "tool": "open",
+   "writes": [
+    {
+     "dataset": "ds.buffer_area_by_commune_csv",
+     "line": 68,
+     "mode": "create",
+     "param": "file"
+    }
+   ]
+  }
+ ],
+ "params": [
+  {
+   "code": "code.s01_prepare_inputs",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s01.BASE",
+   "kind": "assignment",
+   "line": 7,
+   "name": "BASE",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 36,
+     "op": "s01_prepare_inputs.op1",
+     "param": "INPUT"
+    },
+    {
+     "line": 44,
+     "op": "s01_prepare_inputs.op2",
+     "param": "OUTPUT"
+    },
+    {
+     "line": 48,
+     "op": "s01_prepare_inputs.op3",
+     "param": "INPUT"
+    },
+    {
+     "line": 59,
+     "op": "s01_prepare_inputs.op5",
+     "param": "INTERSECT"
+    },
+    {
+     "line": 60,
+     "op": "s01_prepare_inputs.op5",
+     "param": "OUTPUT"
+    }
+   ],
+   "value": "/home/migrate/axis-migrate-dev/evals/cases/_bases/s1-buffers-legacy"
+  },
+  {
+   "code": "code.s01_prepare_inputs",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s01.COMMUNES",
+   "kind": "assignment",
+   "line": 15,
+   "name": "COMMUNES",
+   "shadowed_by": null,
+   "used_at": [],
+   "value": [
+    "Bettembourg",
+    "Differdange",
+    "Dudelange",
+    "Esch-sur-Alzette",
+    "Frisange",
+    "Kayl",
+    "Leudelange",
+    "Mondercange",
+    "Pétange",
+    "Reckange-sur-Mess",
+    "Roeser",
+    "Rumelange",
+    "Sanem",
+    "Schifflange"
+   ]
+  },
+  {
+   "code": "code.s01_prepare_inputs",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s01.QGIS_PREFIX",
+   "kind": "assignment",
+   "line": 8,
+   "name": "QGIS_PREFIX",
+   "shadowed_by": null,
+   "used_at": [],
+   "value": "/home/migrate/micromamba/envs/qgis"
+  },
+  {
+   "code": "code.s01_prepare_inputs",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s01.op2.TARGET_CRS",
+   "kind": "tool_literal",
+   "line": 43,
+   "name": "TARGET_CRS",
+   "op": "s01_prepare_inputs.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 43,
+     "op": "s01_prepare_inputs.op2",
+     "param": "TARGET_CRS"
+    }
+   ],
+   "value": "EPSG:2169"
+  },
+  {
+   "code": "code.s01_prepare_inputs",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s01.op3.TARGET_CRS",
+   "kind": "tool_literal",
+   "line": 49,
+   "name": "TARGET_CRS",
+   "op": "s01_prepare_inputs.op3",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 49,
+     "op": "s01_prepare_inputs.op3",
+     "param": "TARGET_CRS"
+    }
+   ],
+   "value": "EPSG:2169"
+  },
+  {
+   "code": "code.s01_prepare_inputs",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/01_prepare_inputs.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s01.op4.METHOD",
+   "kind": "tool_literal",
+   "line": 54,
+   "name": "METHOD",
+   "op": "s01_prepare_inputs.op4",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 54,
+     "op": "s01_prepare_inputs.op4",
+     "param": "METHOD"
+    }
+   ],
+   "value": 1
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.BASE",
+   "kind": "assignment",
+   "line": 7,
+   "name": "BASE",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 38,
+     "op": "s02_buffer_landuse.op1",
+     "param": "INPUT"
+    },
+    {
+     "line": 51,
+     "op": "s02_buffer_landuse.op2",
+     "param": "OUTPUT"
+    },
+    {
+     "line": 64,
+     "op": "s02_buffer_landuse.op5",
+     "param": "OUTPUT"
+    }
+   ],
+   "value": "/home/migrate/axis-migrate-dev/evals/cases/_bases/s1-buffers-legacy"
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": "m",
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.DIST_INDUSTRIAL",
+   "kind": "assignment",
+   "line": 13,
+   "name": "DIST_INDUSTRIAL",
+   "shadowed_by": null,
+   "used_at": [],
+   "value": 500
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": "m",
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.DIST_OTHER",
+   "kind": "assignment",
+   "line": 14,
+   "name": "DIST_OTHER",
+   "shadowed_by": null,
+   "used_at": [],
+   "value": 200
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.QGIS_PREFIX",
+   "kind": "assignment",
+   "line": 8,
+   "name": "QGIS_PREFIX",
+   "shadowed_by": null,
+   "used_at": [],
+   "value": "/home/migrate/micromamba/envs/qgis"
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": "dialog default",
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.SEGMENTS",
+   "kind": "assignment",
+   "line": 15,
+   "name": "SEGMENTS",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 45,
+     "op": "s02_buffer_landuse.op2",
+     "param": "SEGMENTS"
+    }
+   ],
+   "value": 5
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.op2.DISSOLVE",
+   "kind": "tool_literal",
+   "line": 49,
+   "name": "DISSOLVE",
+   "op": "s02_buffer_landuse.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 49,
+     "op": "s02_buffer_landuse.op2",
+     "param": "DISSOLVE"
+    }
+   ],
+   "value": false
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.op2.END_CAP_STYLE",
+   "kind": "tool_literal",
+   "line": 46,
+   "name": "END_CAP_STYLE",
+   "op": "s02_buffer_landuse.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 46,
+     "op": "s02_buffer_landuse.op2",
+     "param": "END_CAP_STYLE"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.op2.JOIN_STYLE",
+   "kind": "tool_literal",
+   "line": 47,
+   "name": "JOIN_STYLE",
+   "op": "s02_buffer_landuse.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 47,
+     "op": "s02_buffer_landuse.op2",
+     "param": "JOIN_STYLE"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.op2.MITER_LIMIT",
+   "kind": "tool_literal",
+   "line": 48,
+   "name": "MITER_LIMIT",
+   "op": "s02_buffer_landuse.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 48,
+     "op": "s02_buffer_landuse.op2",
+     "param": "MITER_LIMIT"
+    }
+   ],
+   "value": 2
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/02_buffer_landuse.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s02.op2.SEPARATE_DISJOINT",
+   "kind": "tool_literal",
+   "line": 50,
+   "name": "SEPARATE_DISJOINT",
+   "op": "s02_buffer_landuse.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 50,
+     "op": "s02_buffer_landuse.op2",
+     "param": "SEPARATE_DISJOINT"
+    }
+   ],
+   "value": false
+  },
+  {
+   "code": "code.s03_clip_dissolve",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s03.BASE",
+   "kind": "assignment",
+   "line": 7,
+   "name": "BASE",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 26,
+     "op": "s03_clip_dissolve.op1",
+     "param": "INPUT"
+    },
+    {
+     "line": 27,
+     "op": "s03_clip_dissolve.op1",
+     "param": "OVERLAY"
+    },
+    {
+     "line": 31,
+     "op": "s03_clip_dissolve.op1",
+     "param": "OUTPUT"
+    },
+    {
+     "line": 34,
+     "op": "s03_clip_dissolve.op2",
+     "param": "INPUT"
+    },
+    {
+     "line": 42,
+     "op": "s03_clip_dissolve.op3",
+     "param": "OUTPUT"
+    }
+   ],
+   "value": "/home/migrate/axis-migrate-dev/evals/cases/_bases/s1-buffers-legacy"
+  },
+  {
+   "code": "code.s03_clip_dissolve",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s03.QGIS_PREFIX",
+   "kind": "assignment",
+   "line": 8,
+   "name": "QGIS_PREFIX",
+   "shadowed_by": null,
+   "used_at": [],
+   "value": "/home/migrate/micromamba/envs/qgis"
+  },
+  {
+   "code": "code.s03_clip_dissolve",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s03.op1.OVERLAY_FIELDS_PREFIX",
+   "kind": "tool_literal",
+   "line": 30,
+   "name": "OVERLAY_FIELDS_PREFIX",
+   "op": "s03_clip_dissolve.op1",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 30,
+     "op": "s03_clip_dissolve.op1",
+     "param": "OVERLAY_FIELDS_PREFIX"
+    }
+   ],
+   "value": ""
+  },
+  {
+   "code": "code.s03_clip_dissolve",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/03_clip_dissolve.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s03.op3.SEPARATE_DISJOINT",
+   "kind": "tool_literal",
+   "line": 41,
+   "name": "SEPARATE_DISJOINT",
+   "op": "s03_clip_dissolve.op3",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 41,
+     "op": "s03_clip_dissolve.op3",
+     "param": "SEPARATE_DISJOINT"
+    }
+   ],
+   "value": false
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.BASE",
+   "kind": "assignment",
+   "line": 6,
+   "name": "BASE",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 29,
+     "op": "s04_area_per_commune.op1",
+     "param": "INPUT"
+    },
+    {
+     "line": 38,
+     "op": "s04_area_per_commune.op2",
+     "param": "INPUT"
+    },
+    {
+     "line": 64,
+     "op": "s04_area_per_commune.op4",
+     "param": "OUTPUT"
+    },
+    {
+     "line": 67,
+     "op": "s04_area_per_commune.op5",
+     "param": "path"
+    },
+    {
+     "line": 68,
+     "op": "s04_area_per_commune.op6",
+     "param": "file"
+    }
+   ],
+   "value": "/home/migrate/axis-migrate-dev/evals/cases/_bases/s1-buffers-legacy"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.QGIS_PREFIX",
+   "kind": "assignment",
+   "line": 7,
+   "name": "QGIS_PREFIX",
+   "shadowed_by": null,
+   "used_at": [],
+   "value": "/home/migrate/micromamba/envs/qgis"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op1.FIELD_LENGTH",
+   "kind": "tool_literal",
+   "line": 32,
+   "name": "FIELD_LENGTH",
+   "op": "s04_area_per_commune.op1",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 32,
+     "op": "s04_area_per_commune.op1",
+     "param": "FIELD_LENGTH"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op1.FIELD_NAME",
+   "kind": "tool_literal",
+   "line": 30,
+   "name": "FIELD_NAME",
+   "op": "s04_area_per_commune.op1",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 30,
+     "op": "s04_area_per_commune.op1",
+     "param": "FIELD_NAME"
+    }
+   ],
+   "value": "buf_km2"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op1.FIELD_PRECISION",
+   "kind": "tool_literal",
+   "line": 33,
+   "name": "FIELD_PRECISION",
+   "op": "s04_area_per_commune.op1",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 33,
+     "op": "s04_area_per_commune.op1",
+     "param": "FIELD_PRECISION"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op1.FIELD_TYPE",
+   "kind": "tool_literal",
+   "line": 31,
+   "name": "FIELD_TYPE",
+   "op": "s04_area_per_commune.op1",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 31,
+     "op": "s04_area_per_commune.op1",
+     "param": "FIELD_TYPE"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op2.FIELD_LENGTH",
+   "kind": "tool_literal",
+   "line": 41,
+   "name": "FIELD_LENGTH",
+   "op": "s04_area_per_commune.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 41,
+     "op": "s04_area_per_commune.op2",
+     "param": "FIELD_LENGTH"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op2.FIELD_NAME",
+   "kind": "tool_literal",
+   "line": 39,
+   "name": "FIELD_NAME",
+   "op": "s04_area_per_commune.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 39,
+     "op": "s04_area_per_commune.op2",
+     "param": "FIELD_NAME"
+    }
+   ],
+   "value": "commune_km2"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op2.FIELD_PRECISION",
+   "kind": "tool_literal",
+   "line": 42,
+   "name": "FIELD_PRECISION",
+   "op": "s04_area_per_commune.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 42,
+     "op": "s04_area_per_commune.op2",
+     "param": "FIELD_PRECISION"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op2.FIELD_TYPE",
+   "kind": "tool_literal",
+   "line": 40,
+   "name": "FIELD_TYPE",
+   "op": "s04_area_per_commune.op2",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 40,
+     "op": "s04_area_per_commune.op2",
+     "param": "FIELD_TYPE"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op3.DISCARD_NONMATCHING",
+   "kind": "tool_literal",
+   "line": 53,
+   "name": "DISCARD_NONMATCHING",
+   "op": "s04_area_per_commune.op3",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 53,
+     "op": "s04_area_per_commune.op3",
+     "param": "DISCARD_NONMATCHING"
+    }
+   ],
+   "value": false
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op3.FIELD",
+   "kind": "tool_literal",
+   "line": 48,
+   "name": "FIELD",
+   "op": "s04_area_per_commune.op3",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 48,
+     "op": "s04_area_per_commune.op3",
+     "param": "FIELD"
+    }
+   ],
+   "value": "shapeID"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op3.FIELD_2",
+   "kind": "tool_literal",
+   "line": 50,
+   "name": "FIELD_2",
+   "op": "s04_area_per_commune.op3",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 50,
+     "op": "s04_area_per_commune.op3",
+     "param": "FIELD_2"
+    }
+   ],
+   "value": "shapeID"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op3.METHOD",
+   "kind": "tool_literal",
+   "line": 52,
+   "name": "METHOD",
+   "op": "s04_area_per_commune.op3",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 52,
+     "op": "s04_area_per_commune.op3",
+     "param": "METHOD"
+    }
+   ],
+   "value": 1
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op3.PREFIX",
+   "kind": "tool_literal",
+   "line": 54,
+   "name": "PREFIX",
+   "op": "s04_area_per_commune.op3",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 54,
+     "op": "s04_area_per_commune.op3",
+     "param": "PREFIX"
+    }
+   ],
+   "value": ""
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op4.FIELD_LENGTH",
+   "kind": "tool_literal",
+   "line": 61,
+   "name": "FIELD_LENGTH",
+   "op": "s04_area_per_commune.op4",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 61,
+     "op": "s04_area_per_commune.op4",
+     "param": "FIELD_LENGTH"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op4.FIELD_NAME",
+   "kind": "tool_literal",
+   "line": 59,
+   "name": "FIELD_NAME",
+   "op": "s04_area_per_commune.op4",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 59,
+     "op": "s04_area_per_commune.op4",
+     "param": "FIELD_NAME"
+    }
+   ],
+   "value": "share_pct"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op4.FIELD_PRECISION",
+   "kind": "tool_literal",
+   "line": 62,
+   "name": "FIELD_PRECISION",
+   "op": "s04_area_per_commune.op4",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 62,
+     "op": "s04_area_per_commune.op4",
+     "param": "FIELD_PRECISION"
+    }
+   ],
+   "value": 0
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "comment": null,
+   "doc_mentions": [],
+   "file": "02_SCRIPTS/04_area_per_commune.py",
+   "flags": [],
+   "from_superseded": false,
+   "id": "p.s04.op4.FIELD_TYPE",
+   "kind": "tool_literal",
+   "line": 60,
+   "name": "FIELD_TYPE",
+   "op": "s04_area_per_commune.op4",
+   "shadowed_by": null,
+   "used_at": [
+    {
+     "line": 60,
+     "op": "s04_area_per_commune.op4",
+     "param": "FIELD_TYPE"
+    }
+   ],
+   "value": 0
+  }
+ ],
+ "projects": [],
+ "scan": {
+  "changed_during_scan": [],
+  "gdal_pam_enabled": "NO",
+  "legacy_roots": [
+   {
+    "evidence": [
+     {
+      "file": "02_SCRIPTS/01_prepare_inputs.py",
+      "kind": "code_literal",
+      "line": 7
+     },
+     {
+      "file": "02_SCRIPTS/02_buffer_landuse.py",
+      "kind": "code_literal",
+      "line": 7
+     },
+     {
+      "file": "02_SCRIPTS/03_clip_dissolve.py",
+      "kind": "code_literal",
+      "line": 7
+     },
+     {
+      "file": "02_SCRIPTS/04_area_per_commune.py",
+      "kind": "code_literal",
+      "line": 6
+     }
+    ],
+    "value": "/home/migrate/axis-migrate-dev/evals/cases/_bases/s1-buffers-legacy"
+   },
+   {
+    "evidence": [
+     {
+      "file": "02_SCRIPTS/01_prepare_inputs.py",
+      "kind": "commented_code",
+      "line": 6
+     },
+     {
+      "file": "02_SCRIPTS/02_buffer_landuse.py",
+      "kind": "commented_code",
+      "line": 6
+     },
+     {
+      "file": "02_SCRIPTS/03_clip_dissolve.py",
+      "kind": "commented_code",
+      "line": 6
+     },
+     {
+      "file": "02_SCRIPTS/04_area_per_commune.py",
+      "kind": "commented_code",
+      "line": 5
+     }
+    ],
+    "value": "D:\\projets\\buffers_sud"
+   }
+  ],
+  "libs": {
+   "gdal": "3.12.2",
+   "openpyxl": "3.1.5",
+   "proj": "9.8.1",
+   "pyogrio": "0.13.0",
+   "pyogrio_gdal": "3.12.4",
+   "pyproj": "3.8.0",
+   "rasterio": "1.5.2",
+   "shapely": "2.2.0"
+  },
+  "manifest_sha256": "sha256:4222cf9a56fce3ca686a8768cd711f7c92333f63af9adb9230b6b2622d3c03bd",
+  "mtime_reason": "16/16 files within 21 s (copy or checkout artefact; corroboration only)",
+  "mtime_reliable": false,
+  "read_only_verified": true,
+  "started_at": "2026-10-13T23:52:04Z",
+  "tables": {
+   "arcpy_tools_count": 146,
+   "qgis_algs": "4.2.3-Belém do Pará",
+   "qgis_algs_count": 429
+  },
+  "version": "0.1.0"
+ },
+ "schema": "axis-migrate.inventory.v1",
+ "settings": [],
+ "step_candidates": [
+  {
+   "code": "code.s01_prepare_inputs",
+   "id": "s01_prepare_inputs",
+   "kind": "script",
+   "lines": [
+    [
+     35,
+     60
+    ]
+   ],
+   "ops": [
+    "s01_prepare_inputs.op1",
+    "s01_prepare_inputs.op2",
+    "s01_prepare_inputs.op3",
+    "s01_prepare_inputs.op4",
+    "s01_prepare_inputs.op5"
+   ],
+   "order": 1,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 10
+    },
+    {
+     "kind": "name_prefix",
+     "value": "01"
+    }
+   ],
+   "runtime": "pyqgis",
+   "source": "02_SCRIPTS/01_prepare_inputs.py",
+   "status": "live"
+  },
+  {
+   "code": "code.s02_buffer_landuse",
+   "id": "s02_buffer_landuse",
+   "kind": "script",
+   "lines": [
+    [
+     37,
+     64
+    ]
+   ],
+   "ops": [
+    "s02_buffer_landuse.op1",
+    "s02_buffer_landuse.op2",
+    "s02_buffer_landuse.op3",
+    "s02_buffer_landuse.op4",
+    "s02_buffer_landuse.op5"
+   ],
+   "order": 2,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 11
+    },
+    {
+     "after": [
+      "code.s01_prepare_inputs"
+     ],
+     "kind": "data_dependency"
+    },
+    {
+     "kind": "name_prefix",
+     "value": "02"
+    }
+   ],
+   "runtime": "pyqgis",
+   "source": "02_SCRIPTS/02_buffer_landuse.py",
+   "status": "live"
+  },
+  {
+   "code": "code.s03_clip_dissolve",
+   "id": "s03_clip_dissolve",
+   "kind": "script",
+   "lines": [
+    [
+     25,
+     42
+    ]
+   ],
+   "ops": [
+    "s03_clip_dissolve.op1",
+    "s03_clip_dissolve.op2",
+    "s03_clip_dissolve.op3"
+   ],
+   "order": 3,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 12
+    },
+    {
+     "after": [
+      "code.s01_prepare_inputs",
+      "code.s02_buffer_landuse"
+     ],
+     "kind": "data_dependency"
+    },
+    {
+     "kind": "name_prefix",
+     "value": "03"
+    }
+   ],
+   "runtime": "pyqgis",
+   "source": "02_SCRIPTS/03_clip_dissolve.py",
+   "status": "live"
+  },
+  {
+   "code": "code.s04_area_per_commune",
+   "id": "s04_area_per_commune",
+   "kind": "script",
+   "lines": [
+    [
+     28,
+     68
+    ]
+   ],
+   "ops": [
+    "s04_area_per_commune.op1",
+    "s04_area_per_commune.op2",
+    "s04_area_per_commune.op3",
+    "s04_area_per_commune.op4",
+    "s04_area_per_commune.op5",
+    "s04_area_per_commune.op6"
+   ],
+   "order": 4,
+   "order_evidence": [
+    {
+     "file": "NOTES.txt",
+     "kind": "doc_run_order",
+     "line": 13
+    },
+    {
+     "after": [
+      "code.s01_prepare_inputs",
+      "code.s03_clip_dissolve"
+     ],
+     "kind": "data_dependency"
+    },
+    {
+     "kind": "name_prefix",
+     "value": "04"
+    }
+   ],
+   "runtime": "pyqgis",
+   "source": "02_SCRIPTS/04_area_per_commune.py",
+   "status": "live"
+  }
+ ],
+ "twins": [],
+ "unresolved": []
+}

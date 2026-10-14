@@ -1,0 +1,407 @@
+# Tolerance records proposed from the T0 calibration of this project (two measured numbers each).
+# UNSIGNED: agreed_by stays null until a person signs; unsigned records are ignored by compare.py.
+version: 1
+records:
+- id: tol.02_buf_industrial.vector.hausdorff_m.v1
+  dataset: ds.02_buf_industrial
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 20.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 13.077969853921557
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 71.69438120488006
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buf_industrial.vector.symdiff_ratio.v1
+  dataset: ds.02_buf_industrial
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.02
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.016357350074348194
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.04673698055422131
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buf_other.vector.hausdorff_m.v1
+  dataset: ds.02_buf_other
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 50.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 15.746421410016028
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 71.22439735053241
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buf_other.vector.symdiff_ratio.v1
+  dataset: ds.02_buf_other
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.05
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.014294051630243618
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.10150662038614847
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buffers.vector.hausdorff_m.v1
+  dataset: ds.02_buffers
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 50.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 15.746421410016028
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 71.69438120488006
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buffers.vector.symdiff_ratio.v1
+  dataset: ds.02_buffers
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.05
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.016357350074348194
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.10150662038614847
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.03_buf_by_commune.vector.hausdorff_m.v1
+  dataset: ds.03_buf_by_commune
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 500.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 396.8368920910507
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 1131.6818580751926
+    variant: buffer in EPSG:3857
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.03_buf_by_commune.vector.symdiff_ratio.v1
+  dataset: ds.03_buf_by_commune
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005541554968410287
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.029734545006512066
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.03_buf_x_commune.vector.hausdorff_m.v1
+  dataset: ds.03_buf_x_commune
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 100.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 44.58747412730675
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 282.41745365834504
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.buffer_area_by_commune_csv.table.attr:buf_km2.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.attr:buf_km2
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005530099541791775
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.025280455048190893
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_csv.table.attr:share_pct.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.attr:share_pct
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.0064935064935064705
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.025974025974025997
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_csv.table.total:buf_km2.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.total:buf_km2
+  metric: abs+rel
+  rtol: 0.005
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.0031419156629023596
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.008554927791672242
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_csv.table.total:share_pct.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.total:share_pct
+  metric: abs+rel
+  rtol: 0.005
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.003055588200728667
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.008109060994241364
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.attr:buf_km2.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.attr:buf_km2
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005528231209261728
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.02534263084041811
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.attr:commune_km2.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.attr:commune_km2
+  metric: abs+rel
+  rtol: 1.0e-09
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 2.518168003866305e-14
+    variant: golden implementation
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 2.6691201195766274e-05
+    variant: areas measured in EPSG:3035
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.attr:share_pct.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.attr:share_pct
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005528231209274055
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.02534263084040603
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.hausdorff_m.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 500.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 396.8368920910507
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 1131.6818580751926
+    variant: buffer in EPSG:3857
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.buffer_area_by_commune_gpkg.vector.symdiff_ratio.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005541554968410287
+    variant: buffer with 8 segments per quarter circle
+    how: max over clean + legitimate alternatives
+    evidence: T0 calibration of this project, measured outside this workspace
+  nearest_wrong:
+    value: 0.029734545006512066
+    variant: outline simplified (50 m) before buffer
+    how: min over the mutants this check separates
+    evidence: T0 calibration of this project, measured outside this workspace
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null

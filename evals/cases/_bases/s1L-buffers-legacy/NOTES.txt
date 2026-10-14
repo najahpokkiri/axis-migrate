@@ -1,0 +1,30 @@
+buffer zones round built-up land, south (canton Esch)
+=====================================================
+
+what: how much of each commune lies within 200 m of residential / commercial / retail landuse,
+or within 500 m of industrial landuse (nuisance zone, request from planning 03/2024).
+result = area per commune in km2 + share of the commune:
+  04_FINAL/buffer_area_by_commune.csv (for the report), .gpkg (for the map)
+
+run order (qgis python, from the project folder):
+  02_SCRIPTS/01_prepare_inputs.py
+  02_SCRIPTS/02_buffer_landuse.py
+  02_SCRIPTS/03_clip_dissolve.py
+  02_SCRIPTS/04_area_per_commune.py
+  python = /home/migrate/micromamba/envs/qgis  (micromamba run -n qgis python ...)
+
+inputs 03_INPUT:
+  osm_landuse_lux.gpkg            QuickOSM export, landuse residential/industrial/commercial/retail, whole LU
+  geoBoundaries-LUX-ADM2.geojson  communes
+study area = the 14 communes of canton Esch-sur-Alzette. ADM2 has no canton field, the names are typed
+in 01 (check them if the boundaries are updated).
+
+distances: industrial 500 m, everything else 200 m (agreed with M. on the phone, 03/2024).
+  buffers done in web mercator (EPSG:3857, metres) then back to LUREF. segments = 5 (qgis default),
+  round caps/joins.
+landuse polygons that only touch the study area are kept (select by location, intersect); their buffers
+are cut at the commune boundaries in 03, so nothing outside the 14 communes is counted.
+overlapping buffers are merged per commune (dissolve) so overlaps are not counted twice.
+areas are planar in 2169, km2. the csv is rounded (3 decimals, share 1 decimal), the gpkg is not.
+
+05_TEMP = intermediates, prefix = script that wrote it. keep them, needed to check steps.

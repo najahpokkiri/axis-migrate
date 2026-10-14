@@ -1,0 +1,104 @@
+{
+ "area_km2": 167.46852560388135,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  54029.1773405264,
+  57611.573135288956,
+  85661.61215717881,
+  72972.72957780366
+ ],
+ "count": 136,
+ "crs": {
+  "epsg": 2169,
+  "is_geographic": false,
+  "name": "LUREF / Luxembourg TM",
+  "wkt": "PROJCRS[\"LUREF / Luxembourg TM\",BASEGEOGCRS[\"LUREF\",DATUM[\"Luxembourg Reference Frame\",ELLIPSOID[\"International 1924\",6378388,297,LENGTHUNIT[\"metre\",1]]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],ID[\"EPSG\",4181]],CONVERSION[\"Luxembourg TM\",METHOD[\"Transverse Mercator\",ID[\"EPSG\",9807]],PARAMETER[\"Latitude of natural origin\",49.8333333333333,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8801]],PARAMETER[\"Longitude of natural origin\",6.16666666666667,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8802]],PARAMETER[\"Scale factor at natural origin\",1,SCALEUNIT[\"unity\",1],ID[\"EPSG\",8805]],PARAMETER[\"False easting\",80000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8806]],PARAMETER[\"False northing\",100000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8807]]],CS[Cartesian,2],AXIS[\"northing (X)\",north,ORDER[1],LENGTHUNIT[\"metre\",1]],AXIS[\"easting (Y)\",east,ORDER[2],LENGTHUNIT[\"metre\",1]],USAGE[SCOPE[\"Engineering survey, topographic mapping.\"],AREA[\"Luxembourg.\"],BBOX[49.44,5.73,50.19,6.53]],ID[\"EPSG\",2169]]"
+ },
+ "dataset": "ds.02_buf_industrial",
+ "declared_geometry": "MULTIPOLYGON",
+ "domains": {
+  "landuse": [
+   "industrial"
+  ],
+  "name": [
+   "Anlieferbereich Privatkunden",
+   "Atelier communal Pétange",
+   "Cimalux",
+   "Commune de Kayl Service des Régies",
+   "Creos",
+   "Dépot de Frisange",
+   "Ecotec Sàrl",
+   "Incinérateur de Leudelange",
+   "Minett Kompost",
+   "PCh",
+   "Parc Luxite (Ancienne Poudrerie de Kockelscheuer)",
+   "Parc d'Activités Économiques Gadderscheier",
+   "Parc d'activités économiques - PED - Les 2 Luxembourg (ZAEM)",
+   "Poste Lamadelaine",
+   "Poste Sanem WSA",
+   "Poudrerie de Kockelscheuer",
+   "Recyclingcenter Dudelange Bettembourg STEP",
+   "Rolling Mill",
+   "SIFRIDAWE",
+   "SIVEC Centre de recyclage",
+   "STEP",
+   "Site ArcelorMittal",
+   "Station d'épuration Reckange-Dippach",
+   "Station d'épuration de Pétange",
+   "TICE",
+   "Zone Artisanale An den Aessen",
+   "Zone Industrielle Am Bruch",
+   "Zone Industrielle Grasbësch",
+   "Zone Industrielle Livange",
+   "Zone Industrielle Um Monkeler",
+   "Zone d'Activité Régionale Économique Est",
+   "Zone d'Activité Régionale Économique Ouest",
+   "Zone d'Activité et Commerciale Haneboesch II",
+   "Zone d'Activité Économique Wolser A",
+   "Zone d'Activité Économique Wolser B",
+   "Zone d'Activité Économique Wolser H",
+   "Zone industrielle am Bann",
+   "nan"
+  ],
+  "osm_id": [
+   "7869154",
+   "nan"
+  ]
+ },
+ "driver": "GPKG",
+ "empty_geom": 0,
+ "geom_types": {
+  "MultiPolygon": 136
+ },
+ "geometry_multiset_sha256": "0ec6d4bf8b197be21411ee55463a347410ca7a56cff89df2d3ea19f4f367f6c2",
+ "invalid": {
+  "count": 0,
+  "top_reasons": {}
+ },
+ "key_candidates": [],
+ "layer": "02_buf_industrial",
+ "layers": [
+  "02_buf_industrial"
+ ],
+ "legacy_path": "05_TEMP/02_buf_industrial.gpkg",
+ "name": "02_buf_industrial",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "osm_id"
+  },
+  {
+   "dtype": "str",
+   "name": "osm_way_id"
+  },
+  {
+   "dtype": "str",
+   "name": "landuse"
+  },
+  {
+   "dtype": "str",
+   "name": "name"
+  }
+ ]
+}

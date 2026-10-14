@@ -1,0 +1,148 @@
+# Golden S1 pipeline parameters (eval material; never shipped in the plugin). Format: 03 §3.1.
+version: 1
+budget:
+  questions: 5
+params:
+- id: p.study_communes
+  node: s01_prepare_inputs
+  kind: category
+  value:
+  - Bettembourg
+  - Differdange
+  - Dudelange
+  - Esch-sur-Alzette
+  - Frisange
+  - Kayl
+  - Leudelange
+  - Mondercange
+  - Pétange
+  - Reckange-sur-Mess
+  - Roeser
+  - Rumelange
+  - Sanem
+  - Schifflange
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/01_prepare_inputs.py:15-17 COMMUNES
+  - NOTES.txt:19-20
+  used_by:
+  - s01_prepare_inputs
+- id: p.work_crs
+  node: s01_prepare_inputs
+  kind: crs
+  value: EPSG:2169
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/01_prepare_inputs.py:43,49 TARGET_CRS EPSG:2169
+  used_by:
+  - s01_prepare_inputs
+- id: p.industrial_class
+  node: s02_buffer_landuse
+  kind: category
+  value: industrial
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/02_buffer_landuse.py:31-36 if grp == "industrial" / else
+  used_by:
+  - s02_buffer_landuse
+- id: p.buffer_dist_industrial_m
+  node: s02_buffer_landuse
+  kind: distance
+  value: 500
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/02_buffer_landuse.py:13 DIST_INDUSTRIAL = 500
+  - NOTES.txt:22
+  used_by:
+  - s02_buffer_landuse
+  unit: m
+- id: p.buffer_dist_other_m
+  node: s02_buffer_landuse
+  kind: distance
+  value: 200
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/02_buffer_landuse.py:14 DIST_OTHER = 200
+  - NOTES.txt:22
+  used_by:
+  - s02_buffer_landuse
+  unit: m
+- id: p.buffer_segments
+  node: s02_buffer_landuse
+  kind: count
+  value: 5
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/02_buffer_landuse.py:15 SEGMENTS = 5 (native:buffer SEGMENTS, per quarter
+    circle)
+  used_by:
+  - s02_buffer_landuse
+- id: p.commune_key
+  node: s03_clip_dissolve
+  kind: field
+  value: shapeID
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/03_clip_dissolve.py:40 dissolve FIELD ['shapeID']
+  used_by:
+  - s03_clip_dissolve
+  - s04_area_per_commune
+- id: p.area_unit_m2
+  node: s04_area_per_commune
+  kind: scale
+  value: 1000000
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/04_area_per_commune.py:34,43 area($geometry) / 1000000
+  used_by:
+  - s04_area_per_commune
+  unit: m2 per km2
+- id: p.csv_area_decimals
+  node: s04_area_per_commune
+  kind: index
+  value: 3
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/04_area_per_commune.py:72 round(.., 3)
+  used_by:
+  - s04_area_per_commune
+- id: p.csv_share_decimals
+  node: s04_area_per_commune
+  kind: index
+  value: 1
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - 02_SCRIPTS/04_area_per_commune.py:73 round(.., 1)
+  used_by:
+  - s04_area_per_commune
+- id: p.measure_crs
+  node: null
+  kind: crs
+  value: EPSG:2169
+  resolution: resolved
+  source: code
+  status: confirmed
+  evidence:
+  - NOTES.txt:23 buffers done in LUREF (EPSG:2169) so the distances are metres
+  used_by:
+  - verify

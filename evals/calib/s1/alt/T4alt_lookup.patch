@@ -1,0 +1,22 @@
+--- a/s02_buffer_landuse.py
++++ b/s02_buffer_landuse.py
+@@ -23,10 +23,16 @@
+     lu = ctx.read_vector("ds.01_landuse_2169")
+     cls = ctx.param("p.industrial_class")
+     seg = ctx.param("p.buffer_segments")
++    dist_by_class = {cls: ctx.param("p.buffer_dist_industrial_m")}
++    default = ctx.param("p.buffer_dist_other_m")
++    d = lu["landuse"].map(lambda c: dist_by_class.get(c, default)).to_numpy(dtype="float64")
++    geoms = shapely.buffer(lu.geometry.values, d, quad_segs=seg, cap_style="round", join_style="round", mitre_limit=2.0)
++    allbuf = lu.copy()
++    allbuf["geometry"] = [g if g.geom_type == "MultiPolygon" else shapely.MultiPolygon([g]) for g in geoms]
+     is_ind = lu["landuse"] == cls
+-    is_other = lu["landuse"].notna() & (lu["landuse"] != cls)     # QGIS: NULL <> 'x' is not true
+-    ind = _buffer(lu[is_ind], ctx.param("p.buffer_dist_industrial_m"), seg)
+-    other = _buffer(lu[is_other], ctx.param("p.buffer_dist_other_m"), seg)
++    is_other = lu["landuse"].notna() & (lu["landuse"] != cls)
++    ind = allbuf[is_ind].reset_index(drop=True)
++    other = allbuf[is_other].reset_index(drop=True)
+     ctx.write_vector("ds.02_buf_industrial", ind)
+     ctx.write_vector("ds.02_buf_other", other)
+     merged = gpd.GeoDataFrame(pd.concat([ind, other], ignore_index=True), geometry="geometry", crs=lu.crs)

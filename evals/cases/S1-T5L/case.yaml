@@ -1,0 +1,8 @@
+id: S1-T5L
+version: 1
+mode: fresh
+tier: full
+base: s1L
+legacy_name: s1-buffers-legacy
+prompt: "/axis-migrate:migrate ./s1-buffers-legacy"
+timeout_s: 2400

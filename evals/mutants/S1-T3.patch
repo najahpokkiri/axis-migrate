@@ -1,0 +1,13 @@
+--- a/s02_buffer_landuse.py
++++ b/s02_buffer_landuse.py
+@@ -13,7 +13,9 @@
+ 
+ def _buffer(gdf, dist, segments):
+     out = gdf.copy()
+-    geoms = shapely.buffer(gdf.geometry.values, dist, quad_segs=segments, cap_style="round", join_style="round",
++    # simplify first: the OSM outlines are very detailed and buffering is faster on fewer vertices
++    simple = shapely.simplify(gdf.geometry.values, 50.0)
++    geoms = shapely.buffer(simple, dist, quad_segs=segments, cap_style="round", join_style="round",
+                            mitre_limit=2.0)
+     out["geometry"] = [g if g.geom_type == "MultiPolygon" else shapely.MultiPolygon([g]) for g in geoms]
+     return out.reset_index(drop=True)

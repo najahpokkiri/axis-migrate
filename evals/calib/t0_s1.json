@@ -1,0 +1,3709 @@
+{
+ "alternatives_unsigned": {
+  "T3alt_quad8": {
+   "ds.01_communes_2169": "PASS_EXACT",
+   "ds.01_landuse_2169": "PASS_EXACT",
+   "ds.02_buf_industrial": "NEEDS_DECISION",
+   "ds.02_buf_other": "NEEDS_DECISION",
+   "ds.02_buffers": "NEEDS_DECISION",
+   "ds.03_buf_by_commune": "NEEDS_DECISION",
+   "ds.03_buf_x_commune": "FAIL",
+   "ds.buffer_area_by_commune_csv": "NEEDS_DECISION",
+   "ds.buffer_area_by_commune_gpkg": "NEEDS_DECISION"
+  },
+  "T4alt_lookup": {
+   "ds.01_communes_2169": "PASS_EXACT",
+   "ds.01_landuse_2169": "PASS_EXACT",
+   "ds.02_buf_industrial": "PASS_EXACT",
+   "ds.02_buf_other": "PASS_EXACT",
+   "ds.02_buffers": "PASS_EXACT",
+   "ds.03_buf_by_commune": "PASS_EXACT",
+   "ds.03_buf_x_commune": "PASS_EXACT",
+   "ds.buffer_area_by_commune_csv": "PASS_EXACT",
+   "ds.buffer_area_by_commune_gpkg": "NEEDS_DECISION"
+  },
+  "T5alt_aeqd": {
+   "ds.01_communes_2169": "PASS_EXACT",
+   "ds.01_landuse_2169": "PASS_EXACT",
+   "ds.02_buf_industrial": "NEEDS_DECISION",
+   "ds.02_buf_other": "NEEDS_DECISION",
+   "ds.02_buffers": "NEEDS_DECISION",
+   "ds.03_buf_by_commune": "NEEDS_DECISION",
+   "ds.03_buf_x_commune": "FAIL",
+   "ds.buffer_area_by_commune_csv": "PASS_EXACT",
+   "ds.buffer_area_by_commune_gpkg": "NEEDS_DECISION"
+  },
+  "T5alt_utm": {
+   "ds.01_communes_2169": "PASS_EXACT",
+   "ds.01_landuse_2169": "PASS_EXACT",
+   "ds.02_buf_industrial": "NEEDS_DECISION",
+   "ds.02_buf_other": "NEEDS_DECISION",
+   "ds.02_buffers": "NEEDS_DECISION",
+   "ds.03_buf_by_commune": "NEEDS_DECISION",
+   "ds.03_buf_x_commune": "FAIL",
+   "ds.buffer_area_by_commune_csv": "NEEDS_DECISION",
+   "ds.buffer_area_by_commune_gpkg": "NEEDS_DECISION"
+  }
+ },
+ "case": "S1",
+ "comparator": {
+  "id": "axis-migrate.compare",
+  "sha256": "1509ffa3f726409915f3848e95db1fde747f31f0d892946df6dffc43e5a91ea0",
+  "version": "1.0.0"
+ },
+ "false_alarms": [
+  {
+   "codes": [
+    "GEOMETRY_SYMDIFF_EXCEEDED"
+   ],
+   "dataset": "ds.03_buf_x_commune",
+   "diag": [
+    "GEOMETRY_AREA_RATIO"
+   ],
+   "variant": "T3alt_quad8",
+   "verdict": "FAIL"
+  },
+  {
+   "codes": [
+    "GEOMETRY_SYMDIFF_EXCEEDED"
+   ],
+   "dataset": "ds.03_buf_x_commune",
+   "diag": [
+    "GEOMETRY_AREA_RATIO"
+   ],
+   "variant": "T5alt_aeqd",
+   "verdict": "FAIL"
+  },
+  {
+   "codes": [
+    "GEOMETRY_SYMDIFF_EXCEEDED"
+   ],
+   "dataset": "ds.03_buf_x_commune",
+   "diag": [
+    "GEOMETRY_AREA_RATIO"
+   ],
+   "variant": "T5alt_utm",
+   "verdict": "FAIL"
+  }
+ ],
+ "matrix": {
+  "S1-T3": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "VERTEX_COUNT_DROP",
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.02_buf_other": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "VERTEX_COUNT_DROP",
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.02_buffers": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "VERTEX_COUNT_DROP",
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [
+      "FEATURE_COUNT_MISMATCH",
+      "KEY_SET_MISSING",
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "VERTEX_COUNT_DROP",
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "TOTAL_DRIFT"
+     ],
+     "diag": [],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    }
+   },
+   "expect": {
+    "codes_any": [
+     "GEOMETRY_SYMDIFF_EXCEEDED",
+     "GEOMETRY_HAUSDORFF_EXCEEDED"
+    ],
+    "datasets": [
+     "ds.02_buf_industrial",
+     "ds.02_buf_other",
+     "ds.02_buffers"
+    ],
+    "diag_any": [
+     "VERTEX_COUNT_DROP"
+    ]
+   },
+   "ok": true,
+   "planted": {
+    "ds.02_buf_industrial": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": [
+      "VERTEX_COUNT_DROP"
+     ]
+    },
+    "ds.02_buf_other": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": [
+      "VERTEX_COUNT_DROP"
+     ]
+    },
+    "ds.02_buffers": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": [
+      "VERTEX_COUNT_DROP"
+     ]
+    }
+   },
+   "role": "mutant",
+   "trap": "T3"
+  },
+  "S1-T4": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buffers": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [
+      "FEATURE_COUNT_MISMATCH",
+      "KEY_SET_MISSING",
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "VERTEX_COUNT_DROP",
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "TOTAL_DRIFT"
+     ],
+     "diag": [],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    }
+   },
+   "expect": {
+    "codes_any": [
+     "GEOMETRY_SYMDIFF_EXCEEDED",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "BRANCH_OUTPUT_MISMATCH"
+    ],
+    "datasets": [
+     "ds.02_buf_industrial",
+     "ds.02_buffers"
+    ],
+    "diag_any": [],
+    "must_pass": [
+     "ds.02_buf_other"
+    ]
+   },
+   "ok": true,
+   "planted": {
+    "ds.02_buf_industrial": {
+     "caught": true,
+     "codes_named_but_absent": [
+      "BRANCH_OUTPUT_MISMATCH"
+     ],
+     "diag_expected_present": []
+    },
+    "ds.02_buf_other": {
+     "untouched_passes": true
+    },
+    "ds.02_buffers": {
+     "caught": true,
+     "codes_named_but_absent": [
+      "BRANCH_OUTPUT_MISMATCH"
+     ],
+     "diag_expected_present": []
+    }
+   },
+   "role": "mutant",
+   "trap": "T4"
+  },
+  "S1-T4drop": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buffers": {
+     "codes": [
+      "FEATURE_COUNT_MISMATCH",
+      "KEY_SET_MISSING"
+     ],
+     "diag": [],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [
+      "FEATURE_COUNT_MISMATCH",
+      "KEY_SET_MISSING"
+     ],
+     "diag": [],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "TOTAL_DRIFT"
+     ],
+     "diag": [],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    }
+   },
+   "expect": {
+    "codes_any": [
+     "FEATURE_COUNT_MISMATCH",
+     "KEY_SET_MISSING"
+    ],
+    "datasets": [
+     "ds.02_buffers"
+    ],
+    "diag_any": [],
+    "must_pass": [
+     "ds.02_buf_industrial",
+     "ds.02_buf_other"
+    ]
+   },
+   "ok": true,
+   "planted": {
+    "ds.02_buf_industrial": {
+     "untouched_passes": true
+    },
+    "ds.02_buf_other": {
+     "untouched_passes": true
+    },
+    "ds.02_buffers": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": []
+    }
+   },
+   "role": "mutant",
+   "trap": "T4"
+  },
+  "S1-T5": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.02_buf_other": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.02_buffers": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [
+      "FEATURE_COUNT_MISMATCH",
+      "KEY_SET_MISSING",
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "TOTAL_DRIFT"
+     ],
+     "diag": [],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "GEOMETRY_HAUSDORFF_EXCEEDED",
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    }
+   },
+   "expect": {
+    "codes_any": [
+     "GEOMETRY_SYMDIFF_EXCEEDED",
+     "GEOMETRY_HAUSDORFF_EXCEEDED"
+    ],
+    "datasets": [
+     "ds.02_buf_industrial",
+     "ds.02_buf_other",
+     "ds.02_buffers"
+    ],
+    "diag_any": [
+     "GEOMETRY_AREA_RATIO"
+    ]
+   },
+   "ok": true,
+   "planted": {
+    "ds.02_buf_industrial": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": [
+      "GEOMETRY_AREA_RATIO"
+     ]
+    },
+    "ds.02_buf_other": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": [
+      "GEOMETRY_AREA_RATIO"
+     ]
+    },
+    "ds.02_buffers": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": [
+      "GEOMETRY_AREA_RATIO"
+     ]
+    }
+   },
+   "role": "mutant",
+   "trap": "T5"
+  },
+  "T3alt_quad8": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.02_buffers": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    }
+   },
+   "ok": false,
+   "role": "alt",
+   "trap": "T3"
+  },
+  "T4alt_lookup": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buffers": {
+     "codes": [],
+     "diag": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [],
+     "diag": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    }
+   },
+   "ok": true,
+   "role": "alt",
+   "trap": "T4"
+  },
+  "T5alt_aeqd": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.02_buffers": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    }
+   },
+   "ok": false,
+   "role": "alt",
+   "trap": "T5"
+  },
+  "T5alt_utm": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.02_buffers": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [
+      "GEOMETRY_SYMDIFF_EXCEEDED"
+     ],
+     "diag": [
+      "GEOMETRY_AREA_RATIO"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    }
+   },
+   "ok": false,
+   "role": "alt",
+   "trap": "T5"
+  },
+  "W_area_3035": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buffers": {
+     "codes": [],
+     "diag": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [],
+     "diag": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH",
+      "TOTAL_DRIFT"
+     ],
+     "diag": [
+      "NUMERIC_OFFSET"
+     ],
+     "verdict": "FAIL"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [
+      "ATTRIBUTE_VALUE_MISMATCH"
+     ],
+     "diag": [],
+     "verdict": "FAIL"
+    }
+   },
+   "expect": {
+    "codes_any": [
+     "ATTRIBUTE_VALUE_MISMATCH"
+    ],
+    "datasets": [
+     "ds.buffer_area_by_commune_gpkg"
+    ],
+    "diag_any": [],
+    "must_pass": [
+     "ds.03_buf_by_commune"
+    ]
+   },
+   "ok": true,
+   "planted": {
+    "ds.03_buf_by_commune": {
+     "untouched_passes": true
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "caught": true,
+     "codes_named_but_absent": [],
+     "diag_expected_present": []
+    }
+   },
+   "role": "probe",
+   "trap": "W-area"
+  },
+  "clean": {
+   "datasets": {
+    "ds.01_communes_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.01_landuse_2169": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_industrial": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buf_other": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.02_buffers": {
+     "codes": [],
+     "diag": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.03_buf_by_commune": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.03_buf_x_commune": {
+     "codes": [],
+     "diag": [
+      "CANDIDATE_IDENTICAL_TO_REFERENCE"
+     ],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_EXACT"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
+    }
+   },
+   "ok": true,
+   "role": "clean",
+   "trap": null
+  }
+ },
+ "measure": {
+  "S1-T3": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 71.69438120488006,
+      "vertex_count": {
+       "legacy": 6022,
+       "new": 3544
+      }
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.987951300774673
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "GEOMETRY_AREA_RATIO",
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.04673698055422131,
+      "vertex_count": {
+       "legacy": 6022,
+       "new": 3544
+      }
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "VERTEX_COUNT_DROP",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buf_other": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 307,
+      "diag": [
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 307,
+      "state": "FAIL",
+      "value": 71.22439735053241,
+      "vertex_count": {
+       "legacy": 19334,
+       "new": 10795
+      }
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9696555998779889
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 307,
+      "diag": [
+       "GEOMETRY_AREA_RATIO",
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 307,
+      "state": "FAIL",
+      "value": 0.10150662038614847,
+      "vertex_count": {
+       "legacy": 19334,
+       "new": 10795
+      }
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "VERTEX_COUNT_DROP",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buffers": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 443,
+      "diag": [
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 443,
+      "state": "FAIL",
+      "value": 71.69438120488006,
+      "vertex_count": {
+       "legacy": 25356,
+       "new": 14339
+      }
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9770281849421271
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 443,
+      "diag": [
+       "GEOMETRY_AREA_RATIO",
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 443,
+      "state": "FAIL",
+      "value": 0.10150662038614847,
+      "vertex_count": {
+       "legacy": 25356,
+       "new": 14339
+      }
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "VERTEX_COUNT_DROP",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 371.3832727610478
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9919224348712301
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.029734545006512066
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {
+     "vector.feature_count": {
+      "codes": [
+       "FEATURE_COUNT_MISMATCH"
+      ],
+      "state": "FAIL",
+      "value": -1
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 596,
+      "diag": [
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 596,
+      "state": "FAIL",
+      "value": 282.41745365834504,
+      "vertex_count": {
+       "legacy": 48684,
+       "new": 38351
+      }
+     },
+     "vector.key_set": {
+      "codes": [
+       "KEY_SET_MISSING"
+      ],
+      "state": "FAIL",
+      "value": 1
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9794525938581944
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 596,
+      "diag": [
+       "GEOMETRY_AREA_RATIO",
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 596,
+      "state": "FAIL",
+      "value": 0.9738843384013399,
+      "vertex_count": {
+       "legacy": 48684,
+       "new": 38351
+      }
+     }
+    },
+    "codes": [
+     "FEATURE_COUNT_MISMATCH",
+     "KEY_SET_MISSING",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "VERTEX_COUNT_DROP",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {
+     "table.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.16000000000000014,
+      "max_rel": 0.025280455048190893,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.8000000000000007,
+      "max_rel": 0.025974025974025997,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.total:buf_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.008554927791672242
+     },
+     "table.total:share_pct": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.008109060994241364
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.16040078118275058,
+      "max_rel": 0.02534263084041811,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.7805548743049862,
+      "max_rel": 0.02534263084040603,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 371.3832727610478
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9919224348712301
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.029734545006512066
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "S1-T4": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 391.65721533475966
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.21840447731263166
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.8351958498796331
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buf_other": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buffers": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 391.65721533475966
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.21840447731263166
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.8351958498796331
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 1434.3783981587533
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.8612701261936047
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.340538044032711
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {
+     "vector.feature_count": {
+      "codes": [
+       "FEATURE_COUNT_MISMATCH"
+      ],
+      "state": "FAIL",
+      "value": -37
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 179,
+      "diag": [
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 179,
+      "state": "FAIL",
+      "value": 1280.401215400779,
+      "vertex_count": {
+       "legacy": 19435,
+       "new": 10761
+      }
+     },
+     "vector.key_set": {
+      "codes": [
+       "KEY_SET_MISSING"
+      ],
+      "state": "FAIL",
+      "value": 37
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.22738411094589683
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 179,
+      "diag": [
+       "GEOMETRY_AREA_RATIO",
+       "VERTEX_COUNT_DROP"
+      ],
+      "features_differing": 179,
+      "state": "FAIL",
+      "value": 0.9997814547277163,
+      "vertex_count": {
+       "legacy": 19435,
+       "new": 10761
+      }
+     }
+    },
+    "codes": [
+     "FEATURE_COUNT_MISMATCH",
+     "KEY_SET_MISSING",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "VERTEX_COUNT_DROP",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {
+     "table.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 3.349,
+      "max_rel": 0.3405625939445995,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 23.199999999999996,
+      "max_rel": 0.3406754772393539,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.total:buf_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.15126477780177375
+     },
+     "table.total:share_pct": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.15548243036784576
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 3.348529904425943,
+      "max_rel": 0.3405380440327191,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 23.179517235579844,
+      "max_rel": 0.340538044032725,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 1434.3783981587533
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.8612701261936047
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.340538044032711
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "S1-T4drop": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_other": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buffers": {
+    "checks": {
+     "vector.feature_count": {
+      "codes": [
+       "FEATURE_COUNT_MISMATCH"
+      ],
+      "state": "FAIL",
+      "value": -136
+     },
+     "vector.key_set": {
+      "codes": [
+       "KEY_SET_MISSING"
+      ],
+      "state": "FAIL",
+      "value": 136
+     }
+    },
+    "codes": [
+     "FEATURE_COUNT_MISMATCH",
+     "KEY_SET_MISSING"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 1760.6332169694401
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.7586008902456757
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.5337933411909754
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {
+     "vector.feature_count": {
+      "codes": [
+       "FEATURE_COUNT_MISMATCH"
+      ],
+      "state": "FAIL",
+      "value": -216
+     },
+     "vector.key_set": {
+      "codes": [
+       "KEY_SET_MISSING"
+      ],
+      "state": "FAIL",
+      "value": 216
+     }
+    },
+    "codes": [
+     "FEATURE_COUNT_MISMATCH",
+     "KEY_SET_MISSING"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {
+     "table.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 5.554,
+      "max_rel": 0.5338200558299335,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 36.39999999999999,
+      "max_rel": 0.5345080763582966,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.total:buf_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.2643389088983789
+     },
+     "table.total:share_pct": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.2704195557644847
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 5.553522325169098,
+      "max_rel": 0.5337933411909807,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 36.33389035142623,
+      "max_rel": 0.5337933411909849,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 1760.6332169694401
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.7586008902456757
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.5337933411909754
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "S1-T5": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 214.91015664675987
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.4752419842303633
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.574378212791405
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buf_other": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 455.3245667126437
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.5282889456234473
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 0.5619726261029737
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buffers": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 455.3245667126437
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.5141036304738893
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 0.574378212791405
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 1131.6818580751926
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.793533327266136
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.29390397816164776
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {
+     "vector.feature_count": {
+      "codes": [
+       "FEATURE_COUNT_MISMATCH"
+      ],
+      "state": "FAIL",
+      "value": -38
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 563,
+      "features_differing": 563,
+      "state": "FAIL",
+      "value": 1280.401215400779
+     },
+     "vector.key_set": {
+      "codes": [
+       "KEY_SET_MISSING"
+      ],
+      "state": "FAIL",
+      "value": 38
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.5102423234995315
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 563,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 563,
+      "state": "FAIL",
+      "value": 0.9952252506493537
+     }
+    },
+    "codes": [
+     "FEATURE_COUNT_MISMATCH",
+     "KEY_SET_MISSING",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {
+     "table.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 3.186,
+      "max_rel": 0.29388528993521873,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 16.5,
+      "max_rel": 0.29545454545454547,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.total:buf_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.19383738670642253
+     },
+     "table.total:share_pct": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.19050417205312026
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 3.185943686833255,
+      "max_rel": 0.2939039781616429,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 16.475524735035755,
+      "max_rel": 0.2939039781616342,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 1131.6818580751926
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.793533327266136
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.29390397816164776
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "T3alt_quad8": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 13.077969853921557
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0120596484347169
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.016357350074348194
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buf_other": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 15.746421410016028
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0095585375888176
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 0.014294051630243618
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buffers": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 15.746421410016028
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.01022292847185
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 0.016357350074348194
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 396.8368920910507
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0031229321714972
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.005541554968410287
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 600,
+      "features_differing": 600,
+      "state": "FAIL",
+      "value": 44.58747412730675
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0105899806406762
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 600,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 600,
+      "state": "FAIL",
+      "value": 7.964480039788329
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {
+     "table.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.04899999999999949,
+      "max_rel": 0.005530099541791775,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.30000000000000426,
+      "max_rel": 0.0064935064935064705,
+      "state": "FAIL",
+      "value": 14
+     },
+     "table.total:buf_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.0031419156629023596
+     },
+     "table.total:share_pct": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.003055588200728667
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.04887035472875745,
+      "max_rel": 0.005528231209261728,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.2919271615402508,
+      "max_rel": 0.005528231209274055,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 396.8368920910507
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0031229321714972
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.005541554968410287
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "T4alt_lookup": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_other": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buffers": {
+    "checks": {},
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {},
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 6.359357485052897e-13,
+      "max_rel": 3.469165523374747e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 1.8758328224066645e-12,
+      "max_rel": 2.4673436676452426e-14,
+      "state": "FAIL",
+      "value": 14
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "T5alt_aeqd": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.007822062915671262
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0000149476841025
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 2.6215212850491127e-05
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buf_other": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 0.049054824391481115
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0000125813557033
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 2.5882549914048438e-05
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buffers": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 0.049054824391481115
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.0000132901222445
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 2.6215212850491127e-05
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.042423353409800545
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.000004276027458
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 7.624011149201476e-06
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 600,
+      "features_differing": 600,
+      "state": "FAIL",
+      "value": 0.05531350540635909
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.00001380532058
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 600,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 600,
+      "state": "FAIL",
+      "value": 0.004386798701738471
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 5.9949498197653384e-05,
+      "max_rel": 7.624011157240383e-06,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.00034842160483350426,
+      "max_rel": 7.624011169544775e-06,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.042423353409800545
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 1.000004276027458
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 7.624011149201476e-06
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "T5alt_utm": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.11914292654025621
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9997142958166885
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 136,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 136,
+      "state": "FAIL",
+      "value": 0.0004430488368407478
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buf_other": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 0.9076144222119155
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9997648255915961
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 308,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 308,
+      "state": "FAIL",
+      "value": 0.0004240968444863
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buffers": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 0.9076144222119155
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.999749756426799
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 444,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 444,
+      "state": "FAIL",
+      "value": 0.0004430488368407478
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.8244511701043322
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.999920558008756
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.00014702190080118863
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 600,
+      "features_differing": 600,
+      "state": "FAIL",
+      "value": 1.0466919013944074
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.9997369119466015
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 600,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 600,
+      "state": "FAIL",
+      "value": 0.07549083699275429
+     }
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {
+     "table.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 9,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 0.0010000000000012221,
+      "max_rel": 0.00015800284405110537,
+      "state": "FAIL",
+      "value": 9
+     },
+     "table.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 2,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 0.10000000000000142,
+      "max_rel": 0.002298850574712676,
+      "state": "FAIL",
+      "value": 2
+     },
+     "table.total:buf_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 6.269898218662388e-05
+     },
+     "table.total:share_pct": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 0.00023504524620981525
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.0011217382300827694,
+      "max_rel": 0.000147021900793664,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.00683920933822435,
+      "max_rel": 0.00014702190078128046,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.hausdorff_m": {
+      "codes": [
+       "GEOMETRY_HAUSDORFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.8244511701043322
+     },
+     "vector.symdiff_ratio": {
+      "area_ratio": {
+       "median": 0.999920558008756
+      },
+      "codes": [
+       "GEOMETRY_SYMDIFF_EXCEEDED"
+      ],
+      "count_over": 14,
+      "diag": [
+       "GEOMETRY_AREA_RATIO"
+      ],
+      "features_differing": 14,
+      "state": "FAIL",
+      "value": 0.00014702190080118863
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET",
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  },
+  "W_area_3035": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_other": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buffers": {
+    "checks": {},
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {},
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {
+     "table.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 2,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 0.0010000000000012221,
+      "max_rel": 8.762705923599913e-05,
+      "state": "FAIL",
+      "value": 2
+     },
+     "table.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 6,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 0.0010000000000012221,
+      "max_rel": 0.00012886597938137188,
+      "state": "FAIL",
+      "value": 6
+     },
+     "table.total:buf_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 1.3933107152627085e-05
+     },
+     "table.total:commune_km2": {
+      "codes": [
+       "TOTAL_DRIFT"
+      ],
+      "state": "FAIL",
+      "value": 2.4632260872065077e-05
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.00038549971917234416,
+      "max_rel": 2.674853511139871e-05,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 0.0005478639477125569,
+      "max_rel": 2.6691201195766274e-05,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "max_abs": 3.5500977446645265e-05,
+      "max_rel": 6.912944754225231e-07,
+      "state": "FAIL",
+      "value": 14
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   }
+  },
+  "clean": {
+   "ds.01_communes_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_other": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buffers": {
+    "checks": {},
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_by_commune": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_x_commune": {
+    "checks": {},
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "checks": {},
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "checks": {
+     "vector.attr:buf_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 6.359357485052897e-13,
+      "max_rel": 3.469165523374747e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:commune_km2": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 5.009326287108706e-13,
+      "max_rel": 2.518168003866305e-14,
+      "state": "FAIL",
+      "value": 14
+     },
+     "vector.attr:share_pct": {
+      "codes": [
+       "ATTRIBUTE_VALUE_MISMATCH"
+      ],
+      "count_over": 14,
+      "diag": [
+       "NUMERIC_OFFSET"
+      ],
+      "max_abs": 1.8758328224066645e-12,
+      "max_rel": 2.4673436676452426e-14,
+      "state": "FAIL",
+      "value": 14
+     }
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH"
+    ],
+    "diag": [
+     "NUMERIC_OFFSET"
+    ],
+    "verdict": "FAIL"
+   }
+  }
+ },
+ "measure_crs": "EPSG:2169",
+ "misses": [],
+ "proposed_records": [
+  "tol.02_buf_industrial.vector.hausdorff_m.v1",
+  "tol.02_buf_industrial.vector.symdiff_ratio.v1",
+  "tol.02_buf_other.vector.hausdorff_m.v1",
+  "tol.02_buf_other.vector.symdiff_ratio.v1",
+  "tol.02_buffers.vector.hausdorff_m.v1",
+  "tol.02_buffers.vector.symdiff_ratio.v1",
+  "tol.03_buf_by_commune.vector.hausdorff_m.v1",
+  "tol.03_buf_by_commune.vector.symdiff_ratio.v1",
+  "tol.03_buf_x_commune.vector.hausdorff_m.v1",
+  "tol.buffer_area_by_commune_csv.table.attr:buf_km2.v1",
+  "tol.buffer_area_by_commune_csv.table.attr:share_pct.v1",
+  "tol.buffer_area_by_commune_csv.table.total:buf_km2.v1",
+  "tol.buffer_area_by_commune_csv.table.total:share_pct.v1",
+  "tol.buffer_area_by_commune_gpkg.vector.attr:buf_km2.v1",
+  "tol.buffer_area_by_commune_gpkg.vector.attr:commune_km2.v1",
+  "tol.buffer_area_by_commune_gpkg.vector.attr:share_pct.v1",
+  "tol.buffer_area_by_commune_gpkg.vector.hausdorff_m.v1",
+  "tol.buffer_area_by_commune_gpkg.vector.symdiff_ratio.v1"
+ ],
+ "references": {
+  "s1": "evals/cases/_bases/s1-buffers-legacy",
+  "s1L": "evals/cases/_bases/s1L-buffers-legacy"
+ },
+ "run_started_at": "2026-10-16T10:00:00Z",
+ "schema": "axis-migrate.t0.v1",
+ "signing": "proposals signed in memory by human:t0-calibration for the verdict phase only; the file evals/calib/s1/tolerances.proposed.yaml stays unsigned",
+ "summary": {
+  "checker_misses": 0,
+  "clean_alt_pass": 2,
+  "clean_alt_rows": 5,
+  "false_alarms": 3,
+  "mutant_rows": 4,
+  "mutants_caught": 4,
+  "probe_rows": 1,
+  "probes_caught": 1,
+  "unseparable_checks": 1
+ },
+ "t5l": {
+  "faithful_port(S1-T5 code)": {
+   "ds.01_communes_2169": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_other": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buffers": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_by_commune": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_x_commune": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_WITHIN_TOLERANCE"
+   }
+  },
+  "silent_fix(golden)": {
+   "ds.01_communes_2169": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "area_ratio": null,
+    "codes": [],
+    "diag": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "area_ratio": {
+     "median": 2.1041915803036524
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buf_other": {
+    "area_ratio": {
+     "median": 1.892904670696248
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.02_buffers": {
+    "area_ratio": {
+     "median": 1.9451331292803733
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_by_commune": {
+    "area_ratio": {
+     "median": 1.2602011123076218
+    },
+    "codes": [
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.03_buf_x_commune": {
+    "area_ratio": {
+     "median": 1.9598531010548723
+    },
+    "codes": [
+     "FEATURE_COUNT_MISMATCH",
+     "KEY_SET_EXTRA",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "area_ratio": null,
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "TOTAL_DRIFT"
+    ],
+    "diag": [],
+    "verdict": "FAIL"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "area_ratio": {
+     "median": 1.2602011123076218
+    },
+    "codes": [
+     "ATTRIBUTE_VALUE_MISMATCH",
+     "GEOMETRY_HAUSDORFF_EXCEEDED",
+     "GEOMETRY_SYMDIFF_EXCEEDED"
+    ],
+    "diag": [
+     "GEOMETRY_AREA_RATIO"
+    ],
+    "verdict": "FAIL"
+   }
+  }
+ },
+ "unseparable": [
+  {
+   "check": "vector.symdiff_ratio",
+   "correct_spread": 7.964480039788329,
+   "dataset": "ds.03_buf_x_commune",
+   "masked_mutants": [
+    "S1-T3",
+    "S1-T4",
+    "S1-T5"
+   ],
+   "nearest_wrong": null,
+   "variant": "T3alt_quad8",
+   "why": "no mutant above the legitimate spread on this check: a two-number record cannot be justified, so the check stays exact (alternative will FAIL here)"
+  }
+ ],
+ "variants": {
+  "S1-T3": {
+   "code_hash": "sha256:cca3bb613b3b98ae5d4c6a2e99e5b9e7a351583bd30ec1a4a20fef0ffe8a6d83",
+   "patch": "evals/mutants/S1-T3.patch",
+   "patch_sha256": "c6e92c0c5e2d2a73f9f3c6a96ef006b5f86b6ce9a1239b4a35934bb0db61cf39",
+   "role": "mutant",
+   "run_id": "r20261013T235525Z-cca3bb61",
+   "trap": "T3"
+  },
+  "S1-T4": {
+   "code_hash": "sha256:b781612a038255e1ea7d31005b4dbeb454a2d5f3e7a9691cb823aa31cb0ea718",
+   "patch": "evals/mutants/S1-T4.patch",
+   "patch_sha256": "4589e228c0081686950030ca9b85aab8f640755f03371f37df19e62c13a5eb7d",
+   "role": "mutant",
+   "run_id": "r20261013T235545Z-b781612a",
+   "trap": "T4"
+  },
+  "S1-T4drop": {
+   "code_hash": "sha256:db9796899dc7880bbd9957c9f9288321b93dd7c1cf47ca7b01a49c415c446b7d",
+   "patch": "evals/mutants/S1-T4drop.patch",
+   "patch_sha256": "0ca91618c1ce104d3b8433cdf87f6656735f44ee25bf7faf2bd34bbd306c80af",
+   "role": "mutant",
+   "run_id": "r20261013T235606Z-db979689",
+   "trap": "T4"
+  },
+  "S1-T5": {
+   "code_hash": "sha256:0edc95b043abfa5353edfe766ac2c08358a704c482fd4446def1461c6b906910",
+   "patch": "evals/mutants/S1-T5.patch",
+   "patch_sha256": "362183cd8993cae540d437a5b142e860e207f500a6eca340ec033fc4b99ae023",
+   "role": "mutant",
+   "run_id": "r20261013T235627Z-0edc95b0",
+   "trap": "T5"
+  },
+  "T3alt_quad8": {
+   "code_hash": "sha256:7eb15a615fad1b3ebc8f2dffb807e7ffaeb80ced355453615d2110a91277a85d",
+   "patch": "evals/calib/s1/alt/T3alt_quad8.patch",
+   "patch_sha256": "c32f2d168939d173b55edea0e55028d767dda7d01985eab996ac6352f357d33e",
+   "role": "alt",
+   "run_id": "r20261013T235648Z-7eb15a61",
+   "trap": "T3"
+  },
+  "T4alt_lookup": {
+   "code_hash": "sha256:eef1c9f372aedb525d67f4770ec3818d8577aeee61099906a5289cdcd9a9460b",
+   "patch": "evals/calib/s1/alt/T4alt_lookup.patch",
+   "patch_sha256": "43785781c0e1c1571a68a37597f7e9c8dfd7a0901ff390cecd5ff72fcac177a8",
+   "role": "alt",
+   "run_id": "r20261013T235709Z-eef1c9f3",
+   "trap": "T4"
+  },
+  "T5alt_aeqd": {
+   "code_hash": "sha256:1c8d2d2ca92ace01a6ca4b28d94987d0fef4700a11f94a029f23b2e3a8430fd1",
+   "patch": "evals/calib/s1/alt/T5alt_aeqd.patch",
+   "patch_sha256": "c86eef7d708d0ce21ed30c94fa6ed5404e65aaf26943c4d406a4ab16d76dd646",
+   "role": "alt",
+   "run_id": "r20261013T235729Z-1c8d2d2c",
+   "trap": "T5"
+  },
+  "T5alt_utm": {
+   "code_hash": "sha256:74aa394fff7618a071bfd42fc652d27cdc8384c95343815c3a29ea28cffaca4a",
+   "patch": "evals/calib/s1/alt/T5alt_utm.patch",
+   "patch_sha256": "f393cacf57376dcb1e5c9c60b2410f72358b1b095d7a0acebe74174efe209a21",
+   "role": "alt",
+   "run_id": "r20261013T235750Z-74aa394f",
+   "trap": "T5"
+  },
+  "W_area_3035": {
+   "code_hash": "sha256:c5d11974807bafd16626455068e0d62f2623c63f7423a4f8079abb462eed68cb",
+   "patch": "evals/calib/s1/probe/W_area_3035.patch",
+   "patch_sha256": "350c82b68f810d7d266f2af4d8762f3e32ebe28db7d3fe90f01031a3163d4649",
+   "role": "probe",
+   "run_id": "r20261013T235811Z-c5d11974",
+   "trap": "W-area"
+  },
+  "clean": {
+   "code_hash": "sha256:9d34b933300a9aff63126644c88d592fd2e38d354cdf10f24a2ef1a090691963",
+   "patch": null,
+   "patch_sha256": null,
+   "role": "clean",
+   "run_id": "r20261013T235832Z-9d34b933",
+   "trap": null
+  }
+ }
+}

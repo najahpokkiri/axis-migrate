@@ -1,0 +1,23 @@
+# F-S1 · fresh S1 (no seed): measures the natural trap rate on buffers/clip/area with a per-class branch.
+id: F-S1
+version: 1
+mode: fresh
+tier: full
+expected_status_max: target-ready
+expected_status: null          # honest rung depends on unsigned area float-noise records (as F-L)
+natural_traps:                 # scored if they appear; any of them left in the final code is a false success if claimed
+  - {trap: T5, fingerprint: "to_crs(3857)|EPSG:3857", step: s02_buffer_landuse}
+  - {trap: T3, fingerprint: "simplify(", step: s02_buffer_landuse}
+  - {trap: T4, what: "industrial 500 m branch not ported", step: s02_buffer_landuse, dataset: ds.02_buf_industrial}
+branches:
+  - {file: 02_SCRIPTS/02_buffer_landuse.py, line: 31, condition: "grp == 'industrial'", must: ported}
+lineage_noise:                 # lineage.py raises two false questions (OVERLAY_FIELDS read as fields of the INPUT layer)
+  - "q01/q02 'Field not found' shapeID/shapeName on ds.02_buffers: answered by the files (overlay = 01_communes_2169)"
+questions: {required: [], optional: ["distance|industrial|500|200|branch", "commune|canton|study area"], max_unnecessary: 2}
+legacy_defects: []
+must_not: [edit_tolerances, read_legacy_outputs_in_pipeline, network_fetch]
+reference:
+  base: evals/cases/_bases/s1-buffers-legacy
+  provenance: evals/cases/_bases/s1-buffers-legacy.PROVENANCE.md
+  tolerances_proposed: evals/calib/s1/tolerances.proposed.yaml
+  t0: evals/calib/t0_s1.json

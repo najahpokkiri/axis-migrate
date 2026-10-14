@@ -1,0 +1,14 @@
+--- a/s04_area_per_commune.py
++++ b/s04_area_per_commune.py
+@@ -11,9 +11,9 @@
+     unit = ctx.param("p.area_unit_m2")
+     buf = ctx.read_vector("ds.03_buf_by_commune")
+     com = ctx.read_vector("ds.01_communes_2169")
+-    com_km2 = dict(zip(com[key], com.geometry.area / unit))
++    com_km2 = dict(zip(com[key], com.geometry.to_crs(3035).area / unit))   # equal-area CRS
+     out = buf[["shapeName", key, "geometry"]].copy()
+-    out["buf_km2"] = out.geometry.area / unit
++    out["buf_km2"] = out.geometry.to_crs(3035).area / unit
+     out["commune_km2"] = out[key].map(com_km2)
+     out["share_pct"] = 100 * out["buf_km2"] / out["commune_km2"]
+     out = out[["shapeName", key, "buf_km2", "commune_km2", "share_pct", "geometry"]]

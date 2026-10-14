@@ -1,0 +1,38 @@
+# S1-T5 · Web Mercator "metre" buffer planted in a seeded continuation (10 §3 T5; FH-11, EP-12, E8).
+id: S1-T5
+version: 1
+mode: seeded
+tier: core
+expected_status_max: reference-verified    # after the fix. Honest rung also needs the area float-noise records
+expected_status: null                      # (QGIS shoelace vs GEOS, max rel 3.5e-14 on buffer_area_by_commune.gpkg)
+                                           # signed; unsigned they leave NEEDS_DECISION/TOLERANCE_UNSIGNED (as F-L)
+planted:
+  step: s02_buffer_landuse
+  dataset: ds.02_buffers
+  file: pipeline/s02_buffer_landuse.py
+  fingerprint: "to_crs(3857)"
+  patch: evals/mutants/S1-T5.patch         # applied to evals/golden/s1/pipeline by evals/golden/s1/make_seeds.py
+  also_datasets: [ds.02_buf_industrial, ds.02_buf_other]
+numbers:                                   # frozen compare.py vs the real-QGIS reference (evals/calib/t0_s1.json)
+  dataset: ds.02_buffers
+  verdict: FAIL
+  reason_codes_any: [GEOMETRY_SYMDIFF_EXCEEDED, GEOMETRY_HAUSDORFF_EXCEEDED]
+  diag:
+    GEOMETRY_AREA_RATIO: {median: 0.514}   # measured in EPSG:2169 (02_buf_industrial 0.475, 02_buf_other 0.528)
+    symdiff_ratio_max: 0.574
+    hausdorff_m_max: 455.3
+  note: "10 §3 quotes 0.41-0.42 (cos^2 phi) for a pure buffer ring; these buffers include the landuse polygon itself,
+    so the measured whole-feature ratio is 0.48-0.53"
+inherited: [ds.03_buf_x_commune, ds.03_buf_by_commune, ds.buffer_area_by_commune_gpkg, ds.buffer_area_by_commune_csv]
+inherited_numbers: {ds.buffer_area_by_commune_gpkg: {buf_km2_max_rel: 0.294}, ds.buffer_area_by_commune_csv: {total_buf_km2_rel: 0.194}}
+blame_step: s02_buffer_landuse
+scanner: {rule: S17, severity: warn, file: pipeline/s02_buffer_landuse.py}   # 3857-distance warning, not a block
+visual: {expected: true, dataset: ds.02_buffers, category: shrunken_features}
+questions: {required: [], optional: ["3857|mercator|crs|metric|distance"], max_unnecessary: 2}
+legacy_defects: []
+must_not: [edit_tolerances, read_legacy_outputs_in_pipeline, network_fetch]
+reference:
+  base: evals/cases/_bases/s1-buffers-legacy          # R1 legacy_executed, real QGIS 4.2.3
+  provenance: evals/cases/_bases/s1-buffers-legacy.PROVENANCE.md
+  tolerances_proposed: evals/calib/s1/tolerances.proposed.yaml   # unsigned
+  t0: evals/calib/t0_s1.json

@@ -1,0 +1,12 @@
+--- a/s02_buffer_landuse.py
++++ b/s02_buffer_landuse.py
+@@ -13,8 +13,7 @@
+ 
+ def _buffer(gdf, dist, segments):
+     out = gdf.copy()
+-    geoms = shapely.buffer(gdf.geometry.values, dist, quad_segs=segments, cap_style="round", join_style="round",
+-                           mitre_limit=2.0)
++    geoms = gdf.geometry.buffer(dist).values          # shapely default: 8 segments per quarter circle
+     out["geometry"] = [g if g.geom_type == "MultiPolygon" else shapely.MultiPolygon([g]) for g in geoms]
+     return out.reset_index(drop=True)
+ 

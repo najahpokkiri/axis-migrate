@@ -1,0 +1,114 @@
+{
+ "area_km2": 309.338149359932,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  54067.75725556141,
+  57061.77847024047,
+  85253.91809364667,
+  72664.63227900473
+ ],
+ "count": 601,
+ "crs": {
+  "epsg": 2169,
+  "is_geographic": false,
+  "name": "LUREF / Luxembourg TM",
+  "wkt": "PROJCRS[\"LUREF / Luxembourg TM\",BASEGEOGCRS[\"LUREF\",DATUM[\"Luxembourg Reference Frame\",ELLIPSOID[\"International 1924\",6378388,297,LENGTHUNIT[\"metre\",1]]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],ID[\"EPSG\",4181]],CONVERSION[\"Luxembourg TM\",METHOD[\"Transverse Mercator\",ID[\"EPSG\",9807]],PARAMETER[\"Latitude of natural origin\",49.8333333333333,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8801]],PARAMETER[\"Longitude of natural origin\",6.16666666666667,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8802]],PARAMETER[\"Scale factor at natural origin\",1,SCALEUNIT[\"unity\",1],ID[\"EPSG\",8805]],PARAMETER[\"False easting\",80000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8806]],PARAMETER[\"False northing\",100000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8807]]],CS[Cartesian,2],AXIS[\"northing (X)\",north,ORDER[1],LENGTHUNIT[\"metre\",1]],AXIS[\"easting (Y)\",east,ORDER[2],LENGTHUNIT[\"metre\",1]],USAGE[SCOPE[\"Engineering survey, topographic mapping.\"],AREA[\"Luxembourg.\"],BBOX[49.44,5.73,50.19,6.53]],ID[\"EPSG\",2169]]"
+ },
+ "dataset": "ds.03_buf_x_commune",
+ "declared_geometry": "MULTIPOLYGON",
+ "domains": {
+  "landuse": [
+   "commercial",
+   "industrial",
+   "residential",
+   "retail"
+  ],
+  "osm_id": [
+   "10546128",
+   "14011553",
+   "14701066",
+   "17786279",
+   "17786280",
+   "18786149",
+   "2046174",
+   "4292037",
+   "7485187",
+   "7787035",
+   "7869154",
+   "9460028",
+   "nan"
+  ],
+  "shapeID": [
+   "21775719B1069977315926",
+   "21775719B17928354253129",
+   "21775719B23058548235347",
+   "21775719B29416267903606",
+   "21775719B56620819602201",
+   "21775719B60383903025053",
+   "21775719B62903588836755",
+   "21775719B63085135447978",
+   "21775719B68351429546827",
+   "21775719B73724522943348",
+   "21775719B78315936825868",
+   "21775719B78588703449335",
+   "21775719B82173327168433",
+   "21775719B98887930078722"
+  ],
+  "shapeName": [
+   "Bettembourg",
+   "Differdange",
+   "Dudelange",
+   "Esch-sur-Alzette",
+   "Frisange",
+   "Kayl",
+   "Leudelange",
+   "Mondercange",
+   "Pétange",
+   "Reckange-sur-Mess",
+   "Roeser",
+   "Rumelange",
+   "Sanem",
+   "Schifflange"
+  ]
+ },
+ "driver": "GPKG",
+ "empty_geom": 0,
+ "geom_types": {
+  "MultiPolygon": 601
+ },
+ "geometry_multiset_sha256": "5ab1e49df251973910b5bde6a2383e391100904de13eaffe210a6bd0884c0bdd",
+ "invalid": {
+  "count": 0,
+  "top_reasons": {}
+ },
+ "key_candidates": [],
+ "layer": "03_buf_x_commune",
+ "layers": [
+  "03_buf_x_commune"
+ ],
+ "legacy_path": "05_TEMP/03_buf_x_commune.gpkg",
+ "name": "03_buf_x_commune",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "osm_id"
+  },
+  {
+   "dtype": "str",
+   "name": "osm_way_id"
+  },
+  {
+   "dtype": "str",
+   "name": "landuse"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeName"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeID"
+  }
+ ]
+}

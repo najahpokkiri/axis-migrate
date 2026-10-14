@@ -1,0 +1,565 @@
+{
+ "schema": "axis-migrate.calib-variants.v1",
+ "variants": {
+  "S1-T3": {
+   "code_hash": "sha256:cca3bb613b3b98ae5d4c6a2e99e5b9e7a351583bd30ec1a4a20fef0ffe8a6d83",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "09b6296c7d39e95d3f651988c9f82e1642f11f8ed18473da8a0d527b75b2e780",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "0557a7cd51b1b109cd7a8215d5e076cb948ac02c097f92fa41ad2014d30cb866"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "1bd87be102243a0bfb05826ad7a1c7f501fe7fd64f0152efb9748c24d968648f",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "233ddc7986a67161a053fdbc706244a4d93e41b866a6cdfb90de14851c1d54c9"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "8cbb6bbfb38afa3624135ab8418a2ce7ab42da65096798cdde1e41c5c57222b8",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "23f39bf72dd8c8ecbc8d79da7a7d091bcdecf5e334119192c978100dc7c4a735"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "dac00359e1b54b74dc9872579d69c795eee928e7b7cf08275421ad3fcd6f74bd",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "d391f3c30ef0f900ed758cc0f5c4b88e4c31b470080a2339b400d3c7143d6903"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "395386006262c0c83305edeb7eb56df4cd9c68dfe62683048d745544ceb825d5",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "1f832f1249ebfefce272ec0942d1a472d23702ceaf3a7428595c42986f060957"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "318a9e1126abf803a12f26071583bdfaf444b3818dd079373d9b994a63f91467"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "e8ec36a4f6ed9a18f62c8e6f29de98afc713291dac2b359c77fc58da2d065343",
+     "path": "evals/work/calib-s1/S1-T3/migration/runs/r20261013T235525Z-cca3bb61/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "273de0c32f787c0f511d4cf36f3d47c89102bfa5d0ec5991cc463076e719d586"
+    }
+   },
+   "patch": "evals/mutants/S1-T3.patch",
+   "patch_sha256": "c6e92c0c5e2d2a73f9f3c6a96ef006b5f86b6ce9a1239b4a35934bb0db61cf39",
+   "role": "mutant",
+   "run_id": "r20261013T235525Z-cca3bb61",
+   "trap": "T3",
+   "wall_time_s": 7.832
+  },
+  "S1-T4": {
+   "code_hash": "sha256:b781612a038255e1ea7d31005b4dbeb454a2d5f3e7a9691cb823aa31cb0ea718",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "51309c4dcca081d30b0a8b33bca350c302d6412897ea7c3cabcf550aab7c4741",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "ba6b639e2cb7e36eb736225cc056ca8374fa1946e5d8cd0ad1b89c51ea77d6e0"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "6e82bd7c702c1cca6f09aa3844ee6a7d130ec4fe2910fd5e93647a9d82dd40cb",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "7a71d1c14e4c793ceb8bbbf095dfeab465e48ee5bf484b4e29b71debc20d494c"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "b7d5c19980dc9660e1cb07488e20f649d209152de6bf7862eec5074f878d79ce",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "5637ab03f90592a1cdc9dac9a773abe6dba3fc66c6d28bb2ccc6f2ab83fb6b29"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "1f6c9faf80a5b79f30f6bde67b62dc32e26674ce566f36b0501fce785b5d1a34",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "d3c82d3d9b1de5c0a2164129041551f65cf007b1d32072bccbea85e548df63eb"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "9cf46994ca881baedae8e80931337054c6d7e97df5322a45780416b6541edf2d",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "09f26e1b637a23f7e3caaad91a29247388ae44bc90dcef36d855bf3a78c13431"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "a8ee23ae40f178c2e640884871f54d7eebdd7a1dbe8e1d73c84a1dca45453978"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "07b421130b2337146e58733dfa5d3940a3b04b6c8f4ad1e6833b3d737131622a",
+     "path": "evals/work/calib-s1/S1-T4/migration/runs/r20261013T235545Z-b781612a/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "d0c291c54e0dc34cc252a870e0b75119e04fa16528f1c6f73ef4da4c296ac3da"
+    }
+   },
+   "patch": "evals/mutants/S1-T4.patch",
+   "patch_sha256": "4589e228c0081686950030ca9b85aab8f640755f03371f37df19e62c13a5eb7d",
+   "role": "mutant",
+   "run_id": "r20261013T235545Z-b781612a",
+   "trap": "T4",
+   "wall_time_s": 7.971
+  },
+  "S1-T4drop": {
+   "code_hash": "sha256:db9796899dc7880bbd9957c9f9288321b93dd7c1cf47ca7b01a49c415c446b7d",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "039d6485bba69b50b4d3047797f0bcd110f660740d808390b890643d1478403f",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "3e1b4198d5b3983c99edcffd486458c2c21a5b5efc925829cb6d7cd776ab998c"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "6e82bd7c702c1cca6f09aa3844ee6a7d130ec4fe2910fd5e93647a9d82dd40cb",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "7a71d1c14e4c793ceb8bbbf095dfeab465e48ee5bf484b4e29b71debc20d494c"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "33e8074472e1a8c9c05199a7726fc9c5d0f1ef6d66449a7f8ededf402bcff714",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "d9cd2e864dd019aa78a852f4d6763a45aaad5d2e0e858e1fc586ebf2768d6b0c"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "40d0ee95582d99f7521b9faa0c6b22d9a4e4553cc1e8af5a8d0b9a866ca11df0",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "48fe9f914d6a3549179ed2b7bd88572cf8bb24d2b7e81cd6de9b9c1352012f6c"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "a3cf748dd4030071277b90741518d74ffd5135af6377f06d40ab8bc08313c447",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "d2d82c344a9fa039b972bd10d9508e700fdb0ec102a5bdeca5d9e845913f42c8"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "a464b9c351440ee73068a355251ad50375938550118dc744eeb7a3ba4b6b4c8d"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "eb622e6a84332809a78a198612b88da06ecaacc2d6d6df8ddadefa58691e9200",
+     "path": "evals/work/calib-s1/S1-T4drop/migration/runs/r20261013T235606Z-db979689/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "a25b69274ac3e92cbb318a7b253306c15d8cfeb1597f85789ccfe1686ea62853"
+    }
+   },
+   "patch": "evals/mutants/S1-T4drop.patch",
+   "patch_sha256": "0ca91618c1ce104d3b8433cdf87f6656735f44ee25bf7faf2bd34bbd306c80af",
+   "role": "mutant",
+   "run_id": "r20261013T235606Z-db979689",
+   "trap": "T4",
+   "wall_time_s": 8.289
+  },
+  "S1-T5": {
+   "code_hash": "sha256:0edc95b043abfa5353edfe766ac2c08358a704c482fd4446def1461c6b906910",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "6b23c807e9992741da1bfcd4726e5859b26cb4cecf17896efb667508078bca64",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "9851e862e6aec08464e1f2cba21bd3f939d4be32a1408a308942c27da0af2f00"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "bb499558aa0a78d564e4c9b9323e03f9d7a9232e8e61e6d390f7e1a344260bbf",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "448ba5e858cd91aa7c5b46983febc50d952edaa3fa5efb176e62b70f19d849c0"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "98b4b79e6abbc0cde985494e0b70f34c0c1a43a3fecff5af9d8e9e0bb3b5274f",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "fe021e28027f3716782d8fb4c96f60ef0a007fa3d19db1e5d41bb19d3ef1211a"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "75d1898c9ff9841ef2a03bf427eb0a22f02631a78258cd246791c6b6e14ebed0",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "8ede7e5042f31c5c70310b4bc8bdd2fc7709600f132911fa7c081f0f9c4d02bd"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "aa02bc490f9b969b09ba7a9751255bfffe58889b31acd3ac7440775157ef3a0b",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "497e2f6ce9ee4587bf4fa4e8c1e8c4cb1e1e3b2800326d815e097ef07bac01a4"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "386922be07f9ca6f3d012f3916d4dbb8faafa40e19c7e9974c09c607ec4fe6b1"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "02257fa78d607afc3f785da6514c64baf21835d66d67c847e826bfe332e99a14",
+     "path": "evals/work/calib-s1/S1-T5/migration/runs/r20261013T235627Z-0edc95b0/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "eb6c1392c7d0ba10ad3df6b25546b0e2b67f08b8a38cda62714e9d39a76ff942"
+    }
+   },
+   "patch": "evals/mutants/S1-T5.patch",
+   "patch_sha256": "362183cd8993cae540d437a5b142e860e207f500a6eca340ec033fc4b99ae023",
+   "role": "mutant",
+   "run_id": "r20261013T235627Z-0edc95b0",
+   "trap": "T5",
+   "wall_time_s": 8.244
+  },
+  "T3alt_quad8": {
+   "code_hash": "sha256:7eb15a615fad1b3ebc8f2dffb807e7ffaeb80ced355453615d2110a91277a85d",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "47b7b3329073cfe72996cff1ea5cf2bb7c3354bcb6bee5fc958b925b9d107137",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "f7f255b5a4a850e2681c2249ce1cf65da8d61719262c4f571c81de9bae430c6e"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "7a58a760a0d53bbabf9956e8804d9b38f63f4591d61bee75850ba45290224a17",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "90bb660ad43eeaacf0e8c16d7293b7c9e54e0b9672d6f381e4551071453a7940"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "6a2a8188cf22305c7dcb62d84a6d7ab07d9b9a993dc584af4a7fe9f68c1b20ed",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "3d018af18175d55bb6857efc61bb4c245b97a4f1d3e3494ef809d817a76dbcbd"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "a6782631750ac74234f320a28ec50a9d21d73175b494947ca0b90f516de73d52",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "f9d8213dee47dac80fe233d65da150346382aaeaec1349d7d2412771e08a6f25"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "620743fc904eadc5a54e13f8d9af94a2d793a4ab9209aa0f49701feb9633b69b",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "b9a095a8bc2490b35051a751e9d7d45f2eeef1665f0ab2903ead1ce2e93d0c5e"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "37752608fb2502ed734558fa9c376e77fc5c981c983a6a4192f8928fe85226a1"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "2a647eec346d46de188cbe31ef1e33370911c84975a54c60ac192fa68f827bf7",
+     "path": "evals/work/calib-s1/T3alt_quad8/migration/runs/r20261013T235648Z-7eb15a61/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "1d32c4e8611763a46c06e8944710b4ae7ee4e300b160ea0b5b64814564e3d55f"
+    }
+   },
+   "patch": "evals/calib/s1/alt/T3alt_quad8.patch",
+   "patch_sha256": "c32f2d168939d173b55edea0e55028d767dda7d01985eab996ac6352f357d33e",
+   "role": "alt",
+   "run_id": "r20261013T235648Z-7eb15a61",
+   "trap": "T3",
+   "wall_time_s": 8.131
+  },
+  "T4alt_lookup": {
+   "code_hash": "sha256:eef1c9f372aedb525d67f4770ec3818d8577aeee61099906a5289cdcd9a9460b",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "039d6485bba69b50b4d3047797f0bcd110f660740d808390b890643d1478403f",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "3e1b4198d5b3983c99edcffd486458c2c21a5b5efc925829cb6d7cd776ab998c"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "6e82bd7c702c1cca6f09aa3844ee6a7d130ec4fe2910fd5e93647a9d82dd40cb",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "7a71d1c14e4c793ceb8bbbf095dfeab465e48ee5bf484b4e29b71debc20d494c"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "7c901e2bd3def467e7ed5bea3356c99340b67a2b31f11d66048e9d43c1d85e23",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "6e631f9ff6b91780ac99b5481209b3ffac83b2bd67da8675f791314c95e64ede"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "bdcf6c378b11f4997aff45b3056c79084e6c507edb57e4be77f334652c009e21",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "7930ff823a7f6877f2da0d677e1b7fc01c491a14a1a1c592424d642e52aac269"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "f68e3a25df7586716d1b2c17a0c310699c5c3357498fd3fa3817cb7e40cfce4f",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "826b90fac005cda4a5e1697d4421442cbe541e5d3c5635ae4201ad4cf9125f81"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "eefceffe6cb1dc552174e601270a80cc18477442a8319be82626fd4ecbf70b96"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "8699be73a30b4470bb1da5ce14f56a9c7ae951e788f7c5146a9eeb9d8f89314c",
+     "path": "evals/work/calib-s1/T4alt_lookup/migration/runs/r20261013T235709Z-eef1c9f3/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "bb33a407e2db706011d840507af1a620f57354655ea7cd3fd201494922edf8b0"
+    }
+   },
+   "patch": "evals/calib/s1/alt/T4alt_lookup.patch",
+   "patch_sha256": "43785781c0e1c1571a68a37597f7e9c8dfd7a0901ff390cecd5ff72fcac177a8",
+   "role": "alt",
+   "run_id": "r20261013T235709Z-eef1c9f3",
+   "trap": "T4",
+   "wall_time_s": 8.199
+  },
+  "T5alt_aeqd": {
+   "code_hash": "sha256:1c8d2d2ca92ace01a6ca4b28d94987d0fef4700a11f94a029f23b2e3a8430fd1",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "27d0e2e17f90bfb6b4cd3a74b182253a7f56107de7be066d904a54a8056299a4",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "7fa90e0d65028be4f5b4235ef9b80936501d10daaf1b76d6bee933aff299dff1"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "be41bc4cec87bd7b540b097ae230d01efbe8a4daa60eda8b5cad33245c2d4492",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "bf21f8003d0f42ff57c27e953023e8fd6933bbe5b0b4fadb2af4b41e00ebcd6d"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "9f5dacc8c7524d9b6f979d0a4f0cee44043de101b408e074d4057981c94f6612",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "bf0d8e6754225b92dca5f27739efee641b117bb7a8464d0bbe88f215301453ea"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "61946f1a4917a27b9683487a2b6798811c1cf47c2ed68fd2cef9369f211ebfd4",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "e1f9062ff222222d36cc83ad11ed57d7f34e8463e710814f5c01ac8089c7181f"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "08e71c1cdd28670518094aa29ec705c164c6b92cd7740fada7e5303c53af4264",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "ed34dabde37ec568373f5b942272c8352323b5dbe4972004c4b2845e3662f6d0"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "eefceffe6cb1dc552174e601270a80cc18477442a8319be82626fd4ecbf70b96"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "491e16d3fb21dd9885501774b6243fd54265dcfff27cbf99d7b04699e47443e4",
+     "path": "evals/work/calib-s1/T5alt_aeqd/migration/runs/r20261013T235729Z-1c8d2d2c/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "268dd4ff773c3cf0599c4d84a15970e789a6683d9f71c4de3edc4551758256a4"
+    }
+   },
+   "patch": "evals/calib/s1/alt/T5alt_aeqd.patch",
+   "patch_sha256": "c86eef7d708d0ce21ed30c94fa6ed5404e65aaf26943c4d406a4ab16d76dd646",
+   "role": "alt",
+   "run_id": "r20261013T235729Z-1c8d2d2c",
+   "trap": "T5",
+   "wall_time_s": 8.444
+  },
+  "T5alt_utm": {
+   "code_hash": "sha256:74aa394fff7618a071bfd42fc652d27cdc8384c95343815c3a29ea28cffaca4a",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "632786852702402047df86fcce6ad288e38b07aee307b4ac8b24533db6f45975",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "94063d975f73893121916acd8600471383454842765823c034f9e144d7eb4e72"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "af1053ef667815bb228443e707a926eeeefe1ccd2ec203e916e0c168fa941240",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "ee6294738ca6e8667bab98a0b389a6d7669a0dd102f205dc62cca3698c14f99f"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "372f34a7bfa4aaef693d6c0f3dccd96c8ada81ea01fc80814569de7446bfbb2c",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "13d4b0e1d5699ad62433a89353809c5da4da6a20e15f53fc9a1dad75cac49dbf"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "433457d6d3c6169677914c6be8f00f06a56f11716c05653ba919fc39ed511948",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "463e03f2b4fade3e2d954ae9ae09860a19ec819e3662e5f43edd6f843c7f5190"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "d46c55674213e033702e4ad23c341c99e6dbf9ac414673ab14e7b3d29a8a97d6",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "c7013affdfd1d179bc2a5c6fc6ef1de3760104c760e910d08adcb22be72527e1"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "ee7795eceb40ba0955e901ca36aef05906be695e6cd9bd3d37c001ae8757d76f"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "f4cea29493cdee8705969325d5f09c363997d5856a28b5b855c63a7285bee2ad",
+     "path": "evals/work/calib-s1/T5alt_utm/migration/runs/r20261013T235750Z-74aa394f/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "4b6a9b2f8ccfd2957fe7af58333d5fd0c79e662db3f80c9675b01de64cb3c031"
+    }
+   },
+   "patch": "evals/calib/s1/alt/T5alt_utm.patch",
+   "patch_sha256": "f393cacf57376dcb1e5c9c60b2410f72358b1b095d7a0acebe74174efe209a21",
+   "role": "alt",
+   "run_id": "r20261013T235750Z-74aa394f",
+   "trap": "T5",
+   "wall_time_s": 8.263
+  },
+  "W_area_3035": {
+   "code_hash": "sha256:c5d11974807bafd16626455068e0d62f2623c63f7423a4f8079abb462eed68cb",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "039d6485bba69b50b4d3047797f0bcd110f660740d808390b890643d1478403f",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "3e1b4198d5b3983c99edcffd486458c2c21a5b5efc925829cb6d7cd776ab998c"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "6e82bd7c702c1cca6f09aa3844ee6a7d130ec4fe2910fd5e93647a9d82dd40cb",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "7a71d1c14e4c793ceb8bbbf095dfeab465e48ee5bf484b4e29b71debc20d494c"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "7c901e2bd3def467e7ed5bea3356c99340b67a2b31f11d66048e9d43c1d85e23",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "6e631f9ff6b91780ac99b5481209b3ffac83b2bd67da8675f791314c95e64ede"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "bdcf6c378b11f4997aff45b3056c79084e6c507edb57e4be77f334652c009e21",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "7930ff823a7f6877f2da0d677e1b7fc01c491a14a1a1c592424d642e52aac269"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "f68e3a25df7586716d1b2c17a0c310699c5c3357498fd3fa3817cb7e40cfce4f",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "826b90fac005cda4a5e1697d4421442cbe541e5d3c5635ae4201ad4cf9125f81"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "0646ebee357a5f4eb422171116a19d6511e37347e2322feec116c87e765051f8"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "61311b4b9f3dc3807ecd0f36f270acc76621b08a00509f1607d04938da45831d",
+     "path": "evals/work/calib-s1/W_area_3035/migration/runs/r20261013T235811Z-c5d11974/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "48f1382b70537995f322f40a79a631998b2b6ee6be7749461b4c9685bdb20f8c"
+    }
+   },
+   "patch": "evals/calib/s1/probe/W_area_3035.patch",
+   "patch_sha256": "350c82b68f810d7d266f2af4d8762f3e32ebe28db7d3fe90f01031a3163d4649",
+   "role": "probe",
+   "run_id": "r20261013T235811Z-c5d11974",
+   "trap": "W-area",
+   "wall_time_s": 8.542
+  },
+  "clean": {
+   "code_hash": "sha256:9d34b933300a9aff63126644c88d592fd2e38d354cdf10f24a2ef1a090691963",
+   "outputs": {
+    "ds.01_communes_2169": {
+     "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s01_prepare_inputs/01_communes_2169.gpkg",
+     "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+    },
+    "ds.01_landuse_2169": {
+     "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s01_prepare_inputs/01_landuse_2169.gpkg",
+     "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+    },
+    "ds.02_buf_industrial": {
+     "content_sha256": "039d6485bba69b50b4d3047797f0bcd110f660740d808390b890643d1478403f",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s02_buffer_landuse/02_buf_industrial.gpkg",
+     "sha256": "3e1b4198d5b3983c99edcffd486458c2c21a5b5efc925829cb6d7cd776ab998c"
+    },
+    "ds.02_buf_other": {
+     "content_sha256": "6e82bd7c702c1cca6f09aa3844ee6a7d130ec4fe2910fd5e93647a9d82dd40cb",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s02_buffer_landuse/02_buf_other.gpkg",
+     "sha256": "7a71d1c14e4c793ceb8bbbf095dfeab465e48ee5bf484b4e29b71debc20d494c"
+    },
+    "ds.02_buffers": {
+     "content_sha256": "7c901e2bd3def467e7ed5bea3356c99340b67a2b31f11d66048e9d43c1d85e23",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s02_buffer_landuse/02_buffers.gpkg",
+     "sha256": "6e631f9ff6b91780ac99b5481209b3ffac83b2bd67da8675f791314c95e64ede"
+    },
+    "ds.03_buf_by_commune": {
+     "content_sha256": "bdcf6c378b11f4997aff45b3056c79084e6c507edb57e4be77f334652c009e21",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s03_clip_dissolve/03_buf_by_commune.gpkg",
+     "sha256": "7930ff823a7f6877f2da0d677e1b7fc01c491a14a1a1c592424d642e52aac269"
+    },
+    "ds.03_buf_x_commune": {
+     "content_sha256": "f68e3a25df7586716d1b2c17a0c310699c5c3357498fd3fa3817cb7e40cfce4f",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s03_clip_dissolve/03_buf_x_commune.gpkg",
+     "sha256": "826b90fac005cda4a5e1697d4421442cbe541e5d3c5635ae4201ad4cf9125f81"
+    },
+    "ds.buffer_area_by_commune_csv": {
+     "content_sha256": null,
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s04_area_per_commune/buffer_area_by_commune.csv",
+     "sha256": "eefceffe6cb1dc552174e601270a80cc18477442a8319be82626fd4ecbf70b96"
+    },
+    "ds.buffer_area_by_commune_gpkg": {
+     "content_sha256": "8699be73a30b4470bb1da5ce14f56a9c7ae951e788f7c5146a9eeb9d8f89314c",
+     "path": "evals/work/calib-s1/clean/migration/runs/r20261013T235832Z-9d34b933/outputs/s04_area_per_commune/buffer_area_by_commune.gpkg",
+     "sha256": "bb33a407e2db706011d840507af1a620f57354655ea7cd3fd201494922edf8b0"
+    }
+   },
+   "patch": null,
+   "patch_sha256": null,
+   "role": "clean",
+   "run_id": "r20261013T235832Z-9d34b933",
+   "trap": null,
+   "wall_time_s": 8.398
+  }
+ }
+}

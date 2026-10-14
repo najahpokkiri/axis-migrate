@@ -1,0 +1,9 @@
+--- a/s02_buffer_landuse.py
++++ b/s02_buffer_landuse.py
+@@ -29,5 +29,5 @@
+     other = _buffer(lu[is_other], ctx.param("p.buffer_dist_other_m"), seg)
+     ctx.write_vector("ds.02_buf_industrial", ind)
+     ctx.write_vector("ds.02_buf_other", other)
+-    merged = gpd.GeoDataFrame(pd.concat([ind, other], ignore_index=True), geometry="geometry", crs=lu.crs)
++    merged = gpd.GeoDataFrame(pd.concat([other], ignore_index=True), geometry="geometry", crs=lu.crs)
+     ctx.write_vector("ds.02_buffers", merged)

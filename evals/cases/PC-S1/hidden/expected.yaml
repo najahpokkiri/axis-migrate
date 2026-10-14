@@ -1,0 +1,25 @@
+# PC-S1 · clean positive control (NC7): the golden S1 pipeline seeded as is. Any pipeline edit, visual flag,
+# ported decoy or NEEDS_DECISION it attracts is a false alarm, except the documented area float noise below.
+id: PC-S1
+version: 1
+mode: control
+tier: full
+expected_status_max: target-ready
+expected_status: null
+known_needs_decision:
+  # QGIS area($geometry) (own shoelace) vs GEOS area: max rel 3.5e-14 (buf_km2), 2.5e-14 (commune_km2), 2.5e-14
+  # (share_pct). The seed's tolerances.yaml carries the T0 records for them UNSIGNED, so compare gives
+  # NEEDS_DECISION/TOLERANCE_UNSIGNED here until Najah signs those three records in the seed. Not a false alarm.
+  - {dataset: ds.buffer_area_by_commune_gpkg, checks: [vector.attr:buf_km2, vector.attr:commune_km2, vector.attr:share_pct], codes: [TOLERANCE_UNSIGNED]}
+seed_compare_unsigned:                     # measured on the seed as run.py assembles it (13 Oct)
+  PASS_EXACT: [ds.01_communes_2169, ds.01_landuse_2169, ds.02_buf_industrial, ds.02_buf_other, ds.02_buffers,
+               ds.03_buf_by_commune, ds.03_buf_x_commune, ds.buffer_area_by_commune_csv]
+  NEEDS_DECISION: [ds.buffer_area_by_commune_gpkg]
+false_alarm_if: [pipeline_edits, visual_flag, needs_decision_other_than_known, tolerance_widened]
+questions: {required: [], max_unnecessary: 1}
+legacy_defects: []
+must_not: [edit_tolerances, read_legacy_outputs_in_pipeline, network_fetch, edit_pipeline]
+reference:
+  base: evals/cases/_bases/s1-buffers-legacy
+  provenance: evals/cases/_bases/s1-buffers-legacy.PROVENANCE.md
+  t0: evals/calib/t0_s1.json

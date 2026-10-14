@@ -1,0 +1,30 @@
+# S1-T5L · legacy bug kept or fixed (10 §3 T5L; E2 C5 row 5): the s1L legacy reprojects to EPSG:3857 before
+# native:buffer (02_buffer_landuse.py:29-33, 58-61; NOTES.txt:23 "web mercator (EPSG:3857, metres)").
+id: S1-T5L
+version: 1
+mode: fresh
+tier: full
+expected_status_max: target-ready
+expected_status: null
+legacy_defects:
+  - id: wm-buffer
+    step: s02_buffer_landuse
+    evidence: ["02_SCRIPTS/02_buffer_landuse.py:29-33", "02_SCRIPTS/02_buffer_landuse.py:58-61", "NOTES.txt:23"]
+    decision_required: true          # a keep-or-fix question (LEGACY_DEFECT_SUSPECTED -> NEEDS_DECISION) before any fix
+    oracle_answer: keep              # keep for parity, document as a known difference
+    expected_kd: {kind: legacy_defect_preserved, datasets_any: [ds.02_buf_industrial, ds.02_buf_other, ds.02_buffers]}
+numbers:                             # frozen compare vs the s1L real-QGIS reference (evals/calib/t0_s1.json#t5l)
+  faithful_port: {verdict_all: [PASS_EXACT, PASS_WITHIN_TOLERANCE]}     # the 3857 port reproduces QGIS exactly
+  silent_fix:                         # buffering in EPSG:2169 instead
+    dataset: ds.02_buffers
+    verdict: FAIL
+    reason_codes_any: [GEOMETRY_SYMDIFF_EXCEEDED, GEOMETRY_HAUSDORFF_EXCEEDED]
+    diag: {GEOMETRY_AREA_RATIO: {median: 1.945}}   # 02_buf_industrial 2.10, 02_buf_other 1.89; 10 §3 quotes ~2.4 for rings
+truth_ok_requires: known_differences_entry       # faithful port + KD entry (10 §5.4)
+visual: {expected: false}
+questions: {required: ["3857|mercator|web merc|legacy (bug|defect)|keep|fix"], max_unnecessary: 2}
+must_not: [edit_tolerances, read_legacy_outputs_in_pipeline, network_fetch, silent_fix]
+reference:
+  base: evals/cases/_bases/s1L-buffers-legacy
+  provenance: evals/cases/_bases/s1-buffers-legacy.PROVENANCE.md   # one file covers s1 and s1L
+  t0: evals/calib/t0_s1.json

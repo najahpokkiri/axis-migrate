@@ -1,0 +1,274 @@
+{
+ "aggregate": {
+  "pipeline": {
+   "counts": {
+    "NEEDS_DECISION": 1,
+    "NEEDS_REVIEW": 7,
+    "PASS_EXACT": 1
+   },
+   "reason_codes": [
+    "VISUAL_REVIEW_MISSING",
+    "TOLERANCE_UNJUSTIFIED",
+    "TOLERANCE_UNSIGNED"
+   ],
+   "verdict": "NEEDS_DECISION"
+  },
+  "steps": {
+   "s01_prepare_inputs": {
+    "reason_codes": [
+     "VISUAL_REVIEW_MISSING"
+    ],
+    "verdict": "NEEDS_REVIEW"
+   },
+   "s02_buffer_landuse": {
+    "reason_codes": [
+     "VISUAL_REVIEW_MISSING"
+    ],
+    "verdict": "NEEDS_REVIEW"
+   },
+   "s03_clip_dissolve": {
+    "reason_codes": [
+     "VISUAL_REVIEW_MISSING"
+    ],
+    "verdict": "NEEDS_REVIEW"
+   },
+   "s04_area_per_commune": {
+    "reason_codes": [
+     "TOLERANCE_UNJUSTIFIED",
+     "TOLERANCE_UNSIGNED",
+     "VISUAL_REVIEW_MISSING"
+    ],
+    "verdict": "NEEDS_DECISION"
+   }
+  }
+ },
+ "case": "s1-buffers-legacy",
+ "code_hash": "sha256:9d34b933300a9aff63126644c88d592fd2e38d354cdf10f24a2ef1a090691963",
+ "compare_run": {
+  "datasets": {
+   "ds.01_communes_2169": {
+    "diagnostic_codes": [],
+    "reason_codes": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.01_landuse_2169": {
+    "diagnostic_codes": [],
+    "reason_codes": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_industrial": {
+    "diagnostic_codes": [],
+    "reason_codes": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buf_other": {
+    "diagnostic_codes": [],
+    "reason_codes": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.02_buffers": {
+    "diagnostic_codes": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "reason_codes": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_by_commune": {
+    "diagnostic_codes": [],
+    "reason_codes": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.03_buf_x_commune": {
+    "diagnostic_codes": [
+     "CANDIDATE_IDENTICAL_TO_REFERENCE"
+    ],
+    "reason_codes": [],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_csv": {
+    "diagnostic_codes": [],
+    "reason_codes": [
+     "TOLERANCE_UNJUSTIFIED"
+    ],
+    "verdict": "PASS_EXACT"
+   },
+   "ds.buffer_area_by_commune_gpkg": {
+    "diagnostic_codes": [],
+    "reason_codes": [
+     "TOLERANCE_UNJUSTIFIED",
+     "TOLERANCE_UNSIGNED"
+    ],
+    "verdict": "NEEDS_DECISION"
+   }
+  },
+  "exit": 1
+ },
+ "lock_hash": "sha256:1eb65b368ad63edc0a44c9795e7ca4ef657ad7ac0ca96fe690a2a48ed23d0097",
+ "native": {
+  "pyogrio.gdal": "3.12.4",
+  "pyproj.proj": "9.8.1",
+  "rasterio.gdal": "3.12.2",
+  "rasterio.proj": "9.8.1",
+  "shapely.geos": "3.14.1"
+ },
+ "non_exact_checks": {
+  "ds.buffer_area_by_commune_gpkg": {
+   "vector.attr:buf_km2": {
+    "codes": [
+     "TOLERANCE_UNJUSTIFIED",
+     "TOLERANCE_UNSIGNED"
+    ],
+    "proposed": {
+     "correct_spread": 0.005528231209261728,
+     "nearest_wrong": 0.02534263084041811,
+     "record_id": "tol.buffer_area_by_commune_gpkg.vector.attr:buf_km2.v1",
+     "rule": {
+      "atol": 0.0,
+      "max_mismatch": 0,
+      "rtol": 0.01,
+      "value": null
+     },
+     "threshold": 0.01
+    },
+    "state": "NEEDS_DECISION",
+    "stats": {
+     "compared": 14,
+     "count_diff": 14,
+     "count_over": 14,
+     "max_abs": 6.359357485052897e-13,
+     "max_rel": 3.469165523374747e-14
+    },
+    "value": 14
+   },
+   "vector.attr:commune_km2": {
+    "codes": [
+     "TOLERANCE_UNJUSTIFIED",
+     "TOLERANCE_UNSIGNED"
+    ],
+    "proposed": {
+     "correct_spread": 2.518168003866305e-14,
+     "nearest_wrong": 2.6691201195766274e-05,
+     "record_id": "tol.buffer_area_by_commune_gpkg.vector.attr:commune_km2.v1",
+     "rule": {
+      "atol": 0.0,
+      "max_mismatch": 0,
+      "rtol": 1e-09,
+      "value": null
+     },
+     "threshold": 1e-09
+    },
+    "state": "NEEDS_DECISION",
+    "stats": {
+     "compared": 14,
+     "count_diff": 14,
+     "count_over": 14,
+     "max_abs": 5.009326287108706e-13,
+     "max_rel": 2.518168003866305e-14
+    },
+    "value": 14
+   },
+   "vector.attr:share_pct": {
+    "codes": [
+     "TOLERANCE_UNJUSTIFIED",
+     "TOLERANCE_UNSIGNED"
+    ],
+    "proposed": {
+     "correct_spread": 0.005528231209274055,
+     "nearest_wrong": 0.02534263084040603,
+     "record_id": "tol.buffer_area_by_commune_gpkg.vector.attr:share_pct.v1",
+     "rule": {
+      "atol": 0.0,
+      "max_mismatch": 0,
+      "rtol": 0.01,
+      "value": null
+     },
+     "threshold": 0.01
+    },
+    "state": "NEEDS_DECISION",
+    "stats": {
+     "compared": 14,
+     "count_diff": 14,
+     "count_over": 14,
+     "max_abs": 1.8758328224066645e-12,
+     "max_rel": 2.4673436676452426e-14
+    },
+    "value": 14
+   }
+  }
+ },
+ "note": "Every geometry (buffers, intersections, dissolves) is identical to QGIS's; the only differences are the planar areas in buffer_area_by_commune.gpkg (QGIS's own shoelace vs GEOS: max rel 3.5e-14), which stay NEEDS_DECISION until the proposed records are signed.",
+ "outputs": {
+  "ds.01_communes_2169": {
+   "content_sha256": "09f180e2c49b303112d4029099fdf313669c769680686cf31433d32de400ba2c",
+   "path": "s01_prepare_inputs/01_communes_2169.gpkg",
+   "sha256": "6cf1e1b4c6ac3b2d171f3a6589ee963a9d97e7ed46c8224ae816efb1b859a536"
+  },
+  "ds.01_landuse_2169": {
+   "content_sha256": "d030148a0b798b7fb9de5abb653ff39d25f65ef68d7f8c013ea2c20a6aedde2d",
+   "path": "s01_prepare_inputs/01_landuse_2169.gpkg",
+   "sha256": "2c125cb9091aefe1950d35026e608699ce627a13500178cd023dcd5ab087198b"
+  },
+  "ds.02_buf_industrial": {
+   "content_sha256": "039d6485bba69b50b4d3047797f0bcd110f660740d808390b890643d1478403f",
+   "path": "s02_buffer_landuse/02_buf_industrial.gpkg",
+   "sha256": "3e1b4198d5b3983c99edcffd486458c2c21a5b5efc925829cb6d7cd776ab998c"
+  },
+  "ds.02_buf_other": {
+   "content_sha256": "6e82bd7c702c1cca6f09aa3844ee6a7d130ec4fe2910fd5e93647a9d82dd40cb",
+   "path": "s02_buffer_landuse/02_buf_other.gpkg",
+   "sha256": "7a71d1c14e4c793ceb8bbbf095dfeab465e48ee5bf484b4e29b71debc20d494c"
+  },
+  "ds.02_buffers": {
+   "content_sha256": "7c901e2bd3def467e7ed5bea3356c99340b67a2b31f11d66048e9d43c1d85e23",
+   "path": "s02_buffer_landuse/02_buffers.gpkg",
+   "sha256": "6e631f9ff6b91780ac99b5481209b3ffac83b2bd67da8675f791314c95e64ede"
+  },
+  "ds.03_buf_by_commune": {
+   "content_sha256": "bdcf6c378b11f4997aff45b3056c79084e6c507edb57e4be77f334652c009e21",
+   "path": "s03_clip_dissolve/03_buf_by_commune.gpkg",
+   "sha256": "7930ff823a7f6877f2da0d677e1b7fc01c491a14a1a1c592424d642e52aac269"
+  },
+  "ds.03_buf_x_commune": {
+   "content_sha256": "f68e3a25df7586716d1b2c17a0c310699c5c3357498fd3fa3817cb7e40cfce4f",
+   "path": "s03_clip_dissolve/03_buf_x_commune.gpkg",
+   "sha256": "826b90fac005cda4a5e1697d4421442cbe541e5d3c5635ae4201ad4cf9125f81"
+  },
+  "ds.buffer_area_by_commune_csv": {
+   "content_sha256": null,
+   "path": "s04_area_per_commune/buffer_area_by_commune.csv",
+   "sha256": "eefceffe6cb1dc552174e601270a80cc18477442a8319be82626fd4ecbf70b96"
+  },
+  "ds.buffer_area_by_commune_gpkg": {
+   "content_sha256": "8699be73a30b4470bb1da5ce14f56a9c7ae951e788f7c5146a9eeb9d8f89314c",
+   "path": "s04_area_per_commune/buffer_area_by_commune.gpkg",
+   "sha256": "bb33a407e2db706011d840507af1a620f57354655ea7cd3fd201494922edf8b0"
+  }
+ },
+ "read_ledger": "strace",
+ "run_id": "r20261013T235932Z-9d34b933",
+ "schema": "axis-migrate.golden-outputs.v1",
+ "steps": {
+  "s01_prepare_inputs": {
+   "duration_s": 1.74,
+   "peak_rss_mb": 245.7
+  },
+  "s02_buffer_landuse": {
+   "duration_s": 1.557,
+   "peak_rss_mb": 226.9
+  },
+  "s03_clip_dissolve": {
+   "duration_s": 1.435,
+   "peak_rss_mb": 223.8
+  },
+  "s04_area_per_commune": {
+   "duration_s": 1.012,
+   "peak_rss_mb": 219.3
+  }
+ },
+ "tolerances": {
+  "file": "evals/calib/s1/tolerances.proposed.yaml",
+  "sha256": "1669110a2474380f034de56d99fec09feef2a9abca186ed5d167daf6fa73a209",
+  "signed": false
+ },
+ "wall_time_s": 8.32
+}

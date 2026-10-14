@@ -1,0 +1,14 @@
+--- a/s02_buffer_landuse.py
++++ b/s02_buffer_landuse.py
+@@ -25,8 +25,9 @@
+     seg = ctx.param("p.buffer_segments")
+     is_ind = lu["landuse"] == cls
+     is_other = lu["landuse"].notna() & (lu["landuse"] != cls)     # QGIS: NULL <> 'x' is not true
+-    ind = _buffer(lu[is_ind], ctx.param("p.buffer_dist_industrial_m"), seg)
+-    other = _buffer(lu[is_other], ctx.param("p.buffer_dist_other_m"), seg)
++    dist = ctx.param("p.buffer_dist_other_m")
++    ind = _buffer(lu[is_ind], dist, seg)
++    other = _buffer(lu[is_other], dist, seg)
+     ctx.write_vector("ds.02_buf_industrial", ind)
+     ctx.write_vector("ds.02_buf_other", other)
+     merged = gpd.GeoDataFrame(pd.concat([ind, other], ignore_index=True), geometry="geometry", crs=lu.crs)

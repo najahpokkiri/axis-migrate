@@ -1,0 +1,415 @@
+# PROPOSED S1 tolerance records, measured by evals/calib/run_t0.py (T0, no model).
+# Every record is UNSIGNED (agreed_by: null). Only Najah signs, by editing agreed_by/agreed_at himself.
+# Checks not listed stay exact (default).
+version: 1
+records:
+- id: tol.02_buf_industrial.vector.hausdorff_m.v1
+  dataset: ds.02_buf_industrial
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 20.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 13.077969853921557
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buf_industrial
+  nearest_wrong:
+    value: 71.69438120488006
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buf_industrial
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buf_industrial.vector.symdiff_ratio.v1
+  dataset: ds.02_buf_industrial
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.02
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.016357350074348194
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buf_industrial
+  nearest_wrong:
+    value: 0.04673698055422131
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buf_industrial
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buf_other.vector.hausdorff_m.v1
+  dataset: ds.02_buf_other
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 50.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 15.746421410016028
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buf_other
+  nearest_wrong:
+    value: 71.22439735053241
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buf_other
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buf_other.vector.symdiff_ratio.v1
+  dataset: ds.02_buf_other
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.05
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.014294051630243618
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buf_other
+  nearest_wrong:
+    value: 0.10150662038614847
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buf_other
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buffers.vector.hausdorff_m.v1
+  dataset: ds.02_buffers
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 50.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 15.746421410016028
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buffers
+  nearest_wrong:
+    value: 71.69438120488006
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buffers
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.02_buffers.vector.symdiff_ratio.v1
+  dataset: ds.02_buffers
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.05
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.016357350074348194
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buffers
+  nearest_wrong:
+    value: 0.10150662038614847
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buffers
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.03_buf_by_commune.vector.hausdorff_m.v1
+  dataset: ds.03_buf_by_commune
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 500.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 396.8368920910507
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.03_buf_by_commune
+  nearest_wrong:
+    value: 1131.6818580751926
+    variant: S1-T5
+    how: 'min over the mutants this check separates; masked here (<= correct_spread):
+      S1-T3'
+    evidence: evals/calib/t0_s1.json#measure.S1-T5.ds.03_buf_by_commune
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.03_buf_by_commune.vector.symdiff_ratio.v1
+  dataset: ds.03_buf_by_commune
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005541554968410287
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.03_buf_by_commune
+  nearest_wrong:
+    value: 0.029734545006512066
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.03_buf_by_commune
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.03_buf_x_commune.vector.hausdorff_m.v1
+  dataset: ds.03_buf_x_commune
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 100.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 44.58747412730675
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.03_buf_x_commune
+  nearest_wrong:
+    value: 282.41745365834504
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.03_buf_x_commune
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.buffer_area_by_commune_csv.table.attr:buf_km2.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.attr:buf_km2
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005530099541791775
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_csv
+  nearest_wrong:
+    value: 0.025280455048190893
+    variant: S1-T3
+    how: 'min over the mutants this check separates; masked here (<= correct_spread):
+      W_area_3035'
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_csv
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_csv.table.attr:share_pct.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.attr:share_pct
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.0064935064935064705
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_csv
+  nearest_wrong:
+    value: 0.025974025974025997
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_csv
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_csv.table.total:buf_km2.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.total:buf_km2
+  metric: abs+rel
+  rtol: 0.005
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.0031419156629023596
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_csv
+  nearest_wrong:
+    value: 0.008554927791672242
+    variant: S1-T3
+    how: 'min over the mutants this check separates; masked here (<= correct_spread):
+      W_area_3035'
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_csv
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_csv.table.total:share_pct.v1
+  dataset: ds.buffer_area_by_commune_csv
+  check: table.total:share_pct
+  metric: abs+rel
+  rtol: 0.005
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.003055588200728667
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_csv
+  nearest_wrong:
+    value: 0.008109060994241364
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_csv
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.attr:buf_km2.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.attr:buf_km2
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005528231209261728
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_gpkg
+  nearest_wrong:
+    value: 0.02534263084041811
+    variant: S1-T3
+    how: 'min over the mutants this check separates; masked here (<= correct_spread):
+      W_area_3035'
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_gpkg
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.attr:commune_km2.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.attr:commune_km2
+  metric: abs+rel
+  rtol: 1.0e-09
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 2.518168003866305e-14
+    variant: clean
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.clean.ds.buffer_area_by_commune_gpkg
+  nearest_wrong:
+    value: 2.6691201195766274e-05
+    variant: W_area_3035
+    how: 'min over the mutants this check separates; masked here (<= correct_spread):
+      S1-T3, S1-T4, S1-T4drop, S1-T5'
+    evidence: evals/calib/t0_s1.json#measure.W_area_3035.ds.buffer_area_by_commune_gpkg
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.attr:share_pct.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.attr:share_pct
+  metric: abs+rel
+  rtol: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005528231209274055
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_gpkg
+  nearest_wrong:
+    value: 0.02534263084040603
+    variant: S1-T3
+    how: 'min over the mutants this check separates; masked here (<= correct_spread):
+      W_area_3035'
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_gpkg
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+  atol: 0.0
+- id: tol.buffer_area_by_commune_gpkg.vector.hausdorff_m.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.hausdorff_m
+  metric: hausdorff_m
+  value: 500.0
+  max_mismatch: 0
+  units: m
+  basis: measured_spread
+  correct_spread:
+    value: 396.8368920910507
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_gpkg
+  nearest_wrong:
+    value: 1131.6818580751926
+    variant: S1-T5
+    how: 'min over the mutants this check separates; masked here (<= correct_spread):
+      S1-T3'
+    evidence: evals/calib/t0_s1.json#measure.S1-T5.ds.buffer_area_by_commune_gpkg
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.buffer_area_by_commune_gpkg.vector.symdiff_ratio.v1
+  dataset: ds.buffer_area_by_commune_gpkg
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 0.01
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 0.005541554968410287
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_gpkg
+  nearest_wrong:
+    value: 0.029734545006512066
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_gpkg
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null

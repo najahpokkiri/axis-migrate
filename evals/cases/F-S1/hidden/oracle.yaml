@@ -1,0 +1,8 @@
+# answer = regex matched against the option labels (evals/driver.py); unmatched -> sent as free text
+default: recommended
+rules:
+  - {match: "approve.*plan|plan.*approv", answer: "approve|recommended"}
+  - {match: "distance|industrial|500|200|branch", answer: "500|recommended"}
+  - {match: "commune|canton|study area", answer: "14 communes|Esch|recommended"}
+  - {match: "3857|mercator|crs", answer: "EPSG:2169|LUREF|recommended"}
+  - {match: "sign|tolerance|agreed_by", answer: "don.?t know"}

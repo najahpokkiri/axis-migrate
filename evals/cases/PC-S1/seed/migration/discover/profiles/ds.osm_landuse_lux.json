@@ -1,0 +1,116 @@
+{
+ "area_km2": 190.4693734217795,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  5.7231206,
+  49.4338608,
+  6.5164902,
+  50.185987
+ ],
+ "count": 3879,
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "name": "WGS 84",
+  "wkt": "GEOGCRS[\"WGS 84\",ENSEMBLE[\"World Geodetic System 1984 ensemble\",MEMBER[\"World Geodetic System 1984 (Transit)\"],MEMBER[\"World Geodetic System 1984 (G730)\"],MEMBER[\"World Geodetic System 1984 (G873)\"],MEMBER[\"World Geodetic System 1984 (G1150)\"],MEMBER[\"World Geodetic System 1984 (G1674)\"],MEMBER[\"World Geodetic System 1984 (G1762)\"],MEMBER[\"World Geodetic System 1984 (G2139)\"],MEMBER[\"World Geodetic System 1984 (G2296)\"],ELLIPSOID[\"WGS 84\",6378137,298.257223563,LENGTHUNIT[\"metre\",1]],ENSEMBLEACCURACY[2.0]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],CS[ellipsoidal,2],AXIS[\"geodetic latitude (Lat)\",north,ORDER[1],ANGLEUNIT[\"degree\",0.0174532925199433]],AXIS[\"geodetic longitude (Lon)\",east,ORDER[2],ANGLEUNIT[\"degree\",0.0174532925199433]],USAGE[SCOPE[\"Horizontal component of 3D system.\"],AREA[\"World.\"],BBOX[-90,-180,90,180]],ID[\"EPSG\",4326]]"
+ },
+ "dataset": "ds.osm_landuse_lux",
+ "declared_geometry": "MULTIPOLYGON",
+ "domains": {
+  "landuse": [
+   "commercial",
+   "industrial",
+   "residential",
+   "retail"
+  ],
+  "osm_id": [
+   "10546128",
+   "11371124",
+   "11950590",
+   "11970084",
+   "12088174",
+   "12100147",
+   "12268037",
+   "12273734",
+   "12406509",
+   "12674359",
+   "12843245",
+   "12979334",
+   "13130794",
+   "13286233",
+   "13457891",
+   "13565863",
+   "13902212",
+   "14011553",
+   "14085479",
+   "14472486",
+   "14598328",
+   "14701066",
+   "16302473",
+   "16707886",
+   "17699785",
+   "17786279",
+   "17786280",
+   "17792539",
+   "18332011",
+   "18786149",
+   "19021835",
+   "19970644",
+   "2046174",
+   "4292037",
+   "6357039",
+   "6390129",
+   "6955794",
+   "7094423",
+   "7155390",
+   "7485187",
+   "7610311",
+   "7733901",
+   "7787035",
+   "7814675",
+   "7869154",
+   "8824390",
+   "9460028",
+   "9630590",
+   "nan"
+  ]
+ },
+ "driver": "GPKG",
+ "empty_geom": 0,
+ "geom_types": {
+  "MultiPolygon": 3879
+ },
+ "geometry_multiset_sha256": "dfc1a71aa13088523ee19b949caff8971cafee819e059f3b61a41bbaabdc78b2",
+ "invalid": {
+  "count": 13,
+  "top_reasons": {
+   "Self-intersection": 13
+  }
+ },
+ "key_candidates": [],
+ "layer": "landuse",
+ "layers": [
+  "landuse"
+ ],
+ "legacy_path": "03_INPUT/osm_landuse_lux.gpkg",
+ "name": "landuse",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "osm_id"
+  },
+  {
+   "dtype": "str",
+   "name": "osm_way_id"
+  },
+  {
+   "dtype": "str",
+   "name": "landuse"
+  },
+  {
+   "dtype": "str",
+   "name": "name"
+  }
+ ]
+}

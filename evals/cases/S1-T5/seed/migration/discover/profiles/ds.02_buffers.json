@@ -1,0 +1,78 @@
+{
+ "area_km2": 337.60148066064676,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  54029.1773405264,
+  55262.20012936855,
+  85661.61215717881,
+  72972.72957780366
+ ],
+ "count": 444,
+ "crs": {
+  "epsg": 2169,
+  "is_geographic": false,
+  "name": "LUREF / Luxembourg TM",
+  "wkt": "PROJCRS[\"LUREF / Luxembourg TM\",BASEGEOGCRS[\"LUREF\",DATUM[\"Luxembourg Reference Frame\",ELLIPSOID[\"International 1924\",6378388,297,LENGTHUNIT[\"metre\",1]]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],ID[\"EPSG\",4181]],CONVERSION[\"Luxembourg TM\",METHOD[\"Transverse Mercator\",ID[\"EPSG\",9807]],PARAMETER[\"Latitude of natural origin\",49.8333333333333,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8801]],PARAMETER[\"Longitude of natural origin\",6.16666666666667,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8802]],PARAMETER[\"Scale factor at natural origin\",1,SCALEUNIT[\"unity\",1],ID[\"EPSG\",8805]],PARAMETER[\"False easting\",80000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8806]],PARAMETER[\"False northing\",100000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8807]]],CS[Cartesian,2],AXIS[\"northing (X)\",north,ORDER[1],LENGTHUNIT[\"metre\",1]],AXIS[\"easting (Y)\",east,ORDER[2],LENGTHUNIT[\"metre\",1]],USAGE[SCOPE[\"Engineering survey, topographic mapping.\"],AREA[\"Luxembourg.\"],BBOX[49.44,5.73,50.19,6.53]],ID[\"EPSG\",2169]]"
+ },
+ "dataset": "ds.02_buffers",
+ "declared_geometry": "MULTIPOLYGON",
+ "domains": {
+  "landuse": [
+   "commercial",
+   "industrial",
+   "residential",
+   "retail"
+  ],
+  "osm_id": [
+   "10546128",
+   "14011553",
+   "14701066",
+   "17786279",
+   "17786280",
+   "18786149",
+   "2046174",
+   "4292037",
+   "7485187",
+   "7787035",
+   "7869154",
+   "9460028",
+   "nan"
+  ]
+ },
+ "driver": "GPKG",
+ "empty_geom": 0,
+ "geom_types": {
+  "MultiPolygon": 444
+ },
+ "geometry_multiset_sha256": "ee20e881a54df66133686a17fb3c0988af787bdc14729270650aa74938dc021e",
+ "invalid": {
+  "count": 0,
+  "top_reasons": {}
+ },
+ "key_candidates": [],
+ "layer": "02_buffers",
+ "layers": [
+  "02_buffers"
+ ],
+ "legacy_path": "05_TEMP/02_buffers.gpkg",
+ "name": "02_buffers",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "osm_id"
+  },
+  {
+   "dtype": "str",
+   "name": "osm_way_id"
+  },
+  {
+   "dtype": "str",
+   "name": "landuse"
+  },
+  {
+   "dtype": "str",
+   "name": "name"
+  }
+ ]
+}
