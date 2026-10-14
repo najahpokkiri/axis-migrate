@@ -9,7 +9,8 @@ Evidence ids: `EP/MP/IN/AK/FH/HL-nn` = skill-candidates 01–07; `06/08/09/10 §
 ## 0 Executive summary
 
 axis-migrate is a Claude Code plugin: one agent, skills for GIS knowledge, scripts for every check, hooks for honest
-status. It turns a messy legacy GIS folder into a geopandas/rasterio pipeline and proves parity **per step**, against
+status. It turns a messy legacy desktop GIS project into a reproducible Python codebase on the target cloud (open-source GIS
+libraries inside) and proves parity **per step**, against
 the legacy run's own intermediates and finals, with deterministic checks and maps the agent must look at.
 
 The earlier Migration Engine failed in specific, recorded ways. Each design choice below answers one of them:

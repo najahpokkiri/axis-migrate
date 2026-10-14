@@ -7,9 +7,9 @@ Design: `docs/DESIGN.md` (integrated, binding) and `docs/design/01–10` (eviden
 
 A Claude Code plugin (Codex manifest later, first thing to drop) that takes a messy legacy GIS project folder and:
 
-1. **Discovers** it — scripts, QGIS/ArcGIS projects, notebooks, Excel, data, previous outputs and **every intermediate** — draws the inputs on a map, and builds the workflow graph from code checked against the real files.
+1. **Discovers** it — scripts, QGIS projects and models (ArcGIS Pro projects best effort), notebooks, Excel, data, previous outputs and **every intermediate** — draws the inputs on a map, and builds the workflow graph from code checked against the real files.
 2. **Investigates, then interviews** — resolves every output-changing parameter from the files with a citation; asks only what the files cannot answer and parity cannot catch, one question at a time ("I don't know" becomes a visible assumption).
-3. **Migrates** it step by step to an open-source Python pipeline (geopandas / rasterio), plan first, each step verified before the next.
+3. **Migrates** it step by step into a reproducible Python codebase on the target cloud (open-source GIS libraries inside), plan first, each step verified before the next.
 4. **Runs** it locally or in an E2B sandbox, with real libraries, a read ledger and an exit-code contract.
 5. **Verifies** parity **per step** against the legacy intermediates and finals with deterministic checks, and makes the agent look at legacy | new | difference plots; failures stay visible.
 6. **Reports** in HTML (graph coloured by parity, swipe map, plots, parity table, assumptions) from a hash-sealed evidence bundle, and writes Databricks job files that are dry-run but not deployed.

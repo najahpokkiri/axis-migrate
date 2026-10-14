@@ -1,12 +1,12 @@
 ---
-description: Migrate a legacy GIS project folder to a verified geopandas/rasterio pipeline (discover → interview → plan → migrate step by step → verify → report → Databricks bundle, not deployed)
+description: Migrate a legacy desktop GIS project into a verified Python codebase and a cloud job (discover → interview → plan → migrate step by step → verify → report → Databricks bundle, not deployed)
 argument-hint: <legacy-folder>
 ---
 
 # /migrate $ARGUMENTS
 
-You are migrating the legacy GIS project at `$ARGUMENTS` into an open-source Python pipeline and proving, step by
-step, that it reproduces the legacy run's own intermediates and finals. You write code, read files, propose
+You are migrating the legacy GIS project at `$ARGUMENTS` into a reproducible Python codebase that will run on the customer's cloud
+platform, proving step by step that it reproduces the legacy run's own intermediates and finals. You write code, read files, propose
 parameters, ask questions and look at plots. **Scripts decide verdicts and status; you never do.**
 
 `$P` below means `${CLAUDE_PLUGIN_ROOT}`. Run every plugin script as `"$P/bin/axpy" "$P/skills/<skill>/<script>.py" …`

@@ -1,8 +1,12 @@
 # axis-migrate
 
-A Claude Code plugin that migrates a messy legacy GIS project (PyQGIS, ArcPy, notebooks, Excel, hand edits) to an
-open-source geopandas/rasterio pipeline and **proves parity per step** against the legacy run's own intermediates and
-finals — with deterministic checks, plots the agent must look at, and a status that only a script computes.
+A plugin for agent harnesses (Claude Code today; Codex script halves per `CODEX.md`) that moves a legacy, GUI-based
+desktop GIS project — QGIS projects and models, ArcPy/PyQGIS scripts, notebooks, Excel, hand edits stitched together over
+years — into a reproducible Python codebase and onto your cloud platform (Databricks today). It verifies every step
+against the legacy run's own intermediates and final outputs and reports one status computed from evidence, never
+claimed by the agent. The output is a codebase plus a cloud job, not snippets.
+
+Inside, the new codebase uses open-source GIS libraries (geopandas, rasterio, GDAL).
 
 ## Install
 
@@ -36,6 +40,15 @@ Default comparison is exact. A tolerance exists only as a record with two measur
 implementation < threshold < nearest wrong recipe), **signed by a person**: the agent proposes them in
 `migration/tolerances.proposed.yaml` and lists everything awaiting a signature in `migration/SIGN-OFF.md`. Until a
 person signs, the affected checks stay NEEDS_DECISION and the rung stays below reference-verified.
+
+## Scope (today)
+
+- **Reads:** Python scripts (PyQGIS, ArcPy, plain), Jupyter notebooks, QGIS projects (`.qgz`/`.qgs`) and QGIS graphical
+  models (`.model3`), Excel (formulas and cached values), CSV, rasters, vector files, file geodatabases (listing), notes.
+- **Best effort / next:** ArcGIS Pro projects (`.aprx`/`.atbx`: parsed best effort, not yet validated on a real
+  project); ModelBuilder toolboxes (`.tbx`) and `.mxd` are listed, not parsed.
+- **Targets:** Databricks (Asset Bundle, offline checks and a dry run; never deployed by the plugin). Other platforms
+  stop at reference-verified with `TARGET_NOT_SUPPORTED`.
 
 ## Layout
 
