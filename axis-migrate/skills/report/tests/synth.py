@@ -398,13 +398,24 @@ def make_run(proj: dict, n: int = 1, *, compares: dict | None = None, skip_compa
         fh.write(json.dumps({"run_id": rid, "chain": chain, "executor": "local", "status": manifest["status"],
                              "exit_code": manifest["exit_code"], "started_at": STARTED}, sort_keys=True) + "\n")
     if display:
-        import map as dispmap
-        dispmap.display(rd)
+        display_module().display(rd)
     res = {"run_id": rid, "run_dir": rd}
     if seal:
         import seal as sealmod
         res.update(sealmod.seal(mig, rid))
     return res
+
+
+def display_module():
+    """report/map.py loaded by path: `import map` would collide with discover/map.py (inputs) on a shared sys.path."""
+    import importlib.util
+    if "axis_report_map" in sys.modules:
+        return sys.modules["axis_report_map"]
+    spec = importlib.util.spec_from_file_location("axis_report_map", REPORT / "map.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["axis_report_map"] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def sha(path: Path) -> str:

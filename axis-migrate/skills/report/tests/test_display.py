@@ -19,7 +19,7 @@ def test_one_cell_stripe_visible_not_downsampled(proj):
     valid = arr2[:, col] != -9999.0
     arr2[valid, col] += 1.0  # a one-cell-wide defect
     synth._write_raster(out, arr2, -9999.0, "float32")
-    import map as dispmap
+    dispmap = synth.display_module()
     doc = dispmap.display(r["run_dir"])
     e = next(x for x in doc["datasets"] if x["dataset"] == "ds.b_exposure")
     assert e["resampling"] == "nearest" and e["native_cell_px"] >= 1
@@ -46,7 +46,7 @@ def test_shared_scale_shows_scale_error(proj):
         arr = src.read(1)
     arr2 = np.where(arr != -9999.0, arr * 1000, arr)
     synth._write_raster(out, arr2, -9999.0, "float32")
-    import map as dispmap
+    dispmap = synth.display_module()
     from PIL import Image
     doc = dispmap.display(r["run_dir"])
     e = next(x for x in doc["datasets"] if x["dataset"] == "ds.b_exposure")
@@ -59,7 +59,7 @@ def test_shared_scale_shows_scale_error(proj):
 
 def test_vectors_as_geojson_4326(proj):
     r = synth.make_run(proj, 1, seal=False, display=False)
-    import map as dispmap
+    dispmap = synth.display_module()
     doc = dispmap.display(r["run_dir"])
     e = next(x for x in doc["datasets"] if x["dataset"] == "ds.a_outline")
     gj = ac.load_json(r["run_dir"] / "verify" / "display" / e["files"]["legacy"])
