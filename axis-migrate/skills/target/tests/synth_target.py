@@ -13,6 +13,8 @@ seek-less mounts), so the dry run exercises the runtime's staging helper.
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -267,7 +269,7 @@ def build_project(root: Path) -> Path:
     pipe = mig / "pipeline"
     pipe.mkdir(parents=True)
     for f in ("_axis_runtime.py", "__main__.py", "__init__.py"):
-        (pipe / f).write_bytes((PLUGIN / "skills" / "build" / "runtime" / f).read_bytes())
+        (pipe / f).write_bytes((PLUGIN / "skills" / "migrate" / "runtime" / f).read_bytes())
     (pipe / "s01_clip_population.py").write_text(S01)
     (pipe / "s02_zone_report.py").write_text(S02)
     (mig / "tests").mkdir()
@@ -322,9 +324,28 @@ def receipts(run_dir: Path) -> None:
         sh(PLUGIN / "skills/verify/plot.py", "review-add", "--run", run_dir, "--json", fp)
 
 
+# A host without strace (macOS), or AXIS_TEST_NO_STRACE=1 to simulate one on Linux: the runner falls back to the
+# audit + CPL_DEBUG ledger, whose runs are capped at sandbox-validated, and the target dry run has no seek trace.
+NO_STRACE = bool(os.environ.get("AXIS_TEST_NO_STRACE")) or (shutil.which("strace") is None
+                                                            and not Path("/usr/bin/strace").is_file())
+EXPECTED_RUNG = "sandbox-validated" if NO_STRACE else "reference-verified"
+
+
+def run_local(mig: Path) -> dict:
+    if NO_STRACE:      # the run builder's switch (run/tests/conftest.py), applied in a subprocess
+        code = ("import sys; sys.path.insert(0, %r); import run_local; run_local.STRACE = None; "
+                "sys.exit(run_local.main([%r, '--json']))" % (str(PLUGIN / "skills" / "run"), str(mig)))
+        cp = sh("-c", code)
+    else:
+        cp = sh(PLUGIN / "skills/run/run_local.py", mig, "--json")
+    return json.loads(cp.stdout.strip().splitlines()[-1])
+
+
 def reference_verified(root: Path) -> tuple[Path, str]:
+    """The verified path: with strace it reaches reference-verified; without strace the same steps end capped at
+    sandbox-validated (the fallback ledger cap is never weakened here)."""
     mig = build_project(root)
-    out = json.loads(sh(PLUGIN / "skills/run/run_local.py", mig, "--json").stdout.strip().splitlines()[-1])
+    out = run_local(mig)
     run_dir = Path(out["run_dir"])
     sh(PLUGIN / "skills/verify/compare.py", "run", "--run", run_dir)
     sh(PLUGIN / "skills/verify/plot.py", "run", "--run", run_dir)

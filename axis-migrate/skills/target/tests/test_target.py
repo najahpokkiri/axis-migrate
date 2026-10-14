@@ -15,7 +15,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from conftest import (LADDER, PLUGIN, SEAL, TARGET, check, make, manifest, run, set_step, states)
+from conftest import (EXPECTED_RUNG, LADDER, NO_STRACE, PLUGIN, SEAL, TARGET, check, make, manifest,
+                      needs_reference_verified, run, set_step, states)
 import synth_target
 
 import make_databricks as md
@@ -34,6 +35,7 @@ def ladder(mig: Path) -> dict:
 
 
 # ---------------------------------------------------------------------------------------------------------------
+@needs_reference_verified
 def test_happy_path_target_ready_sealed_and_claimed(project):
     mig, run_id = project
     code, out = make(mig)
@@ -145,10 +147,12 @@ def test_at9_03_static_volume_write_fails_t3(project):
     assert st["T3"]["state"] == "FAIL" and "TC_VOLUME_UNSAFE_WRITE" in st["T3"]["reason_codes"]
     assert any("s02_zone_report.py" in e and ".to_file(" in e for e in st["T3"]["evidence"])
     tm = manifest(mig)
-    assert tm["status"] == "reference-verified" and "T3" in tm["failing"]
+    assert tm["status"] == EXPECTED_RUNG and "T3" in tm["failing"]
     assert tm["claim"].startswith("**Not target-ready (Databricks), not deployed.**")
-    # the trace sees the same write at run time (SQLite on the Volume)
-    assert "TC_SQLITE_ON_VOLUME" in st["T13"]["reason_codes"]
+    if NO_STRACE:
+        assert st["T13"]["state"] == "BLOCKED" and st["T13"]["reason_codes"] == ["TC_NO_STRACE"]
+    else:      # the trace sees the same write at run time (SQLite on the Volume)
+        assert "TC_SQLITE_ON_VOLUME" in st["T13"]["reason_codes"]
 
 
 def test_at9_04_dynamic_volume_write_caught_by_trace(project):
@@ -167,10 +171,13 @@ def test_at9_04_dynamic_volume_write_caught_by_trace(project):
     st = states(mig)
     assert st["T3"]["state"] == "PASS", st["T3"]           # the static scan misses it ...
     assert st["T7"]["state"] == "PASS"
-    assert st["T13"]["state"] == "FAIL" and "TC_SEEK_ON_VOLUME" in st["T13"]["reason_codes"]   # ... the trace does not
-    tf = json.loads((mig / "databricks" / "dryrun" / "trace-findings.json").read_text())
-    hits = [f for f in tf["findings"] if f["code"] == "TC_SEEK_ON_VOLUME"]
-    assert hits and all(f["path"].endswith("/work/s01_extra.tif") for f in hits)
+    if NO_STRACE:       # without the trace nothing sees the write: T13 is BLOCKED, so never target-ready
+        assert st["T13"]["state"] == "BLOCKED" and st["T13"]["reason_codes"] == ["TC_NO_STRACE"]
+    else:
+        assert st["T13"]["state"] == "FAIL" and "TC_SEEK_ON_VOLUME" in st["T13"]["reason_codes"]   # ... the trace does not
+        tf = json.loads((mig / "databricks" / "dryrun" / "trace-findings.json").read_text())
+        hits = [f for f in tf["findings"] if f["code"] == "TC_SEEK_ON_VOLUME"]
+        assert hits and all(f["path"].endswith("/work/s01_extra.tif") for f in hits)
     assert manifest(mig)["status"] != "target-ready"
 
 
@@ -187,11 +194,14 @@ def test_at9_05_gpkg_read_in_place_is_sqlite_on_volume(project):
     code, _ = check(mig, run_id)
     assert code == 1
     st = states(mig)
+    assert "TC_VOLUME_UNSAFE_READ" in st["T3"]["reason_codes"]
+    if NO_STRACE:
+        assert st["T13"]["state"] == "BLOCKED" and st["T13"]["reason_codes"] == ["TC_NO_STRACE"]
+        return
     assert st["T13"]["state"] == "FAIL" and "TC_SQLITE_ON_VOLUME" in st["T13"]["reason_codes"]
     tf = json.loads((mig / "databricks" / "dryrun" / "trace-findings.json").read_text())
     assert any(f["code"] == "TC_SQLITE_ON_VOLUME" and f["path"].endswith("/inputs/03_INPUT/zones.gpkg")
                for f in tf["findings"])
-    assert "TC_VOLUME_UNSAFE_READ" in st["T3"]["reason_codes"]
 
 
 def test_at9_06_dunder_file_fails_statically_and_in_the_dry_run(project):
@@ -256,12 +266,17 @@ def test_at9_09_no_cloud_contact(project, tmp_path):
     assert not (home / ".databrickscfg").exists()
     assert make(mig, env=env)[0] == 0
     code, res = check(mig, run_id, env=env)
-    assert code == 0, res
     st = states(mig)
-    assert all(st[c]["state"] in ("PASS", "WARN") for c in ALL)
     assert not marker.exists(), marker.read_text()
-    tf = json.loads((mig / "databricks" / "dryrun" / "trace-findings.json").read_text())
-    assert all(c["network_calls"] == 0 for c in tf["counts"].values())
+    assert not any(c["state"] == "NOT_RUN" for c in st.values())       # every check completes offline
+    if NO_STRACE:
+        assert code == 1 and st["T13"]["state"] == "BLOCKED"
+        assert all(st[c]["state"] in ("PASS", "WARN") for c in ALL if c != "T13")
+    else:
+        assert code == 0, res
+        assert all(st[c]["state"] in ("PASS", "WARN") for c in ALL)
+        tf = json.loads((mig / "databricks" / "dryrun" / "trace-findings.json").read_text())
+        assert all(c["network_calls"] == 0 for c in tf["counts"].values())
     dry = json.loads((mig / "databricks" / "dryrun" / "dryrun.json").read_text())
     assert dry["venv"]["packages_from"] == "uv cache (offline)"
     assert not any(k.startswith("DATABRICKS_") for k in dry["env_keys"])
@@ -310,7 +325,7 @@ def test_at9_12_unsupported_target(tmp_path):
         assert code == 3 and out["code"] == "TARGET_NOT_SUPPORTED"
         assert not (mig / "databricks").exists()
         lad = ladder(mig)
-        assert lad["pipeline"]["rung"] == "reference-verified"
+        assert lad["pipeline"]["rung"] == EXPECTED_RUNG
         assert lad["pipeline"]["target"]["state"] == "not_attempted"
     finally:
         from conftest import make_writable
@@ -326,4 +341,4 @@ def test_at9_13_no_strace_blocks_t13(project):
     assert st["T13"]["state"] == "BLOCKED" and st["T13"]["reason_codes"] == ["TC_NO_STRACE"]
     assert "E2B" in " ".join(st["T13"]["evidence"])
     assert st["T7"]["state"] == "PASS" and st["T8"]["state"] == "PASS"
-    assert manifest(mig)["status"] == "reference-verified"
+    assert manifest(mig)["status"] == EXPECTED_RUNG

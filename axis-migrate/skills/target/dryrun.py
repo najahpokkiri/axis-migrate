@@ -671,7 +671,8 @@ def dry_run(mig: Path, run_id: str, evidence: Path, *, keep: bool = False, use_s
                 txt = lp.read_text(encoding="utf-8", errors="replace")
                 if fake_root in txt or str(tmp) in txt:
                     lp.write_text(txt.replace(fake_root, "<root>").replace(str(tmp), "<tmp>"), encoding="utf-8")
-            rss[key] = {"peak_rss_mb": round(ru.ru_maxrss / 1024.0, 1) if ru else None,
+            rss_div = 1024.0 * 1024.0 if sys.platform == "darwin" else 1024.0     # bytes on macOS, KiB on Linux
+            rss[key] = {"peak_rss_mb": round(ru.ru_maxrss / rss_div, 1) if ru else None,
                         "seconds": rec["seconds"], "exit_code": code}
             sid = steps_in_bundle[tasks.index(t)]
             io_src = root / "local_disk0" / "tmp" / "axis" / f"{sid}.io.json"

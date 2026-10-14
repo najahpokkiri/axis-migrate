@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import stat
 import subprocess
 import sys
@@ -35,6 +36,12 @@ def _unlock(root: Path) -> None:
         for f in files:
             p = Path(dirpath) / f
             os.chmod(p, stat.S_IMODE(p.stat().st_mode) | 0o200)
+
+
+NO_STRACE = bool(os.environ.get("AXIS_TEST_NO_STRACE")) or (shutil.which("strace") is None
+                                                            and not Path("/usr/bin/strace").is_file())
+pytestmark = pytest.mark.skipif(NO_STRACE, reason="lux target-ready needs a reference-verified run (strace read "
+                                                  "ledger, Linux) and the dry run's seek trace")
 
 
 @pytest.fixture(scope="module")

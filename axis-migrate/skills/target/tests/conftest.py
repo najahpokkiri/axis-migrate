@@ -23,6 +23,14 @@ sys.path.insert(0, str(PLUGIN / "skills" / "report"))
 import synth_target  # noqa: E402
 
 os.environ.setdefault("GDAL_PAM_ENABLED", "NO")
+NO_STRACE = synth_target.NO_STRACE
+EXPECTED_RUNG = synth_target.EXPECTED_RUNG
+if NO_STRACE:
+    os.environ["AXIS_TARGET_NO_STRACE"] = "1"      # target_check's own dry run sees the same host (T13 BLOCKED)
+needs_reference_verified = pytest.mark.skipif(
+    NO_STRACE, reason="target-ready needs a reference-verified run, which needs the strace read ledger (Linux); "
+                      "without strace the runner caps runs at sandbox-validated")
+needs_strace = pytest.mark.skipif(NO_STRACE, reason="needs strace for the dry run's seek trace (T13)")
 AXPY = str(PLUGIN / "bin" / "axpy")
 MAKE = TARGET / "make_databricks.py"
 CHECK = TARGET / "target_check.py"
@@ -46,6 +54,9 @@ def _copy(src: Path, dst: Path) -> None:
 def verified_template(tmp_path_factory):
     root = tmp_path_factory.mktemp("target_template")
     mig, run_id = synth_target.reference_verified(root)
+    import ladder
+    rung = ladder.compute(mig, run_id)["pipeline"]["rung"]
+    assert rung == EXPECTED_RUNG, (rung, "strace" if not NO_STRACE else "fallback ledger")   # the cap holds
     yield root, run_id
     make_writable(root)
 
