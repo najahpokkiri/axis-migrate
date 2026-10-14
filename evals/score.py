@@ -319,7 +319,7 @@ def score_trial(tdir: Path, expected: dict) -> dict:
     # traps caught by numbers / plots (agent's own artefacts, any run)
     nums = expected.get("numbers")
     s["caught_by_numbers"] = None
-    if nums and (mdir / "runs").exists():
+    if nums and nums.get("dataset") and (mdir / "runs").exists():
         hit = False
         for cj in (mdir / "runs").glob(f"r*/verify/compare/{nums['dataset']}.json"):
             try:
