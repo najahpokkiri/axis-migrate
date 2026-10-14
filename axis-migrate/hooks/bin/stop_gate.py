@@ -2,7 +2,8 @@
 """H7 Stop gate (08 §5b, D8-8; DESIGN §4.2 for unacked graph edits). Reads files only, never runs compare.
 
 1. No migration/ -> allow. Status from ladder.compute() (newest sealed run); ladder unavailable -> rung "none".
-2. Live re-checks against the run's snapshot: params.yaml, tolerances.yaml, pipeline/ tree; legacy tree vs the
+2. Live re-checks against the run's snapshot: params.yaml, tolerances.yaml, pipeline/ tree, graph.json (contract
+   view via axis_common.graph_contract_sha256, so derive/ingest-verify projections do not count); legacy tree vs the
    inventory baseline (a new .aux.xml counts); for claims >= reference-verified also compare files present and
    bound to the run's outputs, and a report/evidence for this run newer than the compares; open high-impact questions.
 3. Claims in last_assistant_message (claims.py); negated ones and the quoted status line are ignored.
@@ -118,6 +119,11 @@ def drift(mig: Path, run_id: str | None) -> list[str]:
             if (snap / name).exists() or (mig / name).exists():
                 if _sha(snap / name) != _sha(mig / name):
                     out.append(code)
+        # graph: compare the contract view only; ladder/verify projections written by derive / ingest-verify after
+        # the run are not a change of the graph (axis_common.graph_contract_sha256)
+        if (snap / "graph.json").is_file() and (mig / "graph.json").is_file():
+            if ac.graph_contract_sha256(snap / "graph.json") != ac.graph_contract_sha256(mig / "graph.json"):
+                out.append("GRAPH_CHANGED_AFTER_RUN")
         sp = snap / "axis_pipeline"
         if sp.is_dir() and (mig / "pipeline").is_dir():
             if ac.tree_entries(sp) != ac.tree_entries(mig / "pipeline"):

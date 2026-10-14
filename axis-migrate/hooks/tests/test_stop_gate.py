@@ -150,6 +150,30 @@ def test_g11_code_drift(project_run, monkeypatch):
     assert d is not None and "CODE_CHANGED_AFTER_RUN" in d["reason"]
 
 
+def test_g11_graph_projection_after_run_is_not_drift(project_run, monkeypatch):
+    """e2e finding: graph.py derive / ingest-verify writing ladder+verify projections after the run is not drift."""
+    rid = _verified_bundle(project_run)
+    g = project_run.graph()
+    g["revision"] += 2
+    g["ladder"] = {"project": "reference-verified", "derived_rev": g["revision"], "blocking": []}
+    for st in g["steps"]:
+        st["ladder"] = {"state": "reference-verified"}
+        st["verify"] = {"verdict": "PASS_EXACT", "blame": None}
+    for d in g["datasets"]:
+        d["verify"] = {"run_id": rid, "verdict": "PASS_EXACT", "reason_codes": []}
+    project_run.set_graph(g)
+    assert decide(project_run, "Verified.", monkeypatch, "reference-verified", rid) is None
+
+
+def test_g11_graph_contract_change_is_drift(project_run, monkeypatch):
+    rid = _verified_bundle(project_run)
+    g = project_run.graph()
+    g["steps"][0]["scope"] = "keep_legacy"
+    project_run.set_graph(g)
+    d = decide(project_run, "Verified.", monkeypatch, "reference-verified", rid)
+    assert d is not None and "GRAPH_CHANGED_AFTER_RUN" in d["reason"]
+
+
 def test_open_high_impact_question_blocks_claim(project_run, monkeypatch):
     rid = _verified_bundle(project_run)
     g = project_run.graph()
