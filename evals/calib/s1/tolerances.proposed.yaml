@@ -29,17 +29,17 @@ records:
   dataset: ds.02_buf_industrial
   check: vector.symdiff_ratio
   metric: symdiff_ratio
-  value: 0.02
+  value: 10.0
   max_mismatch: 0
   units: '1'
   basis: measured_spread
   correct_spread:
-    value: 0.016357350074348194
+    value: 4.2999428378528775
     variant: T3alt_quad8
     how: max over clean + legitimate alternatives (compare.py pair, exact run)
     evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buf_industrial
   nearest_wrong:
-    value: 0.04673698055422131
+    value: 14.108362736261455
     variant: S1-T3
     how: min over the mutants this check separates
     evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buf_industrial
@@ -73,17 +73,17 @@ records:
   dataset: ds.02_buf_other
   check: vector.symdiff_ratio
   metric: symdiff_ratio
-  value: 0.05
+  value: 5.0
   max_mismatch: 0
   units: '1'
   basis: measured_spread
   correct_spread:
-    value: 0.014294051630243618
+    value: 1.5611938009719806
     variant: T3alt_quad8
     how: max over clean + legitimate alternatives (compare.py pair, exact run)
     evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buf_other
   nearest_wrong:
-    value: 0.10150662038614847
+    value: 14.71019590547476
     variant: S1-T3
     how: min over the mutants this check separates
     evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buf_other
@@ -117,17 +117,17 @@ records:
   dataset: ds.02_buffers
   check: vector.symdiff_ratio
   metric: symdiff_ratio
-  value: 0.05
+  value: 10.0
   max_mismatch: 0
   units: '1'
   basis: measured_spread
   correct_spread:
-    value: 0.016357350074348194
+    value: 4.2999428378528775
     variant: T3alt_quad8
     how: max over clean + legitimate alternatives (compare.py pair, exact run)
     evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.02_buffers
   nearest_wrong:
-    value: 0.10150662038614847
+    value: 14.71019590547476
     variant: S1-T3
     how: min over the mutants this check separates
     evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.02_buffers
@@ -162,17 +162,17 @@ records:
   dataset: ds.03_buf_by_commune
   check: vector.symdiff_ratio
   metric: symdiff_ratio
-  value: 0.01
+  value: 5.0
   max_mismatch: 0
   units: '1'
   basis: measured_spread
   correct_spread:
-    value: 0.005541554968410287
+    value: 1.8602657375531373
     variant: T3alt_quad8
     how: max over clean + legitimate alternatives (compare.py pair, exact run)
     evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.03_buf_by_commune
   nearest_wrong:
-    value: 0.029734545006512066
+    value: 6.42807951591357
     variant: S1-T3
     how: min over the mutants this check separates
     evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.03_buf_by_commune
@@ -195,6 +195,28 @@ records:
     evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.03_buf_x_commune
   nearest_wrong:
     value: 282.41745365834504
+    variant: S1-T3
+    how: min over the mutants this check separates
+    evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.03_buf_x_commune
+  agreed_by: null
+  agreed_at: null
+  decision_ref: null
+  fixed_before: null
+- id: tol.03_buf_x_commune.vector.symdiff_ratio.v1
+  dataset: ds.03_buf_x_commune
+  check: vector.symdiff_ratio
+  metric: symdiff_ratio
+  value: 10.0
+  max_mismatch: 0
+  units: '1'
+  basis: measured_spread
+  correct_spread:
+    value: 4.048561054103007
+    variant: T3alt_quad8
+    how: max over clean + legitimate alternatives (compare.py pair, exact run)
+    evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.03_buf_x_commune
+  nearest_wrong:
+    value: 16.285270348459594
     variant: S1-T3
     how: min over the mutants this check separates
     evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.03_buf_x_commune
@@ -395,17 +417,17 @@ records:
   dataset: ds.buffer_area_by_commune_gpkg
   check: vector.symdiff_ratio
   metric: symdiff_ratio
-  value: 0.01
+  value: 5.0
   max_mismatch: 0
   units: '1'
   basis: measured_spread
   correct_spread:
-    value: 0.005541554968410287
+    value: 1.8602657375531373
     variant: T3alt_quad8
     how: max over clean + legitimate alternatives (compare.py pair, exact run)
     evidence: evals/calib/t0_s1.json#measure.T3alt_quad8.ds.buffer_area_by_commune_gpkg
   nearest_wrong:
-    value: 0.029734545006512066
+    value: 6.42807951591357
     variant: S1-T3
     how: min over the mutants this check separates
     evidence: evals/calib/t0_s1.json#measure.S1-T3.ds.buffer_area_by_commune_gpkg

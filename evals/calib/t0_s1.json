@@ -7,7 +7,7 @@
    "ds.02_buf_other": "NEEDS_DECISION",
    "ds.02_buffers": "NEEDS_DECISION",
    "ds.03_buf_by_commune": "NEEDS_DECISION",
-   "ds.03_buf_x_commune": "FAIL",
+   "ds.03_buf_x_commune": "NEEDS_DECISION",
    "ds.buffer_area_by_commune_csv": "NEEDS_DECISION",
    "ds.buffer_area_by_commune_gpkg": "NEEDS_DECISION"
   },
@@ -29,7 +29,7 @@
    "ds.02_buf_other": "NEEDS_DECISION",
    "ds.02_buffers": "NEEDS_DECISION",
    "ds.03_buf_by_commune": "NEEDS_DECISION",
-   "ds.03_buf_x_commune": "FAIL",
+   "ds.03_buf_x_commune": "NEEDS_DECISION",
    "ds.buffer_area_by_commune_csv": "PASS_EXACT",
    "ds.buffer_area_by_commune_gpkg": "NEEDS_DECISION"
   },
@@ -40,7 +40,7 @@
    "ds.02_buf_other": "NEEDS_DECISION",
    "ds.02_buffers": "NEEDS_DECISION",
    "ds.03_buf_by_commune": "NEEDS_DECISION",
-   "ds.03_buf_x_commune": "FAIL",
+   "ds.03_buf_x_commune": "NEEDS_DECISION",
    "ds.buffer_area_by_commune_csv": "NEEDS_DECISION",
    "ds.buffer_area_by_commune_gpkg": "NEEDS_DECISION"
   }
@@ -48,44 +48,10 @@
  "case": "S1",
  "comparator": {
   "id": "axis-migrate.compare",
-  "sha256": "1509ffa3f726409915f3848e95db1fde747f31f0d892946df6dffc43e5a91ea0",
+  "sha256": "d7a2075664a90fe7c01febfd76f7ee8d58b357ca1e27edfdcc03132a3c60929e",
   "version": "1.0.0"
  },
- "false_alarms": [
-  {
-   "codes": [
-    "GEOMETRY_SYMDIFF_EXCEEDED"
-   ],
-   "dataset": "ds.03_buf_x_commune",
-   "diag": [
-    "GEOMETRY_AREA_RATIO"
-   ],
-   "variant": "T3alt_quad8",
-   "verdict": "FAIL"
-  },
-  {
-   "codes": [
-    "GEOMETRY_SYMDIFF_EXCEEDED"
-   ],
-   "dataset": "ds.03_buf_x_commune",
-   "diag": [
-    "GEOMETRY_AREA_RATIO"
-   ],
-   "variant": "T5alt_aeqd",
-   "verdict": "FAIL"
-  },
-  {
-   "codes": [
-    "GEOMETRY_SYMDIFF_EXCEEDED"
-   ],
-   "dataset": "ds.03_buf_x_commune",
-   "diag": [
-    "GEOMETRY_AREA_RATIO"
-   ],
-   "variant": "T5alt_utm",
-   "verdict": "FAIL"
-  }
- ],
+ "false_alarms": [],
  "matrix": {
   "S1-T3": {
    "datasets": {
@@ -589,13 +555,9 @@
      "verdict": "PASS_WITHIN_TOLERANCE"
     },
     "ds.03_buf_x_commune": {
-     "codes": [
-      "GEOMETRY_SYMDIFF_EXCEEDED"
-     ],
-     "diag": [
-      "GEOMETRY_AREA_RATIO"
-     ],
-     "verdict": "FAIL"
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
     },
     "ds.buffer_area_by_commune_csv": {
      "codes": [],
@@ -608,7 +570,7 @@
      "verdict": "PASS_WITHIN_TOLERANCE"
     }
    },
-   "ok": false,
+   "ok": true,
    "role": "alt",
    "trap": "T3"
   },
@@ -701,13 +663,9 @@
      "verdict": "PASS_WITHIN_TOLERANCE"
     },
     "ds.03_buf_x_commune": {
-     "codes": [
-      "GEOMETRY_SYMDIFF_EXCEEDED"
-     ],
-     "diag": [
-      "GEOMETRY_AREA_RATIO"
-     ],
-     "verdict": "FAIL"
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
     },
     "ds.buffer_area_by_commune_csv": {
      "codes": [],
@@ -720,7 +678,7 @@
      "verdict": "PASS_WITHIN_TOLERANCE"
     }
    },
-   "ok": false,
+   "ok": true,
    "role": "alt",
    "trap": "T5"
   },
@@ -757,13 +715,9 @@
      "verdict": "PASS_WITHIN_TOLERANCE"
     },
     "ds.03_buf_x_commune": {
-     "codes": [
-      "GEOMETRY_SYMDIFF_EXCEEDED"
-     ],
-     "diag": [
-      "GEOMETRY_AREA_RATIO"
-     ],
-     "verdict": "FAIL"
+     "codes": [],
+     "diag": [],
+     "verdict": "PASS_WITHIN_TOLERANCE"
     },
     "ds.buffer_area_by_commune_csv": {
      "codes": [],
@@ -776,7 +730,7 @@
      "verdict": "PASS_WITHIN_TOLERANCE"
     }
    },
-   "ok": false,
+   "ok": true,
    "role": "alt",
    "trap": "T5"
   },
@@ -968,7 +922,7 @@
       ],
       "features_differing": 136,
       "state": "FAIL",
-      "value": 0.04673698055422131,
+      "value": 14.108362736261455,
       "vertex_count": {
        "legacy": 6022,
        "new": 3544
@@ -1017,7 +971,7 @@
       ],
       "features_differing": 307,
       "state": "FAIL",
-      "value": 0.10150662038614847,
+      "value": 14.71019590547476,
       "vertex_count": {
        "legacy": 19334,
        "new": 10795
@@ -1066,7 +1020,7 @@
       ],
       "features_differing": 443,
       "state": "FAIL",
-      "value": 0.10150662038614847,
+      "value": 14.71019590547476,
       "vertex_count": {
        "legacy": 25356,
        "new": 14339
@@ -1107,7 +1061,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.029734545006512066
+      "value": 6.42807951591357
      }
     },
     "codes": [
@@ -1165,7 +1119,7 @@
       ],
       "features_differing": 596,
       "state": "FAIL",
-      "value": 0.9738843384013399,
+      "value": 16.285270348459594,
       "vertex_count": {
        "legacy": 48684,
        "new": 38351
@@ -1285,7 +1239,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.029734545006512066
+      "value": 6.42807951591357
      }
     },
     "codes": [
@@ -1337,7 +1291,7 @@
       ],
       "features_differing": 136,
       "state": "FAIL",
-      "value": 0.8351958498796331
+      "value": 267.4305457886302
      }
     },
     "codes": [
@@ -1379,7 +1333,7 @@
       ],
       "features_differing": 136,
       "state": "FAIL",
-      "value": 0.8351958498796331
+      "value": 267.4305457886302
      }
     },
     "codes": [
@@ -1415,7 +1369,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.340538044032711
+      "value": 127.39968243634458
      }
     },
     "codes": [
@@ -1473,7 +1427,7 @@
       ],
       "features_differing": 179,
       "state": "FAIL",
-      "value": 0.9997814547277163,
+      "value": 247.53065659905292,
       "vertex_count": {
        "legacy": 19435,
        "new": 10761
@@ -1593,7 +1547,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.340538044032711
+      "value": 127.39968243634458
      }
     },
     "codes": [
@@ -1681,7 +1635,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.5337933411909754
+      "value": 193.45188542046697
      }
     },
     "codes": [
@@ -1818,7 +1772,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.5337933411909754
+      "value": 193.45188542046697
      }
     },
     "codes": [
@@ -1870,7 +1824,7 @@
       ],
       "features_differing": 136,
       "state": "FAIL",
-      "value": 0.574378212791405
+      "value": 163.57617047233927
      }
     },
     "codes": [
@@ -1906,7 +1860,7 @@
       ],
       "features_differing": 308,
       "state": "FAIL",
-      "value": 0.5619726261029737
+      "value": 73.39892808843322
      }
     },
     "codes": [
@@ -1942,7 +1896,7 @@
       ],
       "features_differing": 444,
       "state": "FAIL",
-      "value": 0.574378212791405
+      "value": 163.57617047233927
      }
     },
     "codes": [
@@ -1978,7 +1932,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.29390397816164776
+      "value": 104.71690625649484
      }
     },
     "codes": [
@@ -2028,7 +1982,7 @@
       ],
       "features_differing": 563,
       "state": "FAIL",
-      "value": 0.9952252506493537
+      "value": 156.59152535838516
      }
     },
     "codes": [
@@ -2143,7 +2097,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.29390397816164776
+      "value": 104.71690625649484
      }
     },
     "codes": [
@@ -2195,7 +2149,7 @@
       ],
       "features_differing": 136,
       "state": "FAIL",
-      "value": 0.016357350074348194
+      "value": 4.2999428378528775
      }
     },
     "codes": [
@@ -2231,7 +2185,7 @@
       ],
       "features_differing": 308,
       "state": "FAIL",
-      "value": 0.014294051630243618
+      "value": 1.5611938009719806
      }
     },
     "codes": [
@@ -2267,7 +2221,7 @@
       ],
       "features_differing": 444,
       "state": "FAIL",
-      "value": 0.016357350074348194
+      "value": 4.2999428378528775
      }
     },
     "codes": [
@@ -2303,7 +2257,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.005541554968410287
+      "value": 1.8602657375531373
      }
     },
     "codes": [
@@ -2339,7 +2293,7 @@
       ],
       "features_differing": 600,
       "state": "FAIL",
-      "value": 7.964480039788329
+      "value": 4.048561054103007
      }
     },
     "codes": [
@@ -2452,7 +2406,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.005541554968410287
+      "value": 1.8602657375531373
      }
     },
     "codes": [
@@ -2608,7 +2562,7 @@
       ],
       "features_differing": 136,
       "state": "FAIL",
-      "value": 2.6215212850491127e-05
+      "value": 0.007098679465735226
      }
     },
     "codes": [
@@ -2644,7 +2598,7 @@
       ],
       "features_differing": 308,
       "state": "FAIL",
-      "value": 2.5882549914048438e-05
+      "value": 0.002874678042608771
      }
     },
     "codes": [
@@ -2680,7 +2634,7 @@
       ],
       "features_differing": 444,
       "state": "FAIL",
-      "value": 2.6215212850491127e-05
+      "value": 0.007098679465735226
      }
     },
     "codes": [
@@ -2716,7 +2670,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 7.624011149201476e-06
+      "value": 0.0022012294579613245
      }
     },
     "codes": [
@@ -2752,7 +2706,7 @@
       ],
       "features_differing": 600,
       "state": "FAIL",
-      "value": 0.004386798701738471
+      "value": 0.006355723369935832
      }
     },
     "codes": [
@@ -2827,7 +2781,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 7.624011149201476e-06
+      "value": 0.0022012294579613245
      }
     },
     "codes": [
@@ -2879,7 +2833,7 @@
       ],
       "features_differing": 136,
       "state": "FAIL",
-      "value": 0.0004430488368407478
+      "value": 0.116547152144727
      }
     },
     "codes": [
@@ -2915,7 +2869,7 @@
       ],
       "features_differing": 308,
       "state": "FAIL",
-      "value": 0.0004240968444863
+      "value": 0.046879923372639805
      }
     },
     "codes": [
@@ -2951,7 +2905,7 @@
       ],
       "features_differing": 444,
       "state": "FAIL",
-      "value": 0.0004430488368407478
+      "value": 0.116547152144727
      }
     },
     "codes": [
@@ -2987,7 +2941,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.00014702190080118863
+      "value": 0.04124423411138626
      }
     },
     "codes": [
@@ -3023,7 +2977,7 @@
       ],
       "features_differing": 600,
       "state": "FAIL",
-      "value": 0.07549083699275429
+      "value": 0.10920742566035388
      }
     },
     "codes": [
@@ -3144,7 +3098,7 @@
       ],
       "features_differing": 14,
       "state": "FAIL",
-      "value": 0.00014702190080118863
+      "value": 0.04124423411138626
      }
     },
     "codes": [
@@ -3415,6 +3369,7 @@
   "tol.03_buf_by_commune.vector.hausdorff_m.v1",
   "tol.03_buf_by_commune.vector.symdiff_ratio.v1",
   "tol.03_buf_x_commune.vector.hausdorff_m.v1",
+  "tol.03_buf_x_commune.vector.symdiff_ratio.v1",
   "tol.buffer_area_by_commune_csv.table.attr:buf_km2.v1",
   "tol.buffer_area_by_commune_csv.table.attr:share_pct.v1",
   "tol.buffer_area_by_commune_csv.table.total:buf_km2.v1",
@@ -3434,14 +3389,14 @@
  "signing": "proposals signed in memory by human:t0-calibration for the verdict phase only; the file evals/calib/s1/tolerances.proposed.yaml stays unsigned",
  "summary": {
   "checker_misses": 0,
-  "clean_alt_pass": 2,
+  "clean_alt_pass": 5,
   "clean_alt_rows": 5,
-  "false_alarms": 3,
+  "false_alarms": 0,
   "mutant_rows": 4,
   "mutants_caught": 4,
   "probe_rows": 1,
   "probes_caught": 1,
-  "unseparable_checks": 1
+  "unseparable_checks": 0
  },
  "t5l": {
   "faithful_port(S1-T5 code)": {
@@ -3609,21 +3564,7 @@
    }
   }
  },
- "unseparable": [
-  {
-   "check": "vector.symdiff_ratio",
-   "correct_spread": 7.964480039788329,
-   "dataset": "ds.03_buf_x_commune",
-   "masked_mutants": [
-    "S1-T3",
-    "S1-T4",
-    "S1-T5"
-   ],
-   "nearest_wrong": null,
-   "variant": "T3alt_quad8",
-   "why": "no mutant above the legitimate spread on this check: a two-number record cannot be justified, so the check stays exact (alternative will FAIL here)"
-  }
- ],
+ "unseparable": [],
  "variants": {
   "S1-T3": {
    "code_hash": "sha256:cca3bb613b3b98ae5d4c6a2e99e5b9e7a351583bd30ec1a4a20fef0ffe8a6d83",
