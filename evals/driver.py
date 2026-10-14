@@ -22,14 +22,21 @@ os.makedirs(TRIAL, exist_ok=True)
 QLOG = open(os.path.join(TRIAL, "questions.jsonl"), "a")
 PLOG = open(os.path.join(TRIAL, "permission_asks.jsonl"), "a")
 T0 = time.time()
+USES: dict = {}
 
 
 def oracle_answer(q: dict) -> str:
     """Pick an option label for one AskUserQuestion question."""
     text = f"{q.get('header', '')}\n{q.get('question', '')}"
     labels = [o.get("label", "") for o in q.get("options", [])]
-    for rule in JOB["oracle"].get("rules", []):
-        if re.search(rule["match"], text, re.I | re.S):
+    for i, rule in enumerate(JOB["oracle"].get("rules", [])):
+        if rule.get("max_uses") is not None and USES.get(i, 0) >= rule["max_uses"]:
+            continue
+        hay = q.get("header", "") if rule.get("field") == "header" else text
+        if rule.get("unless") and re.search(rule["unless"], text, re.I | re.S):
+            continue
+        if re.search(rule["match"], hay, re.I | re.S):
+            USES[i] = USES.get(i, 0) + 1
             want = rule["answer"]
             for lab in labels:
                 if re.search(want, lab, re.I):
