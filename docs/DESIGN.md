@@ -37,7 +37,7 @@ step-by-step code with isolated verify → chained run → per-step parity with 
 ## 1 Principles (binding on every section)
 
 1. **Scripts decide, hooks warn early, the model writes and looks.** Every guard has a script half that refuses to
-   proceed, because Bash bypasses Write hooks, hook timeouts fail open and Codex plugins cannot ship hooks (D8-1).
+   proceed, because Bash bypasses Write hooks, hook timeouts fail open and Codex hooks run only after the person trusts them in `/hooks` (D8-1).
 2. **Investigate before asking; ask before guessing; never fabricate.** A missing input stops the run (exit 12);
    a manual step is always a question about policy, never about what the files show (D3-1, D3-11, AK-33).
 3. **One owner per fact** (HL-36): values in `params.yaml`; structure, questions and status projections in
@@ -414,8 +414,10 @@ loop) (06 §6.2).
 Hooks are the early, visible layer; each has a script half (D8-1). Guards fail closed (`onFailure: block`, exceptions
 → exit 2 with an ASCII reason); informational hooks fail open (D8-2). JSON decisions only (`permissionDecision`,
 `decision: block`), never prose on stdout (D8-3). Human approval = Claude Code's own permission prompt (`ask`); headless
-resolves to deny (D8-10). Codex plugins cannot ship hooks (`plugin_hooks removed` in codex-cli 0.144.4, measured): for
-Codex the script halves are the guards.
+resolves to deny (D8-10). Codex loads the same `hooks/hooks.json` by default discovery (measured on codex-cli 0.144.4 and 0.162.1; the
+retired `plugin_hooks` flag was misread earlier as "no hooks"), with `apply_patch` in the write matcher and `ask`
+mapped to deny; hooks fire only after the person trusts them in `/hooks`, and the start skill checks the SessionStart
+marker (`skills/guard/hooks_active.py`). The script halves stay as defence in depth (2026-10-14).
 
 | # | Event · matcher | Script | Does |
 |---|---|---|---|
@@ -622,8 +624,9 @@ Do not lift: auto-pairing (`routes/verify.py:449-564`), WARN bands, intersection
 9. **Databricks runtime** to pin and the access mode (09 Q1, Q3); commit the wheel in `dist/` (09 Q4).
 10. **PyQGIS knowledge gap:** run a separate synthetic QGIS evidence pass after the demo, or keep lux traps caught by verify
     only (04 Q1; recommended: the latter for the demo).
-11. **Codex:** no plugin hooks in codex-cli 0.144.4 — ship script halves only (recommended) or an opt-in project-hook
-    installer (08 Q3). Codex remains the first thing to drop.
+11. **Codex:** decided 2026-10-14 (Najah): same hooks and guards as Claude via one `hooks/hooks.json` (trust once in
+    `/hooks`), script halves kept as defence in depth; packaging per `.codex-plugin/plugin.json` and the repo-root
+    `.agents/plugins/marketplace.json`.
 12. `qgis_algs.json` from QGIS (GPL) parameter metadata — ship it? (01 Q2.)
 
 ## 13 Not checked

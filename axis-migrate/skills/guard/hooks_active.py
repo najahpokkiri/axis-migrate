@@ -4,6 +4,8 @@
 SessionStart (hooks/bin/session_start.py) writes, in every harness and even before migration/ exists:
 
     ${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-~/.cache/axis-migrate}}/hooks-active.json
+    (the checker also looks in ~/.cache/axis-migrate and ${CODEX_HOME:-~/.codex}/plugins/data/axis-migrate-*/,
+    because Codex sets PLUGIN_DATA for hooks but not for the agent's shell)
     {"schema": "axis-migrate.hooks-active.v1", "at": "<UTC ISO>", "harness": "codex"|"claude",
      "cwd_sha256": sha256(realpath(session cwd)), "session_id", "source", "migration_found", "plugin_root", "hooks"}
 
@@ -23,15 +25,25 @@ import sys
 from pathlib import Path
 
 
+def marker_paths() -> list[Path]:
+    """Every place a SessionStart marker may be. Codex gives hooks PLUGIN_DATA
+    ($CODEX_HOME/plugins/data/axis-migrate-<marketplace>/) but not the agent's shell, so look there too."""
+    dirs = [os.environ.get("PLUGIN_DATA"), os.environ.get("CLAUDE_PLUGIN_DATA"),
+            os.path.expanduser("~/.cache/axis-migrate")]
+    codex_home = Path(os.environ.get("CODEX_HOME") or os.path.expanduser("~/.codex"))
+    dirs += sorted(str(d) for d in (codex_home / "plugins" / "data").glob("axis-migrate-*") if d.is_dir())
+    out: list[Path] = []
+    for d in dirs:
+        if d and Path(d) / "hooks-active.json" not in out:
+            out.append(Path(d) / "hooks-active.json")
+    return out
+
+
 def marker_path() -> Path:
-    d = os.environ.get("PLUGIN_DATA") or os.environ.get("CLAUDE_PLUGIN_DATA") or os.path.expanduser(
-        "~/.cache/axis-migrate")
-    return Path(d) / "hooks-active.json"
+    return marker_paths()[0]
 
 
-def check(cwd: str, max_age_h: float = 24.0) -> dict:
-    p = marker_path()
-    want = hashlib.sha256(os.path.realpath(cwd).encode("utf-8")).hexdigest()
+def check_one(p: Path, want: str, max_age_h: float) -> dict:
     if not p.is_file():
         return {"active": False, "reason": f"no marker at {p}", "marker": str(p)}
     try:
@@ -49,6 +61,19 @@ def check(cwd: str, max_age_h: float = 24.0) -> dict:
     if age_h > max_age_h:
         return dict(out, active=False, reason=f"marker older than {max_age_h} h")
     return dict(out, active=True, reason="SessionStart hook ran for this working directory")
+
+
+def check(cwd: str, max_age_h: float = 24.0) -> dict:
+    want = hashlib.sha256(os.path.realpath(cwd).encode("utf-8")).hexdigest()
+    results = [check_one(p, want, max_age_h) for p in marker_paths()]
+    active = [r for r in results if r["active"]]
+    if active:
+        return min(active, key=lambda r: r["age_h"])
+    found = [r for r in results if not r["reason"].startswith("no marker")]
+    if found:
+        return found[0]
+    return {"active": False, "reason": "no marker in " + ", ".join(str(p.parent) for p in marker_paths()),
+            "marker": str(marker_path())}
 
 
 def main(argv=None) -> int:

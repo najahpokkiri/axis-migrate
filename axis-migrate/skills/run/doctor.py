@@ -49,6 +49,10 @@ def check_uv() -> tuple[str, str]:
     return "OK", f"{v} ({uv})"
 
 
+SANDBOX_HINT = (" — in a sandbox, rerun this one command with approval (Codex: escalated permissions; Claude Code: "
+                "outside the sandbox); it needs {what}")
+
+
 def check_cache() -> tuple[str, str]:
     venv = ac.env_venv_dir()
     base = venv.parent
@@ -57,7 +61,7 @@ def check_cache() -> tuple[str, str]:
         with tempfile.NamedTemporaryFile(dir=base, prefix=".doctor-", delete=True):
             pass
     except OSError as exc:
-        return "FAIL", f"ENV_CACHE_NOT_WRITABLE: {base}: {exc.strerror or exc}"
+        return "FAIL", f"ENV_CACHE_NOT_WRITABLE: {base}: {exc.strerror or exc}" + SANDBOX_HINT.format(what=f"a write to {base}")
     return "OK", f"environment cache {venv}"
 
 
@@ -74,10 +78,10 @@ def check_env(no_sync: bool) -> tuple[str, str]:
     try:
         cp = subprocess.run(cmd, capture_output=True, text=True, timeout=1800, env=env)
     except subprocess.TimeoutExpired:
-        return "FAIL", "ENV_SYNC_FAILED: uv sync timed out"
+        return "FAIL", "ENV_SYNC_FAILED: uv sync timed out" + SANDBOX_HINT.format(what="network and a write to " + str(venv))
     if cp.returncode != 0:
         tail = (cp.stderr or cp.stdout).strip().splitlines()[-1:] or [""]
-        return "FAIL", f"ENV_SYNC_FAILED: {tail[0][:200]}"
+        return "FAIL", f"ENV_SYNC_FAILED: {tail[0][:200]}" + SANDBOX_HINT.format(what="network and a write to " + str(venv))
     if no_sync:
         return "WARN", "not synced yet; `uv sync --frozen` dry run succeeded (first axpy call will sync)"
     marker.write_text(lock + "\n")
@@ -107,7 +111,7 @@ def check_port() -> tuple[str, str]:
             s.bind(("127.0.0.1", 0))
             port = s.getsockname()[1]
     except OSError as exc:
-        return "FAIL", f"PORT_BIND_FAILED: 127.0.0.1: {exc.strerror or exc} (graph editor server needs a local port)"
+        return "FAIL", f"PORT_BIND_FAILED: 127.0.0.1: {exc.strerror or exc} (graph editor server needs a local port)" + SANDBOX_HINT.format(what="a 127.0.0.1 port")
     return "OK", f"127.0.0.1 bind ok (got port {port})"
 
 

@@ -8,6 +8,7 @@ payloads/codex_*.json (built from the docs' format; no Codex run on this host).
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from conftest import MARKER_DIR, PAYLOADS, add_run, run_hook
@@ -236,3 +237,24 @@ def test_hooks_active_check_cli(project, tmp_path):
     other = subprocess.run([SYS_PY, "-I", str(GUARD / "hooks_active.py"), "--cwd", str(tmp_path)],
                            capture_output=True, text=True, env=env)
     assert other.returncode == 1
+
+
+def test_hooks_active_finds_codex_plugin_data_without_env(project, tmp_path):
+    """Codex sets PLUGIN_DATA for hooks only; the agent's shell must still find the marker under CODEX_HOME."""
+    import shutil
+    import subprocess
+    from conftest import GUARD, SYS_PY
+    run_hook("session_start.py", codex("SessionStart", cwd=str(project.root)), env=CODEX_ENV)
+    codex_home = tmp_path / "codex-home"
+    data = codex_home / "plugins" / "data" / "axis-migrate-axis-migrate-dev"
+    data.mkdir(parents=True)
+    shutil.copy(Path(MARKER_DIR) / "hooks-active.json", data / "hooks-active.json")
+    env = {"CODEX_HOME": str(codex_home), "HOME": str(tmp_path / "home"), "PATH": "/usr/bin:/bin"}
+    res = subprocess.run([SYS_PY, "-I", str(GUARD / "hooks_active.py"), "--cwd", str(project.root), "--json"],
+                         capture_output=True, text=True, env=env)
+    assert res.returncode == 0, res.stdout
+    assert json.loads(res.stdout)["marker"].startswith(str(data))
+    (data / "hooks-active.json").unlink()
+    gone = subprocess.run([SYS_PY, "-I", str(GUARD / "hooks_active.py"), "--cwd", str(project.root)],
+                          capture_output=True, text=True, env=env)
+    assert gone.returncode == 1

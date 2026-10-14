@@ -15,6 +15,8 @@ decide verdicts and status; you never do.**
 (the one pinned environment). Work from the project directory (the parent of the legacy folder); everything you
 create goes under `./migration/`. The legacy folder is read-only: never write, move, `touch` or `gdalinfo -stats`
 anything in it.
+Codex: skills get no `${CLAUDE_PLUGIN_ROOT}`; `$P` is the folder holding `.codex-plugin/plugin.json`; start with
+`$axis-migrate:start`.
 
 ## Hard rules (the hooks and scripts enforce them; do not try to work around a refusal)
 
@@ -40,18 +42,22 @@ own pane; never ask them to open a browser or copy a URL.
   input maps, the verify plots and `report/index.html` there, in a second tab (`tabs_create`, then `navigate` with
   its `tabId`) so the graph stays open. Show the map or plot a question is about before you ask it. Never write the
   token in chat.
-- **Terminal Claude Code, Codex, any harness without a pane tool**: give the URL once and name the file paths.
+- **Codex desktop app**: give the URL once as a clickable link and open it in the in-app browser with browser use
+  (the servers need sandbox approval to bind 127.0.0.1).
+- **Terminal Claude Code, Codex CLI, any harness without a pane**: give the URL once and name the file paths.
 - The pane is for the person. Your own judgement of a plot still comes from Reading the PNG (skill `verify`).
 
 ## Flow (follow the skills in this order; each SKILL.md has the exact commands)
 
 0. **Preflight** — `"$P/bin/axpy" --doctor` once: uv, a writable environment cache, the pinned environment, the read
    ledger (strace, or the macOS fallback that caps runs at sandbox-validated) and a local port bind. Fix any FAIL first.
+   Codex: the first `--doctor` needs escalated permissions (network + writes to the environment cache).
 1. **Discover** — skill `discover`: scan, input map (look at every PNG and record findings with numbers), lineage →
    `graph.json`, start the graph page and show it in the side pane (§Showing).
 2. **Investigate and interview** — skill `interview`: fill `params.yaml` for every output-changing parameter with
    citations; run `params_check.py`; ask the few remaining questions one at a time (AskUserQuestion, recommended
-   option first, explicit "Don't know"); `confirm_all` then the target question last.
+   option first, explicit "Don't know"); `confirm_all` then the target question last. Codex (no AskUserQuestion): ask
+   it as plain text with numbered options, recommended first, plus "Don't know"; then stop and wait.
 3. **Plan** — `BUILD.md` §1 (this skill's folder): one `plan` block per step, `graph.py render-plan`, one approval
    question. No `pipeline/` file may exist before approval. Plans cite reference-entry ids (`G-1`, `N-2`, …) in
    `risks[]`. After approval, once: `run_local.py migration --vendor-runtime` (never edit the vendored runtime).
