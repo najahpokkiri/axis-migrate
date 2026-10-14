@@ -63,15 +63,24 @@ def test_real_run_to_report(tmp_path):
     spec = importlib.util.spec_from_file_location("run_synth", PLUGIN / "skills" / "run" / "tests" / "synth.py")
     runsynth = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(runsynth)
+    # graph.json is only ever written by graph.py (GRAPH_OPS.md §8): adjust the draft, then let build_project run
+    # graph.init() on it (the run synth's draft already carries approved plans)
+    base_doc = runsynth.graph_doc
+
+    def graph_doc():
+        g = base_doc()
+        for e in g["edges"]:
+            if e["kind"] == "writes":
+                e["evidence"] = [{"state": "directly_observed", "ref": "scripts/legacy.py:10", "summary": "writes"}]
+        for d in g["datasets"]:
+            if d["id"] in ("ds.zone_sum", "ds.zone_stats"):
+                d.setdefault("compare", {}).update(key=["name"], match="key")
+        return g
+    runsynth.graph_doc = graph_doc
     mig = Path(runsynth.build_project(tmp_path / "proj"))
-    g = json.loads((mig / "graph.json").read_text())
-    for e in g["edges"]:
-        if e["kind"] == "writes":
-            e["evidence"] = [{"state": "directly_observed", "ref": "scripts/legacy.py:10", "summary": "writes"}]
-    for d in g["datasets"]:
-        if d["id"] in ("ds.zone_sum", "ds.zone_stats"):
-            d["compare"].update(key=["name"], match="key")
-    (mig / "graph.json").write_text(json.dumps(g, indent=1, sort_keys=True))
+    head = mig / ".graph" / "head.json"
+    assert head.is_file(), "graph.json must be written by graph.py init"
+    sh(PLUGIN / "skills/discover/graph.py", "check-integrity", mig)
     out = json.loads(sh(PLUGIN / "skills/run/run_local.py", mig, "--json").stdout)
     run_dir = Path(out["run_dir"])
     sh(PLUGIN / "skills/verify/compare.py", "run", "--run", run_dir)
