@@ -32,7 +32,7 @@ Read `migration/inventory.json`: `scan.read_only_verified` (must be true), `scan
 $AXPY $D/map.py inputs migration
 ```
 Then **Read every PNG** it lists (`discover/inputs_overview.png`, `grid_corners.png`, `legacy_rasters.png`) and go
-through this checklist:
+through this checklist (Codex has no Read tool: open each PNG with `view_image`):
 - every input covers the area of interest; quantify slivers outside (`extent_relations`);
 - mixed CRS or units (degrees vs metres; nominal vs real cell size; documented resolution vs the grid);
 - grid families and offsets: in `grid_corners.png` aligned rasters share one set of cell edges; a second, shifted

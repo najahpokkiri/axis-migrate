@@ -1,29 +1,32 @@
 ---
 name: start
-description: Codex entry point for axis-migrate (what /migrate is under Claude Code). Use first whenever the user asks to migrate, port or verify a legacy GIS project folder (PyQGIS, ArcPy, notebooks, Excel) with axis-migrate, or to resume one that already has a migration/ folder. Sets the plugin root, the chat question fallback and the finish rule, then hands over to commands/migrate.md and the discover, interview, migrate, run, verify, report and target skills.
+description: Codex entry point for axis-migrate (what /axis-migrate:migrate is under Claude Code). Use first whenever the user asks to migrate, port or verify a legacy GIS project folder (QGIS, ArcPy/PyQGIS, notebooks, Excel) with axis-migrate, or to resume one that has a migration/ folder. Checks that the plugin's hooks are active, says which commands need sandbox approval, then hands over to skills/migrate/SKILL.md for the whole flow.
 ---
 
-# axis-migrate under Codex
+# axis-migrate under Codex (thin layer: the method is in `skills/migrate/SKILL.md`)
 
-This file adds nothing to the method. It only says how to follow the Claude Code texts under Codex.
-
-1. **Plugin root.** `P` = the absolute directory that contains `.codex-plugin/plugin.json`, i.e. three levels above
-   this file (`<P>/codex/skills/start/SKILL.md`) and two levels above every other skill's `SKILL.md`. Wherever a text
-   says `${CLAUDE_PLUGIN_ROOT}`, `$PLUGIN`, `$P` or "plugin root", use that absolute path. Shell state may not persist
-   between commands, so write the literal path in every command, e.g. `"<P>/bin/axpy" "<P>/skills/discover/scan.py" …`.
-2. **Read** `<P>/CODEX.md` (what is and is not guarded without hooks), then `<P>/commands/migrate.md` and follow it
-   exactly. `$ARGUMENTS` there = the legacy folder the user named. If they named none, ask for it and stop.
-3. **No hooks run under Codex.** The hard rules in `commands/migrate.md` are not advisory: nothing will stop a
-   wrong write early, the scripts only refuse it later. Never write to the legacy folder, `migration/graph.json`,
-   `graph-edits.jsonl`, `runs/`, or a sealed run; never edit earlier blocks of `decisions.md` or
-   `known-differences.md`; never create `pipeline/sNN_*.py` before the plan is approved; never run pipeline code
-   except through `run_local.py`. Prefix any GDAL command of your own with `GDAL_PAM_ENABLED=NO`.
-4. **Questions (no AskUserQuestion).** Every place a skill says AskUserQuestion (interview questions, plan approval,
-   E2B upload approval) becomes the chat fallback in `skills/interview/SKILL.md`: print exactly one numbered question
-   block (options 1..n, "(Recommended)" first, `0 = don't know`, "or type an answer"), end the turn, and parse the
-   next user message. Record it as the skill says (`by: user (chat)`; graph ops keep `--channel interview
-   --verbatim "<the user's words>"`). Never answer a question yourself and never approve a plan without the user.
-5. **Finish (no Stop gate).** Before any summary, run `python3 -I "<P>/skills/report/ladder.py" migration` and start
-   your last message with its status line, quoted exactly. Then list every failing, unsigned or not-compared item by
-   name and claim nothing above that line. Check the draft with `python3 -I "<P>/skills/guard/claims.py" --json
-   --rung <pipeline rung from ladder.py --json> < draft.txt`: exit 1 means a claim is above the rung; remove it.
+1. **Plugin root.** `P` = the absolute folder holding `.codex-plugin/plugin.json` (three levels above this file, two
+   above every other `SKILL.md`). Wherever a text says `${CLAUDE_PLUGIN_ROOT}`, `$PLUGIN` or `$P`, write that path
+   literally in every command; `$ARGUMENTS` = the legacy folder the user named (none named: ask, then stop).
+2. **Hooks.** Run `python3 -I "<P>/skills/guard/hooks_active.py" --cwd "$PWD" --json` (stdlib; plain `python3` so
+   it does not start the first environment sync inside the sandbox). Exit 0: say the hooks are active and go on.
+   Exit 1: say plainly "Hooks are not active — open /hooks and trust axis-migrate's hooks, then start a new
+   session; until then the script halves are the only guards", and never claim or imply that guards are on.
+3. **Sandbox approvals** (Codex `workspace-write` has no network and cannot write outside the workspace). Run these
+   with escalated permissions, each once, and say why when Codex asks the person:
+   - `"<P>/bin/axpy" --doctor`: first use downloads the pinned environment (`uv sync --frozen`) into
+     `~/.cache/axis-migrate/` (network + a write outside the workspace);
+   - the map environment's first sync (`skills/map/`, GeoLibre 3.4.0 lock): same reasons;
+   - `graph_server.py serve migration` and the map server (`skills/map/start.py migration`): they bind a port on
+     127.0.0.1, which the sandbox refuses; keep them running in the background;
+   - `run_local.py` when `--doctor` reports strace unusable inside the sandbox (ptrace), otherwise runs are capped.
+   If the person refuses, stop and quote the one-line FAIL the script printed; never fall back to another way.
+4. **Flow.** Read `<P>/CODEX.md`, then follow `<P>/skills/migrate/SKILL.md` exactly (plan and build detail in
+   `<P>/skills/migrate/BUILD.md`, maps in `<P>/skills/map/SKILL.md` where it exists). Hook or script refusals are
+   final: report them, never work around them.
+5. **Codex differences, everywhere in the skills.** AskUserQuestion → ask one plain-text question with numbered
+   options, recommended first, plus "Don't know"; then stop and wait. `mcp__Claude_Browser__*` → give the URL once
+   as a clickable link and open it in the in-app browser with browser use. Read on a PNG → `view_image`. Never
+   write a server token in chat.
+6. **Finish.** Start the last message with the status line of `python3 -I "<P>/skills/report/ladder.py" migration`,
+   quoted exactly; list every failing, unsigned or not-compared item; claim nothing above that line.

@@ -1,7 +1,7 @@
 {
   "name": "axis-migrate",
-  "version": "0.1.0",
-  "description": "Moves a legacy, GUI-based desktop GIS project (QGIS projects and models, ArcPy/PyQGIS scripts, notebooks, Excel, hand edits) into a reproducible Python codebase and onto your cloud platform (Databricks today), verifying every step against the legacy run's own intermediates and final outputs and reporting one status computed from evidence, never claimed by the agent. Codex build: skills and scripts only, no hooks (see CODEX.md).",
+  "version": "0.2.0",
+  "description": "Moves a legacy, GUI-based desktop GIS project (QGIS projects and models, ArcPy/PyQGIS scripts, notebooks, Excel, hand edits) into a reproducible Python codebase and onto your cloud platform (Databricks today), verifying every step against the legacy run's own intermediates and final outputs and reporting one status computed from evidence, never claimed by the agent.",
   "author": {
     "name": "Axis Spatial"
   },
@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "axis-migrate",
     "shortDescription": "Legacy desktop GIS to a verified Python codebase on your cloud",
-    "longDescription": "Moves a legacy desktop GIS project into a reproducible Python codebase and a cloud job: discover a read-only legacy folder, investigate and interview, plan, migrate step by step, run under a read ledger, compare every step against the legacy intermediates and finals, seal the evidence and compute the status with ladder.py. Under Codex there are no hooks: the script halves are the guards (CODEX.md), and the start skill is the entry point.",
+    "longDescription": "Moves a legacy desktop GIS project into a reproducible Python codebase and a cloud job: discover a read-only legacy folder, map and investigate it, interview, plan, build step by step, run under a read ledger, compare every step against the legacy intermediates and finals, seal the evidence and compute the status with ladder.py. Start with $axis-migrate:start; trust the plugin's hooks once in /hooks (CODEX.md).",
     "developerName": "Axis Spatial",
     "category": "Coding",
     "capabilities": [
@@ -32,8 +32,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use $axis-migrate:start to migrate the legacy GIS folder ./legacy",
-      "Run ladder.py from the axis-migrate report skill on ./migration and quote its status line"
+      "Migrate the legacy GIS folder ./legacy with $axis-migrate:start",
+      "Show the axis-migrate status of ./migration"
     ]
   }
 }

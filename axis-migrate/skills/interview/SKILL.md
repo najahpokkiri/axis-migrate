@@ -78,8 +78,8 @@ Tolerance records are **not** signed here: proposals go to `tolerances.yaml` wit
 **Target** (always last): "Databricks job files (Recommended) / local only / other". Record in `params.yaml`
 `target.platform` (Glue, GCP, Snowflake → `TARGET_NOT_SUPPORTED`, the ladder stops at reference-verified).
 
-No AskUserQuestion tool (e.g. Codex): print one numbered question block (options 1..n, "(Recommended)", `0 = don't
-know`, "or type an answer"), end the turn, parse the next message; record `by: user (chat)`.
+Codex (no AskUserQuestion): ask the same question as plain text with numbered options, recommended first, plus
+"Don't know" (and "or type an answer"); then stop and wait, parse the next message; record `by: user (chat)`.
 Answers may also arrive from the graph page (`graph_server.py wait`): record them the same way with `by: user (graph)`.
 
 ## 4 Fitted parameters (only when nothing states the value)

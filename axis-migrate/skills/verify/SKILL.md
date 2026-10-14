@@ -28,8 +28,8 @@ black/dark grey = valid on one side only; zone boundaries green), `mask_diff.png
 
 ## 3 Look (mandatory for every compared raster and vector dataset)
 1. `plot.py review-status --run <run>` lists what still lacks a receipt and which questions are missing.
-2. **Read every PNG** of the dataset (Read tool on `migration/runs/<id>/verify/plots/<ds>/<name>.png`). Take
-   `plot_sha256`, `panel_names`, `crs` and `extent` from `plots.json`.
+2. **Read every PNG** of the dataset (Read tool on `migration/runs/<id>/verify/plots/<ds>/<name>.png`; Codex:
+   `view_image`). Take `plot_sha256`, `panel_names`, `crs` and `extent` from `plots.json`.
 3. Answer every rubric question of `$P/skills/verify/rubric.v1.yaml` that applies to the family (raster Q1, Q2, Q4,
    Q5, Q6, Q7; vector Q1, Q3, Q4), from the plots the rubric names, following its `look` guidance. Yes means
    **defect present**. Answer from what you see, not from the verdict printed in the title; a failing check does not

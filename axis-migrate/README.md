@@ -1,6 +1,6 @@
 # axis-migrate
 
-A plugin for agent harnesses (Claude Code today; Codex script halves per `CODEX.md`) that moves a legacy, GUI-based
+A plugin for agent harnesses (Claude Code and Codex, same hooks and guards; see `CODEX.md`) that moves a legacy, GUI-based
 desktop GIS project — QGIS projects and models, ArcPy/PyQGIS scripts, notebooks, Excel, hand edits stitched together over
 years — into a reproducible Python codebase and onto your cloud platform (Databricks today). It verifies every step
 against the legacy run's own intermediates and final outputs and reports one status computed from evidence, never
@@ -23,10 +23,20 @@ scans.
 **Terminal Claude Code**: the same two commands, or `claude --plugin-dir ./axis-migrate` from a checkout; pages are then
 given as local links.
 
+**Codex (desktop app or CLI)** — from a checkout of this repository:
+```
+codex plugin marketplace add <path to this repository>
+codex plugin add axis-migrate@axis-migrate-dev
+```
+or open `codex://plugins/axis-migrate?marketplacePath=<url-encoded absolute path of .agents/plugins/marketplace.json>`
+(print it from the repository root with `python3 -c 'import os,urllib.parse as u;print("codex://plugins/axis-migrate?marketplacePath="+u.quote(os.path.abspath(".agents/plugins/marketplace.json"),safe=""))'`).
+Then once: `/hooks`, trust the axis-migrate hooks, start a new session and type `$axis-migrate:start`. Success looks
+like: the start skill prints `axis-migrate hooks: active`, then the preflight. Approvals and differences: `CODEX.md`.
+
 Requirements: Linux or macOS, `uv` on PATH (the plugin builds one pinned environment from `skills/run/env/uv.lock`
 on first use, in `${CLAUDE_PLUGIN_DATA}` or `~/.cache/axis-migrate/`; no other installs at run time), `strace` on Linux for the read
 ledger (macOS uses the audit-hook + GDAL-debug ledger and caps runs at sandbox-validated). Optional: an E2B API key for
-sandboxed runs (`run_e2b.py`, explicit upload consent per run). Codex: script halves only, see `CODEX.md`.
+sandboxed runs (`run_e2b.py`, explicit upload consent per run).
 
 ## Use
 

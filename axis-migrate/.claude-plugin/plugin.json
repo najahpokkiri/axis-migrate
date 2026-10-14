@@ -1,6 +1,6 @@
 {
   "name": "axis-migrate",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Moves a legacy, GUI-based desktop GIS project (QGIS projects and models, ArcPy/PyQGIS scripts, notebooks, Excel, hand edits) into a reproducible Python codebase and onto your cloud platform (Databricks today), verifying every step against the legacy run's own intermediates and final outputs and reporting one status computed from evidence, never claimed by the agent.",
   "author": {
     "name": "Axis Spatial"
