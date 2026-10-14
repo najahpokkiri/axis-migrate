@@ -130,16 +130,27 @@ def parse_blocks(text: str, head_re: re.Pattern) -> list[dict]:
     return out
 
 
+def _as_list(x) -> list:
+    if x is None:
+        return []
+    return list(x) if isinstance(x, (list, tuple)) else [x]
+
+
 def check_records(mdir: Path, param_ids: set, f: Findings) -> dict:
     out = {"decisions": [], "kds": []}
     dp = mdir / "decisions.md"
     if dp.exists():
         blocks = parse_blocks(dp.read_text(encoding="utf-8"), DEC_HEAD_RE)
+        superseded = {str(s) for b in blocks if not b["error"] for s in _as_list((b["yaml"] or {}).get("supersedes"))}
         seen = []
         for b in blocks:
             w = f"decisions.md:{b['head'][:40]}"
             if b["error"]:
-                f.block("DECISION_FORMAT", w, b["error"])
+                if b["id"] and b["id"] in superseded:
+                    f.warn("DECISION_FORMAT_SUPERSEDED", w, f"{b['error']} (superseded by a later entry)")
+                else:
+                    f.block("DECISION_FORMAT", w, f"{b['error']}; append a corrected entry with "
+                                                  f"`supersedes: {b['id']}` (record.py decision …)")
                 continue
             y = b["yaml"] or {}
             if y.get("id") != b["id"]:
@@ -155,10 +166,16 @@ def check_records(mdir: Path, param_ids: set, f: Findings) -> dict:
             out["decisions"].append(y)
     kp = mdir / "known-differences.md"
     if kp.exists():
-        for b in parse_blocks(kp.read_text(encoding="utf-8"), KD_HEAD_RE):
+        kblocks = parse_blocks(kp.read_text(encoding="utf-8"), KD_HEAD_RE)
+        ksup = {str(s) for b in kblocks if not b["error"] for s in _as_list((b["yaml"] or {}).get("supersedes"))}
+        for b in kblocks:
             w = f"known-differences.md:{b['head'][:40]}"
             if b["error"]:
-                f.block("KD_FORMAT", w, b["error"])
+                if b["id"] and b["id"] in ksup:
+                    f.warn("KD_FORMAT_SUPERSEDED", w, f"{b['error']} (superseded by a later entry)")
+                else:
+                    f.block("KD_FORMAT", w, f"{b['error']}; append a corrected entry with `supersedes: {b['id']}` "
+                                            f"(record.py kd …)")
                 continue
             y = b["yaml"] or {}
             if y.get("id") != b["id"]:

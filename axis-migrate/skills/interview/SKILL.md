@@ -59,8 +59,10 @@ what changes downstream"`; options: recommended first labelled "(Recommended)", 
 - `answer_question` via `graph.py apply … --channel interview --verbatim "<the user's exact words>"`;
 - update `params.yaml` (`source: answer`, `question: qNN`, `status: confirmed`; "Don't know" → `source: assumption`,
   `status: assumed`), increment `budget.asked`;
-- append `## D-nnn · <title> · <UTC timestamp>` + one fenced yaml block (`id, question, kind, answer, by, params,
-  nodes, changes, supersedes, evidence`) to `decisions.md`. Never edit an earlier entry; correct with `supersedes:`.
+- record the decision with `"$P/bin/axpy" "$P/skills/interview/record.py" decision migration --json entry.json`
+  (fields `title, question, kind, answer, by, params, nodes, changes, supersedes, evidence`; it assigns `D-nnn`, writes
+  the heading and a serialiser-made yaml block, so quoting cannot break). Never hand-write or edit an entry; correct
+  one, even a malformed one, by recording a new entry with `supersedes: D-nnn`.
 
 A free-text "Other" answer is restated as a concrete params change and confirmed once ("Recorded as X = …, correct?").
 

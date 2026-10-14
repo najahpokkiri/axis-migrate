@@ -97,8 +97,10 @@ signed before the run that uses it. You never write `tolerances.yaml` and never 
 4. What proposals do: compare.py reads them (from the run's `snapshot/tolerances.proposed.yaml`) only to classify — a
    check that would pass only under a proposal ends NEEDS_DECISION / `TOLERANCE_UNSIGNED`; it never passes. A record
    with a signature inside the proposals file is ignored (listed in `tolerance_proposals_ignored`).
-5. Known differences: append a block to `migration/known-differences.md` (append-only; to change one, append a new KD
-   whose `reason` says which id it supersedes and set nothing in the old one). Copy this template exactly:
+5. Known differences: record each with `"$P/bin/axpy" "$P/skills/interview/record.py" kd migration --json kd.json`
+   (it assigns `KD-nnn` and writes a serialiser-made block; never hand-write one). To change or fix an entry, even a
+   malformed one, record a new KD with `supersedes: KD-nnn`; never edit the old one. The fields, for `kd.json`
+   (plus `title`; `id` is assigned):
 
    ````markdown
    ## KD-004 · exposure written as float64

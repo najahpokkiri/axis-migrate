@@ -118,3 +118,29 @@ def test_cli_exit_codes(tmp_path):
     assert pc.main([str(mig)]) == 0
     assert pc.main([str(mig), "--stage", "wired"]) == 2
     assert pc.main([str(tmp_path / "missing")]) == 3
+
+
+def test_malformed_decision_can_be_superseded(tmp_path):
+    bad = ("## D-001 · Broken · 2026-10-14T10:00:00Z\n```yaml\nid: D-001\nchanges:\n  - a {b: c} d: e\n    f\n```\n")
+    mig = make(tmp_path, [good_param()], decisions=bad)
+    assert "DECISION_FORMAT" in codes(pc.check(mig, "investigate")[0])
+    import record
+    nid = record.append(mig, "decision", {"title": "Fix D-001", "kind": "agent_decision", "by": "agent",
+                                          "supersedes": "D-001", "changes": ["a {b: c} d: e f"]})
+    assert nid == "D-002"
+    f, _ = pc.check(mig, "investigate")
+    assert not f.blocking, f.items
+    assert any(i["code"] == "DECISION_FORMAT_SUPERSEDED" for i in f.items)
+
+
+def test_record_refuses_human_kd_owner_and_round_trips(tmp_path):
+    import record
+    mig = make(tmp_path, [good_param()])
+    with pytest.raises(ValueError):
+        record.append(mig, "kd", {"title": "x", "kind": "normalisation", "owner": "human:someone"})
+    nid = record.append(mig, "kd", {"title": "Raise on unmatched key", "kind": "legacy_defect_preserved",
+                                    "datasets": ["ds.out"], "checks": [], "rule": None, "bound": {"metric": "x", "max": 0},
+                                    "reason": "zero effect: {a: b} quoted safely", "evidence": ["scripts/a.py:1"]})
+    assert nid == "KD-001"
+    f, _ = pc.check(mig, "investigate")
+    assert not f.blocking, f.items

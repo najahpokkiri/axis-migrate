@@ -67,7 +67,7 @@ BUILTIN_DEFAULTS = {
     "vector.geometry_type": {"normalise": "multi_equivalence"},
 }
 KD_KEYS = {"id", "kind", "datasets", "checks", "rule", "bound", "reason", "evidence", "owner", "decided_at",
-           "decision_ref", "status"}
+           "decision_ref", "status", "supersedes"}
 KD_KINDS = {"normalisation", "exclusion", "accepted_change", "legacy_defect_preserved"}
 KD_NORMALISATION_RULES = {"nodata_equivalent", "dtype_widening", "multi_equivalence", "string_strip", "casefold",
                           "rename", "content_hash_only"}
@@ -615,6 +615,13 @@ def parse_known_differences(text: str | None) -> tuple[list[dict], list[dict]]:
         d["_head"] = h.group(1)
         d["_line"] = text.count("\n", 0, h.start() + h.end() - h.start() + m.start()) + 2
         kds.append(d)
+    # append-only correction: a later entry `supersedes: KD-nnn` withdraws that entry (even a malformed one)
+    sup = set()
+    for d in kds:
+        s = d.get("supersedes")
+        sup.update(map(str, s if isinstance(s, (list, tuple)) else ([s] if s else [])))
+    kds = [d for d in kds if str(d.get("id")) not in sup]
+    errs = [e for e in errs if str(e.get("id")) not in sup]
     return kds, errs
 
 
