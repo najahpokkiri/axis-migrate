@@ -23,14 +23,18 @@ scans.
 **Terminal Claude Code**: the same two commands, or `claude --plugin-dir ./axis-migrate` from a checkout; pages are then
 given as local links.
 
-**Codex (desktop app or CLI)** — from a checkout of this repository:
+**Codex (desktop app or CLI)** — from GitHub (needs read access to the repository; SSH:
+`git@github.com:najahpokkiri/axis-migrate.git`):
 ```
-codex plugin marketplace add <path to this repository>
+codex plugin marketplace add najahpokkiri/axis-migrate --ref main
 codex plugin add axis-migrate@axis-migrate-dev
 ```
-or open `codex://plugins/axis-migrate?marketplacePath=<url-encoded absolute path of .agents/plugins/marketplace.json>`
-(print it from the repository root with `python3 -c 'import os,urllib.parse as u;print("codex://plugins/axis-migrate?marketplacePath="+u.quote(os.path.abspath(".agents/plugins/marketplace.json"),safe=""))'`).
-Then once: `/hooks`, trust the axis-migrate hooks, start a new session and type `$axis-migrate:start`. Success looks
+Or from a **fresh clone**, never a working tree: Codex copies the plugin folder as it is, git-ignored files included (a
+stale `skills/run/env/.venv` made one install 460 MB instead of 5 MB; `bin/axpy --doctor` warns `PLUGIN_NOT_CLEAN`).
+With a fresh clone the deeplink also works:
+`codex://plugins/axis-migrate?marketplacePath=<url-encoded absolute path of .agents/plugins/marketplace.json>`
+(print it from the clone's root with `python3 -c 'import os,urllib.parse as u;print("codex://plugins/axis-migrate?marketplacePath="+u.quote(os.path.abspath(".agents/plugins/marketplace.json"),safe=""))'`).
+Then once: `/hooks`, select axis-migrate's hooks, press `t`, start a NEW chat and type `$axis-migrate:start`. Success looks
 like: the start skill prints `axis-migrate hooks: active`, then the preflight. Approvals and differences: `CODEX.md`.
 
 Requirements: Linux or macOS, `uv` on PATH (the plugin builds one pinned environment from `skills/run/env/uv.lock`

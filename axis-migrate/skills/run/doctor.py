@@ -9,6 +9,8 @@ Checks, one line each (OK / WARN / FAIL):
   strace      strace works (read/write ledger); without it (macOS): ledger = audit+cpl_debug, rung capped at
               sandbox-validated
   port        a local port can be bound on 127.0.0.1 (graph editor server)
+  plugin      the plugin folder holds no `.venv`, `__pycache__` or `migration/` (a marketplace added from a working
+              tree copies git-ignored files into the installed cache; install from GitHub or a fresh clone)
 Exit 0 when nothing FAILs (a WARN does not fail), 13 otherwise.
 """
 from __future__ import annotations
@@ -115,13 +117,37 @@ def check_port() -> tuple[str, str]:
     return "OK", f"127.0.0.1 bind ok (got port {port})"
 
 
+STRAY_NAMES = (".venv", "__pycache__", "migration")
+
+
+def stray_paths(root: Path = PLUGIN) -> list[Path]:
+    """Directories under the plugin root that a clean checkout never has (git-ignored leftovers)."""
+    found: list[Path] = []
+    for dirpath, dirnames, _ in os.walk(root):
+        for d in list(dirnames):
+            if d in STRAY_NAMES or d == ".git":
+                if d != ".git":
+                    found.append(Path(dirpath) / d)
+                dirnames.remove(d)
+    return sorted(found)
+
+
+def check_plugin(root: Path = PLUGIN) -> tuple[str, str]:
+    found = stray_paths(root)
+    if not found:
+        return "OK", f"plugin folder clean ({root})"
+    shown = ", ".join(str(p.relative_to(root)) for p in found[:3]) + (f" (+{len(found) - 3} more)" if len(found) > 3 else "")
+    return "WARN", (f"PLUGIN_NOT_CLEAN: {shown} under {root}: installed from a working tree? Reinstall from GitHub "
+                    "or a fresh clone (README, Install)")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="axis-migrate preflight checks.")
     ap.add_argument("--no-sync", action="store_true", help="do not sync the environment; dry run only")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     results = [("uv", *check_uv()), ("cache", *check_cache()), ("env", *check_env(a.no_sync)),
-               ("strace", *check_strace()), ("port", *check_port())]
+               ("strace", *check_strace()), ("port", *check_port()), ("plugin", *check_plugin())]
     failed = any(r[1] == "FAIL" for r in results)
     if a.json:
         print(json.dumps({"ok": not failed, "platform": f"{platform.system()}-{platform.machine()}",

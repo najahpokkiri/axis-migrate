@@ -4,13 +4,12 @@ Codex is a first-class harness with the same hooks, guards and end-to-end gate a
 **14 Oct 2026, premise changed** (Najah): the earlier "no hooks" misread the retired `plugin_hooks` flag; Codex loads
 plugin hooks from `hooks/hooks.json` once trusted, so it gets the same hooks as Claude.
 
-## Install (from a clean checkout; nothing large is copied, the environments live in `~/.cache/axis-migrate/`)
+## Install (from GitHub or a fresh clone, never a working tree: Codex copies git-ignored files too; `--doctor` warns)
 
 ```
-codex plugin marketplace add <checkout of the axis-migrate-dev repository>
+codex plugin marketplace add najahpokkiri/axis-migrate --ref main     # or the path of a fresh clone
 codex plugin add axis-migrate@axis-migrate-dev
 ```
-or the deeplink `codex://plugins/axis-migrate?marketplacePath=<url-encoded absolute path of .agents/plugins/marketplace.json>`.
 Installing is not trusting: until trusted, the hooks do not run and nothing is logged. Once: open `/hooks` (desktop:
 Review hooks), select axis-migrate's definitions, press `t`, then start a NEW chat (an open chat never loads a newly
 installed plugin) and type `$axis-migrate:start`. A changed hook definition needs re-review, so every plugin update
@@ -20,7 +19,8 @@ if not, the start skill says the guards are off and writes nothing under `migrat
 Manifest: `.codex-plugin/plugin.json` (canonical; no root `plugin.json`, no `hooks` key: default discovery finds
 `hooks/hooks.json`). Marketplace: repo-root `.agents/plugins/marketplace.json`, `source.path` `./axis-migrate`.
 `skills` stays the array `["./skills/", "./codex/skills/"]`: measured on 0.144.4 and 0.162.1, the string
-`"./codex/skills/"` replaces default discovery (only `start` loads, the seven method skills vanish).
+`"./codex/skills/"` replaces default discovery (only `start` loads, the seven method skills vanish); the list loads
+all 9 (confirmed on the laptop, 0.162.0).
 
 ## Hooks under Codex
 
