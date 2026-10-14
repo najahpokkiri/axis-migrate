@@ -3,7 +3,7 @@ id: S1-T5
 version: 1
 mode: seeded
 tier: core
-expected_status_max: reference-verified    # after the fix. Honest rung also needs the area float-noise records
+expected_status_max: target-ready    # after the fix (the target step may follow a reference-verified run). Honest rung also needs the area float-noise records
 expected_status: null                      # (QGIS shoelace vs GEOS, max rel 3.5e-14 on buffer_area_by_commune.gpkg)
                                            # signed; unsigned they leave NEEDS_DECISION/TOLERANCE_UNSIGNED (as F-L)
 planted:
