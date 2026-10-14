@@ -99,8 +99,7 @@ tar -xf {ws_tar} -C "$T"
 chmod -R a-w "$T/project/{legacy}"
 cd "$T/project"
 "$HOME/harness-env/.venv/bin/python" {driver}
-cd "$T"; tar -cf {out_tar} out project
-chmod 644 {out_tar}
+cd "$T"; tar -cf "$T.out.tar" out project
 '''
 
 
@@ -134,7 +133,10 @@ def run_trial(case_id, cdir, case, sha, plugin_tar, model, trial_idx, results_ro
     (dest / "harness.log").write_text(f"exit {p.returncode}\nSTDOUT\n{p.stdout[-20000:]}\nSTDERR\n{p.stderr[-20000:]}\n")
     meta = {"case": case_id, "trial": trial, "plugin_commit": sha, "model": model, "started": t0.isoformat() + "Z",
             "ended": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z", "harness_exit": p.returncode, "effort": effort}
-    if out_tar.exists():
+    fetched = subprocess.run(["sudo", "-n", "-u", "axis-eval", "cat", f"/home/axis-eval/ws/{trial}.out.tar"],
+                             capture_output=True)
+    if fetched.returncode == 0 and fetched.stdout:
+        out_tar.write_bytes(fetched.stdout)
         with tarfile.open(out_tar) as tf:
             tf.extractall(dest, filter="tar")
         out_tar.unlink()

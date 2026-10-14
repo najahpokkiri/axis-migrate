@@ -319,3 +319,35 @@ def is_sidecar(path: str) -> bool:
 def utc_now_iso() -> str:
     import datetime as _dt
     return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Graph contract view: drift checks must ignore projections written by graph.py derive / ingest-verify
+# ---------------------------------------------------------------------------------------------------------------
+GRAPH_VOLATILE_TOP = {"revision", "updated", "acks", "ladder", "runs"}
+GRAPH_VOLATILE_STEP = {"ladder", "verify", "provenance"}
+GRAPH_VOLATILE_DATASET = {"verify", "provenance"}
+
+
+def graph_contract_view(graph: dict) -> dict:
+    """The graph minus projections (ladder, verify, revision counters, provenance, code_sha256 written by derive).
+
+    Two graphs with equal contract views describe the same workflow, scope, pairing, params refs, plans, questions and
+    compare settings; projections (rungs, verdicts, blame) never count as a change of the graph after a run.
+    """
+    g = {k: v for k, v in graph.items() if k not in GRAPH_VOLATILE_TOP}
+    steps = []
+    for s in graph.get("steps") or []:
+        s2 = {k: v for k, v in s.items() if k not in GRAPH_VOLATILE_STEP}
+        if isinstance(s2.get("new"), dict):
+            s2["new"] = {k: v for k, v in s2["new"].items() if k != "code_sha256"}
+        steps.append(s2)
+    g["steps"] = steps
+    g["datasets"] = [{k: v for k, v in d.items() if k not in GRAPH_VOLATILE_DATASET}
+                     for d in graph.get("datasets") or []]
+    return g
+
+
+def graph_contract_sha256(graph_or_path) -> str:
+    graph = graph_or_path if isinstance(graph_or_path, dict) else load_json(graph_or_path)
+    return sha256_bytes(cjson(graph_contract_view(graph)))
