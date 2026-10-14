@@ -89,6 +89,15 @@ def main() -> int:
         n = None
         notes.append(f"unacked graph edits: unknown ({e.__class__.__name__})")
     lines = [status_line(mig), f"migration: {mig}"]
+    try:
+        integ = hl.graph_integrity(mig)
+    except Exception as e:  # noqa: BLE001 - informational
+        integ = None
+        notes.append(f"graph integrity check failed: {e.__class__.__name__}")
+    if integ:
+        lines.append("WARNING GRAPH_EDITED_OUTSIDE_APPLY: graph.json or graph-edits.jsonl was changed outside "
+                     "graph.py (" + "; ".join(integ) + "). graph.py refuses to work until it is restored from "
+                     ".graph/rev/<n>.json or the user decides; no status claim is possible meanwhile.")
     if n:
         lines.append(f"The user has {n} unacked graph edit(s): run graph.py diff, act on each, then graph.py ack.")
     lines.append("axis-migrate guards active:")

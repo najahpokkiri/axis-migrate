@@ -360,6 +360,9 @@ def decide(data: dict, mig: Path) -> dict | None:
         elif found:
             bad = cl.unsupported(found, rung)
             problems = drift(mig, res.get("run_id"))
+            integ = hl.graph_integrity(mig)
+            if integ:
+                problems.append("GRAPH_EDITED_OUTSIDE_APPLY (" + "; ".join(integ)[:160] + ")")
             problems += [f"open high-impact question {q}" for q in open_high_impact(g)]
             top = cl.strongest(found)
             if cl.rung_index(top.rung) >= cl.rung_index("reference-verified"):

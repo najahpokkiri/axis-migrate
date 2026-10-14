@@ -93,6 +93,21 @@ def sha(p: Path) -> str:
 # ---------------------------------------------------------------------------------------------------------------
 # Synthetic project
 # ---------------------------------------------------------------------------------------------------------------
+_GRAPH_MOD = None
+
+
+def graph_module():
+    """skills/discover/graph.py (stdlib core), imported once."""
+    global _GRAPH_MOD
+    if _GRAPH_MOD is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("axis_graph_for_tests", PLUGIN / "skills" / "discover" / "graph.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _GRAPH_MOD = mod
+    return _GRAPH_MOD
+
+
 @dataclass
 class Project:
     root: Path
@@ -109,7 +124,20 @@ class Project:
         return json.loads((self.mig / "graph.json").read_text())
 
     def set_graph(self, g: dict) -> None:
+        """Write the graph the way graph.py does (rev snapshot + .graph/head.json write record, GRAPH_OPS §8)."""
+        G = graph_module()
+        G._write_graph(self.mig, g)
+        G._record_head(self.mig, g["revision"])
+
+    def set_graph_outside(self, g: dict) -> None:
+        """Simulate an edit of graph.json outside graph.py apply (GRAPH_EDITED_OUTSIDE_APPLY)."""
         (self.mig / "graph.json").write_text(json.dumps(g, indent=1, sort_keys=True))
+
+    def append_edit(self, rec: dict) -> None:
+        """Append to graph-edits.jsonl as graph.py would (re-recording the write record)."""
+        with open(self.mig / "graph-edits.jsonl", "a") as fh:
+            fh.write(json.dumps(rec, sort_keys=True) + "\n")
+        graph_module()._record_head(self.mig, self.graph()["revision"])
 
 
 LEGACY_FILES = {
@@ -236,8 +264,15 @@ def make_graph() -> dict:
                side=["05_TEMP/01_mid.tif.aux.xml"]),
             ds("ds.final", "final", "04_FINAL/final.csv", "s03_final", "FAIL", kind="table"),
         ],
-        "edges": [], "questions": [
-            {"id": "q01", "status": "answered", "impact": {"level": "high"}},
+        "edges": [
+            {"id": "e.s01_prep>ds.01_mid", "from": "s01_prep", "to": "ds.01_mid", "kind": "writes",
+             "evidence": [{"state": "directly_observed", "ref": "02_SCRIPTS/s01_prep.py:1", "summary": "write"}]},
+            {"id": "e.s03_final>ds.final", "from": "s03_final", "to": "ds.final", "kind": "writes",
+             "evidence": [{"state": "directly_observed", "ref": "02_SCRIPTS/s01_prep.py:1", "summary": "write"}]},
+        ],
+        "questions": [
+            {"id": "q01", "status": "answered", "node": "s01_prep", "nodes": ["s01_prep"], "text": "Which zones?",
+             "impact": {"level": "high"}, "answer": {"value": "derive", "by": "user"}},
         ],
         "invariants": [], "legacy_output_dirs": ["04_FINAL", "05_TEMP"],
     }
@@ -256,7 +291,8 @@ def make_project(base: Path, *, runs: bool = False) -> Project:
     (root / "legacy-demo.build" / "build.py").write_text("print('build')\n")
     mig.mkdir(parents=True)
     pr = Project(root, mig, legacy)
-    pr.set_graph(make_graph())
+    graph_module().init(mig, make_graph())   # rev 1 + write record, as lineage.py does
+    pr.set_graph(make_graph())               # the synthetic state under test, recorded as a graph.py write
     inv = {
         "schema": "axis-migrate.inventory.v1", "legacy_root": "../legacy-demo",
         "scan": {"read_only_verified": True, "legacy_roots": ["."]},

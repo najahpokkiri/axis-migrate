@@ -128,3 +128,17 @@ def recorded_runs(mig: Path) -> list[Path]:
         if d.is_dir() and ((d / "manifest.json").is_file() or (d / "snapshot").is_dir()):
             out.append(d)
     return out
+
+
+def graph_integrity(mig: Path) -> list[str] | None:
+    """graph.py's GRAPH_EDITED_OUTSIDE_APPLY check (GRAPH_OPS §8); None when graph.py is not importable."""
+    import importlib.util
+    gp = PLUGIN / "skills" / "discover" / "graph.py"
+    if not gp.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("axis_graph_for_hooks", gp)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    if not hasattr(mod, "integrity_problems"):
+        return None
+    return list(mod.integrity_problems(mig))

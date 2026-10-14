@@ -19,11 +19,19 @@ def test_context_and_env_file(project, tmp_path):
 
 
 def test_unacked_edits_listed(project, tmp_path):
-    (project.mig / "graph-edits.jsonl").write_text(
-        json.dumps({"seq": 9, "rev": 8, "actor": "user", "op": {"type": "add_note"}}) + "\n")
+    project.append_edit({"seq": 9, "rev": 8, "actor": "user", "op": {"type": "add_note"}})
     r = run_hook("session_start.py", payload("SessionStart", cwd=str(project.root)),
                  env={"CLAUDE_ENV_FILE": str(tmp_path / "e")})
     assert "1 unacked graph edit" in r.out["hookSpecificOutput"]["additionalContext"]
+
+
+def test_graph_edited_outside_apply_warned(project, tmp_path):
+    env = {"CLAUDE_ENV_FILE": str(tmp_path / "e")}
+    ok = run_hook("session_start.py", payload("SessionStart", cwd=str(project.root)), env=env)
+    assert "GRAPH_EDITED_OUTSIDE_APPLY" not in ok.out["hookSpecificOutput"]["additionalContext"]
+    project.set_graph_outside(project.graph())
+    r = run_hook("session_start.py", payload("SessionStart", cwd=str(project.root)), env=env)
+    assert r.rc == 0 and "GRAPH_EDITED_OUTSIDE_APPLY" in r.out["hookSpecificOutput"]["additionalContext"]
 
 
 def test_fails_open(project, tmp_path):

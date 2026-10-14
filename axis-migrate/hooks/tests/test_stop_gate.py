@@ -174,6 +174,15 @@ def test_g11_graph_contract_change_is_drift(project_run, monkeypatch):
     assert d is not None and "GRAPH_CHANGED_AFTER_RUN" in d["reason"]
 
 
+def test_graph_edited_outside_apply_blocks_claims(project_run, monkeypatch):
+    rid = _verified_bundle(project_run)
+    assert decide(project_run, "Verified.", monkeypatch, "reference-verified", rid) is None
+    project_run.set_graph_outside(project_run.graph())  # same content, bytes not written by graph.py
+    d = decide(project_run, "Verified.", monkeypatch, "reference-verified", rid)
+    assert d is not None and "GRAPH_EDITED_OUTSIDE_APPLY" in d["reason"]
+    assert decide(project_run, "Which option do you prefer?", monkeypatch, "reference-verified", rid) is None
+
+
 def test_open_high_impact_question_blocks_claim(project_run, monkeypatch):
     rid = _verified_bundle(project_run)
     g = project_run.graph()
@@ -186,8 +195,7 @@ def test_open_high_impact_question_blocks_claim(project_run, monkeypatch):
 
 # unacked graph edits (DESIGN §4.2) -------------------------------------------------------------------------------
 def test_unacked_user_edits_block_without_claim(project, monkeypatch):
-    (project.mig / "graph-edits.jsonl").write_text(
-        json.dumps({"seq": 4, "rev": 8, "actor": "user", "op": {"type": "add_note", "id": "s01_prep"}}) + "\n")
+    project.append_edit({"seq": 4, "rev": 8, "actor": "user", "op": {"type": "add_note", "id": "s01_prep"}})
     d = decide(project, "Which option do you prefer?", monkeypatch, "generated")
     assert d is not None and "unacked" in d["reason"]
     g = project.graph()
