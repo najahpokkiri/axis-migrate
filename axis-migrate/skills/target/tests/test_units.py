@@ -156,3 +156,12 @@ def test_unsupported_and_unconfigured_platform(tmp_path):
     assert md.main([str(mig)]) == 3 and not (mig / "databricks").exists()
     p.write_text(p.read_text().split("target:")[0])
     assert md.main([str(mig)]) == 2 and not (mig / "databricks").exists()
+
+
+def test_evaluator_crash_is_a_fail_with_evidence_not_a_missing_record():
+    derr = "TC_EVALUATOR_ERROR: ValueError: boom (traceback: databricks/dryrun/evaluator-error.txt)"
+    got = {c["id"]: c for c in tc.checks_dynamic(None, derr, "databricks/dryrun", 8.0)}
+    assert got["T7"]["state"] == "FAIL" and got["T7"]["reason_codes"] == ["TC_EVALUATOR_ERROR"]
+    assert got["T8"]["state"] == "FAIL" and "evaluator-error.txt" in got["T8"]["evidence"][0]
+    setup = {c["id"]: c for c in tc.checks_dynamic(None, "no wheel", "databricks/dryrun", 8.0)}
+    assert setup["T7"]["state"] == "BLOCKED"

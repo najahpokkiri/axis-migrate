@@ -342,3 +342,19 @@ def test_at9_13_no_strace_blocks_t13(project):
     assert "E2B" in " ".join(st["T13"]["evidence"])
     assert st["T7"]["state"] == "PASS" and st["T8"]["state"] == "PASS"
     assert manifest(mig)["status"] == EXPECTED_RUNG
+
+
+def test_dry_run_through_a_symlinked_temp_dir(project, tmp_path):
+    """macOS TMPDIR lives under /var -> /private/var: the dry-run root must be canonical from the start, so parity
+    paths and trace prefixes agree (it once raised in parity and left no target-check.json)."""
+    mig, run_id = project
+    real = tmp_path / "real-tmp"
+    real.mkdir()
+    link = tmp_path / "tmp-link"
+    link.symlink_to(real, target_is_directory=True)
+    env = dict(os.environ, TMPDIR=str(link))
+    assert make(mig, env=env)[0] == 0
+    check(mig, run_id, env=env)
+    st = states(mig)                                       # written, whatever the verdict
+    assert st["T7"]["state"] == "PASS", st["T7"]
+    assert st["T8"]["state"] == "PASS", st["T8"]        # parity ran on canonical paths

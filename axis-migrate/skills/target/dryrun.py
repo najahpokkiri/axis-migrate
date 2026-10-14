@@ -545,7 +545,8 @@ def dry_run(mig: Path, run_id: str, evidence: Path, *, keep: bool = False, use_s
     if evidence.exists():
         shutil.rmtree(evidence)
     (evidence / "logs").mkdir(parents=True)
-    tmp = Path(tempfile.mkdtemp(prefix="axis-dryrun-"))
+    # canonical once (macOS: /var -> /private/var): every path below is built from it and compared with resolved roots
+    tmp = Path(tempfile.mkdtemp(prefix="axis-dryrun-")).resolve()
     res: dict = {"schema": "axis-migrate.target-dryrun.v1", "run_id": run_id, "job_key": job_key,
                  "wheel": {"file": wheel.name, "sha256": ac.sha256_file(wheel)}, "tasks": [], "problems": []}
     install_log: list = []
@@ -721,7 +722,7 @@ def dry_run(mig: Path, run_id: str, evidence: Path, *, keep: bool = False, use_s
         all_ok = venv.get("install_ok") and all(r.get("exit_code") == 0 for r in res["tasks"]) and res["tasks"]
         if all_ok:
             task_steps = {s for s in steps_in_bundle if s}
-            rep = parity(run_dir, dsmap, roots, task_steps, evidence, root.resolve())
+            rep = parity(run_dir, dsmap, roots, task_steps, evidence, root)
         else:
             rep = {"schema": "axis-migrate.target-dryrun-compare.v1", "run_id": run_id, "verdict": "NOT_COMPARED",
                    "problems": ["DRYRUN_INCOMPLETE: not every task ran"], "datasets": {}, "n_compared": 0, "n_pass": 0}

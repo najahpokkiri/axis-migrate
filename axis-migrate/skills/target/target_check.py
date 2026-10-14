@@ -555,6 +555,10 @@ def check_t10(dbx: Path) -> dict:
 # T7, T8, T11, T13 from the dry run
 # ---------------------------------------------------------------------------------------------------------------
 def checks_dynamic(dres: dict | None, derr: str | None, ev_rel: str, mem_gb: float) -> list[dict]:
+    if dres is None and derr and derr.startswith("TC_EVALUATOR_ERROR"):
+        why = [f"dry run crashed inside the evaluator: {derr}"]
+        return [chk("T7", "FAIL", ["TC_EVALUATOR_ERROR"], why), chk("T8", "FAIL", ["TC_EVALUATOR_ERROR"], why),
+                chk("T11", "NOT_RUN", [], why), chk("T13", "NOT_RUN", [], why)]
     if dres is None:
         why = [f"dry run could not start: {derr}"]
         return [chk("T7", "BLOCKED", ["TC_DRYRUN_ENV_UNAVAILABLE"], why), chk("T8", "NOT_RUN", [], why),
@@ -712,6 +716,11 @@ def target_check(mig: Path, run_id: str, *, keep: bool = False, use_strace: bool
         dres["_evidence"] = str(ev_dir)
     except (dr.SetupError, md.Refused) as e:
         derr = str(e)
+    except Exception as e:  # noqa: BLE001 — an evaluator crash is evidence (FAIL), never a missing target-check.json
+        import traceback
+        ev_dir.mkdir(parents=True, exist_ok=True)
+        (ev_dir / "evaluator-error.txt").write_text(traceback.format_exc(), encoding="utf-8")
+        derr = f"TC_EVALUATOR_ERROR: {type(e).__name__}: {str(e)[:300]} (traceback: {ev_rel}/evaluator-error.txt)"
     checks["T2"] = check_t2(dbx, run_dir, dres, wheel.name)
     if runtime_ok:
         checks["T6"] = check_t6(dbx, run_dir, runtime, dres)
