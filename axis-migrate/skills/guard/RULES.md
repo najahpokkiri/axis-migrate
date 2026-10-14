@@ -103,6 +103,10 @@ Five block rules have no archive hits. Each is kept for the reason below.
   "When I ran it, the outputs match the legacy files" and "All checks pass if …" are no longer counted as claims.
   True positives that stay claims: "Migration complete, parity achieved", "all checks pass", "the pipeline is
   reference-verified", "After the chained run, all checks pass".
+- **Manner, not completion.** `done/complete(d)/finished` followed (optionally after one word) by a manner or means
+  phrase (`in code`, `in the pipeline`, `by hand`, `by the runner`, `via`, `with`, `through`, `using`,
+  `automatically`, `manually`, `within`, ...) describes how something is done and is not a claim ("the hand edit is
+  now done in code"). "Done.", "Migration done" and "the migration is complete" stay claims.
 - **Quoted text.** A claim inside quotes still counts, so quoting cannot be used to evade the check. The words before
   the opening quote also apply: `I did not write "all checks pass"` is negated.
 - **Remaining false positive (seen live in HM run 2).** "one completed with a warning" matches `complete[ds]?` and

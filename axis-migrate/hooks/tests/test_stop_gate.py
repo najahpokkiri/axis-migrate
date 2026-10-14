@@ -42,6 +42,10 @@ def decide(pr, msg, monkeypatch, rung, run_id=None):
     ("The job is deployed to Databricks.", "deployed"),
     ("After the chained run, all checks pass.", "reference-verified"),
     ("The pipeline is reference-verified.", "reference-verified"),
+    ("Done.", "reference-verified"),
+    ("Migration done", "reference-verified"),
+    ("The migration is complete.", "reference-verified"),
+    ("The migration is complete; all steps finished.", "reference-verified"),
     ("Status: currently sandbox-validated.", "sandbox-validated"),
     ("It is currently reference-verified and the report is written.", "reference-verified"),
     ("This is production-ready.", "deployed"),
@@ -71,6 +75,14 @@ def test_claim_rungs(text, rung):
     "When the chained run passes, the step is verified.",
     "We are waiting for the user before it can be target-ready.",
     "Nothing above sandbox-validated is possible yet.",
+    # manner / means: how something is done, not that it is done (orchestrator finding, eval trial)
+    "The hand edit of canton names is now done in code, and the code's output is compared against your hand-made file.",
+    "The rename was done by hand in QGIS.",
+    "Staging is done by the runner, not by step code.",
+    "The reprojection is done via pyproj and the clip with rasterio.",
+    "Masking is completed using the declared nodata value.",
+    "The copy is done automatically when the run starts.",
+    "Zonal sums are finished in numpy through a bincount.",
 ])
 
 def test_negated_or_absent_claims(text):

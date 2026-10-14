@@ -51,6 +51,11 @@ CLAUSE_MARKERS_RE = re.compile(
     r"cannot|can['\u2019]t|waiting\s+for|wait\s+for|blocked|to\s+reach|to\s+get\s+to|not\s+yet|only\s+after|"
     r"stops?\s+at|capped\s+at|at\s+most|up\s+to|limited\s+to|aim(?:s|ing)?\s+(?:at|for)|goal|target\s+is)\b",
     re.I)
+# "done/complete(d)/finished" followed by a manner or means phrase describes HOW, not THAT (orchestrator finding)
+COMPLETION_WORDS = {"done", "complete", "completed", "completes", "finished"}
+MANNER_RE = re.compile(r"[ \t]+(?:\w+[ \t]+)?(?:in[ \t]+(?:code|python|the[ \t]+(?:pipeline|code|runner|step)|"
+                       r"geopandas|rasterio|numpy|qgis|arcpy)|by[ \t]+(?:hand|the|a|an|code|script|running)|"
+                       r"via|with|through|using|automatically|manually|programmatically|inside|within)\b", re.I)
 SENTENCE_BREAK_RE = re.compile(r"[.;!?\n]")
 CONDITION_OPENER_RE = re.compile(r"^\W*(?:if|when|once|until|unless|before|whenever)\b", re.I)
 TRAILING_CONDITION_RE = re.compile(r"^[\s,]*(?:\w+\s+){0,2}?(?:only\s+after|until|once|unless|if|requires?|needs?|"
@@ -123,6 +128,8 @@ def find_claims(text: str) -> list[Claim]:
         for m in rx.finditer(clean):
             if _negated(clean, m.start(), m.end()):
                 continue
+            if m.group(0).lower() in COMPLETION_WORDS and MANNER_RE.match(clean, m.end()):
+                continue  # "done in code", "completed by the runner": how something is done, not that it is
             # a quoted claim is judged with the words before the quote too ('I did not write "all checks pass"')
             q = next((a for a, b in quotes if a < m.start() < b), None)
             if q is not None and _negated(clean, q):
