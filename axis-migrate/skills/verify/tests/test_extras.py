@@ -124,3 +124,42 @@ def test_ported_manual_step_artefact_is_a_reference(tmp_path):
     assert results["ds.edited"]["pairing"]["reference_kind"] == "manual_step_artefact"
     assert rc == 0
     # the existing test_legacy_input_offered_as_reference_is_refused keeps refusing a file owned by an input dataset
+
+
+def _equivalent_project(tmp_path, confirmed="user"):
+    g0 = vector_frame()
+    legacy = tmp_path / "legacy"
+    write_raster(legacy / "in" / "src.tif", legacy_raster_array())
+    write_vector(legacy / "out" / "03_x.gpkg", g0, layer="03_x")
+    new = write_vector(tmp_path / "x.gpkg", g0, layer="x")
+    steps = [rb.step("s3"), rb.step("s3b")]
+    dsets = [rb.dataset("ds.src", "raster", "input", "in/src.tif"),
+             rb.dataset("ds.03_x", "vector", "intermediate", "out/03_x.gpkg", layer="03_x", produced_by="s3",
+                        compare={"key": ["fid_key"]}),
+             # the alternative (ArcPy-style) step's own output lived in a gdb that was never written
+             rb.dataset("ds.work__x", "vector", "final", "work.gdb", layer="x", produced_by="s3b", exists=False,
+                        new_path="s3b/x.gpkg", new_layer="x", compare={"key": None, "layer": "x"},
+                        reference={"source": "equivalent", "match_method": "human", "via_dataset": "ds.03_x",
+                                   "confirmed_by": confirmed})]
+    g = rb.graph(steps, dsets, reads=[("s3", "ds.src"), ("s3b", "ds.src")], legacy_output_dirs=["out"])
+    outs = {"ds.03_x": legacy / "out" / "03_x.gpkg", "ds.work__x": new}
+    return rb.build(tmp_path, g, outputs=outs)
+
+
+def test_equivalent_reference_uses_the_via_datasets_layer_and_compare(tmp_path):
+    run = _equivalent_project(tmp_path)
+    results, rc = compare.run_compare(run)
+    r = results["ds.work__x"]
+    assert r["verdict"] == "PASS_EXACT", (r["reason_codes"], r.get("detail"))
+    assert r["pairing"]["reference_kind"] == "legacy_equivalent"
+    assert r["pairing"]["label"] == "reference from equivalent step" and r["pairing"]["via_dataset"] == "ds.03_x"
+    assert r["legacy"]["layer"] == "03_x" and r["legacy"]["legacy_relpath"] == "out/03_x.gpkg"
+    assert next(c for c in r["checks"] if c["id"] == "vector.key")["detail"]["key"] == ["fid_key"]   # via's key
+    assert rc == 0
+
+
+def test_unconfirmed_equivalent_reference_is_refused(tmp_path):
+    run = _equivalent_project(tmp_path, confirmed=None)
+    results, _ = compare.run_compare(run)
+    assert results["ds.work__x"]["verdict"] == "NOT_COMPARED"
+    assert results["ds.work__x"]["reason_codes"] == ["PAIRING_UNCONFIRMED"]

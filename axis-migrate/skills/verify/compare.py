@@ -3019,11 +3019,27 @@ def _pair_one(rc: RunContext, dsid: str, contract: dict, book: ToleranceBook, ge
         if not via or not ref.get("confirmed_by"):
             return early("NOT_COMPARED", "PAIRING_UNCONFIRMED",
                          detail="reference from an equivalent step needs a confirmed via_dataset")
-        L_path = (via.get("legacy") or {}).get("path")
+        vlg = via.get("legacy") or {}
+        L_path = vlg.get("path") if vlg.get("exists", bool(vlg.get("path"))) else None
+        if not L_path:
+            return early("NOT_COMPARED", "NO_REFERENCE", detail=f"equivalent dataset {via['id']} has no legacy file")
         legacy_abs = str(rc.legacy_root / L_path)
-        base["legacy"]["path"] = rc.rel_project(Path(legacy_abs))
-        base["legacy"]["legacy_relpath"] = L_path
-        base["pairing"]["method"] = "equivalent"
+        # the reference is the equivalent step's file: its layer/sheet, and its compare settings where this dataset
+        # declares none (the target's own legacy layer names a container that never existed, e.g. a gdb item)
+        vcmp = dict(via.get("compare") or {})
+        for k, v in (d.get("compare") or {}).items():
+            if k in ("layer", "sheet"):
+                continue
+            if v not in (None, [], {}, "", False):
+                vcmp[k] = v
+        spec["compare"] = vcmp
+        spec["layer"] = vlg.get("layer")
+        spec["sheet"] = vlg.get("sheet") or vcmp.get("sheet")
+        base["legacy"].update(path=rc.rel_project(Path(legacy_abs)), legacy_relpath=L_path, layer=vlg.get("layer"),
+                              via_dataset=via["id"])
+        base["pairing"].update(method="equivalent", reference_kind="legacy_equivalent",
+                               label="reference from equivalent step", via_dataset=via["id"],
+                               confirmed_by=ref.get("confirmed_by"))
     elif ref.get("source") == "none":
         L_path = None
     N_decl = (d.get("new") or {}).get("path")
