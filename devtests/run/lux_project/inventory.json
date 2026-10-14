@@ -357,7 +357,7 @@
    "size": 4284416
   },
   {
-   "content_sha256": "fb2daa0b7a3e93eacf9b86a28952882759d8fc722bf5853860ba40c8c9d41d28",
+   "content_sha256": "b57f9beac664806770dd99620262d98198fd7ae40c33f6ccfc220e1b348cfb0b",
    "dataset_ids": [
     "ds.value_per_capita"
    ],
@@ -393,7 +393,7 @@
    "size": 1245184
   },
   {
-   "content_sha256": "a03a4e08215a9f241d96c60e0c42a0b19a004cebf4123008288b03aa7f3cad37",
+   "content_sha256": "4b218f13df4cf0784035f0aa6338253fe7811b150bf4ee1fb144d787d5ff80e3",
    "dataset_ids": [
     "ds.exposure_by_canton_xlsx"
    ],
