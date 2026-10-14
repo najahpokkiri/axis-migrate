@@ -161,3 +161,35 @@ def test_wait_survives_without_server(tmp_path: Path):
     r = subprocess.run([str(gs.AXPY), str(gs.SERVER_PY), "wait", str(mdir), "--timeout", "5"],
                        capture_output=True, text=True, timeout=30)
     assert r.returncode == 0 and json.loads(r.stdout)["ops"] == []
+
+
+def test_files_page_assets_load_with_the_scoped_cookie(srv: Server):
+    """A page opened as /files/<page>.html?t=<token> loads its relative CSS/JS/JSON without ?t=: the server sets an
+    HttpOnly, SameSite=Strict cookie scoped to /files/ (per port) and accepts it there only."""
+    rep = srv.mdir / "report"
+    (rep / "assets").mkdir(parents=True)
+    (rep / "index.html").write_text('<link rel="stylesheet" href="assets/s.css">')
+    (rep / "assets" / "s.css").write_text("body{}")
+    r = urllib.request.Request(f"{srv.base}/files/report/index.html?t={srv.token}")
+    with urllib.request.urlopen(r, timeout=30) as resp:
+        sc = resp.headers.get("Set-Cookie") or ""
+    port = srv.base.rsplit(":", 1)[1]
+    assert sc.startswith(f"axis_files_t_{port}={srv.token};") and "HttpOnly" in sc and "SameSite=Strict" in sc
+    assert "Path=/files/" in sc
+    cookie = sc.split(";", 1)[0]
+
+    def get(path: str, c: str | None):
+        rq = urllib.request.Request(srv.base + path)
+        if c:
+            rq.add_header("Cookie", c)
+        try:
+            with urllib.request.urlopen(rq, timeout=30) as resp:
+                return resp.status, resp.headers.get_content_type(), resp.headers.get("Set-Cookie")
+        except urllib.error.HTTPError as e:
+            return e.code, None, None
+    assert get("/files/report/assets/s.css", cookie)[:2] == (200, "text/css")
+    assert get("/files/report/assets/s.css", None)[0] == 403                       # no token, no cookie
+    assert get("/files/report/assets/s.css", f"axis_files_t_{port}=wrong")[0] == 403
+    assert get("/files/report/assets/s.css", f"axis_files_t_1={srv.token}")[0] == 403  # another server's name
+    assert get("/api/graph", cookie)[0] == 403                                     # the cookie is for /files/ only
+    assert get("/files/report/assets/s.css", cookie)[2] is None                     # set only on the tokened page

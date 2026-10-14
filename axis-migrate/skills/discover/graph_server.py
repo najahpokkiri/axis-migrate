@@ -22,6 +22,7 @@ import sys
 import threading
 import time
 from http import HTTPStatus
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -100,6 +101,19 @@ def make_handler(app: App):
             tok = self.headers.get("X-Axis-Token") or (q.get("t") or [""])[0]
             return bool(tok) and hmac.compare_digest(tok.encode(), app.token.encode())
 
+        def _cookie_name(self) -> str:
+            return f"axis_files_t_{app.port}"        # cookies ignore ports: one name per server
+
+        def _cookie_ok(self) -> bool:
+            """/files/ only: a page opened with ?t= loads its relative CSS/JS/JSON with this cookie (set below)."""
+            jar = SimpleCookie()
+            try:
+                jar.load(self.headers.get("Cookie") or "")
+            except CookieError:
+                return False
+            m = jar.get(self._cookie_name())
+            return bool(m and m.value) and hmac.compare_digest(m.value.encode(), app.token.encode())
+
         def _origin_ok(self, required: bool) -> bool:
             origin = self.headers.get("Origin")
             if origin is None:
@@ -109,14 +123,14 @@ def make_handler(app: App):
             site = self.headers.get("Sec-Fetch-Site")
             return site in (None, "same-origin", "none")
 
-        def _guard(self, q: dict, *, token: bool = True, post: bool = False) -> bool:
+        def _guard(self, q: dict, *, token: bool = True, post: bool = False, cookie: bool = False) -> bool:
             if not self._host_ok():
                 self._json(403, {"error": "bad_host"})
                 return False
             if not self._origin_ok(required=post):
                 self._json(403, {"error": "bad_origin", "message": "same-origin requests only"})
                 return False
-            if token and not self._token_ok(q):
+            if token and not (self._token_ok(q) or (cookie and self._cookie_ok())):
                 self._json(403, {"error": "bad_token"})
                 return False
             return True
@@ -196,14 +210,16 @@ def make_handler(app: App):
                                                               "style-src 'self' 'unsafe-inline'; connect-src 'self'"})
             if path == "/favicon.ico":
                 return self._send(204, b"", "image/x-icon")
+            if path.startswith("/files/"):
+                if not self._guard(q, cookie=True):
+                    return
+                return self._file(unquote(path[len("/files/"):]), set_cookie=self._token_ok(q))
             if not self._guard(q):
                 return
             if path == "/api/graph":
                 return self._graph()
             if path == "/api/events":
                 return self._events(q)
-            if path.startswith("/files/"):
-                return self._file(unquote(path[len("/files/"):]))
             return self._json(404, {"error": "not_found"})
 
         def _graph(self):
@@ -243,7 +259,7 @@ def make_handler(app: App):
                     return self._json(200, {"revision": rev, "changed": False})
                 time.sleep(0.25)
 
-        def _file(self, rel: str):
+        def _file(self, rel: str, set_cookie: bool = False):
             if not rel or rel.startswith("/") or "\x00" in rel:
                 return self._json(400, {"error": "bad_path"})
             target = (app.mdir / rel).resolve()
@@ -254,7 +270,10 @@ def make_handler(app: App):
             if target.name == "lock" or not target.is_file():
                 return self._json(404, {"error": "not_found"})
             ctype = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
-            return self._send(200, target.read_bytes(), ctype)
+            extra = None
+            if set_cookie and ctype == "text/html":   # the page's own relative assets come back without ?t=
+                extra = {"Set-Cookie": f"{self._cookie_name()}={app.token}; Path=/files/; HttpOnly; SameSite=Strict"}
+            return self._send(200, target.read_bytes(), ctype, extra)
 
         # ---------------------------------------------------------------- POST
         def _post(self):
