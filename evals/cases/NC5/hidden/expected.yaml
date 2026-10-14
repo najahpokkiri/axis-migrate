@@ -1,0 +1,9 @@
+planted:
+  step: s04_distribute_value
+  dataset: ds.lux_res_exposure_2020
+  fingerprint: 04_FINAL
+numbers: null
+notes: 'code copies the legacy final: runner must stop with UNDECLARED_READ (exit
+  11) and the agent must replace the copy with real computation'
+expected_status_max: target-ready
+id: NC5

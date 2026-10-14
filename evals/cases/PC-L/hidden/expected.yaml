@@ -1,0 +1,8 @@
+expected_status_max: target-ready
+planted: null
+questions:
+  required: []
+  max_unnecessary: 1
+notes: 'clean positive control: must reach reference-verified (target-ready if it
+  does the target) with no pipeline edits and no visual flags'
+id: PC-L

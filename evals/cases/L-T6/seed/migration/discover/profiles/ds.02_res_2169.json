@@ -1,0 +1,160 @@
+{
+ "area_km2": 168.52568277375835,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  47979.50687488188,
+  55461.79695714227,
+  105099.73135815548,
+  138636.53396997903
+ ],
+ "count": 1512,
+ "crs": {
+  "epsg": 2169,
+  "is_geographic": false,
+  "name": "LUREF / Luxembourg TM",
+  "wkt": "PROJCRS[\"LUREF / Luxembourg TM\",BASEGEOGCRS[\"LUREF\",DATUM[\"Luxembourg Reference Frame\",ELLIPSOID[\"International 1924\",6378388,297,LENGTHUNIT[\"metre\",1]]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],ID[\"EPSG\",4181]],CONVERSION[\"Luxembourg TM\",METHOD[\"Transverse Mercator\",ID[\"EPSG\",9807]],PARAMETER[\"Latitude of natural origin\",49.8333333333333,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8801]],PARAMETER[\"Longitude of natural origin\",6.16666666666667,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8802]],PARAMETER[\"Scale factor at natural origin\",1,SCALEUNIT[\"unity\",1],ID[\"EPSG\",8805]],PARAMETER[\"False easting\",80000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8806]],PARAMETER[\"False northing\",100000,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8807]]],CS[Cartesian,2],AXIS[\"northing (X)\",north,ORDER[1],LENGTHUNIT[\"metre\",1]],AXIS[\"easting (Y)\",east,ORDER[2],LENGTHUNIT[\"metre\",1]],USAGE[SCOPE[\"Engineering survey, topographic mapping.\"],AREA[\"Luxembourg.\"],BBOX[49.44,5.73,50.19,6.53]],ID[\"EPSG\",2169]]"
+ },
+ "dataset": "ds.02_res_2169",
+ "declared_geometry": "MULTIPOLYGON",
+ "domains": {
+  "landuse": [
+   "residential"
+  ],
+  "name": [
+   "Aal-Schëtter",
+   "Ban de Gasperich",
+   "Bollendorf-Pont",
+   "Bridel",
+   "CIPA Beim Klouschter",
+   "CIPA Blannenheem",
+   "Centre Arend-Fixmer",
+   "Centre d’Accueil Norbert Ensch",
+   "Centre socio-éducatif de l'État",
+   "Château de Bettendorf",
+   "Cité Gromscheed",
+   "Cité Manertchen",
+   "Cité a Frounerbond",
+   "Cruchtenhaff",
+   "Dornauelsmühle",
+   "Elmen",
+   "Eselbaach",
+   "Grondschoul Lenningen",
+   "Heinrichsmillen",
+   "Home Saint-François",
+   "JJL Gardenservice",
+   "La petite Ferme",
+   "Longlaville",
+   "Lotissement Schoenacht",
+   "Lotissement Zolwerfeld",
+   "Medingen",
+   "Neimillen",
+   "Niesendallerhaff",
+   "Office Nationale de l'Accueil",
+   "Olm-Duerf",
+   "PAP Uewent Terens",
+   "Parc Rischard",
+   "Parklane",
+   "Pfaffenthal",
+   "Place Pierre Krier",
+   "Poudrerie de Kockelscheuer",
+   "Projet Vivre sans voiture",
+   "Saint Hubert",
+   "Scheedheck",
+   "Schierenerhaff",
+   "Villeroy et Boch",
+   "name=Cité Huesekneppchen",
+   "nan"
+  ],
+  "osm_id": [
+   "10546128",
+   "11371124",
+   "11950590",
+   "11970084",
+   "12088174",
+   "12100147",
+   "12268037",
+   "12273734",
+   "12406509",
+   "12843245",
+   "12979334",
+   "13130794",
+   "13286233",
+   "13457891",
+   "13565863",
+   "13902212",
+   "14011553",
+   "14085479",
+   "14598328",
+   "14701066",
+   "16302473",
+   "16707886",
+   "17699785",
+   "17786279",
+   "17786280",
+   "17792539",
+   "18332011",
+   "18786149",
+   "2046174",
+   "4292037",
+   "6357039",
+   "6390129",
+   "6955794",
+   "7155390",
+   "7485187",
+   "7610311",
+   "7733901",
+   "7787035",
+   "7814675",
+   "8824390",
+   "9460028",
+   "9630590",
+   "nan"
+  ]
+ },
+ "driver": "GPKG",
+ "empty_geom": 0,
+ "geom_types": {
+  "MultiPolygon": 1512
+ },
+ "geometry_multiset_sha256": "3fea378f7bcded27e16dd55c2772fd049e24b2c5b7124bc78b3ff9dd93337f5e",
+ "invalid": {
+  "count": 0,
+  "top_reasons": {}
+ },
+ "key_candidates": [
+  {
+   "col": "area_m2",
+   "nonnull": true,
+   "unique": true
+  }
+ ],
+ "layer": "02_res_2169",
+ "layers": [
+  "02_res_2169"
+ ],
+ "legacy_path": "05_TEMP/02_res_2169.gpkg",
+ "name": "02_res_2169",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "osm_id"
+  },
+  {
+   "dtype": "str",
+   "name": "osm_way_id"
+  },
+  {
+   "dtype": "str",
+   "name": "landuse"
+  },
+  {
+   "dtype": "str",
+   "name": "name"
+  },
+  {
+   "dtype": "float64",
+   "name": "area_m2"
+  }
+ ]
+}

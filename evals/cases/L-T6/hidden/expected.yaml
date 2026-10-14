@@ -1,0 +1,15 @@
+planted:
+  step: s04_distribute_value
+  dataset: ds.04_canton_factor
+  fingerprint: vpc\[name\] = float\(val\)\s*$
+numbers:
+  dataset: ds.04_canton_factor
+  verdict: FAIL
+  reason_codes_any:
+  - ATTRIBUTE_VALUE_MISMATCH
+visual:
+  expected: true
+  dataset: ds.lux_res_exposure_2020
+  category: uniform_scale
+expected_status_max: target-ready
+id: L-T6

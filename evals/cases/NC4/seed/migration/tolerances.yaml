@@ -1,0 +1,46 @@
+version: 1
+records:
+- id: tol.02_res_2169.vector.attr.area_m2.v1
+  dataset: ds.02_res_2169
+  check: vector.attr:area_m2
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-10
+  max_mismatch: 0
+  units: relative (m2/m2)
+  basis: measured_spread
+  correct_spread:
+    value: 8.64e-13
+    how: GEOS planar area vs the legacy QGIS planar area (all features)
+    evidence: trial F-L t1 analysis/tolcal
+  nearest_wrong:
+    value: 5.8e-08
+    metric: max_rel
+    variant: area stored as float32
+    evidence: trial F-L t1 analysis/tolcal
+  agreed_by: human:eval-fixture-owner
+  agreed_at: '2026-10-01T00:00:00Z'
+  decision_ref: eval seed fixture
+  fixed_before: null
+- id: tol.02_res_4326.vector.attr.area_m2.v1
+  dataset: ds.02_res_4326
+  check: vector.attr:area_m2
+  metric: abs+rel
+  atol: 0.0
+  rtol: 1.0e-10
+  max_mismatch: 0
+  units: relative (m2/m2)
+  basis: measured_spread
+  correct_spread:
+    value: 8.64e-13
+    how: GEOS planar area vs the legacy QGIS planar area (all features)
+    evidence: trial F-L t1 analysis/tolcal
+  nearest_wrong:
+    value: 5.8e-08
+    metric: max_rel
+    variant: area stored as float32
+    evidence: trial F-L t1 analysis/tolcal
+  agreed_by: human:eval-fixture-owner
+  agreed_at: '2026-10-01T00:00:00Z'
+  decision_ref: eval seed fixture
+  fixed_before: null

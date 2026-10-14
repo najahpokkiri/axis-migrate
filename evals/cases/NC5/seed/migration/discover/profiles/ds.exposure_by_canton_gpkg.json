@@ -1,0 +1,210 @@
+{
+ "area_km2": 2592.999596874279,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  5.7357006,
+  49.4478539,
+  6.5308971,
+  50.1827724
+ ],
+ "count": 12,
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "name": "WGS 84",
+  "wkt": "GEOGCRS[\"WGS 84\",ENSEMBLE[\"World Geodetic System 1984 ensemble\",MEMBER[\"World Geodetic System 1984 (Transit)\"],MEMBER[\"World Geodetic System 1984 (G730)\"],MEMBER[\"World Geodetic System 1984 (G873)\"],MEMBER[\"World Geodetic System 1984 (G1150)\"],MEMBER[\"World Geodetic System 1984 (G1674)\"],MEMBER[\"World Geodetic System 1984 (G1762)\"],MEMBER[\"World Geodetic System 1984 (G2139)\"],MEMBER[\"World Geodetic System 1984 (G2296)\"],ELLIPSOID[\"WGS 84\",6378137,298.257223563,LENGTHUNIT[\"metre\",1]],ENSEMBLEACCURACY[2.0]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],CS[ellipsoidal,2],AXIS[\"geodetic latitude (Lat)\",north,ORDER[1],ANGLEUNIT[\"degree\",0.0174532925199433]],AXIS[\"geodetic longitude (Lon)\",east,ORDER[2],ANGLEUNIT[\"degree\",0.0174532925199433]],USAGE[SCOPE[\"Horizontal component of 3D system.\"],AREA[\"World.\"],BBOX[-90,-180,90,180]],ID[\"EPSG\",4326]]"
+ },
+ "dataset": "ds.exposure_by_canton_gpkg",
+ "declared_geometry": "POLYGON",
+ "domains": {
+  "canton": [
+   "Capellen",
+   "Clervaux",
+   "Diekirch",
+   "Echternach",
+   "Esch/Alzette",
+   "Grevenmacher",
+   "Luxembourg",
+   "Mersch",
+   "Redange",
+   "Remich",
+   "Vianden",
+   "Wiltz"
+  ],
+  "shapeID": [
+   "76397094B22879125121781",
+   "76397094B23155303849994",
+   "76397094B45773647818245",
+   "76397094B46061876108979",
+   "76397094B49543500261856",
+   "76397094B51041035930086",
+   "76397094B53618071923197",
+   "76397094B67457450323927",
+   "76397094B70222545473363",
+   "76397094B75044033408583",
+   "76397094B81286574502905",
+   "76397094B91879595380480"
+  ],
+  "shapeISO": [
+   "LU-CA",
+   "LU-CL",
+   "LU-DI",
+   "LU-EC",
+   "LU-ES",
+   "LU-GR",
+   "LU-LU",
+   "LU-ME",
+   "LU-RD",
+   "LU-RM",
+   "LU-VD",
+   "LU-WI"
+  ],
+  "shapeName": [
+   "Canton Capellen",
+   "Canton Clervaux",
+   "Canton Diekirch",
+   "Canton Echternach",
+   "Canton Esch-sur-Alzette",
+   "Canton Grevenmacher",
+   "Canton Luxembourg",
+   "Canton Mersch",
+   "Canton Redange",
+   "Canton Remich",
+   "Canton Vianden",
+   "Canton Wiltz"
+  ]
+ },
+ "driver": "GPKG",
+ "empty_geom": 0,
+ "geom_types": {
+  "Polygon": 12
+ },
+ "geometry_multiset_sha256": "00ceefe03ec25cdbfe307cbd1471d99eb2fcd8024ad40ccca941ade8464b760b",
+ "invalid": {
+  "count": 0,
+  "top_reasons": {}
+ },
+ "key_candidates": [
+  {
+   "col": "shapeName",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "shapeISO",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "shapeID",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "canton",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "pop_count",
+   "nonnull": true,
+   "unique": true
+  },
+  {
+   "col": "pop_sum",
+   "nonnull": true,
+   "unique": true
+  },
+  {
+   "col": "res_count",
+   "nonnull": true,
+   "unique": true
+  },
+  {
+   "col": "res_sum",
+   "nonnull": true,
+   "unique": true
+  },
+  {
+   "col": "vpc_eur",
+   "nonnull": true,
+   "unique": true
+  },
+  {
+   "col": "tot_value",
+   "nonnull": true,
+   "unique": true
+  },
+  {
+   "col": "factor",
+   "nonnull": true,
+   "unique": true
+  },
+  {
+   "col": "exp_sum",
+   "nonnull": true,
+   "unique": true
+  }
+ ],
+ "layer": "exposure_by_canton",
+ "layers": [
+  "exposure_by_canton"
+ ],
+ "legacy_path": "04_FINAL/exposure_by_canton.gpkg",
+ "name": "exposure_by_canton",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "shapeName"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeISO"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeID"
+  },
+  {
+   "dtype": "str",
+   "name": "canton"
+  },
+  {
+   "dtype": "float64",
+   "name": "pop_count"
+  },
+  {
+   "dtype": "float64",
+   "name": "pop_sum"
+  },
+  {
+   "dtype": "float64",
+   "name": "res_count"
+  },
+  {
+   "dtype": "float64",
+   "name": "res_sum"
+  },
+  {
+   "dtype": "float64",
+   "name": "vpc_eur"
+  },
+  {
+   "dtype": "float64",
+   "name": "tot_value"
+  },
+  {
+   "dtype": "float64",
+   "name": "factor"
+  },
+  {
+   "dtype": "float64",
+   "name": "exp_sum"
+  }
+ ]
+}

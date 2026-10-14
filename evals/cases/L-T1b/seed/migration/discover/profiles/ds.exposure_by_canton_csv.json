@@ -1,0 +1,22 @@
+{
+ "bom": false,
+ "code_like_cols": [],
+ "columns": 7,
+ "dataset": "ds.exposure_by_canton_csv",
+ "decimal": ".",
+ "encoding": "utf-8",
+ "format": "csv",
+ "header": [
+  "canton",
+  "pop_total",
+  "pop_residential",
+  "value_per_capita_eur",
+  "total_value_eur",
+  "exposure_raster_sum_eur",
+  "diff_eur"
+ ],
+ "layer": null,
+ "legacy_path": "04_FINAL/exposure_by_canton.csv",
+ "rows": 12,
+ "sep": ","
+}

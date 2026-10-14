@@ -1,0 +1,169 @@
+{
+ "bands": 1,
+ "block": [
+  2,
+  940
+ ],
+ "bounds": [
+  5.744583325,
+  49.44791667,
+  6.527916655,
+  50.18125
+ ],
+ "colortable": false,
+ "compress": null,
+ "computed": {
+  "cells": 827200,
+  "max": 67.24102783203125,
+  "mean": 5.217768467428981,
+  "min": 0.0,
+  "nan": 0,
+  "nodata": 774785,
+  "std": 7.090332993477558,
+  "sum": 273489.3342202902,
+  "valid": 52415,
+  "zero": 4042
+ },
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "units": "degree",
+  "wkt": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]"
+ },
+ "dataset": "ds.03_pop_res",
+ "driver": "GTiff",
+ "dtype": "float32",
+ "dtypes": [
+  "float32"
+ ],
+ "embedded_stats": {
+  "approximate": true,
+  "aux_xml": null,
+  "note": "recorded only; every statistic used is computed",
+  "tags": {
+   "approximate": true,
+   "maximum": 59.550476074219,
+   "mean": 5.3632819274331,
+   "minimum": 0.0,
+   "stddev": 6.8604000672973,
+   "valid_percent": 6.451
+  },
+  "trusted": false
+ },
+ "embedded_vs_computed": {
+  "tags": {
+   "approximate": true,
+   "mean_diff": 0.14551346000411858
+  }
+ },
+ "hist64": {
+  "counts": [
+   11855,
+   10254,
+   6413,
+   4014,
+   3275,
+   2523,
+   2299,
+   1908,
+   1528,
+   1322,
+   1081,
+   882,
+   690,
+   624,
+   498,
+   429,
+   354,
+   317,
+   265,
+   228,
+   178,
+   176,
+   181,
+   125,
+   61,
+   60,
+   53,
+   35,
+   33,
+   20,
+   24,
+   35,
+   31,
+   21,
+   25,
+   34,
+   24,
+   16,
+   23,
+   21,
+   34,
+   28,
+   19,
+   19,
+   23,
+   29,
+   31,
+   34,
+   38,
+   41,
+   42,
+   33,
+   18,
+   21,
+   14,
+   14,
+   11,
+   11,
+   6,
+   5,
+   1,
+   4,
+   1,
+   3
+  ],
+  "range": [
+   0.0,
+   67.24102783203125
+  ]
+ },
+ "layer": null,
+ "legacy_path": "05_TEMP/03_pop_res.tif",
+ "nodata": -3.4028234663852886e+38,
+ "nodata_in_domain": true,
+ "origin": [
+  5.744583325,
+  50.18125
+ ],
+ "overviews": [],
+ "res": [
+  0.0008333333297872345,
+  -0.0008333333295454553
+ ],
+ "res_m_at_centre": [
+  59.976,
+  92.688
+ ],
+ "scale_offset": [
+  [
+   1.0
+  ],
+  [
+   0.0
+  ]
+ ],
+ "shape": [
+  880,
+  940
+ ],
+ "stats_mode": "full",
+ "transform": [
+  0.0008333333297872345,
+  0.0,
+  5.744583325,
+  0.0,
+  -0.0008333333295454553,
+  50.18125
+ ]
+}

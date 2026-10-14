@@ -1,0 +1,46 @@
+{
+ "dataset": "ds.exposure_by_canton_xlsx",
+ "external_links": [],
+ "format": "xlsx",
+ "layer": null,
+ "legacy_path": "04_FINAL/exposure_by_canton.xlsx",
+ "named_ranges": [],
+ "sheets": [
+  {
+   "data_rows": null,
+   "dims": "A1:G15",
+   "formula_cells": [],
+   "formula_count": 0,
+   "formula_no_cache": [],
+   "header_candidates": [
+    {
+     "columns": {
+      "A": "canton",
+      "B": "pop_total",
+      "C": "pop_residential",
+      "D": "value_per_capita_eur",
+      "E": "total_value_eur",
+      "F": "exposure_raster_sum_eur",
+      "G": "diff_eur"
+     },
+     "data_rows": [
+      2,
+      13
+     ],
+     "reason": "7 text cells, 12 typed data rows below",
+     "row": 1,
+     "score": 32
+    }
+   ],
+   "header_row": null,
+   "header_state": "unresolved",
+   "hidden": false,
+   "max_column": 7,
+   "max_row": 15,
+   "merged": [],
+   "name": "by_canton",
+   "strip_issues": [],
+   "units_cells": []
+  }
+ ]
+}

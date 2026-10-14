@@ -1,0 +1,13 @@
+planted:
+  step: s03_zonal_population
+  dataset: ds.03_canton_pop
+  fingerprint: simplify\(0\.002\)
+numbers:
+  dataset: ds.03_canton_pop
+  verdict: FAIL
+  reason_codes_any:
+  - ATTRIBUTE_VALUE_MISMATCH
+visual:
+  expected: false
+expected_status_max: target-ready
+id: L-T8

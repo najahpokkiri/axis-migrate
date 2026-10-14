@@ -1,0 +1,167 @@
+{
+ "bands": 1,
+ "block": [
+  2,
+  940
+ ],
+ "bounds": [
+  5.744583325,
+  49.44791667,
+  6.527916655,
+  50.18125
+ ],
+ "colortable": false,
+ "compress": "LZW",
+ "computed": {
+  "cells": 827200,
+  "max": 69.30003356933594,
+  "mean": 1.2882740703035487,
+  "min": 0.06038784980773926,
+  "nan": 0,
+  "nodata": 366707,
+  "std": 3.4359981386456777,
+  "sum": 593241.1914562918,
+  "valid": 460493,
+  "zero": 0
+ },
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "units": "degree",
+  "wkt": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]"
+ },
+ "dataset": "ds.lux_ppp_2020",
+ "driver": "GTiff",
+ "dtype": "float32",
+ "dtypes": [
+  "float32"
+ ],
+ "embedded_stats": {
+  "approximate": false,
+  "aux_xml": null,
+  "note": "recorded only; every statistic used is computed",
+  "tags": {
+   "maximum": 69.300033870327,
+   "mean": 1.2882740705367,
+   "minimum": 0.060387848480491,
+   "stddev": 3.4360018701679
+  },
+  "trusted": false
+ },
+ "embedded_vs_computed": {
+  "tags": {
+   "approximate": null,
+   "mean_diff": 2.3315127606338137e-10
+  }
+ },
+ "hist64": {
+  "counts": [
+   368329,
+   37976,
+   14898,
+   8425,
+   5736,
+   4311,
+   3653,
+   2821,
+   2402,
+   2012,
+   1583,
+   1246,
+   1092,
+   918,
+   686,
+   636,
+   578,
+   457,
+   416,
+   322,
+   226,
+   222,
+   193,
+   90,
+   77,
+   67,
+   49,
+   46,
+   31,
+   33,
+   48,
+   41,
+   30,
+   41,
+   37,
+   37,
+   24,
+   27,
+   33,
+   33,
+   34,
+   26,
+   23,
+   28,
+   42,
+   42,
+   48,
+   49,
+   49,
+   48,
+   32,
+   24,
+   17,
+   15,
+   21,
+   19,
+   22,
+   12,
+   9,
+   14,
+   16,
+   13,
+   5,
+   3
+  ],
+  "range": [
+   0.06038784980773926,
+   69.30003356933594
+  ]
+ },
+ "layer": null,
+ "legacy_path": "03_INPUT/lux_ppp_2020.tif",
+ "nodata": -99999.0,
+ "nodata_in_domain": true,
+ "origin": [
+  5.744583325,
+  50.18125
+ ],
+ "overviews": [],
+ "res": [
+  0.0008333333297872345,
+  -0.0008333333295454553
+ ],
+ "res_m_at_centre": [
+  59.976,
+  92.688
+ ],
+ "scale_offset": [
+  [
+   1.0
+  ],
+  [
+   0.0
+  ]
+ ],
+ "shape": [
+  880,
+  940
+ ],
+ "stats_mode": "full",
+ "transform": [
+  0.0008333333297872345,
+  0.0,
+  5.744583325,
+  0.0,
+  -0.0008333333295454553,
+  50.18125
+ ]
+}

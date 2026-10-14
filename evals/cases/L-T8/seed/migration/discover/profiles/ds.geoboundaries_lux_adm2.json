@@ -1,0 +1,84 @@
+{
+ "area_km2": 2594.3703940750547,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  5.7357006,
+  49.4478539,
+  6.5308971,
+  50.1827712
+ ],
+ "count": 105,
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "name": "WGS 84",
+  "wkt": "GEOGCRS[\"WGS 84\",ENSEMBLE[\"World Geodetic System 1984 ensemble\",MEMBER[\"World Geodetic System 1984 (Transit)\"],MEMBER[\"World Geodetic System 1984 (G730)\"],MEMBER[\"World Geodetic System 1984 (G873)\"],MEMBER[\"World Geodetic System 1984 (G1150)\"],MEMBER[\"World Geodetic System 1984 (G1674)\"],MEMBER[\"World Geodetic System 1984 (G1762)\"],MEMBER[\"World Geodetic System 1984 (G2139)\"],MEMBER[\"World Geodetic System 1984 (G2296)\"],ELLIPSOID[\"WGS 84\",6378137,298.257223563,LENGTHUNIT[\"metre\",1]],ENSEMBLEACCURACY[2.0]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],CS[ellipsoidal,2],AXIS[\"geodetic latitude (Lat)\",north,ORDER[1],ANGLEUNIT[\"degree\",0.0174532925199433]],AXIS[\"geodetic longitude (Lon)\",east,ORDER[2],ANGLEUNIT[\"degree\",0.0174532925199433]],USAGE[SCOPE[\"Horizontal component of 3D system.\"],AREA[\"World.\"],BBOX[-90,-180,90,180]],ID[\"EPSG\",4326]]"
+ },
+ "dataset": "ds.geoboundaries_lux_adm2",
+ "declared_geometry": "Unknown",
+ "domains": {
+  "shapeGroup": [
+   "LUX"
+  ],
+  "shapeISO": [
+   ""
+  ],
+  "shapeType": [
+   "ADM2"
+  ]
+ },
+ "driver": "GeoJSON",
+ "empty_geom": 0,
+ "geom_types": {
+  "MultiPolygon": 2,
+  "Polygon": 103
+ },
+ "geometry_multiset_sha256": "21e0bf731c1ec8908b87eabe8760d16073ba1560379ec83cb2c31c623a29f843",
+ "invalid": {
+  "count": 0,
+  "top_reasons": {}
+ },
+ "key_candidates": [
+  {
+   "col": "shapeName",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "shapeID",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  }
+ ],
+ "layer": "geoBoundaries-LUX-ADM2",
+ "layers": [
+  "geoBoundaries-LUX-ADM2"
+ ],
+ "legacy_path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+ "name": "geoBoundaries-LUX-ADM2",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "shapeName"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeISO"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeID"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeGroup"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeType"
+  }
+ ]
+}

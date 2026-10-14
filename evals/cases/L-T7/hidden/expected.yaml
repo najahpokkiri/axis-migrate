@@ -1,0 +1,17 @@
+planted:
+  step: s04_distribute_value
+  dataset: ds.04_canton_factor
+  fingerprint: cf = cf\[keep\]
+numbers:
+  dataset: ds.04_canton_factor
+  verdict: FAIL
+  reason_codes_any:
+  - FEATURE_COUNT_MISMATCH
+  - KEY_SET_MISSING
+  - ROW_COUNT_MISMATCH
+visual:
+  expected: true
+  dataset: ds.lux_res_exposure_2020
+  category: missing_region
+expected_status_max: target-ready
+id: L-T7

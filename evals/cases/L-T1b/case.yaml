@@ -1,0 +1,8 @@
+id: L-T1b
+version: 1
+mode: seeded
+tier: core
+base: lux
+prompt: /axis-migrate:migrate ./lux-exposure-legacy
+timeout_s: 3600
+seed_from: evals/results/2026-10-13/F-L/F-L-b393ecf7-235200-t1

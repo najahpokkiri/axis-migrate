@@ -1,0 +1,73 @@
+{
+ "dataset": "ds.value_per_capita",
+ "external_links": [],
+ "format": "xlsx",
+ "layer": null,
+ "legacy_path": "03_INPUT/value_per_capita.xlsx",
+ "named_ranges": [],
+ "sheets": [
+  {
+   "data_rows": [
+    5,
+    16
+   ],
+   "dims": "A1:D18",
+   "formula_cells": [
+    {
+     "cached": null,
+     "cell": "B18",
+     "formula": "=AVERAGE(B5:B16)"
+    }
+   ],
+   "formula_count": 1,
+   "formula_no_cache": [
+    "B18"
+   ],
+   "header_candidates": [
+    {
+     "columns": {
+      "A": "Canton",
+      "B": "Value per capita",
+      "C": "comment"
+     },
+     "data_rows": [
+      5,
+      16
+     ],
+     "reason": "3 text cells, 12 typed data rows below",
+     "row": 4,
+     "score": 28
+    }
+   ],
+   "header_corroboration": {
+    "candidate": true,
+    "file": "02_SCRIPTS/04_distribute_value.py",
+    "line": 39,
+    "max_row": 16,
+    "min_row": 5,
+    "op": "s04_distribute_value.op1"
+   },
+   "header_row": 4,
+   "header_state": "resolved",
+   "hidden": false,
+   "max_column": 4,
+   "max_row": 18,
+   "merged": [],
+   "name": "vpc",
+   "strip_issues": [
+    {
+     "cell": "A16",
+     "value": "Wiltz "
+    }
+   ],
+   "units_cells": [
+    {
+     "cell": "A2",
+     "label": "units:",
+     "value": "kEUR / inh.",
+     "value_cell": "B2"
+    }
+   ]
+  }
+ ]
+}

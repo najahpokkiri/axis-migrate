@@ -1,0 +1,1003 @@
+version: 1
+budget:
+  max_questions: 8
+  asked: 3
+params:
+- id: p.canton_name_policy
+  node: m01_cantons_lux_edit
+  kind: manual_step
+  value: derive
+  unit: null
+  resolution: resolved
+  source: answer
+  status: confirmed
+  question: q01
+  reason: NOTES describe a hand edit of the ADM1 file; the files show what was done, not what the pipeline should do from
+    now on.
+  evidence:
+  - ref: NOTES.txt:15
+    quote: 'manual step (NOT in the scripts):'
+  - ref: NOTES.txt:19
+    quote: if the boundaries get updated this has to be redone by hand.
+  - ref: inventory:03_INPUT/cantons_lux_edit.gpkg
+    quote: null
+  flags:
+  - policy
+  impact:
+    datasets:
+    - ds.cantons_lux_edit
+    - ds.03_canton_pop
+    - ds.04_canton_factor
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    - ds.exposure_by_canton_gpkg
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: high
+  used_by:
+  - pipeline/m01_cantons_lux_edit.py
+- id: p.canton_name_source_field
+  node: m01_cantons_lux_edit
+  kind: other
+  value: shapeName
+  unit: null
+  resolution: inferred
+  method: rule-from-inputs
+  confidence: high
+  source: input_data
+  status: confirmed
+  reason: canton = shapeName with the "Canton " prefix removed for 11/12 features (inventory derived copy dc.01, join_coverage);
+    only used if the manual step is ported as code.
+  evidence:
+  - ref: NOTES.txt:17
+    quote: 'added field "canton" in the attribute table: dropped the "Canton " prefix, and'
+  - ref: inventory:03_INPUT/cantons_lux_edit.gpkg
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.cantons_lux_edit
+    level: high
+  used_by:
+  - pipeline/m01_cantons_lux_edit.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.canton_name_strip_prefix
+  node: m01_cantons_lux_edit
+  kind: other
+  value: 'Canton '
+  unit: null
+  resolution: inferred
+  method: rule-from-inputs
+  confidence: high
+  source: input_data
+  status: confirmed
+  reason: prefix removed by hand; reproduces 11/12 canton values exactly.
+  evidence:
+  - ref: NOTES.txt:17
+    quote: dropped the "Canton " prefix
+  - ref: inventory:03_INPUT/cantons_lux_edit.gpkg
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.cantons_lux_edit
+    level: high
+  used_by:
+  - pipeline/m01_cantons_lux_edit.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.canton_name_exceptions
+  node: m01_cantons_lux_edit
+  kind: other
+  value:
+    Esch-sur-Alzette: Esch/Alzette
+  unit: null
+  resolution: inferred
+  method: rule-from-inputs
+  confidence: high
+  source: input_data
+  status: confirmed
+  reason: the one exception to the prefix rule; spelled as in value_per_capita.xlsx column A.
+  evidence:
+  - ref: NOTES.txt:18
+    quote: Esch-sur-Alzette -> Esch/Alzette (that's how it is in the xlsx).
+  - ref: inventory:03_INPUT/cantons_lux_edit.gpkg
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.cantons_lux_edit
+    level: high
+  used_by:
+  - pipeline/m01_cantons_lux_edit.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.canton_name_field
+  node: m01_cantons_lux_edit
+  kind: join_key
+  value: canton
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: name of the added field, read by 04 as the join key to the xlsx.
+  evidence:
+  - ref: NOTES.txt:17
+    quote: added field "canton" in the attribute table
+  - ref: 02_SCRIPTS/04_distribute_value.py:60
+    quote: name = f["canton"]
+  impact:
+    datasets:
+    - ds.cantons_lux_edit
+    - ds.04_canton_factor
+    level: high
+  used_by:
+  - pipeline/m01_cantons_lux_edit.py
+- id: p.outline_dissolve
+  node: s01_prepare_population
+  kind: tool_option
+  value:
+    fields: []
+    separate_disjoint: false
+    attributes: first_feature
+  unit: null
+  resolution: inferred
+  method: semantics
+  confidence: medium
+  source: code
+  status: confirmed
+  reason: native:dissolve with no field dissolves everything into one feature; QGIS keeps the attributes of the first input
+    feature (legacy outline has the cantons schema, 1 feature).
+  evidence:
+  - ref: 02_SCRIPTS/01_prepare_population.py:33
+    quote: '''FIELD'': [],'
+  - ref: 02_SCRIPTS/01_prepare_population.py:34
+    quote: '''SEPARATE_DISJOINT'': False,'
+  - ref: inventory:05_TEMP/01_lux_outline.gpkg
+    quote: null
+  impact:
+    datasets:
+    - ds.01_lux_outline
+    - ds.01_pop_lux
+    level: low
+  used_by:
+  - pipeline/s01_prepare_population.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.pop_clip_grid
+  node: s01_prepare_population
+  kind: grid
+  value: source_grid
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: CROP_TO_CUTLINE and KEEP_RESOLUTION off keep the WorldPop grid unchanged; 01_pop_lux transform/shape equal the input
+    (grid offsets 0,0).
+  evidence:
+  - ref: 02_SCRIPTS/01_prepare_population.py:37
+    quote: keep the worldpop grid, don't resample!!
+  - ref: 02_SCRIPTS/01_prepare_population.py:47
+    quote: '''CROP_TO_CUTLINE'': False,'
+  - ref: 02_SCRIPTS/01_prepare_population.py:48
+    quote: '''KEEP_RESOLUTION'': False,'
+  - ref: inventory:grids
+    quote: null
+  flags:
+  - global
+  impact:
+    datasets:
+    - ds.01_pop_lux
+    - ds.02_res_mask
+    - ds.03_pop_res
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    level: high
+  used_by:
+  - pipeline/s01_prepare_population.py
+- id: p.pop_clip_rule
+  node: s01_prepare_population
+  kind: tool_option
+  value: cell_centre
+  unit: null
+  resolution: inferred
+  method: semantics
+  confidence: high
+  source: code
+  status: confirmed
+  reason: gdalwarp cutline without CUTLINE_ALL_TOUCHED (EXTRA empty) keeps cells whose centre is inside; source-valid & centre-inside
+    equals the 01_pop_lux valid mask (456764 cells, analysis/a01_nodata.py).
+  evidence:
+  - ref: 02_SCRIPTS/01_prepare_population.py:53
+    quote: '''EXTRA'': '''','
+  - ref: inventory:05_TEMP/01_pop_lux.tif
+    quote: null
+  impact:
+    datasets:
+    - ds.01_pop_lux
+    level: high
+  used_by:
+  - pipeline/s01_prepare_population.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.pop_lux_nodata
+  node: s01_prepare_population
+  kind: nodata
+  value: -99999
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: explicit NODATA; output header nodata -99999.
+  evidence:
+  - ref: 02_SCRIPTS/01_prepare_population.py:45
+    quote: '''NODATA'': -99999,'
+  impact:
+    datasets:
+    - ds.01_pop_lux
+    level: medium
+  used_by:
+  - pipeline/s01_prepare_population.py
+- id: p.pop_lux_dtype
+  node: s01_prepare_population
+  kind: dtype
+  value: float32
+  unit: null
+  resolution: resolved
+  source: reference_metadata
+  status: confirmed
+  reason: DATA_TYPE 0 = use input data type (float32); 01_pop_lux header is float32.
+  evidence:
+  - ref: 02_SCRIPTS/01_prepare_population.py:52
+    quote: '''DATA_TYPE'': 0,'
+  - ref: inventory:05_TEMP/01_pop_lux.tif
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.01_pop_lux
+    level: medium
+  used_by:
+  - pipeline/s01_prepare_population.py
+- id: p.gtiff_creation_options
+  node: s01_prepare_population
+  kind: tool_option
+  value:
+    compress: lzw
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: COMPRESS=LZW on every GDAL-written raster (01, 02, 04 factor and final); storage only, values unchanged.
+  evidence:
+  - ref: 02_SCRIPTS/01_prepare_population.py:51
+    quote: '''CREATION_OPTIONS'': ''COMPRESS=LZW'','
+  - ref: 02_SCRIPTS/02_landuse_mask.py:71
+    quote: '''CREATION_OPTIONS'': ''COMPRESS=LZW'','
+  - ref: 02_SCRIPTS/04_distribute_value.py:104
+    quote: '''CREATION_OPTIONS'': ''COMPRESS=LZW'','
+  impact:
+    datasets:
+    - ds.01_pop_lux
+    - ds.02_res_mask
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    level: low
+  used_by:
+  - pipeline/s01_prepare_population.py
+  - pipeline/s02_landuse_mask.py
+  - pipeline/s04_distribute_value.py
+- id: p.measure_crs
+  node: s01_prepare_population
+  kind: crs
+  value: EPSG:2169
+  unit: null
+  resolution: resolved
+  source: agent_decision
+  status: confirmed
+  reason: local metric CRS (LUREF) used by the legacy for areas; used only to measure vector differences in compare.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:26
+    quote: '# LUREF for areas'
+  - ref: 02_SCRIPTS/02_landuse_mask.py:29
+    quote: '''TARGET_CRS'': ''EPSG:2169'','
+  impact:
+    datasets:
+    - ds.01_lux_outline
+    - ds.02_res_2169
+    - ds.02_res_4326
+    - ds.03_canton_pop
+    - ds.04_canton_factor
+    - ds.exposure_by_canton_gpkg
+    level: low
+  used_by:
+  - compare
+- id: p.landuse_area_crs
+  node: s02_landuse_mask
+  kind: crs
+  value: EPSG:2169
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: landuse reprojected to LUREF before fix and area.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:29
+    quote: '''TARGET_CRS'': ''EPSG:2169'','
+  impact:
+    datasets:
+    - ds.02_res_2169
+    - ds.02_res_4326
+    - ds.02_res_mask
+    level: high
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.landuse_fix_method
+  node: s02_landuse_mask
+  kind: tool_option
+  value: structure
+  unit: null
+  resolution: inferred
+  method: semantics
+  confidence: high
+  source: code
+  status: confirmed
+  reason: native:fixgeometries METHOD 1 = Structure (GEOS MakeValid structure); 13 of 3879 input polygons are invalid (analysis/a04_landuse.py).
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:33
+    quote: '''INPUT'': lu, ''METHOD'': 1, ''OUTPUT'': ''memory:''})[''OUTPUT'']'
+  impact:
+    datasets:
+    - ds.02_res_2169
+    - ds.02_res_4326
+    - ds.02_res_mask
+    level: medium
+  used_by:
+  - pipeline/s02_landuse_mask.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.landuse_area_method
+  node: s02_landuse_mask
+  kind: other
+  value: planar
+  unit: null
+  resolution: inferred
+  method: semantics
+  confidence: medium
+  source: code
+  status: confirmed
+  reason: area($geometry) in a standalone processing context without a project ellipsoid is planar in the layer CRS (EPSG:2169);
+    planar area >= 2500 reproduces the 1512 features of 02_res_2169 (analysis/a04_landuse.py).
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:41
+    quote: '''FORMULA'': ''area($geometry)'','
+  - ref: inventory:05_TEMP/02_res_2169.gpkg
+    quote: null
+  impact:
+    datasets:
+    - ds.02_res_2169
+    - ds.02_res_4326
+    - ds.02_res_mask
+    level: medium
+  used_by:
+  - pipeline/s02_landuse_mask.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.landuse_area_field
+  node: s02_landuse_mask
+  kind: other
+  value: area_m2
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: field added by the field calculator and kept in 02_res_2169/02_res_4326.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:37
+    quote: '''FIELD_NAME'': ''area_m2'','
+  impact:
+    datasets:
+    - ds.02_res_2169
+    - ds.02_res_4326
+    level: low
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.landuse_class_filter
+  node: s02_landuse_mask
+  kind: other
+  value:
+    field: landuse
+    keep:
+    - residential
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: only residential landuse is used; industrial/commercial/retail present but out of scope (NOTES).
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:47
+    quote: '''EXPRESSION'': "\"landuse\" = ''residential'' AND \"area_m2\" >= %d" % MIN_AREA,'
+  - ref: NOTES.txt:29
+    quote: only residential landuse used. industrial/commercial/retail are in the osm extract but not used yet.
+  impact:
+    datasets:
+    - ds.02_res_2169
+    - ds.02_res_4326
+    - ds.02_res_mask
+    level: high
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.res_min_area_m2
+  node: s02_landuse_mask
+  kind: threshold
+  value:
+    value: 2500
+    operator: '>='
+  unit: m2
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: literal and operator at the use site; NOTES say it was eyeballed on Clervaux/Wiltz.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:12
+    quote: 'MIN_AREA = 2500   # m2'
+  - ref: 02_SCRIPTS/02_landuse_mask.py:47
+    quote: \"area_m2\" >= %d" % MIN_AREA
+  - ref: NOTES.txt:24
+    quote: 2500 was eyeballed on Clervaux/Wiltz, no science.
+  flags:
+  - tuned_in_sample
+  impact:
+    datasets:
+    - ds.02_res_2169
+    - ds.02_res_4326
+    - ds.02_res_mask
+    - ds.03_pop_res
+    - ds.03_canton_pop
+    - ds.04_canton_factor
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    - ds.exposure_by_canton_gpkg
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: high
+  used_by:
+  - pipeline/s02_landuse_mask.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.res_output_crs
+  node: s02_landuse_mask
+  kind: crs
+  value: EPSG:4326
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: residential polygons go back to WGS84 to sit on the WorldPop grid.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:53
+    quote: '''TARGET_CRS'': ''EPSG:4326'','
+  impact:
+    datasets:
+    - ds.02_res_4326
+    - ds.02_res_mask
+    level: high
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.res_mask_all_touched
+  node: s02_landuse_mask
+  kind: tool_option
+  value: true
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: gdal_rasterize -at.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:75
+    quote: '''EXTRA'': ''-at'',      # all touched, otherwise lose the thin village strips'
+  impact:
+    datasets:
+    - ds.02_res_mask
+    - ds.03_pop_res
+    - ds.03_canton_pop
+    - ds.lux_res_exposure_2020
+    level: high
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.res_mask_burn
+  node: s02_landuse_mask
+  kind: other
+  value:
+    burn: 1
+    init: 0
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: burn 1 into a grid initialised with 0.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:64
+    quote: '''BURN'': 1,'
+  - ref: 02_SCRIPTS/02_landuse_mask.py:73
+    quote: '''INIT'': 0,'
+  impact:
+    datasets:
+    - ds.02_res_mask
+    level: high
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.res_mask_nodata
+  node: s02_landuse_mask
+  kind: nodata
+  value: 0
+  unit: null
+  resolution: resolved
+  source: reference_metadata
+  status: confirmed
+  reason: code passes NODATA None (tool default); 02_res_mask header nodata is 0, so non-residential cells (init 0) are NoData.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:70
+    quote: '''NODATA'': None,'
+  - ref: inventory:05_TEMP/02_res_mask.tif
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.02_res_mask
+    - ds.03_pop_res
+    level: high
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.res_mask_dtype
+  node: s02_landuse_mask
+  kind: dtype
+  value: uint8
+  unit: null
+  resolution: resolved
+  source: reference_metadata
+  status: confirmed
+  reason: DATA_TYPE 0 = Byte; header uint8.
+  evidence:
+  - ref: 02_SCRIPTS/02_landuse_mask.py:72
+    quote: '''DATA_TYPE'': 0,'
+  - ref: inventory:05_TEMP/02_res_mask.tif
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.02_res_mask
+    level: low
+  used_by:
+  - pipeline/s02_landuse_mask.py
+- id: p.pop_min
+  node: s03_zonal_population
+  kind: threshold
+  value:
+    value: 0.5
+    operator: '>='
+  unit: persons/cell
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: literal and operator at the use site.
+  evidence:
+  - ref: 02_SCRIPTS/03_zonal_population.py:13
+    quote: 'POP_MIN = 0.5   # ignore crumbs (worldpop puts 0.0x people everywhere)'
+  - ref: 02_SCRIPTS/03_zonal_population.py:33
+    quote: '''EXPRESSION'': ''("pop_lux@1" >= %s) * "pop_lux@1" * "res_mask@1"'' % POP_MIN,'
+  impact:
+    datasets:
+    - ds.03_pop_res
+    - ds.03_canton_pop
+    - ds.04_canton_factor
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    - ds.exposure_by_canton_gpkg
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: high
+  used_by:
+  - pipeline/s03_zonal_population.py
+- id: p.pop_res_nodata_rule
+  node: s03_zonal_population
+  kind: tool_option
+  value: nodata_if_any_input_nodata
+  unit: null
+  resolution: inferred
+  method: semantics
+  confidence: high
+  source: code
+  status: confirmed
+  reason: native:rastercalc returns NoData where any referenced layer is NoData; mask NoData is 0, so pop_res is NoData off
+    residential cells (03_pop_res valid 52415 < mask 54381).
+  evidence:
+  - ref: 02_SCRIPTS/03_zonal_population.py:31
+    quote: processing.run("native:rastercalc", {
+  - ref: inventory:05_TEMP/03_pop_res.tif
+    quote: null
+  impact:
+    datasets:
+    - ds.03_pop_res
+    - ds.03_canton_pop
+    - ds.lux_res_exposure_2020
+    level: high
+  used_by:
+  - pipeline/s03_zonal_population.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.pop_res_nodata
+  node: s03_zonal_population
+  kind: nodata
+  value: -3.4028234663852886e+38
+  unit: null
+  resolution: resolved
+  source: reference_metadata
+  status: confirmed
+  reason: native:rastercalc default output NoData (float32 lowest); 03_pop_res header.
+  evidence:
+  - ref: inventory:05_TEMP/03_pop_res.tif
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.03_pop_res
+    level: medium
+  used_by:
+  - pipeline/s03_zonal_population.py
+- id: p.pop_res_dtype
+  node: s03_zonal_population
+  kind: dtype
+  value: float32
+  unit: null
+  resolution: resolved
+  source: reference_metadata
+  status: confirmed
+  reason: 03_pop_res header float32, uncompressed (rastercalc writes no creation options).
+  evidence:
+  - ref: inventory:05_TEMP/03_pop_res.tif
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.03_pop_res
+    level: low
+  used_by:
+  - pipeline/s03_zonal_population.py
+- id: p.zonal_rule
+  node: s03_zonal_population
+  kind: tool_option
+  value: cell_centre
+  unit: null
+  resolution: inferred
+  method: semantics
+  confidence: high
+  source: code
+  status: confirmed
+  reason: native:zonalstatisticsfb assigns a cell to a polygon by its centre; legacy pop_sum over the 12 cantons equals the
+    clipped raster total 588219.87 (cell-centre partition).
+  evidence:
+  - ref: 02_SCRIPTS/03_zonal_population.py:40
+    quote: z1 = processing.run("native:zonalstatisticsfb", {
+  - ref: inventory:05_TEMP/03_canton_pop.gpkg
+    quote: null
+  impact:
+    datasets:
+    - ds.03_canton_pop
+    - ds.04_canton_factor
+    - ds.exposure_by_canton_gpkg
+    level: high
+  used_by:
+  - pipeline/s03_zonal_population.py
+  question: q02
+  decisions:
+  - D-003
+- id: p.zonal_pop_stats
+  node: s03_zonal_population
+  kind: tool_option
+  value:
+    prefix: pop_
+    stats:
+    - count
+    - sum
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: STATISTICS [0, 1] = count, sum; prefix pop_ (fields pop_count, pop_sum in 03_canton_pop).
+  evidence:
+  - ref: 02_SCRIPTS/03_zonal_population.py:44
+    quote: '''COLUMN_PREFIX'': ''pop_'','
+  - ref: 02_SCRIPTS/03_zonal_population.py:45
+    quote: '''STATISTICS'': [0, 1],   # count, sum'
+  impact:
+    datasets:
+    - ds.03_canton_pop
+    level: medium
+  used_by:
+  - pipeline/s03_zonal_population.py
+- id: p.zonal_res_stats
+  node: s03_zonal_population
+  kind: tool_option
+  value:
+    prefix: res_
+    stats:
+    - count
+    - sum
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: STATISTICS [0, 1] = count, sum; prefix res_.
+  evidence:
+  - ref: 02_SCRIPTS/03_zonal_population.py:53
+    quote: '''COLUMN_PREFIX'': ''res_'','
+  - ref: 02_SCRIPTS/03_zonal_population.py:54
+    quote: '''STATISTICS'': [0, 1],'
+  impact:
+    datasets:
+    - ds.03_canton_pop
+    level: medium
+  used_by:
+  - pipeline/s03_zonal_population.py
+- id: p.vpc_table
+  node: s04_distribute_value
+  kind: table_read
+  value:
+    sheet: vpc
+    min_row: 5
+    max_row: 16
+    key_col: 1
+    value_col: 2
+    strip_keys: true
+    skip_empty_key: true
+    data_only: true
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: sheet vpc, rows 5-16, column A stripped (row 16 is "Wiltz " with a trailing space), column B; B18 (AVERAGE formula,
+    no cached value) is outside the range.
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:37
+    quote: ws = wb["vpc"]
+  - ref: 02_SCRIPTS/04_distribute_value.py:39
+    quote: 'for row in ws.iter_rows(min_row=5, max_row=16, values_only=True):'
+  - ref: 02_SCRIPTS/04_distribute_value.py:42
+    quote: 'vpc[row[0].strip()] = float(row[1]) * 1000.0   # -> EUR'
+  impact:
+    datasets:
+    - ds.04_canton_factor
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    - ds.exposure_by_canton_gpkg
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: high
+  used_by:
+  - pipeline/s04_distribute_value.py
+- id: p.vpc_scale
+  node: s04_distribute_value
+  kind: scale
+  value: 1000.0
+  unit: EUR per kEUR
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: xlsx units cell B2 says kEUR / inh.; code multiplies by 1000; outputs are EUR.
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:42
+    quote: 'float(row[1]) * 1000.0   # -> EUR'
+  - ref: NOTES.txt:28
+    quote: value_per_capita.xlsx is kEUR per inhabitant -> x1000 in 04. outputs are EUR.
+  - ref: 03_INPUT/value_per_capita.xlsx#cell=vpc!B2
+    quote: null
+  impact:
+    datasets:
+    - ds.04_canton_factor
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    - ds.exposure_by_canton_gpkg
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: high
+  used_by:
+  - pipeline/s04_distribute_value.py
+- id: p.vpc_join_key
+  node: s04_distribute_value
+  kind: join_key
+  value:
+    vector_field: canton
+    table_key: stripped column A
+    match: exact
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: canton field matched exactly against stripped xlsx names; 12/12 match after strip (inventory join_coverage).
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:60
+    quote: name = f["canton"]
+  - ref: 02_SCRIPTS/04_distribute_value.py:61
+    quote: 'if name not in vpc:'
+  - ref: inventory:join_coverage
+    quote: null
+  impact:
+    datasets:
+    - ds.04_canton_factor
+    level: high
+  used_by:
+  - pipeline/s04_distribute_value.py
+- id: p.no_res_factor
+  node: s04_distribute_value
+  kind: other
+  value: 0
+  unit: EUR/person
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: factor is 0 for a canton with no residential population (no canton is in that case in the reference data).
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:69
+    quote: fac = 0
+  impact:
+    datasets:
+    - ds.04_canton_factor
+    - ds.04_factor
+    level: low
+  used_by:
+  - pipeline/s04_distribute_value.py
+- id: p.factor_raster
+  node: s04_distribute_value
+  kind: tool_option
+  value:
+    field: factor
+    init: 0
+    all_touched: false
+    dtype: float64
+    nodata: 0
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: gdal:rasterize of the factor field, cell-centre (EXTRA empty), init 0, Float64 (DATA_TYPE 6); header nodata 0 (tool
+    default, NODATA None).
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:81
+    quote: '''FIELD'': ''factor'','
+  - ref: 02_SCRIPTS/04_distribute_value.py:90
+    quote: '''DATA_TYPE'': 6,'
+  - ref: 02_SCRIPTS/04_distribute_value.py:91
+    quote: '''INIT'': 0,'
+  - ref: 02_SCRIPTS/04_distribute_value.py:93
+    quote: '''EXTRA'': '''','
+  - ref: inventory:05_TEMP/04_factor.tif
+    quote: null
+  flags:
+  - by_construction
+  impact:
+    datasets:
+    - ds.04_factor
+    - ds.lux_res_exposure_2020
+    level: high
+  used_by:
+  - pipeline/s04_distribute_value.py
+- id: p.exposure_raster
+  node: s04_distribute_value
+  kind: tool_option
+  value:
+    formula: A*B
+    dtype: float32
+    nodata: -9999
+    nodata_rule: nodata_if_any_input_nodata
+  unit: EUR/cell
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: gdal_calc A*B, RTYPE 5 = Float32, NO_DATA -9999; gdal_calc writes NoData where any input is NoData (pop_res NoData,
+    factor 0).
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:100
+    quote: '''FORMULA'': ''A*B'','
+  - ref: 02_SCRIPTS/04_distribute_value.py:101
+    quote: '''NO_DATA'': -9999,'
+  - ref: 02_SCRIPTS/04_distribute_value.py:103
+    quote: '''RTYPE'': 5,'
+  - ref: inventory:04_FINAL/lux_res_exposure_2020.tif
+    quote: null
+  impact:
+    datasets:
+    - ds.lux_res_exposure_2020
+    - ds.exposure_by_canton_gpkg
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: high
+  used_by:
+  - pipeline/s04_distribute_value.py
+- id: p.exposure_zonal
+  node: s04_distribute_value
+  kind: tool_option
+  value:
+    prefix: exp_
+    stats:
+    - sum
+    rule: cell_centre
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: check sum of the final raster per canton (zonalstatisticsfb, sum only, prefix exp_).
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:113
+    quote: '''COLUMN_PREFIX'': ''exp_'','
+  - ref: 02_SCRIPTS/04_distribute_value.py:114
+    quote: '''STATISTICS'': [1],'
+  impact:
+    datasets:
+    - ds.exposure_by_canton_gpkg
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: medium
+  used_by:
+  - pipeline/s04_distribute_value.py
+- id: p.report_table
+  node: s04_distribute_value
+  kind: table_read
+  value:
+    header:
+    - canton
+    - pop_total
+    - pop_residential
+    - value_per_capita_eur
+    - total_value_eur
+    - exposure_raster_sum_eur
+    - diff_eur
+    sort_by: canton
+    xlsx_sheet: by_canton
+    xlsx_total_label: TOTAL
+    xlsx_blank_row_before_total: true
+  unit: null
+  resolution: resolved
+  source: code
+  status: confirmed
+  reason: csv/xlsx layout as written by 04 (rows sorted by canton; xlsx has a blank row and a TOTAL row summing columns 2,
+    3, 5, 6).
+  evidence:
+  - ref: 02_SCRIPTS/04_distribute_value.py:122
+    quote: 'rows.sort(key=lambda r: r[0])'
+  - ref: 02_SCRIPTS/04_distribute_value.py:123
+    quote: hdr = ["canton", "pop_total", "pop_residential", "value_per_capita_eur", "total_value_eur",
+  - ref: 02_SCRIPTS/04_distribute_value.py:134
+    quote: ws2.title = "by_canton"
+  - ref: 02_SCRIPTS/04_distribute_value.py:139
+    quote: ws2.append(["TOTAL", sum(r[1] for r in rows), sum(r[2] for r in rows), None,
+  impact:
+    datasets:
+    - ds.exposure_by_canton_csv
+    - ds.exposure_by_canton_xlsx
+    level: medium
+  used_by:
+  - pipeline/s04_distribute_value.py
+target:
+  platform: databricks
+  question: q03
+  decisions:
+  - D-004

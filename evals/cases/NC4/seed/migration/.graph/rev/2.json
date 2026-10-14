@@ -1,0 +1,6433 @@
+{
+ "acks": {
+  "agent_seq": 0
+ },
+ "datasets": [
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "01_lux_outline",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeISO",
+     "shapeID",
+     "canton"
+    ],
+    "kind": "vector",
+    "layer": "01_lux_outline",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/01_lux_outline.gpkg",
+    "02_SCRIPTS/01_prepare_population.py:31",
+    "02_SCRIPTS/01_prepare_population.py:42",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/01_lux_outline.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s01_prepare_population.op1; file exists"
+    }
+   ],
+   "id": "ds.01_lux_outline",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "ed189502219075c712da8306d4188b09c0969bf77aa4ba82bdaef0be171a047d",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "01_lux_outline",
+    "path": "05_TEMP/01_lux_outline.gpkg",
+    "profile": "discover/profiles/ds.01_lux_outline.json",
+    "sha256": "f1f37a88e2aaad745ee1a95ea2592f5c9b14b5e56af1c9782919dfc0a3fa1632",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "01_lux_outline",
+    "path": "s01_prepare_population/01_lux_outline.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s01_prepare_population.op1",
+    "step": "s01_prepare_population"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "01_lux_outline",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "dtype": "float32",
+    "kind": "raster",
+    "nodata": -99999.0,
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "s02_landuse_mask",
+    "s03_zonal_population"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/01_pop_lux.tif",
+    "02_SCRIPTS/01_prepare_population.py:40",
+    "02_SCRIPTS/02_landuse_mask.py:56",
+    "02_SCRIPTS/02_landuse_mask.py:67",
+    "02_SCRIPTS/02_landuse_mask.py:68",
+    "02_SCRIPTS/02_landuse_mask.py:69",
+    "02_SCRIPTS/03_zonal_population.py:27",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/01_pop_lux.tif",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s01_prepare_population.op2; file exists"
+    }
+   ],
+   "grid_id": "grid.lux_ppp_2020",
+   "id": "ds.01_pop_lux",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GTiff",
+    "layer": null,
+    "path": "05_TEMP/01_pop_lux.tif",
+    "profile": "discover/profiles/ds.01_pop_lux.json",
+    "sha256": "e1d622de159d99b2625e53e7e0423ff3fed3a35d54f570a0772ea9ee0b47732b",
+    "sheet": null,
+    "sidecars": [
+     "05_TEMP/01_pop_lux.tif.aux.xml"
+    ]
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s01_prepare_population/01_pop_lux.tif"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s01_prepare_population.op2",
+    "step": "s01_prepare_population"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "01_pop_lux",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "02_res_2169",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "area_m2"
+    ],
+    "kind": "vector",
+    "layer": "02_res_2169",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/02_res_2169.gpkg",
+    "02_SCRIPTS/02_landuse_mask.py:45",
+    "02_SCRIPTS/02_landuse_mask.py:52",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/02_res_2169.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s02_landuse_mask.op4; file exists"
+    }
+   ],
+   "id": "ds.02_res_2169",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "c4249946f50fa2c53b9d11838a225a6a5853a481596ba84b23e05503247a8c46",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "02_res_2169",
+    "path": "05_TEMP/02_res_2169.gpkg",
+    "profile": "discover/profiles/ds.02_res_2169.json",
+    "sha256": "8bc481ec159f91734b59689b5c648863e87ceff8852e862aba38c1de8c11b52b",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "02_res_2169",
+    "path": "s02_landuse_mask/02_res_2169.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s02_landuse_mask.op4",
+    "step": "s02_landuse_mask"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "02_res_2169",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "02_res_4326",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "area_m2"
+    ],
+    "kind": "vector",
+    "layer": "02_res_4326",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/02_res_4326.gpkg",
+    "02_SCRIPTS/02_landuse_mask.py:51",
+    "02_SCRIPTS/02_landuse_mask.py:62",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/02_res_4326.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s02_landuse_mask.op5; file exists"
+    }
+   ],
+   "id": "ds.02_res_4326",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "c12a963b0967c52b087388b2b7fe6010d2b8d5368200e9adbcf38f0296f55830",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "02_res_4326",
+    "path": "05_TEMP/02_res_4326.gpkg",
+    "profile": "discover/profiles/ds.02_res_4326.json",
+    "sha256": "6c36e38c7f5689fa166ba35b003c354085557804b1e9787a9b36c23a6d33b3cc",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "02_res_4326",
+    "path": "s02_landuse_mask/02_res_4326.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s02_landuse_mask.op5",
+    "step": "s02_landuse_mask"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "02_res_4326",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": true,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": true,
+    "dtype": "uint8",
+    "kind": "raster",
+    "nodata": 0.0,
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "s03_zonal_population"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/02_res_mask.tif",
+    "02_SCRIPTS/02_landuse_mask.py:61",
+    "02_SCRIPTS/03_zonal_population.py:28",
+    "02_SCRIPTS/03_zonal_population.py:32",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/02_res_mask.tif",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s02_landuse_mask.op7; file exists"
+    }
+   ],
+   "grid_id": "grid.lux_ppp_2020",
+   "id": "ds.02_res_mask",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GTiff",
+    "layer": null,
+    "path": "05_TEMP/02_res_mask.tif",
+    "profile": "discover/profiles/ds.02_res_mask.json",
+    "sha256": "cb16d48a8514bf3a062a13d1cac4a978e1efcc0a1e0abac040a78e6bc177b0b3",
+    "sheet": null,
+    "sidecars": [
+     "05_TEMP/02_res_mask.tif.aux.xml"
+    ]
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s02_landuse_mask/02_res_mask.tif"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s02_landuse_mask.op7",
+    "step": "s02_landuse_mask"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "02_res_mask",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "03_canton_pop",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeISO",
+     "shapeID",
+     "canton",
+     "pop_count",
+     "pop_sum",
+     "res_count",
+     "res_sum"
+    ],
+    "kind": "vector",
+    "layer": "03_canton_pop",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s04_distribute_value"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/03_canton_pop.gpkg",
+    "02_SCRIPTS/03_zonal_population.py:49",
+    "02_SCRIPTS/04_distribute_value.py:46",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/03_canton_pop.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s03_zonal_population.op5; file exists"
+    }
+   ],
+   "id": "ds.03_canton_pop",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "593b0d9df6e0a0fdb732d52e1ba487e2f003b8c799ff8ff911b2b643f9dad4c0",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "03_canton_pop",
+    "path": "05_TEMP/03_canton_pop.gpkg",
+    "profile": "discover/profiles/ds.03_canton_pop.json",
+    "sha256": "b689f7f3441d6c68ac9a760cfad7c685abf32868443522d72c51cc08612873c5",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "03_canton_pop",
+    "path": "s03_zonal_population/03_canton_pop.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s03_zonal_population.op5",
+    "step": "s03_zonal_population"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "03_canton_pop",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "dtype": "float32",
+    "kind": "raster",
+    "nodata": -3.4028234663852886e+38,
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "s04_distribute_value"
+   ],
+   "evidence": [
+    "inventory:05_TEMP/03_pop_res.tif",
+    "02_SCRIPTS/03_zonal_population.py:31",
+    "02_SCRIPTS/03_zonal_population.py:51",
+    "02_SCRIPTS/04_distribute_value.py:76",
+    "02_SCRIPTS/04_distribute_value.py:85",
+    "02_SCRIPTS/04_distribute_value.py:86",
+    "02_SCRIPTS/04_distribute_value.py:87",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/03_pop_res.tif",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s03_zonal_population.op3; file exists"
+    }
+   ],
+   "grid_id": "grid.lux_ppp_2020",
+   "id": "ds.03_pop_res",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GTiff",
+    "layer": null,
+    "path": "05_TEMP/03_pop_res.tif",
+    "profile": "discover/profiles/ds.03_pop_res.json",
+    "sha256": "a6e7158220ee0597777837906595cbf67a1749f051ef918e896f0d984fb5c593",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s03_zonal_population/03_pop_res.tif"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s03_zonal_population.op3",
+    "step": "s03_zonal_population"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "03_pop_res",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "canton_factor",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeISO",
+     "shapeID",
+     "canton",
+     "pop_count",
+     "pop_sum",
+     "res_count",
+     "res_sum",
+     "vpc_eur",
+     "tot_value",
+     "factor"
+    ],
+    "kind": "vector",
+    "layer": "canton_factor",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/04_canton_factor.gpkg",
+    "02_SCRIPTS/04_distribute_value.py:46",
+    "02_SCRIPTS/04_distribute_value.py:47",
+    "02_SCRIPTS/04_distribute_value.py:47",
+    "02_SCRIPTS/04_distribute_value.py:47",
+    "02_SCRIPTS/04_distribute_value.py:80",
+    "02_SCRIPTS/04_distribute_value.py:110",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/04_canton_factor.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_distribute_value.op2; file exists"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/04_canton_factor.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_distribute_value.op3; file exists"
+    }
+   ],
+   "id": "ds.04_canton_factor",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "54e53f24fa957ca0d30c3b60a530069cecaa0b145e3a1773ddd8056d665c67bf",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "canton_factor",
+    "path": "05_TEMP/04_canton_factor.gpkg",
+    "profile": "discover/profiles/ds.04_canton_factor.json",
+    "sha256": "fe95dcfc0ede3c508e2a06915661b9f5436a52b71a79dee8d94caa780b172834",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "canton_factor",
+    "path": "s04_distribute_value/04_canton_factor.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_distribute_value.op2",
+    "step": "s04_distribute_value"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "04_canton_factor",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "dtype": "float64",
+    "kind": "raster",
+    "nodata": 0.0,
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:05_TEMP/04_factor.tif",
+    "02_SCRIPTS/04_distribute_value.py:79",
+    "02_SCRIPTS/04_distribute_value.py:99",
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/04_factor.tif",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_distribute_value.op5; file exists"
+    }
+   ],
+   "grid_id": "grid.lux_ppp_2020",
+   "id": "ds.04_factor",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GTiff",
+    "layer": null,
+    "path": "05_TEMP/04_factor.tif",
+    "profile": "discover/profiles/ds.04_factor.json",
+    "sha256": "9b2c5a1e5a029a760f905d0f96fb531869b5e62c057bd2075ce1b3aa3a8e3588",
+    "sheet": null,
+    "sidecars": [
+     "05_TEMP/04_factor.tif.aux.xml"
+    ]
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s04_distribute_value/04_factor.tif"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_distribute_value.op5",
+    "step": "s04_distribute_value"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "intermediate",
+   "role_lineage": "intermediate",
+   "title": "04_factor",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "cantons",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeISO",
+     "shapeID",
+     "canton"
+    ],
+    "kind": "vector",
+    "layer": "cantons",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s01_prepare_population",
+    "s03_zonal_population"
+   ],
+   "derived_from": "ds.geoboundaries_lux_adm1",
+   "evidence": [
+    "inventory:03_INPUT/cantons_lux_edit.gpkg",
+    "02_SCRIPTS/01_prepare_population.py:32",
+    "02_SCRIPTS/03_zonal_population.py:41",
+    "NOTES.txt:18"
+   ],
+   "id": "ds.cantons_lux_edit",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "3dddf000785c04d4841f3288dd7db51872f29199febbe512688c2788bb20d8fe",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "cantons",
+    "path": "03_INPUT/cantons_lux_edit.gpkg",
+    "profile": "discover/profiles/ds.cantons_lux_edit.json",
+    "sha256": "59066aad7bede836e1a3130cd3b485fb3af861f3f8dd5c1911bd91360953c12a",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": null,
+    "step": "m01_cantons_lux_edit"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "input",
+   "role_lineage": "input",
+   "title": "cantons_lux_edit",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": 1,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "header_row": 1,
+    "kind": "table",
+    "sep": ",",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:04_FINAL/exposure_by_canton.csv",
+    "02_SCRIPTS/04_distribute_value.py:126",
+    "NOTES.txt:32",
+    "NOTES.txt:32",
+    {
+     "by": "lineage",
+     "ref": "inventory:04_FINAL/exposure_by_canton.csv",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_distribute_value.op9; file exists"
+    }
+   ],
+   "id": "ds.exposure_by_canton_csv",
+   "kind": "table",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "CSV",
+    "layer": null,
+    "path": "04_FINAL/exposure_by_canton.csv",
+    "profile": "discover/profiles/ds.exposure_by_canton_csv.json",
+    "sha256": "f7e4247d5722a9018c315479c741479dca8186e7803b256b5cc883df1656eb04",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s04_distribute_value/exposure_by_canton.csv"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_distribute_value.op9",
+    "step": "s04_distribute_value"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "final",
+   "role_lineage": "final",
+   "title": "exposure_by_canton",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "exposure_by_canton",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeISO",
+     "shapeID",
+     "canton",
+     "pop_count",
+     "pop_sum",
+     "res_count",
+     "res_sum",
+     "vpc_eur",
+     "tot_value",
+     "factor",
+     "exp_sum"
+    ],
+    "kind": "vector",
+    "layer": "exposure_by_canton",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:04_FINAL/exposure_by_canton.gpkg",
+    "02_SCRIPTS/04_distribute_value.py:109",
+    "02_SCRIPTS/04_distribute_value.py:117",
+    "NOTES.txt:32",
+    "NOTES.txt:32",
+    {
+     "by": "lineage",
+     "ref": "inventory:04_FINAL/exposure_by_canton.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_distribute_value.op7; file exists"
+    }
+   ],
+   "id": "ds.exposure_by_canton_gpkg",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "a2347741bb9f0a74563dad104ea27fadcd8ef14febdb3dc47f6594519db22c72",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "exposure_by_canton",
+    "path": "04_FINAL/exposure_by_canton.gpkg",
+    "profile": "discover/profiles/ds.exposure_by_canton_gpkg.json",
+    "sha256": "0028124e9fd999527b5aa4946719f7c89f48f6137d3d620bcf9e62a7cc9c03dc",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": "exposure_by_canton",
+    "path": "s04_distribute_value/exposure_by_canton.gpkg"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_distribute_value.op7",
+    "step": "s04_distribute_value"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "final",
+   "role_lineage": "final",
+   "title": "exposure_by_canton",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": "by_canton",
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "data_rows": null,
+    "header_row": null,
+    "kind": "table",
+    "sheet": "by_canton",
+    "volatile_bytes": [
+     "docProps/core.xml"
+    ]
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:04_FINAL/exposure_by_canton.xlsx",
+    "02_SCRIPTS/04_distribute_value.py:141",
+    "NOTES.txt:32",
+    "NOTES.txt:32",
+    {
+     "by": "lineage",
+     "ref": "inventory:04_FINAL/exposure_by_canton.xlsx",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_distribute_value.op10; file exists"
+    }
+   ],
+   "id": "ds.exposure_by_canton_xlsx",
+   "kind": "table",
+   "legacy": {
+    "content_sha256": "4b218f13df4cf0784035f0aa6338253fe7811b150bf4ee1fb144d787d5ff80e3",
+    "exists": true,
+    "format": "XLSX",
+    "layer": null,
+    "path": "04_FINAL/exposure_by_canton.xlsx",
+    "profile": "discover/profiles/ds.exposure_by_canton_xlsx.json",
+    "sha256": "e9fc464121d401363660df2875e4a3821326c66f860115982db6fd1cd9106078",
+    "sheet": "by_canton",
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s04_distribute_value/exposure_by_canton.xlsx"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_distribute_value.op10",
+    "step": "s04_distribute_value"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "final",
+   "role_lineage": "final",
+   "title": "exposure_by_canton",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "geoBoundaries-LUX-ADM1",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeISO",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "geoBoundaries-LUX-ADM1",
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "m01_cantons_lux_edit"
+   ],
+   "evidence": [
+    "inventory:03_INPUT/geoBoundaries-LUX-ADM1.geojson",
+    "NOTES.txt:16"
+   ],
+   "id": "ds.geoboundaries_lux_adm1",
+   "input_of_manual_step": "m01_cantons_lux_edit",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GeoJSON",
+    "layer": "geoBoundaries-LUX-ADM1",
+    "path": "03_INPUT/geoBoundaries-LUX-ADM1.geojson",
+    "profile": "discover/profiles/ds.geoboundaries_lux_adm1.json",
+    "sha256": "6d94cd5c195bd0d103fe5bef528a3ee1ed7b2622f7dd261c43ef273b80558e90",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "input",
+   "role_lineage": "input",
+   "title": "geoBoundaries-LUX-ADM1",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "geoBoundaries-LUX-ADM2",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [
+     "shapeName",
+     "shapeID"
+    ],
+    "kind": "vector",
+    "layer": "geoBoundaries-LUX-ADM2",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:03_INPUT/geoBoundaries-LUX-ADM2.geojson"
+   ],
+   "id": "ds.geoboundaries_lux_adm2",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GeoJSON",
+    "layer": "geoBoundaries-LUX-ADM2",
+    "path": "03_INPUT/geoBoundaries-LUX-ADM2.geojson",
+    "profile": "discover/profiles/ds.geoboundaries_lux_adm2.json",
+    "sha256": "c885587d4883438e800b910029b54a37a3c9bcb73a45ddf48544e496b7ee265d",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "display_only",
+   "notes": [],
+   "persistence": "file",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "geoBoundaries-LUX-ADM2",
+   "title_set_by": "agent",
+   "unused_kind": "display_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "dtype": "float32",
+    "kind": "raster",
+    "nodata": -99999.0,
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "s01_prepare_population",
+    "s03b_zonal_arcpy_old"
+   ],
+   "evidence": [
+    "inventory:03_INPUT/lux_ppp_2020.tif",
+    "02_SCRIPTS/01_prepare_population.py:41"
+   ],
+   "grid_id": "grid.lux_ppp_2020",
+   "id": "ds.lux_ppp_2020",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GTiff",
+    "layer": null,
+    "path": "03_INPUT/lux_ppp_2020.tif",
+    "profile": "discover/profiles/ds.lux_ppp_2020.json",
+    "sha256": "6a8f2e17b90bdce076a633c61f82a73f0b474b4137df7c22a5638a4527c34a96",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "input",
+   "role_lineage": "input",
+   "title": "lux_ppp_2020",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "dtype": "float32",
+    "kind": "raster",
+    "nodata": -9999.0,
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:04_FINAL/lux_res_exposure_2020.tif",
+    "02_SCRIPTS/04_distribute_value.py:97",
+    "02_SCRIPTS/04_distribute_value.py:111",
+    "NOTES.txt:31",
+    "NOTES.txt:31",
+    {
+     "by": "lineage",
+     "ref": "inventory:04_FINAL/lux_res_exposure_2020.tif",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "written by s04_distribute_value.op6; file exists"
+    }
+   ],
+   "grid_id": "grid.lux_ppp_2020",
+   "id": "ds.lux_res_exposure_2020",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": true,
+    "format": "GTiff",
+    "layer": null,
+    "path": "04_FINAL/lux_res_exposure_2020.tif",
+    "profile": "discover/profiles/ds.lux_res_exposure_2020.json",
+    "sha256": "b364ee901a73c4e25b5554569946900f8f443be171de7e1dde6907252e2d6b87",
+    "sheet": null,
+    "sidecars": [
+     "04_FINAL/lux_res_exposure_2020.tif.aux.xml"
+    ]
+   },
+   "legacy_in_memory": false,
+   "new": {
+    "auto": true,
+    "layer": null,
+    "path": "s04_distribute_value/lux_res_exposure_2020.tif"
+   },
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": {
+    "op": "s04_distribute_value.op6",
+    "step": "s04_distribute_value"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "final",
+   "role_lineage": "final",
+   "title": "lux_res_exposure_2020",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "landuse",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "key_candidates": [],
+    "kind": "vector",
+    "layer": "landuse",
+    "volatile_bytes": [
+     "gpkg_contents.last_change"
+    ]
+   },
+   "consumed_by": [
+    "s02_landuse_mask"
+   ],
+   "evidence": [
+    "inventory:03_INPUT/osm_landuse_lux.gpkg",
+    "02_SCRIPTS/02_landuse_mask.py:28"
+   ],
+   "id": "ds.osm_landuse_lux",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": "1559f8be4ca6799cf4076a53ba6acb6d096295957eb227f35b314b5c45a7d79d",
+    "exists": true,
+    "format": "GPKG",
+    "layer": "landuse",
+    "path": "03_INPUT/osm_landuse_lux.gpkg",
+    "profile": "discover/profiles/ds.osm_landuse_lux.json",
+    "sha256": "106175f643f03f11b209eaa9957139043e7dc8e110cdb716851336da740ca3bd",
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "input",
+   "role_lineage": "input",
+   "title": "osm_landuse_lux",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": false,
+    "count": null,
+    "data_rows": [
+     5,
+     16
+    ],
+    "header_row": 4,
+    "ignore": [],
+    "key": null,
+    "layer": null,
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": "vpc",
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "categorical": false,
+    "data_rows": [
+     5,
+     16
+    ],
+    "header_row": 4,
+    "kind": "table",
+    "sheet": "vpc",
+    "volatile_bytes": [
+     "docProps/core.xml"
+    ]
+   },
+   "consumed_by": [
+    "s04_distribute_value"
+   ],
+   "evidence": [
+    "inventory:03_INPUT/value_per_capita.xlsx",
+    "02_SCRIPTS/04_distribute_value.py:36",
+    "NOTES.txt:28"
+   ],
+   "id": "ds.value_per_capita",
+   "kind": "table",
+   "legacy": {
+    "content_sha256": "b57f9beac664806770dd99620262d98198fd7ae40c33f6ccfc220e1b348cfb0b",
+    "exists": true,
+    "format": "XLSX",
+    "layer": null,
+    "path": "03_INPUT/value_per_capita.xlsx",
+    "profile": "discover/profiles/ds.value_per_capita.json",
+    "sha256": "1b56e99ee3336b24bfa1be820b6a29907333497d8e88116e714fce63b3a25ad8",
+    "sheet": "vpc",
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": null,
+   "notes": [],
+   "persistence": "file",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "legacy",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "input",
+   "role_lineage": "input",
+   "title": "value_per_capita",
+   "title_set_by": "agent",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": null,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "canton_pop",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "kind": "vector",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:work.gdb"
+   ],
+   "id": "ds.work__canton_pop",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": null,
+    "exists": false,
+    "format": "OpenFileGDB",
+    "layer": "canton_pop",
+    "path": "work.gdb",
+    "profile": null,
+    "sha256": null,
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "superseded_only",
+   "notes": [],
+   "persistence": "gdb",
+   "produced_by": {
+    "op": "s03b_zonal_arcpy_old.op9",
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "canton_pop",
+   "title_set_by": "agent",
+   "unused_kind": "superseded_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": null,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "cantons_edit",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "kind": "vector",
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "s03b_zonal_arcpy_old"
+   ],
+   "evidence": [
+    "inventory:work.gdb"
+   ],
+   "id": "ds.work__cantons_edit",
+   "kind": "vector",
+   "legacy": {
+    "content_sha256": null,
+    "exists": false,
+    "format": "OpenFileGDB",
+    "layer": "cantons_edit",
+    "path": "work.gdb",
+    "profile": null,
+    "sha256": null,
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "superseded_only",
+   "notes": [],
+   "persistence": "gdb",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "cantons_edit",
+   "title_set_by": "agent",
+   "unused_kind": "superseded_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": null,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "pop_lux",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "kind": "raster",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:work.gdb"
+   ],
+   "id": "ds.work__pop_lux",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": false,
+    "format": "OpenFileGDB",
+    "layer": "pop_lux",
+    "path": "work.gdb",
+    "profile": null,
+    "sha256": null,
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "superseded_only",
+   "notes": [],
+   "persistence": "gdb",
+   "produced_by": {
+    "op": "s03b_zonal_arcpy_old.op3",
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "pop_lux",
+   "title_set_by": "agent",
+   "unused_kind": "superseded_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": null,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "pop_res",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "kind": "raster",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:work.gdb"
+   ],
+   "id": "ds.work__pop_res",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": false,
+    "format": "OpenFileGDB",
+    "layer": "pop_res",
+    "path": "work.gdb",
+    "profile": null,
+    "sha256": null,
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "superseded_only",
+   "notes": [],
+   "persistence": "gdb",
+   "produced_by": {
+    "op": "s03b_zonal_arcpy_old.op6",
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "pop_res",
+   "title_set_by": "agent",
+   "unused_kind": "superseded_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": null,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "res_mask",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "kind": "raster",
+    "volatile_bytes": []
+   },
+   "consumed_by": [
+    "s03b_zonal_arcpy_old"
+   ],
+   "evidence": [
+    "inventory:work.gdb"
+   ],
+   "id": "ds.work__res_mask",
+   "kind": "raster",
+   "legacy": {
+    "content_sha256": null,
+    "exists": false,
+    "format": "OpenFileGDB",
+    "layer": "res_mask",
+    "path": "work.gdb",
+    "profile": null,
+    "sha256": null,
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "superseded_only",
+   "notes": [],
+   "persistence": "gdb",
+   "produced_by": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "res_mask",
+   "title_set_by": "agent",
+   "unused_kind": "superseded_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": null,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "zs_pop",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "kind": "table",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:work.gdb"
+   ],
+   "id": "ds.work__zs_pop",
+   "kind": "table",
+   "legacy": {
+    "content_sha256": null,
+    "exists": false,
+    "format": "OpenFileGDB",
+    "layer": "zs_pop",
+    "path": "work.gdb",
+    "profile": null,
+    "sha256": null,
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "superseded_only",
+   "notes": [],
+   "persistence": "gdb",
+   "produced_by": {
+    "op": "s03b_zonal_arcpy_old.op7",
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "zs_pop",
+   "title_set_by": "agent",
+   "unused_kind": "superseded_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  },
+  {
+   "compare": {
+    "categorical": null,
+    "count": null,
+    "data_rows": null,
+    "header_row": null,
+    "ignore": [],
+    "key": null,
+    "layer": "zs_res",
+    "match": null,
+    "may_be_empty": false,
+    "measure": null,
+    "measure_crs_param": null,
+    "rename": {},
+    "sheet": null,
+    "total_row": null,
+    "zone_rule": null,
+    "zones": null
+   },
+   "compare_hints": {
+    "kind": "table",
+    "volatile_bytes": []
+   },
+   "consumed_by": [],
+   "evidence": [
+    "inventory:work.gdb"
+   ],
+   "id": "ds.work__zs_res",
+   "kind": "table",
+   "legacy": {
+    "content_sha256": null,
+    "exists": false,
+    "format": "OpenFileGDB",
+    "layer": "zs_res",
+    "path": "work.gdb",
+    "profile": null,
+    "sha256": null,
+    "sheet": null,
+    "sidecars": []
+   },
+   "legacy_in_memory": false,
+   "new": null,
+   "no_reference_reason": "superseded_only",
+   "notes": [],
+   "persistence": "gdb",
+   "produced_by": {
+    "op": "s03b_zonal_arcpy_old.op8",
+    "step": "s03b_zonal_arcpy_old"
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "reference": {
+    "confirmed_by": null,
+    "match_method": "lineage",
+    "source": "none",
+    "via_dataset": null
+   },
+   "review": "pending",
+   "role": "unused",
+   "role_lineage": "unused",
+   "title": "zs_res",
+   "title_set_by": "agent",
+   "unused_kind": "superseded_only",
+   "verify": {
+    "blame": null,
+    "plots": [],
+    "reason_codes": [],
+    "report": null,
+    "report_sha256": null,
+    "run_id": null,
+    "verdict": null,
+    "visual_flag": null,
+    "waiver": null
+   }
+  }
+ ],
+ "draft_schema": "axis-migrate.graph-draft.v1",
+ "edges": [
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:56",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "QgsRasterLayer path (line 56)"
+    }
+   ],
+   "from": "ds.01_pop_lux",
+   "id": "e.ds.01_pop_lux>s02_landuse_mask",
+   "kind": "reads",
+   "lines": [
+    [
+     56,
+     56
+    ]
+   ],
+   "notes": [],
+   "op": "s02_landuse_mask.op6",
+   "ops": [
+    "s02_landuse_mask.op6"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s02_landuse_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:67",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize WIDTH = width_of(ds.01_pop_lux)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:68",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize HEIGHT = height_of(ds.01_pop_lux)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:69",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize EXTENT = extent_of(ds.01_pop_lux)"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/02_res_mask.tif",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "transform, shape and CRS of ds.02_res_mask == ds.01_pop_lux"
+    }
+   ],
+   "from": "ds.01_pop_lux",
+   "id": "e.ds.01_pop_lux>s02_landuse_mask#reads_grid",
+   "kind": "reads_grid",
+   "lines": [
+    [
+     61,
+     76
+    ]
+   ],
+   "notes": [],
+   "op": "s02_landuse_mask.op7",
+   "ops": [
+    "s02_landuse_mask.op7"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s02_landuse_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:27",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "QgsRasterLayer path (line 27)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:31-37",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:rastercalc LAYERS (line 32)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:40-46",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:zonalstatisticsfb INPUT_RASTER (line 42)"
+    }
+   ],
+   "from": "ds.01_pop_lux",
+   "id": "e.ds.01_pop_lux>s03_zonal_population",
+   "kind": "reads",
+   "lines": [
+    [
+     27,
+     27
+    ],
+    [
+     31,
+     37
+    ],
+    [
+     40,
+     46
+    ]
+   ],
+   "notes": [],
+   "op": "s03_zonal_population.op1",
+   "ops": [
+    "s03_zonal_population.op1",
+    "s03_zonal_population.op3",
+    "s03_zonal_population.op4"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03_zonal_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:28",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "QgsRasterLayer path (line 28)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:31-37",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:rastercalc LAYERS (line 32)"
+    }
+   ],
+   "from": "ds.02_res_mask",
+   "id": "e.ds.02_res_mask>s03_zonal_population",
+   "kind": "reads",
+   "lines": [
+    [
+     28,
+     28
+    ],
+    [
+     31,
+     37
+    ]
+   ],
+   "notes": [],
+   "op": "s03_zonal_population.op2",
+   "ops": [
+    "s03_zonal_population.op2",
+    "s03_zonal_population.op3"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03_zonal_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:46",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:savefeatures INPUT (line 46)"
+    }
+   ],
+   "from": "ds.03_canton_pop",
+   "id": "e.ds.03_canton_pop>s04_distribute_value",
+   "kind": "reads",
+   "lines": [
+    [
+     46,
+     46
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op2",
+   "ops": [
+    "s04_distribute_value.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s04_distribute_value"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:76",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "QgsRasterLayer path (line 76)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:97-106",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rastercalculator INPUT_A (line 98)"
+    }
+   ],
+   "from": "ds.03_pop_res",
+   "id": "e.ds.03_pop_res>s04_distribute_value",
+   "kind": "reads",
+   "lines": [
+    [
+     76,
+     76
+    ],
+    [
+     97,
+     106
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op4",
+   "ops": [
+    "s04_distribute_value.op4",
+    "s04_distribute_value.op6"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s04_distribute_value"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:85",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize WIDTH = width_of(ds.03_pop_res)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:86",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize HEIGHT = height_of(ds.03_pop_res)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:87",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize EXTENT = extent_of(ds.03_pop_res)"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:05_TEMP/04_factor.tif",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "transform, shape and CRS of ds.04_factor == ds.03_pop_res"
+    }
+   ],
+   "from": "ds.03_pop_res",
+   "id": "e.ds.03_pop_res>s04_distribute_value#reads_grid",
+   "kind": "reads_grid",
+   "lines": [
+    [
+     79,
+     94
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op5",
+   "ops": [
+    "s04_distribute_value.op5"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s04_distribute_value"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_population.py:31-35",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:dissolve INPUT (line 32)"
+    }
+   ],
+   "from": "ds.cantons_lux_edit",
+   "id": "e.ds.cantons_lux_edit>s01_prepare_population",
+   "kind": "reads",
+   "lines": [
+    [
+     31,
+     35
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_population.op1",
+   "ops": [
+    "s01_prepare_population.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s01_prepare_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:40-46",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:zonalstatisticsfb INPUT (line 41)"
+    }
+   ],
+   "from": "ds.cantons_lux_edit",
+   "id": "e.ds.cantons_lux_edit>s03_zonal_population",
+   "kind": "reads",
+   "lines": [
+    [
+     40,
+     46
+    ]
+   ],
+   "notes": [],
+   "op": "s03_zonal_population.op4",
+   "ops": [
+    "s03_zonal_population.op4"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03_zonal_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:15-19",
+     "rev": 1,
+     "state": "documented",
+     "summary": "named as the source of the manual edit"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:03_INPUT/geoBoundaries-LUX-ADM1.geojson",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "dc.01: same geometries as the edited file"
+    }
+   ],
+   "from": "ds.geoboundaries_lux_adm1",
+   "id": "e.ds.geoboundaries_lux_adm1>m01_cantons_lux_edit",
+   "kind": "reads",
+   "lines": [
+    [
+     15,
+     19
+    ]
+   ],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "m01_cantons_lux_edit"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_population.py:40-54",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:cliprasterbymasklayer INPUT (line 41)"
+    }
+   ],
+   "from": "ds.lux_ppp_2020",
+   "id": "e.ds.lux_ppp_2020>s01_prepare_population",
+   "kind": "reads",
+   "lines": [
+    [
+     40,
+     54
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_population.op2",
+   "ops": [
+    "s01_prepare_population.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s01_prepare_population"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:26",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "Describe value (line 26)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:28",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.ExtractByMask in_raster (line 28)"
+    }
+   ],
+   "from": "ds.lux_ppp_2020",
+   "id": "e.ds.lux_ppp_2020>s03b_zonal_arcpy_old",
+   "kind": "reads",
+   "lines": [
+    [
+     26,
+     26
+    ],
+    [
+     28,
+     28
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op1",
+   "ops": [
+    "s03b_zonal_arcpy_old.op1",
+    "s03b_zonal_arcpy_old.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03b_zonal_arcpy_old"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:24",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "arcpy.env.cellSize = dataset(ds.lux_ppp_2020)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:25",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "arcpy.env.extent = dataset(ds.lux_ppp_2020)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:26",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "arcpy.env.outputCoordinateSystem = spatialReference_of(ds.lux_ppp_2020)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:23",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "arcpy.env.snapRaster = dataset(ds.lux_ppp_2020)"
+    }
+   ],
+   "from": "ds.lux_ppp_2020",
+   "id": "e.ds.lux_ppp_2020>s03b_zonal_arcpy_old#reads_grid",
+   "kind": "reads_grid",
+   "lines": [
+    [
+     23,
+     23
+    ],
+    [
+     24,
+     24
+    ],
+    [
+     25,
+     25
+    ],
+    [
+     26,
+     26
+    ]
+   ],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03b_zonal_arcpy_old"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:27-30",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:reprojectlayer INPUT (line 28)"
+    }
+   ],
+   "from": "ds.osm_landuse_lux",
+   "id": "e.ds.osm_landuse_lux>s02_landuse_mask",
+   "kind": "reads",
+   "lines": [
+    [
+     27,
+     30
+    ]
+   ],
+   "notes": [],
+   "op": "s02_landuse_mask.op1",
+   "ops": [
+    "s02_landuse_mask.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s02_landuse_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:36",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "load_workbook filename (line 36)"
+    }
+   ],
+   "from": "ds.value_per_capita",
+   "id": "e.ds.value_per_capita>s04_distribute_value",
+   "kind": "reads",
+   "lines": [
+    [
+     36,
+     36
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op1",
+   "ops": [
+    "s04_distribute_value.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s04_distribute_value"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:3",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:13",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:work.gdb",
+     "rev": 1,
+     "state": "ai_inferred",
+     "summary": "same role in the twin step; name tokens ['canton', 'pop']"
+    }
+   ],
+   "from": "ds.work__canton_pop",
+   "id": "e.ds.work__canton_pop>ds.03_canton_pop#equivalent_to",
+   "kind": "equivalent_to",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "documented",
+   "to": "ds.03_canton_pop"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:3",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:13",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:work.gdb",
+     "rev": 1,
+     "state": "ai_inferred",
+     "summary": "same role in the twin step; name tokens ['cantons', 'edit']"
+    }
+   ],
+   "from": "ds.work__cantons_edit",
+   "id": "e.ds.work__cantons_edit>ds.cantons_lux_edit#equivalent_to",
+   "kind": "equivalent_to",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "documented",
+   "to": "ds.cantons_lux_edit"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:28",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.ExtractByMask in_mask_data (line 28)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:36",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.ZonalStatisticsAsTable in_zone_data (line 36)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:37",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.ZonalStatisticsAsTable in_zone_data (line 37)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:41",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "management.CopyFeatures in_features (line 41)"
+    }
+   ],
+   "from": "ds.work__cantons_edit",
+   "id": "e.ds.work__cantons_edit>s03b_zonal_arcpy_old",
+   "kind": "reads",
+   "lines": [
+    [
+     28,
+     28
+    ],
+    [
+     36,
+     36
+    ],
+    [
+     37,
+     37
+    ],
+    [
+     41,
+     41
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op2",
+   "ops": [
+    "s03b_zonal_arcpy_old.op2",
+    "s03b_zonal_arcpy_old.op7",
+    "s03b_zonal_arcpy_old.op8",
+    "s03b_zonal_arcpy_old.op9"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03b_zonal_arcpy_old"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:3",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:13",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:work.gdb",
+     "rev": 1,
+     "state": "ai_inferred",
+     "summary": "same role in the twin step; name tokens ['lux', 'pop']"
+    }
+   ],
+   "from": "ds.work__pop_lux",
+   "id": "e.ds.work__pop_lux>ds.01_pop_lux#equivalent_to",
+   "kind": "equivalent_to",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "documented",
+   "to": "ds.01_pop_lux"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:3",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:13",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:work.gdb",
+     "rev": 1,
+     "state": "ai_inferred",
+     "summary": "same role in the twin step; name tokens ['pop', 'res']"
+    }
+   ],
+   "from": "ds.work__pop_res",
+   "id": "e.ds.work__pop_res>ds.03_pop_res#equivalent_to",
+   "kind": "equivalent_to",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "documented",
+   "to": "ds.03_pop_res"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:3",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:13",
+     "rev": 1,
+     "state": "documented",
+     "summary": "s03b_zonal_arcpy_old is an alternative implementation of s03_zonal_population"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:work.gdb",
+     "rev": 1,
+     "state": "ai_inferred",
+     "summary": "same role in the twin step; name tokens ['mask', 'res']"
+    }
+   ],
+   "from": "ds.work__res_mask",
+   "id": "e.ds.work__res_mask>ds.02_res_mask#equivalent_to",
+   "kind": "equivalent_to",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "documented",
+   "to": "ds.02_res_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:32",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.Con inRaster (line 32)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:32",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.Con in_raster (line 32)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:32",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.Con in_false_raster_or_constant (line 32)"
+    }
+   ],
+   "from": "ds.work__res_mask",
+   "id": "e.ds.work__res_mask>s03b_zonal_arcpy_old",
+   "kind": "reads",
+   "lines": [
+    [
+     32,
+     32
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op4",
+   "ops": [
+    "s03b_zonal_arcpy_old.op4"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "s03b_zonal_arcpy_old"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:15-19",
+     "rev": 1,
+     "state": "documented",
+     "summary": "saved by hand"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:03_INPUT/cantons_lux_edit.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "dc.01"
+    }
+   ],
+   "from": "m01_cantons_lux_edit",
+   "id": "e.m01_cantons_lux_edit>ds.cantons_lux_edit",
+   "kind": "writes",
+   "lines": [
+    [
+     15,
+     19
+    ]
+   ],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.cantons_lux_edit"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "qgz:01_QGIS/lux_exposure.qgz#layer=res_mask",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "layer 'res_mask' in group working"
+    }
+   ],
+   "from": "project:01_QGIS/lux_exposure.qgz",
+   "id": "e.project:01_qgis_lux_exposure_qgz>ds.02_res_mask#displays",
+   "kind": "displays",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.02_res_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "qgz:01_QGIS/lux_exposure.qgz#layer=cantons_lux_edit",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "layer 'cantons_lux_edit' in group input"
+    }
+   ],
+   "from": "project:01_QGIS/lux_exposure.qgz",
+   "id": "e.project:01_qgis_lux_exposure_qgz>ds.cantons_lux_edit#displays",
+   "kind": "displays",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.cantons_lux_edit"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "qgz:01_QGIS/lux_exposure.qgz#layer=exposure_by_canton",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "layer 'exposure_by_canton' in group results"
+    }
+   ],
+   "from": "project:01_QGIS/lux_exposure.qgz",
+   "id": "e.project:01_qgis_lux_exposure_qgz>ds.exposure_by_canton_gpkg#displays",
+   "kind": "displays",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.exposure_by_canton_gpkg"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "qgz:01_QGIS/lux_exposure.qgz#layer=communes (ADM2)",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "layer 'communes (ADM2)' in group input"
+    }
+   ],
+   "from": "project:01_QGIS/lux_exposure.qgz",
+   "id": "e.project:01_qgis_lux_exposure_qgz>ds.geoboundaries_lux_adm2#displays",
+   "kind": "displays",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.geoboundaries_lux_adm2"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "qgz:01_QGIS/lux_exposure.qgz#layer=lux_ppp_2020",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "layer 'lux_ppp_2020' in group input"
+    }
+   ],
+   "from": "project:01_QGIS/lux_exposure.qgz",
+   "id": "e.project:01_qgis_lux_exposure_qgz>ds.lux_ppp_2020#displays",
+   "kind": "displays",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.lux_ppp_2020"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "qgz:01_QGIS/lux_exposure.qgz#layer=lux_res_exposure_2020",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "layer 'lux_res_exposure_2020' in group results"
+    }
+   ],
+   "from": "project:01_QGIS/lux_exposure.qgz",
+   "id": "e.project:01_qgis_lux_exposure_qgz>ds.lux_res_exposure_2020#displays",
+   "kind": "displays",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.lux_res_exposure_2020"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "qgz:01_QGIS/lux_exposure.qgz#layer=osm_landuse",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "layer 'osm_landuse' in group input, subset \"landuse\" = 'residential'"
+    }
+   ],
+   "from": "project:01_QGIS/lux_exposure.qgz",
+   "id": "e.project:01_qgis_lux_exposure_qgz>ds.osm_landuse_lux#displays",
+   "kind": "displays",
+   "lines": [],
+   "notes": [],
+   "op": null,
+   "ops": [],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "subset": [
+    {
+     "field": "landuse",
+     "op": "=",
+     "value": "residential"
+    }
+   ],
+   "to": "ds.osm_landuse_lux"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_population.py:31-35",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:dissolve OUTPUT (create)"
+    }
+   ],
+   "from": "s01_prepare_population",
+   "id": "e.s01_prepare_population>ds.01_lux_outline",
+   "kind": "writes",
+   "lines": [
+    [
+     31,
+     35
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_population.op1",
+   "ops": [
+    "s01_prepare_population.op1"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.01_lux_outline"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_population.py:40-54",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:cliprasterbymasklayer OUTPUT (create)"
+    }
+   ],
+   "from": "s01_prepare_population",
+   "id": "e.s01_prepare_population>ds.01_pop_lux",
+   "kind": "writes",
+   "lines": [
+    [
+     40,
+     54
+    ]
+   ],
+   "notes": [],
+   "op": "s01_prepare_population.op2",
+   "ops": [
+    "s01_prepare_population.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.01_pop_lux"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:45-48",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:extractbyexpression OUTPUT (create)"
+    }
+   ],
+   "from": "s02_landuse_mask",
+   "id": "e.s02_landuse_mask>ds.02_res_2169",
+   "kind": "writes",
+   "lines": [
+    [
+     45,
+     48
+    ]
+   ],
+   "notes": [],
+   "op": "s02_landuse_mask.op4",
+   "ops": [
+    "s02_landuse_mask.op4"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.02_res_2169"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:51-54",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:reprojectlayer OUTPUT (create)"
+    }
+   ],
+   "from": "s02_landuse_mask",
+   "id": "e.s02_landuse_mask>ds.02_res_4326",
+   "kind": "writes",
+   "lines": [
+    [
+     51,
+     54
+    ]
+   ],
+   "notes": [],
+   "op": "s02_landuse_mask.op5",
+   "ops": [
+    "s02_landuse_mask.op5"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.02_res_4326"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:61-76",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize OUTPUT (create)"
+    }
+   ],
+   "from": "s02_landuse_mask",
+   "id": "e.s02_landuse_mask>ds.02_res_mask",
+   "kind": "writes",
+   "lines": [
+    [
+     61,
+     76
+    ]
+   ],
+   "notes": [],
+   "op": "s02_landuse_mask.op7",
+   "ops": [
+    "s02_landuse_mask.op7"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.02_res_mask"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:49-55",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:zonalstatisticsfb OUTPUT (create)"
+    }
+   ],
+   "from": "s03_zonal_population",
+   "id": "e.s03_zonal_population>ds.03_canton_pop",
+   "kind": "writes",
+   "lines": [
+    [
+     49,
+     55
+    ]
+   ],
+   "notes": [],
+   "op": "s03_zonal_population.op5",
+   "ops": [
+    "s03_zonal_population.op5"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.03_canton_pop"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:31-37",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:rastercalc OUTPUT (create)"
+    }
+   ],
+   "from": "s03_zonal_population",
+   "id": "e.s03_zonal_population>ds.03_pop_res",
+   "kind": "writes",
+   "lines": [
+    [
+     31,
+     37
+    ]
+   ],
+   "notes": [],
+   "op": "s03_zonal_population.op3",
+   "ops": [
+    "s03_zonal_population.op3"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.03_pop_res"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:41",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "management.CopyFeatures out_feature_class (create)"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old>ds.work__canton_pop",
+   "kind": "writes",
+   "lines": [
+    [
+     41,
+     41
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op9",
+   "ops": [
+    "s03b_zonal_arcpy_old.op9"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.work__canton_pop"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:42",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "management.AddField in_table (in_place)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:43",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "management.AddField in_table (in_place)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:54",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "da.UpdateCursor in_table (in_place)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:62",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "da.UpdateCursor updateRow (in_place)"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old>ds.work__canton_pop#reads_write",
+   "kind": "reads_write",
+   "lines": [
+    [
+     42,
+     42
+    ],
+    [
+     43,
+     43
+    ],
+    [
+     54,
+     62
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op10",
+   "ops": [
+    "s03b_zonal_arcpy_old.op10",
+    "s03b_zonal_arcpy_old.op11",
+    "s03b_zonal_arcpy_old.op14"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.work__canton_pop"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:29",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "save path (create)"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old>ds.work__pop_lux",
+   "kind": "writes",
+   "lines": [
+    [
+     29,
+     29
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op3",
+   "ops": [
+    "s03b_zonal_arcpy_old.op3"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.work__pop_lux"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:34",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "save path (create)"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old>ds.work__pop_res",
+   "kind": "writes",
+   "lines": [
+    [
+     34,
+     34
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op6",
+   "ops": [
+    "s03b_zonal_arcpy_old.op6"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.work__pop_res"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:36",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.ZonalStatisticsAsTable out_table (create)"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old>ds.work__zs_pop",
+   "kind": "writes",
+   "lines": [
+    [
+     36,
+     36
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op7",
+   "ops": [
+    "s03b_zonal_arcpy_old.op7"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.work__zs_pop"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:37",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "sa.ZonalStatisticsAsTable out_table (create)"
+    }
+   ],
+   "from": "s03b_zonal_arcpy_old",
+   "id": "e.s03b_zonal_arcpy_old>ds.work__zs_res",
+   "kind": "writes",
+   "lines": [
+    [
+     37,
+     37
+    ]
+   ],
+   "notes": [],
+   "op": "s03b_zonal_arcpy_old.op8",
+   "ops": [
+    "s03b_zonal_arcpy_old.op8"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.work__zs_res"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:46",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:savefeatures OUTPUT (create)"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value>ds.04_canton_factor",
+   "kind": "writes",
+   "lines": [
+    [
+     46,
+     46
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op2",
+   "ops": [
+    "s04_distribute_value.op2"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.04_canton_factor"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:51",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "QgsVectorLayer addAttributes (in_place)"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:72",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "QgsVectorLayer changeAttributeValues (in_place)"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value>ds.04_canton_factor#reads_write",
+   "kind": "reads_write",
+   "lines": [
+    [
+     47,
+     72
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op3",
+   "ops": [
+    "s04_distribute_value.op3"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.04_canton_factor"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:79-94",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rasterize OUTPUT (create)"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value>ds.04_factor",
+   "kind": "writes",
+   "lines": [
+    [
+     79,
+     94
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op5",
+   "ops": [
+    "s04_distribute_value.op5"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.04_factor"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:126",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "open file (create)"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value>ds.exposure_by_canton_csv",
+   "kind": "writes",
+   "lines": [
+    [
+     126,
+     126
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op9",
+   "ops": [
+    "s04_distribute_value.op9"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.exposure_by_canton_csv"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:109-115",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "native:zonalstatisticsfb OUTPUT (create)"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value>ds.exposure_by_canton_gpkg",
+   "kind": "writes",
+   "lines": [
+    [
+     109,
+     115
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op7",
+   "ops": [
+    "s04_distribute_value.op7"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.exposure_by_canton_gpkg"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:141",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "save filename (create)"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value>ds.exposure_by_canton_xlsx",
+   "kind": "writes",
+   "lines": [
+    [
+     141,
+     141
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op10",
+   "ops": [
+    "s04_distribute_value.op10"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.exposure_by_canton_xlsx"
+  },
+  {
+   "conflict": false,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:97-106",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "gdal:rastercalculator OUTPUT (create)"
+    }
+   ],
+   "from": "s04_distribute_value",
+   "id": "e.s04_distribute_value>ds.lux_res_exposure_2020",
+   "kind": "writes",
+   "lines": [
+    [
+     97,
+     106
+    ]
+   ],
+   "notes": [],
+   "op": "s04_distribute_value.op6",
+   "ops": [
+    "s04_distribute_value.op6"
+   ],
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "review": "pending",
+   "state": "directly_observed",
+   "to": "ds.lux_res_exposure_2020"
+  }
+ ],
+ "intra_step_reads": [
+  {
+   "dataset": "ds.01_lux_outline",
+   "line": 42,
+   "op": "s01_prepare_population.op2",
+   "step": "s01_prepare_population"
+  },
+  {
+   "dataset": "ds.02_res_2169",
+   "line": 52,
+   "op": "s02_landuse_mask.op5",
+   "step": "s02_landuse_mask"
+  },
+  {
+   "dataset": "ds.02_res_4326",
+   "line": 62,
+   "op": "s02_landuse_mask.op7",
+   "step": "s02_landuse_mask"
+  },
+  {
+   "dataset": "ds.03_pop_res",
+   "line": 51,
+   "op": "s03_zonal_population.op5",
+   "step": "s03_zonal_population"
+  },
+  {
+   "dataset": "ds.04_canton_factor",
+   "line": 47,
+   "op": "s04_distribute_value.op3",
+   "step": "s04_distribute_value"
+  },
+  {
+   "dataset": "ds.04_canton_factor",
+   "line": 80,
+   "op": "s04_distribute_value.op5",
+   "step": "s04_distribute_value"
+  },
+  {
+   "dataset": "ds.04_factor",
+   "line": 99,
+   "op": "s04_distribute_value.op6",
+   "step": "s04_distribute_value"
+  },
+  {
+   "dataset": "ds.04_canton_factor",
+   "line": 110,
+   "op": "s04_distribute_value.op7",
+   "step": "s04_distribute_value"
+  },
+  {
+   "dataset": "ds.lux_res_exposure_2020",
+   "line": 111,
+   "op": "s04_distribute_value.op7",
+   "step": "s04_distribute_value"
+  },
+  {
+   "dataset": "ds.exposure_by_canton_gpkg",
+   "line": 117,
+   "op": "s04_distribute_value.op8",
+   "step": "s04_distribute_value"
+  },
+  {
+   "dataset": "ds.work__pop_lux",
+   "line": 33,
+   "op": "s03b_zonal_arcpy_old.op5",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__pop_lux",
+   "line": 33,
+   "op": "s03b_zonal_arcpy_old.op5",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__pop_lux",
+   "line": 36,
+   "op": "s03b_zonal_arcpy_old.op7",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__pop_res",
+   "line": 37,
+   "op": "s03b_zonal_arcpy_old.op8",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__canton_pop",
+   "line": 42,
+   "op": "s03b_zonal_arcpy_old.op10",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__canton_pop",
+   "line": 43,
+   "op": "s03b_zonal_arcpy_old.op11",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__zs_pop",
+   "line": 46,
+   "op": "s03b_zonal_arcpy_old.op12",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__zs_res",
+   "line": 50,
+   "op": "s03b_zonal_arcpy_old.op13",
+   "step": "s03b_zonal_arcpy_old"
+  },
+  {
+   "dataset": "ds.work__canton_pop",
+   "line": 54,
+   "op": "s03b_zonal_arcpy_old.op14",
+   "step": "s03b_zonal_arcpy_old"
+  }
+ ],
+ "invariants": [],
+ "ladder": null,
+ "legacy_output_dirs": [
+  "04_FINAL",
+  "05_TEMP"
+ ],
+ "lineage_checks": {
+  "failed": [],
+  "passed": [
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.01_lux_outline",
+    "op": "s01_prepare_population.op1"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.01_pop_lux",
+    "op": "s01_prepare_population.op2"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.02_res_2169",
+    "op": "s02_landuse_mask.op4"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.02_res_4326",
+    "op": "s02_landuse_mask.op5"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.02_res_mask",
+    "op": "s02_landuse_mask.op7"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.03_canton_pop",
+    "op": "s03_zonal_population.op5"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.03_pop_res",
+    "op": "s03_zonal_population.op3"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.04_canton_factor",
+    "op": "s04_distribute_value.op2"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.04_canton_factor",
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.04_canton_factor",
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.04_factor",
+    "op": "s04_distribute_value.op5"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.exposure_by_canton_csv",
+    "op": "s04_distribute_value.op9"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "op": "s04_distribute_value.op7"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.exposure_by_canton_xlsx",
+    "op": "s04_distribute_value.op10"
+   },
+   {
+    "check": "a_write_exists",
+    "dataset": "ds.lux_res_exposure_2020",
+    "op": "s04_distribute_value.op6"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_lux_outline",
+    "layer": "01_lux_outline",
+    "op": "s01_prepare_population.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.01_lux_outline",
+    "layer": "01_lux_outline",
+    "op": "s01_prepare_population.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_res_2169",
+    "layer": "02_res_2169",
+    "op": "s02_landuse_mask.op4"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_res_2169",
+    "layer": "02_res_2169",
+    "op": "s02_landuse_mask.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_res_4326",
+    "layer": "02_res_4326",
+    "op": "s02_landuse_mask.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.02_res_4326",
+    "layer": "02_res_4326",
+    "op": "s02_landuse_mask.op7"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.03_canton_pop",
+    "layer": "03_canton_pop",
+    "op": "s03_zonal_population.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.03_canton_pop",
+    "layer": "03_canton_pop",
+    "op": "s04_distribute_value.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.04_canton_factor",
+    "layer": "canton_factor",
+    "op": "s04_distribute_value.op2"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.04_canton_factor",
+    "layer": "canton_factor",
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.04_canton_factor",
+    "layer": "canton_factor",
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.04_canton_factor",
+    "layer": "canton_factor",
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.04_canton_factor",
+    "layer": "canton_factor",
+    "op": "s04_distribute_value.op5"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.04_canton_factor",
+    "layer": "canton_factor",
+    "op": "s04_distribute_value.op7"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.cantons_lux_edit",
+    "layer": "cantons",
+    "op": "s01_prepare_population.op1"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.cantons_lux_edit",
+    "layer": "cantons",
+    "op": "s03_zonal_population.op4"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "layer": "exposure_by_canton",
+    "op": "s04_distribute_value.op7"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "layer": "exposure_by_canton",
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "b_layer_exists",
+    "dataset": "ds.osm_landuse_lux",
+    "layer": "landuse",
+    "op": "s02_landuse_mask.op1"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.04_canton_factor",
+    "field": "canton",
+    "line": 60,
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.04_canton_factor",
+    "field": "factor",
+    "line": 81,
+    "op": "s04_distribute_value.op5"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.04_canton_factor",
+    "field": "pop_sum",
+    "line": 64,
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.04_canton_factor",
+    "field": "pop_sum",
+    "line": 70,
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.04_canton_factor",
+    "field": "res_sum",
+    "line": 65,
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.04_canton_factor",
+    "field": "res_sum",
+    "line": 66,
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.04_canton_factor",
+    "field": "res_sum",
+    "line": 70,
+    "op": "s04_distribute_value.op3"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "canton",
+    "line": 120,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "exp_sum",
+    "line": 120,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "exp_sum",
+    "line": 121,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "pop_sum",
+    "line": 120,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "res_sum",
+    "line": 120,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "tot_value",
+    "line": 120,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "tot_value",
+    "line": 121,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "c_field_in_schema",
+    "dataset": "ds.exposure_by_canton_gpkg",
+    "field": "vpc_eur",
+    "line": 120,
+    "op": "s04_distribute_value.op8"
+   },
+   {
+    "check": "d_grid_equals_template",
+    "dataset": "ds.02_res_mask",
+    "op": "s02_landuse_mask.op7",
+    "template": "ds.01_pop_lux"
+   },
+   {
+    "check": "d_grid_equals_template",
+    "dataset": "ds.04_factor",
+    "op": "s04_distribute_value.op5",
+    "template": "ds.03_pop_res"
+   },
+   {
+    "check": "e_target_crs",
+    "dataset": "ds.02_res_4326",
+    "declared": "EPSG:4326",
+    "file_epsg": 4326,
+    "op": "s02_landuse_mask.op5"
+   }
+  ],
+  "warnings": []
+ },
+ "open_items_from_scan": [
+  "OI-01",
+  "OI-02",
+  "OI-03",
+  "OI-04"
+ ],
+ "project": {
+  "created_at": "2026-10-13T23:53:30Z",
+  "inventory_manifest_sha256": "sha256:2c9aa0c3ea6c645ec532ccff0b2ed744dee313803b57068d9ebdaf5bbb857651",
+  "legacy_root": "../lux-exposure-legacy",
+  "legacy_tree_sha256": "sha256:5e167977acb4e5107f21de15d4e510d7b8c2abee59faa8b71c57fff50bece9c8",
+  "name": "lux-exposure-legacy",
+  "plugin_version": "0.1.0"
+ },
+ "questions": [
+  {
+   "agent_guess": {
+    "option": "derive",
+    "why": "the rule explains all but the listed exceptions"
+   },
+   "allow_dont_know": true,
+   "allow_other": true,
+   "answer": null,
+   "answered_by": null,
+   "decision": null,
+   "evidence": [
+    {
+     "fact": "derived copy dc.01",
+     "ref": "inventory:03_INPUT/cantons_lux_edit.gpkg"
+    }
+   ],
+   "header": "Manual step",
+   "id": "q01",
+   "impact": {
+    "datasets": [
+     "ds.01_lux_outline",
+     "ds.01_pop_lux",
+     "ds.02_res_2169",
+     "ds.02_res_4326",
+     "ds.02_res_mask",
+     "ds.03_canton_pop",
+     "ds.03_pop_res",
+     "ds.04_canton_factor",
+     "ds.04_factor",
+     "ds.cantons_lux_edit",
+     "ds.exposure_by_canton_csv",
+     "ds.exposure_by_canton_gpkg",
+     "ds.exposure_by_canton_xlsx",
+     "ds.geoboundaries_lux_adm1",
+     "ds.lux_res_exposure_2020"
+    ],
+    "level": "high"
+   },
+   "kind": "manual_step",
+   "node": "m01_cantons_lux_edit",
+   "nodes": [
+    "ds.cantons_lux_edit",
+    "ds.geoboundaries_lux_adm1"
+   ],
+   "options": [
+    {
+     "description": "Apply the observed rule plus an explicit exception table; verified against the hand-made file",
+     "label": "Derive in code (Recommended)",
+     "recommended": true,
+     "value": "derive"
+    },
+    {
+     "description": "Keep the hand-made file as a hash-pinned input (bridge)",
+     "label": "Read the edited file",
+     "value": "read_edited"
+    },
+    {
+     "description": "Use the recommended option as a visible assumption",
+     "label": "Don't know",
+     "value": "dont_know"
+    }
+   ],
+   "param_ids": [
+    "p.canton_name_policy"
+   ],
+   "priority": {
+    "cost": 3,
+    "impact": 3,
+    "score": 27,
+    "uncertainty": 3
+   },
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "param_ids"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "source": "lineage",
+   "status": "open",
+   "text": "03_INPUT/cantons_lux_edit.gpkg was made by hand from 03_INPUT/geoBoundaries-LUX-ADM1.geojson (12/12 geometries identical; added canton column(s)). Column canton follows the rule strip_prefix('Canton ') from shapeName for 11 of 12 features, with 1 exception(s). How should the new pipeline handle this step?",
+   "trigger": {
+    "quote": null,
+    "ref": "NOTES.txt:15-19"
+   },
+   "why": "A manual step is redone by hand whenever its source changes; parity cannot tell which policy is wanted."
+  }
+ ],
+ "revision": 2,
+ "schema": "axis-migrate.graph.v1",
+ "scope_facts": [
+  {
+   "evidence": [
+    "01_QGIS/lux_exposure.qgz#layer=communes (ADM2)"
+   ],
+   "fact": "display_only",
+   "for": "confirm_all",
+   "node": "ds.geoboundaries_lux_adm2",
+   "scope": "unused",
+   "summary": "03_INPUT/geoBoundaries-LUX-ADM2.geojson appears only in a project file"
+  },
+  {
+   "evidence": [
+    "02_SCRIPTS/02_landuse_mask.py:47",
+    "NOTES.txt:29"
+   ],
+   "fact": "unused_branch",
+   "for": "confirm_all",
+   "node": "ds.osm_landuse_lux",
+   "scope": "out_of_scope",
+   "summary": "filter on landuse keeps ['residential']; ['commercial', 'industrial', 'retail'] are present but unused",
+   "values_unused": [
+    "commercial",
+    "industrial",
+    "retail"
+   ],
+   "values_used": [
+    "residential"
+   ]
+  },
+  {
+   "evidence": [
+    "02_SCRIPTS/03b_zonal_arcpy_OLD.py:1",
+    "02_SCRIPTS/03b_zonal_arcpy_OLD.py:3",
+    "NOTES.txt:13"
+   ],
+   "fact": "superseded",
+   "for": "confirm_all",
+   "missing_writes": [
+    "ds.work__canton_pop",
+    "ds.work__pop_lux",
+    "ds.work__pop_res",
+    "ds.work__zs_pop",
+    "ds.work__zs_res"
+   ],
+   "node": "s03b_zonal_arcpy_old",
+   "scope": "drop",
+   "scope_reason": "alternative_impl",
+   "summary": "02_SCRIPTS/03b_zonal_arcpy_OLD.py is marked superseded (alternative implementation of s03_zonal_population); 5 of its outputs do not exist",
+   "twin_of": "s03_zonal_population"
+  }
+ ],
+ "steps": [
+  {
+   "derived_copy": "dc.01",
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:15-19",
+     "rev": 1,
+     "state": "documented",
+     "summary": "manual step described in the notes"
+    },
+    {
+     "by": "lineage",
+     "ref": "inventory:03_INPUT/cantons_lux_edit.gpkg",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "derived copy dc.01 of 03_INPUT/geoBoundaries-LUX-ADM1.geojson"
+    }
+   ],
+   "id": "m01_cantons_lux_edit",
+   "inputs": [
+    "ds.geoboundaries_lux_adm1"
+   ],
+   "kind": "manual",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "inventory:03_INPUT/cantons_lux_edit.gpkg"
+    ],
+    "lines": [
+     [
+      15,
+      19
+     ]
+    ],
+    "source": "NOTES.txt"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": null
+   },
+   "notes": [],
+   "ops": [],
+   "outputs": [
+    "ds.cantons_lux_edit"
+   ],
+   "params": [
+    "p.canton_name_policy",
+    "p.canton_name_source_field",
+    "p.canton_name_strip_prefix",
+    "p.canton_name_exceptions",
+    "p.canton_name_field"
+   ],
+   "plan": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "params"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "keep_legacy",
+   "scope_reason": "manual_pending_answer",
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "Manual edit: cantons_lux_edit.gpkg from geoBoundaries-LUX-ADM1.geojson",
+   "title_set_by": "agent",
+   "tool": "gis_gui",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/01_prepare_population.py:30-54",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "2 legacy tool calls"
+    }
+   ],
+   "id": "s01_prepare_population",
+   "inputs": [
+    "ds.cantons_lux_edit",
+    "ds.lux_ppp_2020"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:8",
+     "inventory:05_TEMP/01_lux_outline.gpkg",
+     "inventory:05_TEMP/01_pop_lux.tif"
+    ],
+    "lines": [
+     [
+      30,
+      54
+     ]
+    ],
+    "source": "02_SCRIPTS/01_prepare_population.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": null
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "run",
+     "call": "native:dissolve",
+     "flags": [],
+     "id": "s01_prepare_population.op1",
+     "lines": [
+      31,
+      35
+     ],
+     "literal_params": {
+      "SEPARATE_DISJOINT": false
+     },
+     "reads": [
+      "ds.cantons_lux_edit"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/01_prepare_population.py:31-35",
+     "writes": [
+      "ds.01_lux_outline"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "gdal:cliprasterbymasklayer",
+     "flags": [],
+     "id": "s01_prepare_population.op2",
+     "lines": [
+      40,
+      54
+     ],
+     "literal_params": {
+      "ALPHA_BAND": false,
+      "CREATION_OPTIONS": "COMPRESS=LZW",
+      "CROP_TO_CUTLINE": false,
+      "DATA_TYPE": 0,
+      "EXTRA": "",
+      "KEEP_RESOLUTION": false,
+      "MULTITHREADING": false,
+      "NODATA": -99999,
+      "SET_RESOLUTION": false,
+      "SOURCE_CRS": null,
+      "TARGET_CRS": null
+     },
+     "reads": [
+      "ds.lux_ppp_2020",
+      "ds.01_lux_outline"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/01_prepare_population.py:40-54",
+     "writes": [
+      "ds.01_pop_lux"
+     ]
+    }
+   ],
+   "order": 1,
+   "outputs": [
+    "ds.01_lux_outline",
+    "ds.01_pop_lux"
+   ],
+   "params": [
+    "p.outline_dissolve",
+    "p.pop_clip_grid",
+    "p.pop_clip_rule",
+    "p.pop_lux_nodata",
+    "p.pop_lux_dtype",
+    "p.gtiff_creation_options",
+    "p.measure_crs"
+   ],
+   "plan": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "params"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "population raster clipped to LU",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/02_landuse_mask.py:26-76",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "7 legacy tool calls"
+    }
+   ],
+   "id": "s02_landuse_mask",
+   "inputs": [
+    "ds.01_pop_lux",
+    "ds.osm_landuse_lux"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:9",
+     "inventory:05_TEMP/02_res_2169.gpkg",
+     "inventory:05_TEMP/02_res_4326.gpkg",
+     "inventory:05_TEMP/02_res_mask.tif"
+    ],
+    "lines": [
+     [
+      26,
+      76
+     ]
+    ],
+    "source": "02_SCRIPTS/02_landuse_mask.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": null
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "run",
+     "call": "native:reprojectlayer",
+     "flags": [],
+     "id": "s02_landuse_mask.op1",
+     "lines": [
+      27,
+      30
+     ],
+     "literal_params": {
+      "TARGET_CRS": "EPSG:2169"
+     },
+     "reads": [
+      "ds.osm_landuse_lux"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_landuse_mask.py:27-30",
+     "writes": [
+      "ds.mem.s02_l30"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:fixgeometries",
+     "flags": [],
+     "id": "s02_landuse_mask.op2",
+     "lines": [
+      32,
+      33
+     ],
+     "literal_params": {
+      "METHOD": 1
+     },
+     "reads": [
+      "ds.mem.s02_l30"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_landuse_mask.py:32-33",
+     "writes": [
+      "ds.mem.s02_l33"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:fieldcalculator",
+     "flags": [],
+     "id": "s02_landuse_mask.op3",
+     "lines": [
+      35,
+      42
+     ],
+     "literal_params": {
+      "FIELD_LENGTH": 0,
+      "FIELD_NAME": "area_m2",
+      "FIELD_PRECISION": 0,
+      "FIELD_TYPE": 0,
+      "FORMULA": "area($geometry)"
+     },
+     "reads": [
+      "ds.mem.s02_l33"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_landuse_mask.py:35-42",
+     "writes": [
+      "ds.mem.s02_l42"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:extractbyexpression",
+     "flags": [],
+     "id": "s02_landuse_mask.op4",
+     "lines": [
+      45,
+      48
+     ],
+     "literal_params": {
+      "EXPRESSION": "\"landuse\" = 'residential' AND \"area_m2\" >= 2500"
+     },
+     "reads": [
+      "ds.mem.s02_l42"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_landuse_mask.py:45-48",
+     "writes": [
+      "ds.02_res_2169"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:reprojectlayer",
+     "flags": [],
+     "id": "s02_landuse_mask.op5",
+     "lines": [
+      51,
+      54
+     ],
+     "literal_params": {
+      "TARGET_CRS": "EPSG:4326"
+     },
+     "reads": [
+      "ds.02_res_2169"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_landuse_mask.py:51-54",
+     "writes": [
+      "ds.02_res_4326"
+     ]
+    },
+    {
+     "api": "QgsRasterLayer",
+     "call": "QgsRasterLayer",
+     "flags": [],
+     "id": "s02_landuse_mask.op6",
+     "lines": [
+      56,
+      56
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.01_pop_lux"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/02_landuse_mask.py:56",
+     "writes": []
+    },
+    {
+     "api": "run",
+     "call": "gdal:rasterize",
+     "flags": [],
+     "id": "s02_landuse_mask.op7",
+     "lines": [
+      61,
+      76
+     ],
+     "literal_params": {
+      "BURN": 1,
+      "CREATION_OPTIONS": "COMPRESS=LZW",
+      "DATA_TYPE": 0,
+      "EXTRA": "-at",
+      "FIELD": null,
+      "INIT": 0,
+      "INVERT": false,
+      "NODATA": null,
+      "UNITS": 0,
+      "USE_Z": false
+     },
+     "reads": [
+      "ds.02_res_4326"
+     ],
+     "reads_grid": [
+      "ds.01_pop_lux"
+     ],
+     "ref": "02_SCRIPTS/02_landuse_mask.py:61-76",
+     "writes": [
+      "ds.02_res_mask"
+     ]
+    }
+   ],
+   "order": 2,
+   "outputs": [
+    "ds.02_res_2169",
+    "ds.02_res_4326",
+    "ds.02_res_mask"
+   ],
+   "params": [
+    "p.landuse_area_crs",
+    "p.landuse_fix_method",
+    "p.landuse_area_method",
+    "p.landuse_area_field",
+    "p.landuse_class_filter",
+    "p.res_min_area_m2",
+    "p.res_output_crs",
+    "p.res_mask_all_touched",
+    "p.res_mask_burn",
+    "p.res_mask_nodata",
+    "p.res_mask_dtype"
+   ],
+   "plan": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "params"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "residential mask from OSM landuse, on the pop grid",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03_zonal_population.py:27-55",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "5 legacy tool calls"
+    }
+   ],
+   "id": "s03_zonal_population",
+   "inputs": [
+    "ds.01_pop_lux",
+    "ds.02_res_mask",
+    "ds.cantons_lux_edit"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:10",
+     "inventory:05_TEMP/03_canton_pop.gpkg",
+     "inventory:05_TEMP/03_pop_res.tif"
+    ],
+    "lines": [
+     [
+      27,
+      55
+     ]
+    ],
+    "source": "02_SCRIPTS/03_zonal_population.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": null
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "QgsRasterLayer",
+     "call": "QgsRasterLayer",
+     "flags": [],
+     "id": "s03_zonal_population.op1",
+     "lines": [
+      27,
+      27
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.01_pop_lux"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_zonal_population.py:27",
+     "writes": []
+    },
+    {
+     "api": "QgsRasterLayer",
+     "call": "QgsRasterLayer",
+     "flags": [],
+     "id": "s03_zonal_population.op2",
+     "lines": [
+      28,
+      28
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.02_res_mask"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_zonal_population.py:28",
+     "writes": []
+    },
+    {
+     "api": "run",
+     "call": "native:rastercalc",
+     "flags": [],
+     "id": "s03_zonal_population.op3",
+     "lines": [
+      31,
+      37
+     ],
+     "literal_params": {
+      "CELL_SIZE": null,
+      "CRS": null,
+      "EXPRESSION": "(\"pop_lux@1\" >= 0.5) * \"pop_lux@1\" * \"res_mask@1\"",
+      "EXTENT": null
+     },
+     "reads": [
+      "ds.01_pop_lux",
+      "ds.02_res_mask"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_zonal_population.py:31-37",
+     "writes": [
+      "ds.03_pop_res"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:zonalstatisticsfb",
+     "flags": [],
+     "id": "s03_zonal_population.op4",
+     "lines": [
+      40,
+      46
+     ],
+     "literal_params": {
+      "COLUMN_PREFIX": "pop_",
+      "RASTER_BAND": 1
+     },
+     "reads": [
+      "ds.cantons_lux_edit",
+      "ds.01_pop_lux"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_zonal_population.py:40-46",
+     "writes": [
+      "ds.mem.s03_l46"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:zonalstatisticsfb",
+     "flags": [],
+     "id": "s03_zonal_population.op5",
+     "lines": [
+      49,
+      55
+     ],
+     "literal_params": {
+      "COLUMN_PREFIX": "res_",
+      "RASTER_BAND": 1
+     },
+     "reads": [
+      "ds.03_pop_res",
+      "ds.mem.s03_l46"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03_zonal_population.py:49-55",
+     "writes": [
+      "ds.03_canton_pop"
+     ]
+    }
+   ],
+   "order": 3,
+   "outputs": [
+    "ds.03_canton_pop",
+    "ds.03_pop_res"
+   ],
+   "params": [
+    "p.pop_min",
+    "p.pop_res_nodata_rule",
+    "p.pop_res_nodata",
+    "p.pop_res_dtype",
+    "p.zonal_rule",
+    "p.zonal_pop_stats",
+    "p.zonal_res_stats"
+   ],
+   "plan": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "params"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "population per canton: total, and the part sitting on residential cells",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:11-62",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "14 legacy tool calls"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:1",
+     "rev": 1,
+     "state": "structurally_inferred",
+     "summary": "name: OLD"
+    },
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:3",
+     "rev": 1,
+     "state": "documented",
+     "summary": "comment: replaced by 03_zonal_population.py (QGIS). kept for reference, NOT USED."
+    },
+    {
+     "by": "lineage",
+     "ref": "NOTES.txt:13",
+     "rev": 1,
+     "state": "documented",
+     "summary": "doc_mention: 03b_zonal_arcpy_OLD.py is the old arcgis version of 03, don't run."
+    }
+   ],
+   "id": "s03b_zonal_arcpy_old",
+   "inputs": [
+    "ds.lux_ppp_2020",
+    "ds.work__cantons_edit",
+    "ds.work__res_mask"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "no",
+    "executed_evidence": [],
+    "lines": [
+     [
+      11,
+      62
+     ]
+    ],
+    "source": "02_SCRIPTS/03b_zonal_arcpy_OLD.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": null
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "arcpy.Describe",
+     "call": "Describe",
+     "flags": [
+      "metadata_read"
+     ],
+     "id": "s03b_zonal_arcpy_old.op1",
+     "lines": [
+      26,
+      26
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.lux_ppp_2020"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:26",
+     "writes": []
+    },
+    {
+     "api": "arcpy.sa.ExtractByMask",
+     "call": "sa.ExtractByMask",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op2",
+     "lines": [
+      28,
+      28
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.lux_ppp_2020",
+      "ds.work__cantons_edit"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:28",
+     "writes": [
+      "ds.mem.s03b_l28"
+     ]
+    },
+    {
+     "api": "arcpy.Raster.save",
+     "call": "save",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op3",
+     "lines": [
+      29,
+      29
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.mem.s03b_l28"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:29",
+     "writes": [
+      "ds.work__pop_lux"
+     ]
+    },
+    {
+     "api": "arcpy.sa.Con",
+     "call": "sa.Con",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op4",
+     "lines": [
+      32,
+      32
+     ],
+     "literal_params": {
+      "in_true_raster_or_constant": 0
+     },
+     "reads": [
+      "ds.work__res_mask",
+      "ds.work__res_mask",
+      "ds.work__res_mask"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:32",
+     "writes": [
+      "ds.mem.s03b_l32"
+     ]
+    },
+    {
+     "api": "arcpy.sa.Con",
+     "call": "sa.Con",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op5",
+     "lines": [
+      33,
+      33
+     ],
+     "literal_params": {
+      "in_false_raster_or_constant": 0
+     },
+     "reads": [
+      "ds.work__pop_lux",
+      "ds.work__pop_lux"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:33",
+     "writes": [
+      "ds.mem.s03b_l33"
+     ]
+    },
+    {
+     "api": "arcpy.Raster.save",
+     "call": "save",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op6",
+     "lines": [
+      34,
+      34
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.mem.s03b_l33",
+      "ds.mem.s03b_l32"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:34",
+     "writes": [
+      "ds.work__pop_res"
+     ]
+    },
+    {
+     "api": "arcpy.sa.ZonalStatisticsAsTable",
+     "call": "sa.ZonalStatisticsAsTable",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op7",
+     "lines": [
+      36,
+      36
+     ],
+     "literal_params": {
+      "ignore_nodata": "DATA",
+      "statistics_type": "SUM",
+      "zone_field": "canton"
+     },
+     "reads": [
+      "ds.work__cantons_edit",
+      "ds.work__pop_lux"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:36",
+     "writes": [
+      "ds.work__zs_pop"
+     ]
+    },
+    {
+     "api": "arcpy.sa.ZonalStatisticsAsTable",
+     "call": "sa.ZonalStatisticsAsTable",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op8",
+     "lines": [
+      37,
+      37
+     ],
+     "literal_params": {
+      "ignore_nodata": "DATA",
+      "statistics_type": "SUM",
+      "zone_field": "canton"
+     },
+     "reads": [
+      "ds.work__cantons_edit",
+      "ds.work__pop_res"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:37",
+     "writes": [
+      "ds.work__zs_res"
+     ]
+    },
+    {
+     "api": "arcpy.CopyFeatures_management",
+     "call": "management.CopyFeatures",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op9",
+     "lines": [
+      41,
+      41
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.work__cantons_edit"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:41",
+     "writes": [
+      "ds.work__canton_pop"
+     ]
+    },
+    {
+     "api": "arcpy.AddField_management",
+     "call": "management.AddField",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op10",
+     "lines": [
+      42,
+      42
+     ],
+     "literal_params": {
+      "field_name": "pop_sum",
+      "field_type": "DOUBLE"
+     },
+     "reads": [
+      "ds.work__canton_pop"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:42",
+     "writes": [
+      "ds.work__canton_pop"
+     ]
+    },
+    {
+     "api": "arcpy.AddField_management",
+     "call": "management.AddField",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op11",
+     "lines": [
+      43,
+      43
+     ],
+     "literal_params": {
+      "field_name": "res_sum",
+      "field_type": "DOUBLE"
+     },
+     "reads": [
+      "ds.work__canton_pop"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:43",
+     "writes": [
+      "ds.work__canton_pop"
+     ]
+    },
+    {
+     "api": "arcpy.da.SearchCursor",
+     "call": "da.SearchCursor",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op12",
+     "lines": [
+      46,
+      46
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.work__zs_pop"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:46",
+     "writes": []
+    },
+    {
+     "api": "arcpy.da.SearchCursor",
+     "call": "da.SearchCursor",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op13",
+     "lines": [
+      50,
+      50
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.work__zs_res"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:50",
+     "writes": []
+    },
+    {
+     "api": "arcpy.da.UpdateCursor",
+     "call": "da.UpdateCursor",
+     "flags": [],
+     "id": "s03b_zonal_arcpy_old.op14",
+     "lines": [
+      54,
+      62
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.work__canton_pop"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/03b_zonal_arcpy_OLD.py:54-62",
+     "writes": [
+      "ds.work__canton_pop",
+      "ds.work__canton_pop"
+     ]
+    }
+   ],
+   "order": null,
+   "outputs": [
+    "ds.work__canton_pop",
+    "ds.work__pop_lux",
+    "ds.work__pop_res",
+    "ds.work__zs_pop",
+    "ds.work__zs_res"
+   ],
+   "params": [],
+   "plan": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": []
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "drop",
+   "scope_reason": "alternative_impl",
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "OLD - step 03 from when this ran in ArcGIS (Spatial Analyst licence).",
+   "title_set_by": "agent",
+   "tool": "arcpy",
+   "twin_of": "s03_zonal_population",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  },
+  {
+   "description": null,
+   "evidence": [
+    {
+     "by": "lineage",
+     "ref": "02_SCRIPTS/04_distribute_value.py:35-141",
+     "rev": 1,
+     "state": "directly_observed",
+     "summary": "10 legacy tool calls"
+    }
+   ],
+   "id": "s04_distribute_value",
+   "inputs": [
+    "ds.03_canton_pop",
+    "ds.03_pop_res",
+    "ds.value_per_capita"
+   ],
+   "kind": "script",
+   "ladder": null,
+   "legacy": {
+    "executed": "yes",
+    "executed_evidence": [
+     "NOTES.txt:11",
+     "inventory:04_FINAL/lux_res_exposure_2020.tif",
+     "inventory:05_TEMP/04_canton_factor.gpkg",
+     "inventory:05_TEMP/04_factor.tif"
+    ],
+    "lines": [
+     [
+      35,
+      141
+     ]
+    ],
+    "source": "02_SCRIPTS/04_distribute_value.py"
+   },
+   "new": {
+    "code_sha256": null,
+    "function": "run",
+    "module": null
+   },
+   "notes": [],
+   "ops": [
+    {
+     "api": "openpyxl.load_workbook",
+     "call": "load_workbook",
+     "flags": [],
+     "id": "s04_distribute_value.op1",
+     "lines": [
+      36,
+      36
+     ],
+     "literal_params": {
+      "data_only": true,
+      "sheet": "vpc"
+     },
+     "reads": [
+      "ds.value_per_capita"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:36",
+     "writes": []
+    },
+    {
+     "api": "run",
+     "call": "native:savefeatures",
+     "flags": [],
+     "id": "s04_distribute_value.op2",
+     "lines": [
+      46,
+      46
+     ],
+     "literal_params": {
+      "LAYER_NAME": "canton_factor"
+     },
+     "reads": [
+      "ds.03_canton_pop"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:46",
+     "writes": [
+      "ds.04_canton_factor"
+     ]
+    },
+    {
+     "api": "QgsVectorLayer",
+     "call": "QgsVectorLayer",
+     "flags": [],
+     "id": "s04_distribute_value.op3",
+     "lines": [
+      47,
+      72
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.04_canton_factor"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:47-72",
+     "writes": [
+      "ds.04_canton_factor",
+      "ds.04_canton_factor"
+     ]
+    },
+    {
+     "api": "QgsRasterLayer",
+     "call": "QgsRasterLayer",
+     "flags": [],
+     "id": "s04_distribute_value.op4",
+     "lines": [
+      76,
+      76
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.03_pop_res"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:76",
+     "writes": []
+    },
+    {
+     "api": "run",
+     "call": "gdal:rasterize",
+     "flags": [],
+     "id": "s04_distribute_value.op5",
+     "lines": [
+      79,
+      94
+     ],
+     "literal_params": {
+      "BURN": 0,
+      "CREATION_OPTIONS": "COMPRESS=LZW",
+      "DATA_TYPE": 6,
+      "EXTRA": "",
+      "FIELD": "factor",
+      "INIT": 0,
+      "INVERT": false,
+      "NODATA": null,
+      "UNITS": 0,
+      "USE_Z": false
+     },
+     "reads": [
+      "ds.04_canton_factor"
+     ],
+     "reads_grid": [
+      "ds.03_pop_res"
+     ],
+     "ref": "02_SCRIPTS/04_distribute_value.py:79-94",
+     "writes": [
+      "ds.04_factor"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "gdal:rastercalculator",
+     "flags": [],
+     "id": "s04_distribute_value.op6",
+     "lines": [
+      97,
+      106
+     ],
+     "literal_params": {
+      "BAND_A": 1,
+      "BAND_B": 1,
+      "CREATION_OPTIONS": "COMPRESS=LZW",
+      "EXTENT_OPT": 0,
+      "EXTRA": "",
+      "FORMULA": "A*B",
+      "NO_DATA": -9999,
+      "RTYPE": 5
+     },
+     "reads": [
+      "ds.03_pop_res",
+      "ds.04_factor"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:97-106",
+     "writes": [
+      "ds.lux_res_exposure_2020"
+     ]
+    },
+    {
+     "api": "run",
+     "call": "native:zonalstatisticsfb",
+     "flags": [],
+     "id": "s04_distribute_value.op7",
+     "lines": [
+      109,
+      115
+     ],
+     "literal_params": {
+      "COLUMN_PREFIX": "exp_",
+      "RASTER_BAND": 1
+     },
+     "reads": [
+      "ds.04_canton_factor",
+      "ds.lux_res_exposure_2020"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:109-115",
+     "writes": [
+      "ds.exposure_by_canton_gpkg"
+     ]
+    },
+    {
+     "api": "QgsVectorLayer",
+     "call": "QgsVectorLayer",
+     "flags": [],
+     "id": "s04_distribute_value.op8",
+     "lines": [
+      117,
+      117
+     ],
+     "literal_params": {},
+     "reads": [
+      "ds.exposure_by_canton_gpkg"
+     ],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:117",
+     "writes": []
+    },
+    {
+     "api": "open",
+     "call": "open",
+     "flags": [],
+     "id": "s04_distribute_value.op9",
+     "lines": [
+      126,
+      126
+     ],
+     "literal_params": {
+      "mode": "w"
+     },
+     "reads": [],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:126",
+     "writes": [
+      "ds.exposure_by_canton_csv"
+     ]
+    },
+    {
+     "api": "openpyxl.Workbook.save",
+     "call": "save",
+     "flags": [],
+     "id": "s04_distribute_value.op10",
+     "lines": [
+      141,
+      141
+     ],
+     "literal_params": {},
+     "reads": [],
+     "reads_grid": [],
+     "ref": "02_SCRIPTS/04_distribute_value.py:141",
+     "writes": [
+      "ds.exposure_by_canton_xlsx"
+     ]
+    }
+   ],
+   "order": 4,
+   "outputs": [
+    "ds.04_canton_factor",
+    "ds.04_factor",
+    "ds.exposure_by_canton_csv",
+    "ds.exposure_by_canton_gpkg",
+    "ds.exposure_by_canton_xlsx",
+    "ds.lux_res_exposure_2020"
+   ],
+   "params": [
+    "p.vpc_table",
+    "p.vpc_scale",
+    "p.vpc_join_key",
+    "p.no_res_factor",
+    "p.factor_raster",
+    "p.exposure_raster",
+    "p.exposure_zonal",
+    "p.report_table"
+   ],
+   "plan": null,
+   "provenance": {
+    "created": {
+     "by": "agent",
+     "rev": 1
+    },
+    "edits": [
+     {
+      "by": "agent",
+      "fields": [
+       "params"
+      ],
+      "rev": 2
+     }
+    ]
+   },
+   "requires_confirmation": null,
+   "review": "pending",
+   "scope": "migrate",
+   "scope_reason": null,
+   "scope_set_by": "agent",
+   "timeout_s": 120,
+   "title": "canton value = pop x value per capita, spread over residential cells by pop",
+   "title_set_by": "agent",
+   "tool": "pyqgis",
+   "verify": {
+    "blame": null,
+    "reason_codes": [],
+    "run_id": null,
+    "verdict": null
+   }
+  }
+ ],
+ "updated": {
+  "at": "2026-10-13T23:57:07Z",
+  "by": "agent",
+  "rev": 2
+ }
+}

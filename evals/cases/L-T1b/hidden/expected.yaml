@@ -1,0 +1,18 @@
+planted:
+  step: s04_distribute_value
+  dataset: ds.04_factor
+  fingerprint: Affine\.translation\(1, 0\)
+numbers:
+  dataset: ds.04_factor
+  verdict: FAIL
+  reason_codes_any:
+  - RASTER_VALUE_MISMATCH
+  - NODATA_MASK_MISMATCH
+inherited:
+- ds.lux_res_exposure_2020
+visual:
+  expected: true
+  dataset: ds.lux_res_exposure_2020
+  category: boundary_stripes
+expected_status_max: target-ready
+id: L-T1b

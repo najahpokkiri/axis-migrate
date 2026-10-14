@@ -1,0 +1,170 @@
+{
+ "bands": 1,
+ "block": [
+  2,
+  940
+ ],
+ "bounds": [
+  5.744583325,
+  49.44791667,
+  6.527916655,
+  50.18125
+ ],
+ "colortable": false,
+ "compress": "LZW",
+ "computed": {
+  "cells": 827200,
+  "max": 69.30003356933594,
+  "mean": 1.2877982215960055,
+  "min": 0.06038784980773926,
+  "nan": 0,
+  "nodata": 370436,
+  "std": 3.4434506540166603,
+  "sum": 588219.8668890782,
+  "valid": 456764,
+  "zero": 0
+ },
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "units": "degree",
+  "wkt": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]"
+ },
+ "dataset": "ds.01_pop_lux",
+ "driver": "GTiff",
+ "dtype": "float32",
+ "dtypes": [
+  "float32"
+ ],
+ "embedded_stats": {
+  "approximate": true,
+  "aux_xml": {
+   "approximate": true,
+   "maximum": 59.550476074219,
+   "mean": 1.3398768478082,
+   "minimum": 0.064114816486835,
+   "source": "aux.xml",
+   "stddev": 3.4736587091492,
+   "valid_percent": 55.23
+  },
+  "note": "recorded only; every statistic used is computed",
+  "tags": null,
+  "trusted": false
+ },
+ "embedded_vs_computed": {
+  "aux_xml": {
+   "approximate": true,
+   "mean_diff": 0.05207862621219439
+  }
+ },
+ "hist64": {
+  "counts": [
+   365681,
+   37483,
+   14651,
+   8332,
+   5685,
+   4275,
+   3618,
+   2791,
+   2386,
+   2001,
+   1570,
+   1237,
+   1070,
+   910,
+   678,
+   630,
+   576,
+   456,
+   416,
+   322,
+   226,
+   222,
+   193,
+   90,
+   77,
+   67,
+   49,
+   46,
+   31,
+   33,
+   48,
+   41,
+   30,
+   41,
+   37,
+   37,
+   24,
+   27,
+   33,
+   33,
+   34,
+   26,
+   23,
+   28,
+   42,
+   42,
+   48,
+   49,
+   49,
+   48,
+   32,
+   24,
+   17,
+   15,
+   21,
+   19,
+   22,
+   12,
+   9,
+   14,
+   16,
+   13,
+   5,
+   3
+  ],
+  "range": [
+   0.06038784980773926,
+   69.30003356933594
+  ]
+ },
+ "layer": null,
+ "legacy_path": "05_TEMP/01_pop_lux.tif",
+ "nodata": -99999.0,
+ "nodata_in_domain": true,
+ "origin": [
+  5.744583325,
+  50.18125
+ ],
+ "overviews": [],
+ "res": [
+  0.0008333333297872345,
+  -0.0008333333295454553
+ ],
+ "res_m_at_centre": [
+  59.976,
+  92.688
+ ],
+ "scale_offset": [
+  [
+   1.0
+  ],
+  [
+   0.0
+  ]
+ ],
+ "shape": [
+  880,
+  940
+ ],
+ "stats_mode": "full",
+ "transform": [
+  0.0008333333297872345,
+  0.0,
+  5.744583325,
+  0.0,
+  -0.0008333333295454553,
+  50.18125
+ ]
+}

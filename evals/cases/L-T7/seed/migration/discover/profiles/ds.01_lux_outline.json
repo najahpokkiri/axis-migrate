@@ -1,0 +1,94 @@
+{
+ "area_km2": 2592.999596874281,
+ "area_note": "valid polygons only, LAEA centred on the bbox",
+ "bounds": [
+  5.7357006,
+  49.4478539,
+  6.5308971,
+  50.1827724
+ ],
+ "count": 1,
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "name": "WGS 84",
+  "wkt": "GEOGCRS[\"WGS 84\",ENSEMBLE[\"World Geodetic System 1984 ensemble\",MEMBER[\"World Geodetic System 1984 (Transit)\"],MEMBER[\"World Geodetic System 1984 (G730)\"],MEMBER[\"World Geodetic System 1984 (G873)\"],MEMBER[\"World Geodetic System 1984 (G1150)\"],MEMBER[\"World Geodetic System 1984 (G1674)\"],MEMBER[\"World Geodetic System 1984 (G1762)\"],MEMBER[\"World Geodetic System 1984 (G2139)\"],MEMBER[\"World Geodetic System 1984 (G2296)\"],ELLIPSOID[\"WGS 84\",6378137,298.257223563,LENGTHUNIT[\"metre\",1]],ENSEMBLEACCURACY[2.0]],PRIMEM[\"Greenwich\",0,ANGLEUNIT[\"degree\",0.0174532925199433]],CS[ellipsoidal,2],AXIS[\"geodetic latitude (Lat)\",north,ORDER[1],ANGLEUNIT[\"degree\",0.0174532925199433]],AXIS[\"geodetic longitude (Lon)\",east,ORDER[2],ANGLEUNIT[\"degree\",0.0174532925199433]],USAGE[SCOPE[\"Horizontal component of 3D system.\"],AREA[\"World.\"],BBOX[-90,-180,90,180]],ID[\"EPSG\",4326]]"
+ },
+ "dataset": "ds.01_lux_outline",
+ "declared_geometry": "MULTIPOLYGON",
+ "domains": {
+  "canton": [
+   "Echternach"
+  ],
+  "shapeID": [
+   "76397094B75044033408583"
+  ],
+  "shapeISO": [
+   "LU-EC"
+  ],
+  "shapeName": [
+   "Canton Echternach"
+  ]
+ },
+ "driver": "GPKG",
+ "empty_geom": 0,
+ "geom_types": {
+  "MultiPolygon": 1
+ },
+ "geometry_multiset_sha256": "3a8a876d1e5c640aa2c3c4ed2a556199c8ab5d20bbd8bc80cc738a5a4c4bb73d",
+ "invalid": {
+  "count": 0,
+  "top_reasons": {}
+ },
+ "key_candidates": [
+  {
+   "col": "shapeName",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "shapeISO",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "shapeID",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  },
+  {
+   "col": "canton",
+   "nonnull": true,
+   "unique": true,
+   "unique_after_strip_casefold": true
+  }
+ ],
+ "layer": "01_lux_outline",
+ "layers": [
+  "01_lux_outline"
+ ],
+ "legacy_path": "05_TEMP/01_lux_outline.gpkg",
+ "name": "01_lux_outline",
+ "null_geom": 0,
+ "schema": [
+  {
+   "dtype": "str",
+   "name": "shapeName"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeISO"
+  },
+  {
+   "dtype": "str",
+   "name": "shapeID"
+  },
+  {
+   "dtype": "str",
+   "name": "canton"
+  }
+ ]
+}

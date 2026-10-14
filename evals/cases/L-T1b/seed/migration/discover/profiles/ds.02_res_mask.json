@@ -1,0 +1,104 @@
+{
+ "bands": 1,
+ "block": [
+  8,
+  940
+ ],
+ "bounds": [
+  5.744583325,
+  49.44791667,
+  6.527916655,
+  50.18125
+ ],
+ "colortable": false,
+ "compress": "LZW",
+ "computed": {
+  "cells": 827200,
+  "max": 1.0,
+  "mean": 1.0,
+  "min": 1.0,
+  "nan": 0,
+  "nodata": 772819,
+  "std": 0.0,
+  "sum": 54381.0,
+  "valid": 54381,
+  "zero": 0
+ },
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "units": "degree",
+  "wkt": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]"
+ },
+ "dataset": "ds.02_res_mask",
+ "driver": "GTiff",
+ "dtype": "uint8",
+ "dtypes": [
+  "uint8"
+ ],
+ "embedded_stats": {
+  "approximate": true,
+  "aux_xml": {
+   "approximate": true,
+   "maximum": 1.0,
+   "mean": 1.0,
+   "minimum": 1.0,
+   "source": "aux.xml",
+   "stddev": 0.0,
+   "valid_percent": 5.959
+  },
+  "note": "recorded only; every statistic used is computed",
+  "tags": null,
+  "trusted": false
+ },
+ "embedded_vs_computed": {
+  "aux_xml": {
+   "approximate": true,
+   "mean_diff": 0.0
+  }
+ },
+ "layer": null,
+ "legacy_path": "05_TEMP/02_res_mask.tif",
+ "nodata": 0.0,
+ "nodata_in_domain": true,
+ "origin": [
+  5.744583325,
+  50.18125
+ ],
+ "overviews": [],
+ "res": [
+  0.0008333333297872345,
+  -0.0008333333295454553
+ ],
+ "res_m_at_centre": [
+  59.976,
+  92.688
+ ],
+ "scale_offset": [
+  [
+   1.0
+  ],
+  [
+   0.0
+  ]
+ ],
+ "shape": [
+  880,
+  940
+ ],
+ "stats_mode": "full",
+ "transform": [
+  0.0008333333297872345,
+  0.0,
+  5.744583325,
+  0.0,
+  -0.0008333333295454553,
+  50.18125
+ ],
+ "unique": [
+  1
+ ],
+ "unique_counts": {
+  "1": 54381
+ }
+}

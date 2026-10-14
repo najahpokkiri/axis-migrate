@@ -1,0 +1,170 @@
+{
+ "bands": 1,
+ "block": [
+  2,
+  940
+ ],
+ "bounds": [
+  5.744583325,
+  49.44791667,
+  6.527916655,
+  50.18125
+ ],
+ "colortable": false,
+ "compress": "LZW",
+ "computed": {
+  "cells": 827200,
+  "max": 24869248.0,
+  "mean": 1987666.7334410467,
+  "min": 0.0,
+  "nan": 0,
+  "nodata": 774785,
+  "std": 2566862.4355262504,
+  "sum": 104183551833.3125,
+  "valid": 52415,
+  "zero": 4042
+ },
+ "crs": {
+  "epsg": 4326,
+  "is_geographic": true,
+  "units": "degree",
+  "wkt": "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AXIS[\"Latitude\",NORTH],AXIS[\"Longitude\",EAST],AUTHORITY[\"EPSG\",\"4326\"]]"
+ },
+ "dataset": "ds.lux_res_exposure_2020",
+ "driver": "GTiff",
+ "dtype": "float32",
+ "dtypes": [
+  "float32"
+ ],
+ "embedded_stats": {
+  "approximate": true,
+  "aux_xml": {
+   "approximate": true,
+   "maximum": 22024880.0,
+   "mean": 2044127.7479327,
+   "minimum": 0.0,
+   "source": "aux.xml",
+   "stddev": 2505253.9246636,
+   "valid_percent": 6.451
+  },
+  "note": "recorded only; every statistic used is computed",
+  "tags": null,
+  "trusted": false
+ },
+ "embedded_vs_computed": {
+  "aux_xml": {
+   "approximate": true,
+   "mean_diff": 56461.0144916533
+  }
+ },
+ "hist64": {
+  "counts": [
+   9290,
+   10095,
+   7565,
+   4511,
+   3250,
+   2829,
+   2475,
+   2144,
+   1802,
+   1469,
+   1160,
+   981,
+   767,
+   604,
+   455,
+   425,
+   382,
+   271,
+   277,
+   203,
+   214,
+   113,
+   61,
+   78,
+   59,
+   60,
+   53,
+   35,
+   33,
+   20,
+   24,
+   35,
+   31,
+   21,
+   25,
+   34,
+   24,
+   16,
+   23,
+   21,
+   34,
+   28,
+   19,
+   19,
+   23,
+   29,
+   31,
+   34,
+   38,
+   41,
+   42,
+   33,
+   18,
+   21,
+   14,
+   14,
+   11,
+   11,
+   6,
+   5,
+   1,
+   4,
+   1,
+   3
+  ],
+  "range": [
+   0.0,
+   24869248.0
+  ]
+ },
+ "layer": null,
+ "legacy_path": "04_FINAL/lux_res_exposure_2020.tif",
+ "nodata": -9999.0,
+ "nodata_in_domain": true,
+ "origin": [
+  5.744583325,
+  50.18125
+ ],
+ "overviews": [],
+ "res": [
+  0.0008333333297872345,
+  -0.0008333333295454553
+ ],
+ "res_m_at_centre": [
+  59.976,
+  92.688
+ ],
+ "scale_offset": [
+  [
+   1.0
+  ],
+  [
+   0.0
+  ]
+ ],
+ "shape": [
+  880,
+  940
+ ],
+ "stats_mode": "full",
+ "transform": [
+  0.0008333333297872345,
+  0.0,
+  5.744583325,
+  0.0,
+  -0.0008333333295454553,
+  50.18125
+ ]
+}
