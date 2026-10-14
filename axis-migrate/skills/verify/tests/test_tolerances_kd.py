@@ -217,3 +217,62 @@ def test_kd_markdown_parsing(tmp_path):
     kds, errs = compare.parse_known_differences(p.read_text())
     assert [k["id"] for k in kds] == ["KD-001", "KD-002"] and errs == []
     assert SIGNED
+
+
+# ------------------------------------------------------------------ area-weighted symdiff (T0 S1 false alarm, C2)
+def _sliver_layers(tmp_path, grow=3.0, shrink_all=None):
+    import geopandas as gpd
+    from shapely.geometry import box
+    from conftest import CRS_M, write_vector
+    x0, y0 = 500000.0, 5500000.0
+    big = [box(x0 + i * 300, y0, x0 + i * 300 + 200, y0 + 200) for i in range(5)]
+    sliver = box(x0, y0 - 2, x0 + 2, y0)                              # 4 m2 piece
+    leg = gpd.GeoDataFrame({"k": [f"f{i}" for i in range(6)]}, geometry=big + [sliver], crs=CRS_M)
+    new_geoms = big + [box(x0, y0 - 2 * grow, x0 + 2 * grow, y0)]     # a legitimate segment change grows the sliver
+    if shrink_all:
+        new_geoms = [g.buffer(-shrink_all) for g in big] + [box(x0, y0 - 2, x0 + 2, y0)]
+    new = gpd.GeoDataFrame({"k": [f"f{i}" for i in range(6)]}, geometry=new_geoms, crs=CRS_M)
+    return write_vector(tmp_path / "l.gpkg", leg, layer="l"), write_vector(tmp_path / f"n{grow}{shrink_all}.gpkg", new, layer="l")
+
+
+def test_symdiff_is_boundary_displacement_slivers_do_not_explode(tmp_path):
+    leg, new = _sliver_layers(tmp_path)
+    s = spec("vector", compare={"key": ["k"]})
+    r = pair(leg, new, s)
+    sd = check(r, "vector.symdiff_ratio")
+    assert sd["state"] == "FAIL"                                       # default exact: any difference fails
+    assert sd["metric"] == "symdiff_m"
+    assert sd["stats"]["per_feature_max_ratio"] == 8.0                 # 4 -> 36 m2: the old per-feature ratio
+    assert abs(sd["value"] - 32.0 / 8.0) < 1e-9                        # 32 m2 over an 8 m boundary: 4 m
+    rec = tol_record("ds.synthetic", "vector.symdiff_ratio", value=5.0, spread=4.0, wrong=20.0, units="m")
+    rh = tol_record("ds.synthetic", "vector.hausdorff_m", value=10.0, spread=5.7, wrong=50.0, units="m")
+    r2 = pair(leg, new, dict(s, tolerances=_tol(rec, rh)))
+    assert r2["verdict"] == "PASS_WITHIN_TOLERANCE", r2["reason_codes"]
+    # a real defect (every large polygon shrunk 20 m) still fails under the same signed records
+    leg3, new3 = _sliver_layers(tmp_path / "m", shrink_all=20.0)
+    r3 = pair(leg3, new3, dict(s, tolerances=_tol(rec, rh)))
+    assert "GEOMETRY_SYMDIFF_EXCEEDED" in check(r3, "vector.symdiff_ratio")["reason_codes"]
+
+
+def test_branch_not_exercised_and_branch_subset(tmp_path):
+    from conftest import vector_frame, write_vector
+    g = vector_frame()
+    g["landuse"] = ["industrial" if i < 10 else "residential" for i in range(len(g))]
+    leg = write_vector(tmp_path / "l.gpkg", g)
+    br = [{"id": "industrial_500m", "where": {"landuse": "industrial"}}, {"id": "retail", "where": {"landuse": "retail"}}]
+    s = spec("vector", compare={"key": ["fid_key"], "branches": br})
+    r = pair(leg, leg, s)
+    assert check(r, "branch:retail")["state"] == "NEEDS_REVIEW"
+    assert check(r, "branch:retail")["reason_codes"] == ["BRANCH_NOT_EXERCISED"]
+    assert check(r, "branch:industrial_500m")["state"] == "PASS_EXACT"
+    assert r["verdict"] == "NEEDS_REVIEW"
+    g2 = g[g["landuse"] != "industrial"].copy()                        # branch dropped in the port
+    new = write_vector(tmp_path / "n.gpkg", g2, layer="l")
+    r2 = pair(leg, new, s)
+    b = check(r2, "branch:industrial_500m")
+    assert b["state"] == "FAIL" and b["reason_codes"] == ["KEY_SET_MISSING"] and b["detail"]["missing"] == 10
+    g3 = g.copy()
+    g3.loc[:9, "geometry"] = g3.loc[:9, "geometry"].buffer(5)            # wrong distance on the branch only
+    new3 = write_vector(tmp_path / "n3.gpkg", g3, layer="l")
+    b3 = check(pair(leg, new3, s), "branch:industrial_500m")
+    assert b3["state"] == "FAIL" and "GEOMETRY_SYMDIFF_EXCEEDED" in b3["reason_codes"]

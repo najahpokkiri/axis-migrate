@@ -1801,6 +1801,7 @@ def _compare_frames(ctx: "PairCtx", L: Frame, N: Frame, prefix: str, order: int)
             out.append(s)
         return out
     ks["samples"] = ksample(missing, L, li) + ksample(extra_k, N, ni)
+    ctx.key_index_legacy, ctx.keys_missing = li, missing
     codes = (["KEY_SET_MISSING"] if missing else []) + (["KEY_SET_EXTRA"] if extra_k else [])
     set_state(ks, "FAIL" if codes else "PASS_EXACT", *codes)
     checks.append(ks)
@@ -2018,11 +2019,16 @@ def _geometry_checks(ctx: "PairCtx", L: Frame, N: Frame, m: dict, gate: str | No
     # measurement only: both sides projected into measure_crs; the files are never changed
     gl = gpd.GeoSeries([lg[i] for i in differ], crs=L.crs).to_crs(mcrs)
     gn = gpd.GeoSeries([ng[i] for i in differ], crs=N.crs).to_crs(mcrs)
-    haus, ratios, area_ratio, vtx_l, vtx_n = [], [], [], 0, 0
+    haus, syms, ratios, area_ratio, vtx_l, vtx_n = [], [], [], [], 0, 0
     for a, b in zip(gl, gn):
-        if a is None or b is None or a.is_empty or b.is_empty:
+        a_ok = a is not None and not a.is_empty
+        b_ok = b is not None and not b.is_empty
+        if not (a_ok and b_ok):
             haus.append(math.inf)
-            ratios.append(math.inf)
+            if polygonal:                                 # one side null/empty: the whole other side differs
+                sym = (a.area if a_ok else 0.0) + (b.area if b_ok else 0.0)
+                syms.append(sym)
+                ratios.append(math.inf if not a_ok or a.area == 0 else sym / a.area)
             continue
         haus.append(float(shapely.hausdorff_distance(a, b)))
         vtx_l += int(shapely.get_num_coordinates(a))
@@ -2030,42 +2036,163 @@ def _geometry_checks(ctx: "PairCtx", L: Frame, N: Frame, m: dict, gate: str | No
         if polygonal:
             al = a.area
             sym = shapely.symmetric_difference(shapely.make_valid(a), shapely.make_valid(b)).area
+            syms.append(sym)
             ratios.append(sym / al if al > 0 else (0.0 if sym == 0 else math.inf))
             if al > 0:
                 area_ratio.append(b.area / al)
-    for c, vals, code in ((hd, haus, "GEOMETRY_HAUSDORFF_EXCEEDED"), (sd, ratios, "GEOMETRY_SYMDIFF_EXCEEDED")):
-        if c is None:
-            continue
-        res = ctx.book.lookup(ctx.ds_id, c["id"])
-        arr = np.array(vals, dtype="float64")
+    thr = lambda r: (r.value if r.value is not None else r.atol)  # noqa: E731
+    ctx.geom_by_key = {k: {"sym": 0.0, "haus": 0.0} for k in matched}
+    for j, i in enumerate(differ):
+        ctx.geom_by_key[matched[i]] = {"sym": syms[j] if polygonal else 0.0, "haus": haus[j]}
+    # ---- Hausdorff: per feature, in metres (a local defect on one feature is never averaged away)
+    res = ctx.book.lookup(ctx.ds_id, hd["id"])
+    arr = np.array(haus, dtype="float64")
+    rules = [res.rule] + ([res.proposed] if res.proposed is not None else [])
+    over = [int((~(arr <= thr(r))).sum()) for r in rules]
+    mx = float(arr.max()) if arr.size else 0.0
+    hd.update(metric="hausdorff_m", value=mx if math.isfinite(mx) else None, threshold=thr(res.rule))
+    if not math.isfinite(mx):
+        hd.setdefault("nulls", {})["value"] = "EMPTY_OR_NULL_GEOMETRY"
+    hd["detail"]["features_differing"] = len(differ)
+    hd["stats"] = {"count_over": over[0],
+                   "median": float(np.median(arr[np.isfinite(arr)])) if np.isfinite(arr).any() else None}
+    for j in np.argsort(-np.nan_to_num(arr, posinf=1e300))[:SAMPLE_N]:
+        i = differ[int(j)]
+        if not (arr[j] <= thr(res.rule)):
+            hd["samples"].append({"key": list(matched[i]), "value": _jsonable(float(arr[j])), "bbox": _bbox(lg[i])})
+    for j in range(arr.size):
+        if not (arr[j] <= thr(res.rule)):
+            ctx.mismatch_rows.append({"check": hd["id"], "key": json.dumps(list(matched[differ[j]])), "legacy": None,
+                                      "new": None, "kind": "geometry", "value": _jsonable(float(arr[j]))})
+    apply_tol(hd, res, lambda r: over[rules.index(r)] <= r.max_mismatch if r in rules else False,
+              bool((arr > 0).any()), "GEOMETRY_HAUSDORFF_EXCEEDED")
+    if hd["state"] == "FAIL" and vtx_l and vtx_n < 0.8 * vtx_l:
+        add_diag(hd, "VERTEX_COUNT_DROP", vertex_count={"legacy": vtx_l, "new": vtx_n})
+    # ---- symmetric difference as a per-feature MEAN BOUNDARY DISPLACEMENT in metres: area(Li^Ni) / perimeter(Li).
+    # A ratio to area(Li) explodes on slivers (T0 S1: a legitimate segment-count change gave 7.96 on a 3.87 m2 piece
+    # while every mutant stayed <= 0.997: unseparable); an area-weighted ratio was only 1.8x apart from the
+    # simplify-before-buffer mutant. Displacement per unit boundary keeps the per-feature guard (max over features),
+    # is in metres like Hausdorff (D6-9) and separated every S1 dataset by >= 3.3x. Check id kept for consumers.
+    if sd is not None:
+        ml = gpd.GeoSeries(lg, crs=L.crs).to_crs(mcrs) if lg else gpd.GeoSeries([])
+        areas = ml.area.fillna(0.0).tolist() if lg else []
+        perims = ml.length.fillna(0.0).tolist() if lg else []
+        ctx.legacy_area_by_key = dict(zip(matched, areas))
+        ctx.legacy_perimeter_by_key = dict(zip(matched, perims))
+        disp = []
+        for j, i in enumerate(differ):
+            pl = perims[i]
+            disp.append(syms[j] / pl if pl > 0 else (0.0 if syms[j] == 0 else math.inf))
+        for j, i in enumerate(differ):
+            ctx.geom_by_key[matched[i]]["disp"] = disp[j]
+        darr = np.array(disp, dtype="float64")
+        res = ctx.book.lookup(ctx.ds_id, sd["id"])
         rules = [res.rule] + ([res.proposed] if res.proposed is not None else [])
-        thr = lambda r: (r.value if r.value is not None else r.atol)  # noqa: E731
-        over = [int((~(arr <= thr(r))).sum()) for r in rules]
-        mx = float(arr.max()) if arr.size else 0.0
-        c.update(metric=c["id"].split(".")[1], value=mx if math.isfinite(mx) else None, threshold=thr(res.rule))
+        over = [int((~(darr <= thr(r))).sum()) for r in rules]
+        mx = float(darr.max()) if darr.size else 0.0
+        tot_l, sym_tot = math.fsum(areas), math.fsum(syms)
+        rarr = np.array(ratios, dtype="float64")
+        sd.update(metric="symdiff_m", value=mx if math.isfinite(mx) else None, threshold=thr(res.rule))
         if not math.isfinite(mx):
-            c.setdefault("nulls", {})["value"] = "EMPTY_OR_NULL_GEOMETRY"
-        c["detail"]["features_differing"] = len(differ)
-        c["stats"] = {"count_over": over[0], "median": float(np.median(arr[np.isfinite(arr)])) if np.isfinite(arr).any() else None}
-        order_idx = np.argsort(-np.nan_to_num(arr, posinf=1e300))
-        for j in order_idx[:SAMPLE_N]:
+            sd.setdefault("nulls", {})["value"] = "EMPTY_OR_NULL_GEOMETRY"
+        sd["detail"].update(features_differing=len(differ), symdiff_area_m2=sym_tot, legacy_area_m2=tot_l,
+                            metric_definition="max over matched features of area(L xor N) / perimeter(L), metres, "
+                                              "in measure_crs")
+        sd["stats"] = {"count_over": over[0],
+                       "area_weighted_ratio": _jsonable(sym_tot / tot_l) if tot_l > 0 else None,
+                       "per_feature_max_ratio": _jsonable(float(rarr.max())) if rarr.size else 0.0}
+        for j in np.argsort(-np.nan_to_num(darr, posinf=1e300))[:SAMPLE_N]:
             i = differ[int(j)]
-            if not (arr[j] <= thr(res.rule)):
-                c["samples"].append({"key": list(matched[i]), "value": _jsonable(float(arr[j])),
-                                     "bbox": _bbox(lg[i])})
-        for j in range(arr.size):
-            if not (arr[j] <= thr(res.rule)):
-                ctx.mismatch_rows.append({"check": c["id"], "key": json.dumps(list(matched[differ[j]])),
+            if not (darr[j] <= thr(res.rule)):
+                sd["samples"].append({"key": list(matched[i]), "value": _jsonable(float(darr[j])),
+                                      "symdiff_m2": float(syms[j]), "ratio": _jsonable(float(rarr[j])),
+                                      "bbox": _bbox(lg[i])})
+        for j in range(darr.size):
+            if not (darr[j] <= thr(res.rule)):
+                ctx.mismatch_rows.append({"check": sd["id"], "key": json.dumps(list(matched[differ[j]])),
                                           "legacy": None, "new": None, "kind": "geometry",
-                                          "value": _jsonable(float(arr[j]))})
-        apply_tol(c, res, lambda r: over[rules.index(r)] <= r.max_mismatch if r in rules else False,
-                  bool((arr > 0).any()), code)
-        if c["state"] == "FAIL":
-            if area_ratio and c is sd:
-                add_diag(c, "GEOMETRY_AREA_RATIO", area_ratio={"median": float(np.median(area_ratio))})
+                                          "value": _jsonable(float(darr[j]))})
+        apply_tol(sd, res, lambda r: over[rules.index(r)] <= r.max_mismatch if r in rules else False,
+                  bool((darr > 0).any()), "GEOMETRY_SYMDIFF_EXCEEDED")
+        if sd["state"] == "FAIL":
+            if area_ratio:
+                add_diag(sd, "GEOMETRY_AREA_RATIO", area_ratio={"median": float(np.median(area_ratio))})
             if vtx_l and vtx_n < 0.8 * vtx_l:
-                add_diag(c, "VERTEX_COUNT_DROP", vertex_count={"legacy": vtx_l, "new": vtx_n})
+                add_diag(sd, "VERTEX_COUNT_DROP", vertex_count={"legacy": vtx_l, "new": vtx_n})
     return out + geo_checks
+
+
+def _scalar_under(ctx: "PairCtx", check_id: str, value: float) -> str:
+    """PASS | UNSIGNED (passes only under an unsigned proposal) | FAIL for a scalar metric with threshold rules."""
+    res = ctx.book.lookup(ctx.ds_id, check_id)
+    thr = lambda r: (r.value if r.value is not None else r.atol)  # noqa: E731
+    ok = lambda r: math.isfinite(value) and value <= thr(r)  # noqa: E731
+    if res.error is None and ok(res.rule):
+        return "PASS"
+    if res.error is None and res.proposed is not None and ok(res.proposed):
+        return "UNSIGNED"
+    return "FAIL"
+
+
+def _branch_checks(ctx: "PairCtx", L: Frame, checks: list[dict], order: int) -> list[dict]:
+    """compare.branches: [{id, where: {column: value}}] (a legacy code branch and the rows it produced). A branch
+    the legacy data never exercised cannot be proven by parity -> NEEDS_REVIEW/BRANCH_NOT_EXERCISED; otherwise key
+    set and geometry are re-checked on the branch subset (DESIGN §3: BRANCH_OUTPUT_MISMATCH -> KEY_SET_MISSING /
+    GEOMETRY_SYMDIFF_EXCEEDED on the subset)."""
+    out = []
+    for br in (ctx.spec.get("compare") or {}).get("branches") or []:
+        c = new_check(f"branch:{br.get('id')}", order)
+        where = br.get("where") or {}
+        c["detail"]["where"] = where
+        if not where or any(col not in L.data for col in where):
+            set_state(c, "EVALUATOR_ERROR", "CHECKER_EXCEPTION")
+            c["detail"]["error"] = f"branch where-columns {sorted(where)} not in the legacy layer"
+            out.append(c)
+            continue
+        li = ctx.key_index_legacy or {}
+        sub = [k for k, i in li.items() if all(_canon_key(L.data[col][i]) == _canon_key(v) for col, v in where.items())]
+        c.update(metric="legacy_rows_in_branch", legacy=len(sub))
+        if not sub:
+            set_state(c, "NEEDS_REVIEW", "BRANCH_NOT_EXERCISED")
+            out.append(c)
+            continue
+        if any(x["id"] == "vector.key" and x["state"] != "PASS_EXACT" for x in checks):
+            out.append(gated(c["id"], order, "vector.key"))
+            continue
+        codes, unsigned = [], False
+        miss = sorted(set(sub) & set(ctx.keys_missing or []))
+        if miss:
+            codes.append("KEY_SET_MISSING")
+            c["samples"] = [{"key": list(k)} for k in miss[:SAMPLE_N]]
+        gk = ctx.geom_by_key or {}
+        present = [k for k in sub if k in gk]
+        detail = {"rows": len(sub), "missing": len(miss)}
+        if present and ctx.legacy_area_by_key is not None:
+            dmax = max(gk[k].get("disp", 0.0) for k in present)
+            detail["symdiff_m_max"] = _jsonable(dmax)
+            verdict_ = _scalar_under(ctx, "vector.symdiff_ratio", dmax)
+            if verdict_ == "FAIL":
+                codes.append("GEOMETRY_SYMDIFF_EXCEEDED")
+            elif verdict_ == "UNSIGNED":
+                unsigned = True
+        if present:
+            h = max(gk[k]["haus"] for k in present)
+            detail["hausdorff_m_max"] = _jsonable(h)
+            verdict_ = _scalar_under(ctx, "vector.hausdorff_m", h)
+            if verdict_ == "FAIL":
+                codes.append("GEOMETRY_HAUSDORFF_EXCEEDED")
+            elif verdict_ == "UNSIGNED":
+                unsigned = True
+        c["detail"].update(detail)
+        c["value"] = len(codes)
+        if codes:
+            set_state(c, "FAIL", *codes)
+        elif unsigned:
+            set_state(c, "NEEDS_DECISION", "TOLERANCE_UNSIGNED")
+        else:
+            set_state(c, "PASS_EXACT")
+        out.append(c)
+    return out
 
 
 def compare_vector(ctx: "PairCtx") -> list[dict]:
@@ -2119,6 +2246,7 @@ def compare_vector(ctx: "PairCtx") -> list[dict]:
     checks.extend(fchecks)
     if L.geoms is not None:
         checks.extend(_geometry_checks(ctx, L, N, m, gate, 60))
+    checks.extend(_branch_checks(ctx, L, checks, 70))
 
     def values_for(chk: str):
         return ctx.attr_values.get(chk)
@@ -2329,6 +2457,11 @@ class PairCtx:
     matched_keys: list | None = None
     raster_pair_arrays: Any = None
     prefix_override: str | None = None
+    key_index_legacy: dict | None = None
+    keys_missing: list | None = None
+    geom_by_key: dict | None = None
+    legacy_area_by_key: dict | None = None
+    legacy_perimeter_by_key: dict | None = None
 
     def legacy_integral(self, lds, band) -> bool:
         return _exact_total(lds, band)[2]
