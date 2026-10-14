@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "plugins": {"registryUrl": "plugin-registry.json"},
+  "branding": {"welcome": false},
+  "sharing": {"shareUrl": "off", "embedOrigins": ["__SELF_ORIGIN__"]}
+}

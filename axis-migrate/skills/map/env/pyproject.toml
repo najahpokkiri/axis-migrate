@@ -1,0 +1,21 @@
+[project]
+name = "axis-migrate-map-env"
+version = "0.1.0"
+description = "Map-view environment for axis-migrate (GeoLibre web app + the COG/GeoJSON view writer). Display only; separate from the pipeline lock in skills/run/env."
+requires-python = "==3.12.*"
+dependencies = [
+  "geolibre==3.4.0",
+  "numpy==2.5.4",
+  "rasterio==1.5.2",
+  "pyogrio==0.13.0",
+  "shapely==2.2.0",
+  "pyproj==3.8.0",
+  "geopandas==1.2.0",
+  "pandas",
+  "matplotlib",
+  "pyyaml",
+  "pytest",
+]
+
+[tool.uv]
+package = false
