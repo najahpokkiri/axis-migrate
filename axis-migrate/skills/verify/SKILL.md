@@ -80,23 +80,60 @@ pipeline verdicts with visual receipts merged, blame per step (`own | inherited 
 - A difference that looks like a legacy bug (`LEGACY_DEFECT_SUSPECTED`, NEEDS_DECISION) is a keep-or-fix question for
   the user (recommended: keep for parity), not a repair.
 
-## 6 Tolerances: propose with two numbers, never sign
-Default is exact. A non-zero tolerance exists only as a record whose `correct_spread` (an independent correct
-implementation) < threshold < `nearest_wrong` (closest plausible wrong recipe), fixed before the run that uses it.
+## 6 Tolerances and known differences: propose with two numbers, never sign
+Default is exact. A non-zero tolerance exists only as a **signed** record in `migration/tolerances.yaml` whose
+`correct_spread` (an independent correct implementation) < threshold < `nearest_wrong` (closest plausible wrong recipe),
+signed before the run that uses it. You never write `tolerances.yaml` and never sign anything.
 1. Nearest wrong: `tolcal.py mutate --legacy <legacy file> --kind raster|vector|table --out migration/analysis/tolcal/<ds>
    [--spec spec.json] [--recipe rasterize.json] [--key col]…` (deterministic mutants of the legacy file, compared with
    the frozen comparator; writes `tolcal.json`).
 2. Correct spread: measure it with an independent correct implementation in `migration/analysis/` (never imported by
    the pipeline). Without it there is no record and the check stays exact.
-3. `tolcal.py propose --dataset ds.x --check raster.values --correct-spread X --nearest-wrong Y [--form rtol|atol|
-   value|max_mismatch] [--units …] [--spread-how … --spread-evidence …] [--wrong-variant … --wrong-evidence …]`
-   prints one record with `agreed_by: null`; append it to `migration/tolerances.yaml` as a new record id (a guard asks
-   the user). Never edit an existing record, never fill `agreed_by`/`agreed_at`.
-4. `signoff.py migration` renders `migration/SIGN-OFF.md` (every unsigned record and proposed KD with its numbers and
-   the lines a person edits to sign). Tell the user it exists.
-5. Unsigned records are ignored: a check that would pass only under one ends NEEDS_DECISION / `TOLERANCE_UNSIGNED`
-   (`KD_UNSIGNED` for known differences). Say so; do not claim parity for it. A signed record takes effect from the
-   next run.
+3. Propose: `tolcal.py propose --dataset ds.x --check raster.values --correct-spread X --nearest-wrong Y [--form rtol|
+   atol|value|max_mismatch] [--units …] [--spread-how … --spread-evidence …] [--wrong-variant … --wrong-evidence …]`
+   prints one record with `agreed_by: null`. Put it under `records:` in **`migration/tolerances.proposed.yaml`**
+   (create it as `version: 1` + `records: []`; Write the file or indent the printed record as a list item). You may
+   write that file at any time; it is not part of the run contract. Never fill `agreed_by`/`agreed_at`.
+4. What proposals do: compare.py reads them (from the run's `snapshot/tolerances.proposed.yaml`) only to classify — a
+   check that would pass only under a proposal ends NEEDS_DECISION / `TOLERANCE_UNSIGNED`; it never passes. A record
+   with a signature inside the proposals file is ignored (listed in `tolerance_proposals_ignored`).
+5. Known differences: append a block to `migration/known-differences.md` (append-only; to change one, append a new KD
+   whose `reason` says which id it supersedes and set nothing in the old one). Copy this template exactly:
+
+   ````markdown
+   ## KD-004 · exposure written as float64
+
+   One or two sentences of prose (ignored by code).
+
+   ```yaml
+   id: KD-004                      # equal to the heading id; next free number
+   kind: normalisation             # normalisation | exclusion | accepted_change | legacy_defect_preserved
+   datasets: [ds.lux_res_exposure_2020]   # graph dataset ids
+   checks: [raster.dtype]          # check ids as in compare/<ds>.json (a prefix covers raster.values:b2 etc.)
+   rule: {dtype_widening: {from: float32, to: float64}}
+   #   normalisation:   nodata_equivalent: [a, b] | dtype_widening: {from, to} | multi_equivalence: true |
+   #                    string_strip: {columns: [c]} | casefold: {columns: [c]} | rename: {legacy: new} |
+   #                    content_hash_only: {gpkg_contents.last_change: true}
+   #   exclusion:       {reason: NO_REFERENCE | FAMILY_UNSUPPORTED}   (never for a role: final dataset)
+   #   accepted_change: {expected: "new = legacy * 1000"}   (needs a bound; the check stays FAIL)
+   #   legacy_defect_preserved: null
+   bound: null                     # or {metric: max_abs | max_rel | count_over, max: <measured number>}
+   reason: "why this difference is acceptable, with numbers"
+   evidence: ["migration/analysis/…json", "02_SCRIPTS/x.py:12"]
+   owner: agent                    # you always write agent; a human changes it to human:<name>
+   decided_at: null                # set by the human who accepts it
+   decision_ref: null              # decisions.md#D-nnn, set with the decision
+   status: proposed                # proposed | accepted | withdrawn — only a human sets accepted
+   ```
+   ````
+   A proposed KD that would cover a failure gives NEEDS_DECISION / `KD_UNSIGNED`, never a pass; an accepted_change
+   never turns a check green (the step can only become ACCEPTED_DIFFERENCE, amber).
+6. Validate before you rely on either file: `signoff.py migration --check` (exit 0 clean, 2 with every problem and
+   line). Fix a malformed KD by appending a superseding entry, never by editing the old one.
+7. `signoff.py migration` renders `migration/SIGN-OFF.md`: every unsigned record (from both files) and proposed KD with
+   its two numbers or bound, the runs it affects and exactly what the human edits (copy into `tolerances.yaml`, set
+   `agreed_by: human:<name>`, `agreed_at`, `decision_ref`; for a KD `owner`/`status`/`decided_at`), then a **new run**.
+   Tell the user it exists. Do not claim parity for anything waiting there.
 
 ## Never
 Write or edit anything under `migration/runs/` by hand; widen a tolerance or edit a record after seeing a failure;

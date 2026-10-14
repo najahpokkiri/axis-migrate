@@ -276,3 +276,25 @@ def test_branch_not_exercised_and_branch_subset(tmp_path):
     new3 = write_vector(tmp_path / "n3.gpkg", g3, layer="l")
     b3 = check(pair(leg, new3, s), "branch:industrial_500m")
     assert b3["state"] == "FAIL" and "GEOMETRY_SYMDIFF_EXCEEDED" in b3["reason_codes"]
+
+
+# ------------------------------------------------------------------ tolerances.proposed.yaml (unsigned proposals)
+def test_proposals_file_only_classifies_never_passes(tmp_path):
+    leg, new = _small_drift(tmp_path)
+    prop = tol_record("ds.synthetic", "raster.values", rtol=1e-6, spread=1e-8, wrong=1e-3, agreed_by=None,
+                      agreed_at=None)
+    v = check(pair(leg, new, spec("raster", tolerances_proposed=_tol(prop))), "raster.values")
+    assert v["state"] == "NEEDS_DECISION" and "TOLERANCE_UNSIGNED" in v["reason_codes"]
+    assert v["proposed"]["source"] == "tolerances.proposed.yaml" and v["proposed"]["record_id"] == prop["id"]
+    # a proposal that would not cover the difference: FAIL
+    far = dict(prop, rtol=1e-9, correct_spread={"value": 1e-10, "how": "x", "evidence": "e"})
+    assert check(pair(leg, new, spec("raster", tolerances_proposed=_tol(far))), "raster.values")["state"] == "FAIL"
+
+
+def test_signed_record_in_proposals_file_is_ignored(tmp_path):
+    leg, new = _small_drift(tmp_path)
+    signed = tol_record("ds.synthetic", "raster.values", rtol=1e-6, spread=1e-8, wrong=1e-3)
+    r = pair(leg, new, spec("raster", tolerances_proposed=_tol(signed)))
+    assert check(r, "raster.values")["state"] == "FAIL"                 # a signature counts only in tolerances.yaml
+    assert r["tolerance_proposals_ignored"][0]["id"] == signed["id"]
+    assert "ignored" in r["tolerance_proposals_ignored"][0]["why"]

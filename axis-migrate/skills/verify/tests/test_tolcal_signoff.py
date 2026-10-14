@@ -121,9 +121,49 @@ def test_signoff_renders_unsigned_only_and_never_signs(tmp_path):
     lines = (mig / "tolerances.yaml").read_text().splitlines()
     import re
     for m in re.finditer(r"tolerances\.yaml:(\d+)", text):
-        assert "agreed_" in lines[int(m.group(1)) - 1]
+        assert "agreed_" in lines[int(m.group(1)) - 1] or "decision_ref" in lines[int(m.group(1)) - 1]
     assert re.search(r"known-differences\.md:\d+", text)
     after = {p.name: p.read_bytes() for p in mig.iterdir() if p.is_file() and p.name != "SIGN-OFF.md"}
     assert before == after                                   # nothing signed, nothing edited
     p = _cli("signoff.py", mig)
     assert p.returncode == 0, p.stderr
+
+
+def test_signoff_lists_proposals_file_and_how_to_sign(tmp_path):
+    import signoff
+    mig, _ = _signoff_project(tmp_path)
+    prop = tol_record("ds.x", "vector.hausdorff_m", value=0.5, spread=0.12, wrong=13.0, agreed_by=None,
+                      agreed_at=None)
+    stray = tol_record("ds.y", "raster.values", rtol=1e-6, spread=1e-8, wrong=1e-3)       # signed: wrong file
+    (mig / "tolerances.proposed.yaml").write_text(yaml.safe_dump({"version": 1, "records": [prop, stray]},
+                                                                 sort_keys=False))
+    before = (mig / "tolerances.proposed.yaml").read_bytes(), (mig / "tolerances.yaml").read_bytes()
+    text = signoff.render(mig).read_text()
+    assert prop["id"] in text and "0.12" in text and "13.0" in text
+    assert "copy the record" in text and "migration/tolerances.yaml" in text and "new run" in text
+    assert "agreed_by: human:<your name>" in text and "decision_ref: decisions.md#D-nnn" in text
+    assert f"{stray['id']} — IGNORED" in text
+    assert ((mig / "tolerances.proposed.yaml").read_bytes(), (mig / "tolerances.yaml").read_bytes()) == before
+
+
+def test_signoff_check_validates_records(tmp_path):
+    import signoff
+    mig, _ = _signoff_project(tmp_path)
+    assert signoff.check_records(mig) == []
+    skill = (VERIFY / "SKILL.md").read_text()
+    template = skill.split("````markdown\n")[1].split("````")[0]
+    template = "\n".join(line[3:] if line.startswith("   ") else line for line in template.splitlines()) + "\n"
+    (mig / "known-differences.md").write_text((mig / "known-differences.md").read_text().replace("KD-003", "KD-009")
+                                              + template)
+    assert signoff.check_records(mig) == [], signoff.check_records(mig)       # the SKILL template is valid as written
+    bad = ("## KD-010 broken heading\n\n```yaml\nid: KD-011\nkind: accepted_change\ndatasets: ds.a\nchecks: [raster.values]\n"
+           "rule: {expected: 'new = legacy * 1000'}\nowner: agent\nstatus: accepted\n```\n")
+    (mig / "known-differences.md").write_text((mig / "known-differences.md").read_text() + bad)
+    (mig / "tolerances.proposed.yaml").write_text(yaml.safe_dump({"version": 1, "records": [
+        tol_record("ds.a", "raster.values", rtol=1e-6, spread=1e-8, wrong=1e-3)]}))
+    probs = "\n".join(signoff.check_records(mig))
+    for needle in ("heading must be", "missing keys", "only a human accepts", "needs a measured bound",
+                   "signed record in tolerances.proposed.yaml"):
+        assert needle in probs, (needle, probs)
+    p = _cli("signoff.py", mig, "--check")
+    assert p.returncode == 2

@@ -105,7 +105,7 @@ def build(root: Path, g: dict, *, outputs: dict, tolerances: str | None = None, 
           params: str | None = None, run_id: str = "r20261016T100000Z-deadbeef", chain: str = "chained",
           started_at: str = STARTED_AT, step_status: dict | None = None, ledger_drop: tuple = (),
           written_by: dict | None = None, extra_outputs: dict | None = None, legacy_name: str = "legacy",
-          inventory_roles: dict | None = None) -> Path:
+          inventory_roles: dict | None = None, proposals: str | None = None) -> Path:
     """outputs: {ds_id: Path to a file (copied to outputs/<new.path>)}; legacy files must already be in
     <root>/<legacy_name>/. Returns the run dir."""
     mig = root / "migration"
@@ -126,12 +126,14 @@ def build(root: Path, g: dict, *, outputs: dict, tolerances: str | None = None, 
     write_yaml_text(mig / "params.yaml", params)
     write_yaml_text(mig / "tolerances.yaml", tolerances)
     write_yaml_text(mig / "known-differences.md", kd)
+    write_yaml_text(mig / "tolerances.proposed.yaml", proposals)
     run = mig / "runs" / run_id
     if run.exists():
         shutil.rmtree(run)
     snap = run / "snapshot"
     snap.mkdir(parents=True)
-    for name in ("graph.json", "inventory.json", "params.yaml", "tolerances.yaml", "known-differences.md"):
+    for name in ("graph.json", "inventory.json", "params.yaml", "tolerances.yaml", "known-differences.md",
+                 "tolerances.proposed.yaml"):
         if (mig / name).exists():
             shutil.copy2(mig / name, snap / name)
     (run / "verify").mkdir()

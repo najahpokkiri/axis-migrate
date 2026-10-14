@@ -358,13 +358,19 @@ def _crs_invalid_for_measure(crs_text: Any) -> str | None:
 class ToleranceBook:
     """Validates every record once; lookups give the rule to apply, an unsigned proposal, or an error."""
 
-    def __init__(self, doc: Any, run_started_at: _dt.datetime, measure_crs: Any = None):
+    def __init__(self, doc: Any, run_started_at: _dt.datetime, measure_crs: Any = None, proposals: Any = None):
         self.started_at = run_started_at
         self.measure_crs = measure_crs
         self.doc_errors: list[str] = []
         self.defaults_ignored: list[str] = []
         self.records: list[dict] = []
         self.status: dict[int, dict] = {}
+        # tolerances.proposed.yaml: unsigned proposals, used ONLY to tell NEEDS_DECISION/TOLERANCE_UNSIGNED from FAIL;
+        # they never make a check pass and never enter the contract hash
+        self.proposals: list[dict] = []
+        self.proposal_status: dict[int, dict] = {}
+        self.proposal_notes: list[dict] = []
+        self._load_proposals(proposals)
         if doc is None:
             return
         if not isinstance(doc, dict):
@@ -379,6 +385,30 @@ class ToleranceBook:
         for i, rec in enumerate(doc.get("records") or []):
             self.records.append(rec)
             self.status[i] = self._validate(rec)
+
+    def _load_proposals(self, pdoc: Any) -> None:
+        if pdoc is None:
+            return
+        recs = pdoc.get("records") if isinstance(pdoc, dict) else None
+        if not isinstance(recs, list):
+            self.proposal_notes.append({"id": None, "why": "proposals file has no records list; ignored"})
+            return
+        for rec in recs:
+            if not isinstance(rec, dict):
+                self.proposal_notes.append({"id": None, "why": "proposal is not a mapping; ignored"})
+                continue
+            if rec.get("agreed_by") not in (None, "") or rec.get("agreed_at") not in (None, ""):
+                self.proposal_notes.append({"id": rec.get("id"), "dataset": rec.get("dataset"),
+                                            "why": "a signed record in tolerances.proposed.yaml is ignored: a "
+                                                   "signature counts only in tolerances.yaml"})
+                continue
+            st = self._validate(rec)
+            if st["status"] != "unsigned":
+                self.proposal_notes.append({"id": rec.get("id"), "dataset": rec.get("dataset"),
+                                            "why": f"proposal ignored: {st.get('why')}"})
+                continue
+            self.proposal_status[len(self.proposals)] = st
+            self.proposals.append(rec)
 
     def _validate(self, rec: Any) -> dict:
         if not isinstance(rec, dict):
@@ -446,7 +476,7 @@ class ToleranceBook:
             out.append({"record": rec, "status": st["status"], "why": st.get("why"), "threshold": st.get("threshold")})
         return out
 
-    def _resolve(self, idxs: list[int]) -> TolRes:
+    def _resolve(self, idxs: list[int], pidxs: Iterable[int] = ()) -> TolRes:
         res = TolRes()
         if self.doc_errors:
             res.error = ("TOLERANCE_UNJUSTIFIED", "; ".join(self.doc_errors))
@@ -476,18 +506,34 @@ class ToleranceBook:
         if unsigned is not None:
             st = self.status[unsigned]
             res.proposed = self._rule(self.records[unsigned])
-            res.proposed_info = {"record_id": st["id"], "threshold": st["threshold"],
+            res.proposed_info = {"record_id": st["id"], "threshold": st["threshold"], "source": "tolerances.yaml",
                                  "correct_spread": st["correct_spread"], "nearest_wrong": st["nearest_wrong"]}
+            return res
+        pidxs = sorted(pidxs, key=lambda i: -_record_version(self.proposals[i].get("id", "")))
+        for i in pidxs:
+            st = self.proposal_status[i]
+            res.considered.append({"id": st.get("id"), "status": "proposed", "why": "tolerances.proposed.yaml"})
+        if pidxs:
+            st = self.proposal_status[pidxs[0]]
+            res.proposed = self._rule(self.proposals[pidxs[0]])
+            res.proposed_info = {"record_id": st["id"], "threshold": st["threshold"],
+                                 "source": "tolerances.proposed.yaml", "correct_spread": st["correct_spread"],
+                                 "nearest_wrong": st["nearest_wrong"]}
         return res
 
     def lookup(self, dataset: str, check: str) -> TolRes:
         return self._resolve([i for i, r in enumerate(self.records)
-                              if isinstance(r, dict) and r.get("dataset") == dataset and r.get("check") == check])
+                              if isinstance(r, dict) and r.get("dataset") == dataset and r.get("check") == check],
+                             [i for i, r in enumerate(self.proposals)
+                              if r.get("dataset") == dataset and r.get("check") == check])
 
     def lookup_id(self, rid: str | None) -> TolRes:
         if not rid:
             return TolRes()
         idxs = [i for i, r in enumerate(self.records) if isinstance(r, dict) and r.get("id") == rid]
+        pidxs = [i for i, r in enumerate(self.proposals) if r.get("id") == rid]
+        if not idxs and pidxs:
+            return self._resolve([], pidxs)
         if not idxs:
             res = TolRes()
             res.notes.append("TOLERANCE_UNJUSTIFIED")
@@ -566,13 +612,14 @@ def parse_known_differences(text: str | None) -> tuple[list[dict], list[dict]]:
             errs.append({"id": h.group(1), "why": "yaml block is not a mapping"})
             continue
         d.setdefault("id", h.group(1))
+        d["_head"] = h.group(1)
         d["_line"] = text.count("\n", 0, h.start() + h.end() - h.start() + m.start()) + 2
         kds.append(d)
     return kds, errs
 
 
 def _kd_wellformed(kd: dict, role: str | None) -> str | None:
-    unknown = set(kd) - KD_KEYS - {"_line"}
+    unknown = set(kd) - KD_KEYS - {"_line", "_head"}
     if unknown:
         return f"unknown keys {sorted(unknown)}"
     if kd.get("kind") not in KD_KINDS:
@@ -2507,6 +2554,7 @@ def _base_result(spec: dict, legacy: str, new: str, family: str) -> dict:
             "pairing": spec.get("pairing") or {"method": "declared_spec", "evidence": [], "state": "standalone"},
             "verdict": None, "reason_codes": [], "diagnostic_codes": [], "checks": [], "within_tolerance": [],
             "not_checked": [], "known_differences_applied": [], "known_differences_ignored": [],
+            "tolerance_proposals_ignored": [],
             "excluded": False, "refs": {"out": None, "ref": None, "tol": list(spec.get("tol_refs") or [])},
             "env": _env_block(), "plots": f"plots/{spec.get('dataset_id')}/plots.json", "mismatches": None,
             "created_at": ac.utc_now_iso()}
@@ -2567,9 +2615,12 @@ def compare_pair(legacy: str, new: str, spec: dict, *, mismatches_path: str | No
     try:
         started = parse_time(spec.get("run_started_at"), end_of_day=False) or _dt.datetime.now(_dt.timezone.utc)
         if book is None:
-            book = ToleranceBook(_load_tolerance_doc(spec.get("tolerances")), started, spec.get("measure_crs"))
+            book = ToleranceBook(_load_tolerance_doc(spec.get("tolerances")), started, spec.get("measure_crs"),
+                                 proposals=_load_tolerance_doc(spec.get("tolerances_proposed")))
         kd_list = kds if kds is not None else _load_kds(spec.get("known_differences"))
         kdb = KDBook(kd_list, started, spec.get("dataset_id") or "", spec.get("role"))
+        result["tolerance_proposals_ignored"] = [n for n in book.proposal_notes
+                                                 if n.get("dataset") in (None, spec.get("dataset_id"))]
         result["known_differences_ignored"] = kdb.ignored
         if spec.get("role") == "input" or spec.get("legacy_role") == "input":
             result["checks"] = []
@@ -2687,6 +2738,8 @@ class RunContext:
         self.kd_text = _read_text(self.snap / "known-differences.md")
         self.params_text = _read_text(self.snap / "params.yaml")
         self.tol_doc = yaml.safe_load(self.tol_text) if self.tol_text else None
+        prop_text = _read_text(self.snap / "tolerances.proposed.yaml")       # never part of the contract
+        self.prop_doc = yaml.safe_load(prop_text) if prop_text else None
         self.kds, self.kd_errors = parse_known_differences(self.kd_text)
         self.params = yaml.safe_load(self.params_text) if self.params_text else None
         self.chain = self.manifest.get("chain") or "chained"
@@ -2761,7 +2814,7 @@ def build_contract(rc: RunContext) -> dict:
         refs[p] = {"sha256": (f or {}).get("sha256"), "content_sha256": (f or {}).get("content_sha256")}
     kd_entries = []
     for kd in rc.kds:
-        k = {x: y for x, y in kd.items() if x != "_line"}
+        k = {x: y for x, y in kd.items() if x not in ("_line", "_head")}
         kd_entries.append(_jsonable(k))
     body = {
         "schema": CONTRACT_SCHEMA, "run_id": rc.run_id, "chain": rc.chain, "comparator": comparator_block(),
@@ -2776,6 +2829,7 @@ def build_contract(rc: RunContext) -> dict:
         "known_differences": {"sha256": ac.sha256_bytes(rc.kd_text.encode()) if rc.kd_text is not None else None,
                               "entries": kd_entries, "parse_errors": rc.kd_errors},
         "pairing": proj, "references": refs, "params": {"measure_crs": _jsonable(rc.measure_crs())},
+        "graph_contract_sha256": ac.graph_contract_sha256(rc.graph),
     }
     body = _sanitise(body, [])
     return dict(body, contract_hash="sha256:" + ac.sha256_bytes(ac.cjson(body)), created_at=ac.utc_now_iso())
@@ -3114,7 +3168,8 @@ def run_compare(run_dir: str | os.PathLike, datasets: list[str] | None = None) -
         ac.dump_json(cpath, contract)
     out_dir = vdir / "compare"
     out_dir.mkdir(exist_ok=True)
-    book = ToleranceBook(rc.tol_doc, rc.started_at or _dt.datetime.now(_dt.timezone.utc), rc.measure_crs())
+    book = ToleranceBook(rc.tol_doc, rc.started_at or _dt.datetime.now(_dt.timezone.utc), rc.measure_crs(),
+                         proposals=rc.prop_doc)
     bc = _by_construction(rc)
     results: dict[str, dict] = {}
     pairing_rows, excluded_scope = [], []
@@ -3140,7 +3195,8 @@ def run_compare(run_dir: str | os.PathLike, datasets: list[str] | None = None) -
     ac.dump_json(ppath, {"schema": "axis-migrate.verify-pairing.v1", "run_id": rc.run_id,
                          "contract_hash": contract["contract_hash"], "global_errors": [list(x) for x in gerrs],
                          "pairs": sorted(keep + pairing_rows, key=lambda p: p["dataset_id"]),
-                         "not_considered": excluded_scope, "notes": sweep(rc)})
+                         "not_considered": excluded_scope, "notes": sweep(rc),
+                         "tolerance_proposals_ignored": book.proposal_notes})
     requested = list(datasets) if datasets else list(results)
     ok = bool(requested) and all(d in results and results[d]["verdict"] in PASS for d in requested)
     return results, (EXIT_PASS if ok else EXIT_NOT_PASS)

@@ -37,12 +37,14 @@ def _record_lines(text: str) -> dict[str, dict]:
             starts.append((i, m.group(2)))
     for n, (i, rid) in enumerate(starts):
         end = starts[n + 1][0] if n + 1 < len(starts) else len(lines)
-        info = {"id_line": i + 1, "agreed_by": None, "agreed_at": None}
+        info = {"id_line": i + 1, "end_line": end, "agreed_by": None, "agreed_at": None, "decision_ref": None}
         for j in range(i, end):
             if re.match(r"^\s*-?\s*agreed_by:", lines[j]):
                 info["agreed_by"] = j + 1
             if re.match(r"^\s*-?\s*agreed_at:", lines[j]):
                 info["agreed_at"] = j + 1
+            if re.match(r"^\s*-?\s*decision_ref:", lines[j]):
+                info["decision_ref"] = j + 1
         out[rid] = info
     return out
 
@@ -73,6 +75,9 @@ def _runs_affected(mig: Path, rid: str) -> list[str]:
         snap = run / "snapshot" / "tolerances.yaml"
         if snap.exists() and rid in snap.read_text(encoding="utf-8"):
             runs.add(run.name)
+        snapp = run / "snapshot" / "tolerances.proposed.yaml"
+        if snapp.exists() and rid in snapp.read_text(encoding="utf-8"):
+            runs.add(run.name)
         snapk = run / "snapshot" / "known-differences.md"
         if snapk.exists() and re.search(rf"^##\s+{re.escape(rid)}\b", snapk.read_text(encoding="utf-8"), re.M):
             runs.add(run.name)
@@ -83,6 +88,25 @@ def _runs_affected(mig: Path, rid: str) -> list[str]:
                 if rid in txt:
                     runs.add(run.name)
     return sorted(runs)
+
+
+def _record_block(rec: dict, st: dict, mig: Path) -> list[str]:
+    cs, nw = rec.get("correct_spread") or {}, rec.get("nearest_wrong") or {}
+    ok = st.get("status") in ("unsigned", "signed")
+    return [f"- dataset `{rec.get('dataset')}`, check `{rec.get('check')}`, metric `{rec.get('metric')}`, "
+            f"threshold {_fmt(st.get('threshold'))} (atol {_fmt(rec.get('atol'))}, rtol {_fmt(rec.get('rtol'))}, "
+            f"max_mismatch {_fmt(rec.get('max_mismatch'))}, units {_fmt(rec.get('units'))})",
+            f"- correct spread: **{_fmt(cs.get('value'))}** — {cs.get('how') or 'how not stated'}; "
+            f"evidence {cs.get('evidence') or 'none'}",
+            f"- nearest wrong: **{_fmt(nw.get('value'))}** — {nw.get('variant') or 'variant not stated'}; "
+            f"evidence {nw.get('evidence') or 'none'}",
+            f"- two-number check: {'passes' if ok else 'FAILS — ' + str(st.get('why'))}"
+            + ("" if ok else " (signing it would not help: the check would still run exact)"),
+            f"- runs affected: {', '.join(_runs_affected(mig, rec.get('id'))) or 'none yet'}"]
+
+
+NEW_RUN = ("then start a **new run** (the current run keeps the contract it started with; a signature applies only "
+           "from the next run)")
 
 
 def render(migration: str | Path) -> Path:
@@ -96,6 +120,7 @@ def render(migration: str | Path) -> Path:
     tpath = mig / "tolerances.yaml"
     out.append("## Tolerance records")
     out.append("")
+    out += ["### Unsigned records in tolerances.yaml", ""]
     n_t = 0
     if tpath.exists():
         text = tpath.read_text(encoding="utf-8")
@@ -126,13 +151,47 @@ def render(migration: str | Path) -> Path:
                        else " (signing it would not help: the check would still run exact)"),
                     f"- runs affected: {', '.join(_runs_affected(mig, rid)) or 'none yet'}",
                     f"- record starts at line {ln.get('id_line', '?')} of tolerances.yaml. To sign, edit:"]
-            for k, hint in (("agreed_by", "<your name>"), ("agreed_at", "<UTC time before the next run, e.g. "
-                                                                         "2026-10-14T09:00:00Z>")):
+            for k, hint in (("agreed_by", "human:<your name>"), ("agreed_at", "<UTC time before the next run, e.g. "
+                                                                               "2026-10-14T09:00:00Z>"),
+                            ("decision_ref", "decisions.md#D-nnn")):
                 if ln.get(k):
                     out.append(f"  - `tolerances.yaml:{ln[k]}`: `{k}: {_fmt(rec.get(k))}` → `{k}: {hint}`")
                 else:
                     out.append(f"  - add `{k}: {hint}` to the record (no `{k}` line yet)")
+            out.append(f"  - {NEW_RUN}")
             out.append("")
+    ppath = mig / "tolerances.proposed.yaml"
+    out += ["### Proposals in tolerances.proposed.yaml", "",
+            "Written by the agent (`tolcal.py propose`). compare.py uses them only to report NEEDS_DECISION / "
+            "`TOLERANCE_UNSIGNED` instead of FAIL; they never make a check pass.", ""]
+    n_p = 0
+    if ppath.exists():
+        ptext = ppath.read_text(encoding="utf-8")
+        pdoc = yaml.safe_load(ptext) or {}
+        plines = _record_lines(ptext)
+        pbook = compare.ToleranceBook(None, compare.parse_time("2999-01-01T00:00:00Z", end_of_day=False))
+        for rec in pdoc.get("records") or []:
+            if not isinstance(rec, dict):
+                continue
+            rid = rec.get("id")
+            ln = plines.get(rid, {})
+            if rec.get("agreed_by") not in (None, "") or rec.get("agreed_at") not in (None, ""):
+                out += [f"#### {rid} — IGNORED", "",
+                        f"- it carries a signature inside the proposals file (lines {ln.get('id_line', '?')}–"
+                        f"{ln.get('end_line', '?')}); compare.py ignores it there. If you mean it, move it into "
+                        "`migration/tolerances.yaml` as below.", ""]
+                continue
+            n_p += 1
+            n_t += 1
+            out += [f"#### {rid}", ""] + _record_block(rec, pbook._validate(rec), mig) + [
+                "- to sign it:",
+                f"  - copy the record (`tolerances.proposed.yaml:{ln.get('id_line', '?')}-{ln.get('end_line', '?')}`) "
+                "into the `records:` list of `migration/tolerances.yaml` (bump `version:`)",
+                "  - in that copy set `agreed_by: human:<your name>`, `agreed_at: <UTC time, e.g. 2026-10-14T09:00:00Z>`"
+                " and `decision_ref: decisions.md#D-nnn`; leave the numbers as measured",
+                f"  - {NEW_RUN}", ""]
+    if n_p == 0:
+        out += ["No proposals file or no proposals in it.", ""]
     if n_t == 0:
         out += ["No unsigned tolerance records.", ""]
     kpath = mig / "known-differences.md"
@@ -176,10 +235,97 @@ def render(migration: str | Path) -> Path:
     return dst
 
 
+KD_REQUIRED = ["id", "kind", "datasets", "checks", "rule", "bound", "reason", "evidence", "owner", "decided_at",
+               "decision_ref", "status"]
+_HEAD_RE = re.compile(r"^##\s+(KD-\d{3,})\s+·\s+\S.*$")
+BOUND_METRICS = {"max_abs", "max_rel", "count_over"}
+
+
+def check_records(migration: str | Path) -> list[str]:
+    """Validate known-differences.md and tolerances.proposed.yaml before anyone relies on them. Returns problems."""
+    import yaml
+    mig = Path(migration)
+    problems: list[str] = []
+    graph_ids = None
+    if (mig / "graph.json").exists():
+        graph_ids = {d["id"] for d in ac.load_json(mig / "graph.json").get("datasets", [])}
+    kpath = mig / "known-differences.md"
+    if kpath.exists():
+        text = kpath.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        for i, ln in enumerate(lines, start=1):
+            if ln.startswith("## ") and ln[3:].lstrip().startswith("KD") and not _HEAD_RE.match(ln):
+                problems.append(f"known-differences.md:{i}: heading must be '## KD-nnn · title' (got {ln!r})")
+        kds, errs = compare.parse_known_differences(text)
+        for e in errs:
+            problems.append(f"known-differences.md: {e['id']}: {e['why']}")
+        seen = set()
+        for kd in kds:
+            head = kd.get("_head")
+            kid, where = kd.get("id"), f"known-differences.md:{kd.get('_line', '?')} {kd.get('id')}"
+            if kid != head:
+                problems.append(f"{where}: yaml id {kid!r} differs from the heading {head!r}")
+            if kid in seen:
+                problems.append(f"{where}: duplicate id (append a new KD that supersedes it instead)")
+            seen.add(kid)
+            missing = [k for k in KD_REQUIRED if k not in kd]
+            if missing:
+                problems.append(f"{where}: missing keys {missing}")
+            bad = compare._kd_wellformed(kd, None)
+            if bad:
+                problems.append(f"{where}: {bad}")
+            if not isinstance(kd.get("datasets"), list) or not kd.get("datasets"):
+                problems.append(f"{where}: datasets must be a non-empty list of dataset ids")
+            elif graph_ids is not None:
+                unknown = [d for d in kd["datasets"] if d not in graph_ids]
+                if unknown:
+                    problems.append(f"{where}: datasets not in graph.json: {unknown}")
+            if not isinstance(kd.get("checks"), list):
+                problems.append(f"{where}: checks must be a list of check ids (e.g. [raster.values])")
+            b = kd.get("bound")
+            if b is not None and not (isinstance(b, dict) and b.get("metric") in BOUND_METRICS
+                                      and isinstance(b.get("max"), (int, float))):
+                problems.append(f"{where}: bound must be null or {{metric: max_abs|max_rel|count_over, max: <number>}}")
+            if kd.get("kind") == "accepted_change" and b is None:
+                problems.append(f"{where}: an accepted_change needs a measured bound")
+            if kd.get("status") not in ("proposed", "accepted", "withdrawn"):
+                problems.append(f"{where}: status must be proposed|accepted|withdrawn")
+            owner = kd.get("owner")
+            if not (owner == "agent" or (isinstance(owner, str) and owner.startswith("human:") and len(owner) > 6)):
+                problems.append(f"{where}: owner must be 'agent' or 'human:<name>'")
+            if kd.get("status") == "accepted" and owner == "agent":
+                problems.append(f"{where}: only a human accepts a KD (owner agent must stay status proposed)")
+            if not isinstance(kd.get("evidence"), list):
+                problems.append(f"{where}: evidence must be a list")
+    ppath = mig / "tolerances.proposed.yaml"
+    if ppath.exists():
+        try:
+            pdoc = yaml.safe_load(ppath.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError as e:
+            return problems + [f"tolerances.proposed.yaml: yaml: {e}"]
+        book = compare.ToleranceBook(None, compare.parse_time("2999-01-01T00:00:00Z", end_of_day=False),
+                                     proposals=pdoc)
+        for n in book.proposal_notes:
+            problems.append(f"tolerances.proposed.yaml: {n.get('id')}: {n['why']}")
+        if graph_ids is not None:
+            for rec in book.proposals:
+                if rec.get("dataset") not in graph_ids:
+                    problems.append(f"tolerances.proposed.yaml: {rec.get('id')}: dataset not in graph.json")
+    return problems
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="signoff.py", description=__doc__.split("\n\n")[0])
     ap.add_argument("migration")
+    ap.add_argument("--check", action="store_true",
+                    help="validate known-differences.md and tolerances.proposed.yaml (exit 0 clean, 2 problems)")
     a = ap.parse_args(argv)
+    if a.check:
+        problems = check_records(a.migration)
+        for x in problems:
+            print(x)
+        print("records OK" if not problems else f"{len(problems)} problem(s): fix by appending a superseding entry")
+        return 0 if not problems else 2
     p = render(a.migration)
     print(f"wrote {p}")
     return 0

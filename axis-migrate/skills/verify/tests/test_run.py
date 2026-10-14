@@ -282,3 +282,39 @@ def test_multiband_check_ids(tmp_path):
     r = pair(leg, tmp_path / "n.tif", spec("raster"))
     ids = {c["id"]: c["state"] for c in r["checks"]}
     assert ids["raster.values"] == "PASS_EXACT" and ids["raster.values:b2"] == "FAIL"
+
+
+def test_proposals_file_in_run_mode_outside_the_contract(tmp_path):
+    import yaml
+    prop = tol_record("ds.a", "raster.values", rtol=1e-6, spread=1e-8, wrong=1e-3, agreed_by=None, agreed_at=None)
+    ptext = yaml.safe_dump({"version": 1, "records": [prop]})
+    run = project(tmp_path / "with", proposals=ptext)
+    run_np = project(tmp_path / "without")
+    compare.run_compare(run)
+    compare.run_compare(run_np)
+    c1 = ac.load_json(run / "verify" / "contract.json")
+    c2 = ac.load_json(run_np / "verify" / "contract.json")
+    assert c1["tolerances"] == c2["tolerances"] and c1["known_differences"] == c2["known_differences"]
+    assert "proposed" not in json.dumps(c1["tolerances"])
+    # the agent may write proposals at any time: editing the live file after the run is not a contract change
+    rb.edit_live(run, "tolerances.proposed.yaml", ptext + "# more\n")
+    results, rc = compare.run_compare(run, datasets=["ds.a"])
+    assert rc == 0 and "TOLERANCE_CHANGED_AFTER_RUN" not in results["ds.a"]["reason_codes"]
+
+
+def test_proposals_classify_in_run_mode(tmp_path):
+    import yaml
+    legacy = tmp_path / "legacy"
+    a = legacy_raster_array().astype("float64")
+    write_raster(legacy / "in" / "src.tif", a, dtype="float64")
+    write_raster(legacy / "out" / "a.tif", a, dtype="float64")
+    drift = write_raster(tmp_path / "drift.tif", np.where(a == -9999.0, a, a * (1 + 1e-7)), dtype="float64")
+    g = rb.graph([rb.step("s1")], [rb.dataset("ds.src", "raster", "input", "in/src.tif"),
+                                   rb.dataset("ds.a", "raster", "intermediate", "out/a.tif", produced_by="s1")],
+                 reads=[("s1", "ds.src")])
+    prop = tol_record("ds.a", "raster.values", rtol=1e-6, spread=1e-8, wrong=1e-3, agreed_by=None, agreed_at=None)
+    run = rb.build(tmp_path, g, outputs={"ds.a": drift}, proposals=yaml.safe_dump({"version": 1, "records": [prop]}))
+    results, rc = compare.run_compare(run)
+    v = next(c for c in results["ds.a"]["checks"] if c["id"] == "raster.values")
+    assert v["state"] == "NEEDS_DECISION" and v["proposed"]["source"] == "tolerances.proposed.yaml" and rc != 0
+    assert "tolerance_proposals_ignored" in ac.load_json(run / "verify" / "pairing.json")
