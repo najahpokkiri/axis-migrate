@@ -511,7 +511,10 @@ def parity(run_dir: Path, dsmap: dict, roots: dict, task_steps: set, evidence: P
     comp = [e for e in rep["datasets"].values() if e["state"] == "compared"]
     rep["n_compared"] = len(comp)
     rep["n_pass"] = sum(1 for e in comp if e["verdict"] in ac.PASS_STATES)
-    rep["n_compared_in_run"] = sum(1 for e in rep["datasets"].values() if e["state"] != "not_compared_in_run")
+    # the job's own outputs that the run compared; outputs of untasked (manual, bridged) steps are uploaded inputs
+    rep["n_compared_in_run"] = sum(1 for e in rep["datasets"].values() if e["state"] == "compared")
+    rep["not_produced_by_the_job"] = sorted(k for k, e in rep["datasets"].items()
+                                            if e["state"] == "not_produced_by_the_job")
     rep["verdict"] = ac.worst([e["verdict"] for e in comp]) if comp else "NOT_COMPARED"
     rep["report_id"] = ac.object_id("dryrun-cmp", {k: v for k, v in rep.items() if k != "report_id"})
     return rep

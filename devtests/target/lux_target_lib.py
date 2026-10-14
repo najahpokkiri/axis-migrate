@@ -80,24 +80,35 @@ def receipts(run_dir: Path) -> int:
     return n
 
 
+def _bridge_m01(mig: Path) -> None:
+    """The fixture marks m01 (manual canton edit) as a migrated step whose output has no legacy reference
+    (reference.source none), so the ladder caps it at sandbox-validated (NO_REFERENCE) and the pipeline never reaches
+    reference-verified. The demo path (DESIGN §8: 13 pairs, rename not ported) keeps the human's edited file: here m01
+    becomes a bridge (the runner copies the legacy file; the ladder shows "partial (1 bridged)"). Written the way
+    graph.py writes (lock, write, head record), so graph integrity holds."""
+    sys.path.insert(0, str(PLUGIN / "skills" / "discover"))
+    import graph as graph_py
+    with graph_py.locked(mig):
+        g = json.loads((mig / "graph.json").read_text())
+        for s in g["steps"]:
+            if s["id"] == "m01_cantons_lux_edit":
+                s["kind"], s["direction"] = "bridge", "in"
+                s["new"]["module"] = None
+        g["revision"] = int(g.get("revision", 1)) + 1
+        graph_py._write_graph(mig, g)
+        graph_py._record_head(mig, g["revision"])
+    (mig / "pipeline" / "m01_cantons_lux_edit.py").unlink()
+
+
 def reference_verified_project(dest: Path) -> tuple[Path, str]:
     mig = mlp.assemble(dest)
     (mig / "tolerances.yaml").write_text(yaml.safe_dump(tolerances_doc(), sort_keys=False))
     with open(mig / "params.yaml", "a", encoding="utf-8") as fh:       # the end-of-interview platform answer
         fh.write(TARGET_BLOCK)
-    g = json.loads((mig / "graph.json").read_text())
-    for s in g["steps"]:
-        # The fixture marks m01 (manual canton edit) as migrated although its output is a legacy INPUT, so verify
-        # has nothing to compare (NOT_COMPARED/NO_REFERENCE) and the pipeline cannot reach reference-verified.
-        # The demo path (DESIGN §8: 13 pairs, rename not ported) keeps the manual step in legacy.
-        if s["id"] == "m01_cantons_lux_edit":
-            s["scope"], s["scope_reason"] = "keep_legacy", "manual_edit_kept"
-            s["new"]["module"] = None
-    (mig / "graph.json").write_text(json.dumps(g, indent=1, sort_keys=True) + "\n")
-    (mig / "pipeline" / "m01_cantons_lux_edit.py").unlink()
+    _bridge_m01(mig)
     out = json.loads(sh(PLUGIN / "skills/run/run_local.py", mig, "--json").stdout.strip().splitlines()[-1])
     run_dir = Path(out["run_dir"])
-    sh(PLUGIN / "skills/verify/compare.py", "run", "--run", run_dir)
+    sh(PLUGIN / "skills/verify/compare.py", "run", "--run", run_dir, ok=(0, 1))   # UNPAIRED_NEW is listed, not failed
     sh(PLUGIN / "skills/verify/plot.py", "run", "--run", run_dir)
     if (PLUGIN / "skills/report/map.py").is_file():
         sh(PLUGIN / "skills/report/map.py", "display", "--run", run_dir, ok=(0, 1))

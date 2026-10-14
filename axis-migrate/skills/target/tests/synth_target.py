@@ -174,7 +174,7 @@ def legacy_outputs(pop, zones):
 
 
 def _ds(i, path, layer, kind, role, *, producer=None, new=None, sheet=None, compare=None):
-    return {"id": i, "title": i[3:], "kind": kind, "role": role, "persistence": "persisted",
+    return {"id": i, "title": i[3:], "kind": kind, "role": role, "persistence": "file",
             "legacy": {"path": path, "layer": layer, "sheet": sheet, "exists": True},
             "new": new, "produced_by": {"step": producer, "op": f"{producer}.op1"} if producer else None,
             "consumed_by": [],
@@ -219,6 +219,9 @@ def graph_doc() -> dict:
             edges.append({"id": f"e.{s['id']}->{o}", "from": s["id"], "to": o, "kind": "writes", "state": "verified",
                           "evidence": [{"state": "directly_observed", "ref": "scripts/legacy.py:9",
                                         "summary": "writes"}]})
+    for s in steps:                     # the plan approval the runner requires (PLAN_NOT_APPROVED otherwise)
+        s["plan"] = {"approved": {"by": "user:synthetic", "at": "2026-10-13T00:00:00Z", "channel": "test",
+                                  "verbatim": "approve"}}
     return {"schema": "axis-migrate.graph.v1",
             "project": {"name": "synth target", "legacy_root": f"../{LEGACY}", "legacy_tree_sha256": None,
                         "plugin_version": ac.PLUGIN_VERSION, "created_at": "2026-10-13T00:00:00Z"},
@@ -269,7 +272,7 @@ def build_project(root: Path) -> Path:
     (pipe / "s02_zone_report.py").write_text(S02)
     (mig / "tests").mkdir()
     (mig / "tests" / "test_smoke.py").write_text(SMOKE)
-    (mig / "graph.json").write_text(json.dumps(graph_doc(), indent=1, sort_keys=True))
+    graph_py().init(mig, graph_doc())        # graph.json is only ever written by graph.py (GRAPH_OPS.md §8)
     (mig / "params.yaml").write_text(PARAMS)
     (mig / "tolerances.yaml").write_text("version: 1\ndefaults: {}\nrecords: []\n")
     (mig / "decisions.md").write_text("# decisions\n")
@@ -286,6 +289,12 @@ def build_project(root: Path) -> Path:
                                                     "legacy_root": f"../{LEGACY}", "files": files,
                                                     "datasets": roles}, indent=1))
     return mig
+
+
+def graph_py():
+    sys.path.insert(0, str(PLUGIN / "skills" / "discover"))
+    import graph
+    return graph
 
 
 def sh(*args, ok=(0,), env=None) -> subprocess.CompletedProcess:
