@@ -462,3 +462,71 @@ def test_producerless_intermediate_is_not_made_an_input(mdir: Path):
     a = node(mdir, "ds.a_clip")
     assert a["produced_by"] is None and a["consumed_by"] == ["s02_mask"] and a["role"] == "intermediate"
     assert "tmp/a_clip.tif" in G.protected(mdir)["paths"]
+
+
+# ------------------------------------------------------------------------------------------------ rehearsal D3/D4/D12
+def _gdb_items(m: Path):
+    agent(m, [{"type": "add_dataset", "id": "ds.work__a", "kind": "vector", "role": "unused",
+               "legacy": {"path": "work.gdb", "layer": "a", "exists": False}, "persistence": "gdb"},
+              {"type": "add_dataset", "id": "ds.work__b", "kind": "raster", "role": "unused",
+               "legacy": {"path": "work.gdb", "layer": "b", "exists": False}, "persistence": "gdb"},
+              {"type": "add_dataset", "id": "ds.work__mask", "kind": "raster", "role": "unused",
+               "legacy": {"path": "work.gdb", "layer": "mask", "exists": False}, "persistence": "gdb"},
+              {"type": "add_edge", "from": "s03b_alt", "to": "ds.work__a", "kind": "writes",
+               "evidence": [{"ref": "scripts/03b_alt.py:16"}]},
+              {"type": "add_edge", "from": "s03b_alt", "to": "ds.work__b", "kind": "writes",
+               "evidence": [{"ref": "scripts/03b_alt.py:17"}]},
+              {"type": "add_edge", "from": "ds.work__mask", "to": "s03b_alt", "kind": "reads",
+               "evidence": [{"ref": "scripts/03b_alt.py:5"}]},
+              {"type": "add_edge", "from": "ds.work__mask", "to": "ds.b_mask", "kind": "equivalent_to",
+               "evidence": [{"state": "documented", "ref": "scripts/03b_alt.py:2"}]}])
+
+
+def test_container_items_get_unique_default_paths(mdir: Path):
+    _gdb_items(mdir)
+    user(mdir, [{"type": "set_scope", "id": "s03b_alt", "scope": "migrate"}])
+    news = {d: node(mdir, d)["new"] for d in ("ds.work__a", "ds.work__b", "ds.alt_out")}
+    assert news["ds.work__a"] == {"path": "s03b_alt/work__a.gpkg", "layer": "a", "auto": True}
+    assert news["ds.work__b"] == {"path": "s03b_alt/work__b.tif", "layer": None, "auto": True}
+    assert news["ds.alt_out"]["path"] == "s03b_alt/work__alt_out.gpkg"  # work.gdb/alt_out
+    paths = [d["new"]["path"] for d in G.load_graph(mdir)["datasets"] if d.get("new")]
+    assert len(paths) == len(set(paths))
+    agent(mdir, [{"type": "set_new", "id": "ds.work__b", "new": {"path": "s03b_alt/work__a.gpkg"}}])
+    assert node(mdir, "ds.work__a")["new"]["path"] == "s03b_alt/work__a__2.gpkg"  # an explicit path wins
+    with pytest.raises(G.ValidationError) as ei:  # validate refuses duplicate new.path values
+        agent(mdir, [{"type": "set_new", "id": "ds.work__a", "new": {"path": "s03b_alt/work__a.gpkg"}}])
+    assert "used by several datasets" in ei.value.message
+
+
+def test_same_basename_twice_in_one_step_falls_back_to_ids(mdir: Path):
+    agent(mdir, [{"type": "add_dataset", "id": "ds.final_copy", "kind": "raster", "role": "final",
+                  "legacy": {"path": "tmp/final.tif", "exists": False}},
+                 {"type": "add_edge", "from": "s03_stats", "to": "ds.final_copy", "kind": "writes",
+                  "evidence": [{"ref": "scripts/03_stats.py:59"}]}])
+    assert node(mdir, "ds.final")["new"]["path"] == "s03_stats/final.tif"
+    assert node(mdir, "ds.final_copy")["new"]["path"] == "s03_stats/final_copy.tif"
+
+
+def test_reenabled_step_with_unproducible_inputs_is_flagged(mdir: Path):
+    _gdb_items(mdir)
+    res = user(mdir, [{"type": "set_scope", "id": "s03b_alt", "scope": "migrate"}])
+    assert res["results"][0]["missing_inputs"] == [{"dataset": "ds.work__mask", "equivalents": ["ds.b_mask"]}]
+    assert node(mdir, "ds.work__mask")["role"] == "unused"  # never-written items are not made required inputs
+    ob = [o for o in G.diff(mdir, since_rev=1)["obligations"] if o["op"] == "set_scope"][0]
+    assert ob["code"] == "migrate_step" and "rewire inputs that have no file" in ob["obligation"]
+    assert "ds.work__mask -> ds.b_mask" in ob["obligation"]
+    v = G.validate_full(mdir)
+    assert v["open_questions"] == [{"step": "s03b_alt", "dataset": "ds.work__mask", "equivalents": ["ds.b_mask"]}]
+    assert any(e.startswith("UNPRODUCIBLE_INPUT: s03b_alt reads ds.work__mask") for e in v["errors"])
+    assert gs.run_cli("validate", str(mdir)).returncode == 2
+    agent(mdir, [{"type": "reject_edge", "id": "e.ds.work__mask>s03b_alt", "reason": "use the equivalent ds.b_mask"}])
+    assert G.validate_full(mdir)["open_questions"] == []
+
+
+def test_automate_obligation_mentions_open_policy_question(mdir: Path):
+    user(mdir, [{"type": "set_scope", "id": "m01_zones_edit", "scope": "migrate"}])
+    ob = G.diff(mdir, since_rev=1)["obligations"][0]
+    assert ob["code"] == "automate_manual_step" and "q01 is still open" in ob["obligation"]
+    user(mdir, [{"type": "answer_question", "id": "q01", "value": "derive"}])  # what the page sends with it
+    ob = [o for o in G.diff(mdir, since_rev=1)["obligations"] if o["code"] == "automate_manual_step"][0]
+    assert "still open" not in ob["obligation"]

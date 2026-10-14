@@ -100,3 +100,4 @@ ul.ev, ul.notes, ul.params, ul.ops { margin: 0; padding-left: 16px; }
 .dialog fieldset { flex: 1; max-height: 220px; overflow: auto; border: 1px solid #dde2e7; border-radius: 6px; }
 .dialog label.cb { flex-direction: row; align-items: center; gap: 5px; font-size: 12px; }
 .react-flow__edge-text { font-size: 10px; }
+.qinline { display: flex; flex-direction: column; gap: 3px; margin: 4px 0; font-size: 12px; }

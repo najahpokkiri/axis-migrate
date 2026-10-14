@@ -517,6 +517,73 @@ def _norm_question(q: dict, by: str, rev: int) -> dict:
 # ---------------------------------------------------------------------------------------------------------------
 # Automatic derivation on every write (D2-2): edges are the one copy of the I/O fact
 # ---------------------------------------------------------------------------------------------------------------
+def _is_container_item(d: dict, shared: dict[str, int]) -> bool:
+    lp = (d.get("legacy") or {}).get("path") or ""
+    parts = lp.split("/")
+    return any(x.lower().endswith(".gdb") for x in parts) or (shared.get(lp, 0) > 1 and bool((d.get("legacy") or
+                                                                                              {}).get("layer")))
+
+
+def _default_new_paths(dsets: dict, steps: dict, in_scope) -> None:
+    """Default new outputs (CONTRACTS §4): <producer>/<legacy basename>; container items (FileGDB members, several
+    layers of one file) get <producer>/<container stem>__<layer>.<tif|gpkg>; remaining clashes use the dataset id."""
+    shared: dict[str, int] = {}
+    for d in dsets.values():
+        lp = (d.get("legacy") or {}).get("path")
+        if lp:
+            shared[lp] = shared.get(lp, 0) + 1
+    want: dict[str, dict] = {}
+    for d in dsets.values():
+        pb = d.get("produced_by")
+        cur = d.get("new")
+        auto_ok = cur is None or cur.get("auto")
+        if d.get("role") != "input" and pb and in_scope(pb["step"]):
+            if not auto_ok:
+                continue
+            leg = d.get("legacy") or {}
+            lp = leg.get("path")
+            ext = "tif" if d.get("kind") == "raster" else NO_EXT.get(d.get("kind"), "bin")
+            if lp and _is_container_item(d, shared):
+                last = lp.rstrip("/").split("/")
+                cont = next((x for x in reversed(last) if x.lower().endswith(".gdb")), last[-1])
+                stem = slug(cont.rsplit(".", 1)[0])
+                layer = leg.get("layer") or last[-1]
+                name = f"{stem}__{slug(layer)}.{'tif' if d.get('kind') == 'raster' else 'gpkg'}"
+                layer_out = leg.get("layer") if d.get("kind") != "raster" else None
+            elif lp:
+                name, layer_out = lp.rsplit("/", 1)[-1], leg.get("layer")
+            else:
+                name, layer_out = f"{d['id'][3:]}.{ext}", None
+            want[d["id"]] = {"path": f"{pb['step']}/{name}", "layer": layer_out, "auto": True}
+        elif cur is not None and cur.get("auto"):
+            d["new"] = None
+    taken: dict[str, int] = {}
+    for did, nw in want.items():
+        taken[nw["path"]] = taken.get(nw["path"], 0) + 1
+    for d in dsets.values():
+        if d.get("new") and not d["new"].get("auto") and d["new"].get("path"):
+            taken[d["new"]["path"]] = taken.get(d["new"]["path"], 0) + 2
+    used = {d["new"]["path"] for d in dsets.values() if d.get("new") and not d["new"].get("auto")
+            and d["new"].get("path")}
+    for did, nw in sorted(want.items()):
+        path = nw["path"]
+        step, name = path.split("/", 1)
+        ext = name.rsplit(".", 1)[-1] if "." in name else "bin"
+        if taken[path] > 1:
+            path = f"{step}/{did[3:]}.{ext}"
+        k = 2
+        base = path
+        while path in used:  # never let a default collide (validate refuses duplicate new.path)
+            path = f"{base.rsplit('.', 1)[0]}__{k}.{ext}"
+            k += 1
+        used.add(path)
+        dsets[did]["new"] = {**nw, "path": path}
+
+
+def slug(text: str) -> str:
+    return ac.slug(text)
+
+
 def derive_structure(graph: dict) -> None:
     steps = {s["id"]: s for s in graph["steps"]}
     dsets = {d["id"]: d for d in graph["datasets"]}
@@ -561,19 +628,12 @@ def derive_structure(graph: dict) -> None:
         role = base
         if pb and in_scope(pb["step"]) and base in ("input", "unused"):
             role = "intermediate" if in_scope_consumers else "final"
-        elif not pb and base == "unused" and in_scope_consumers:
-            role = "input"
+        elif not pb and base == "unused" and in_scope_consumers and (d.get("legacy") or {}).get("exists"):
+            role = "input"  # a raw file that exists; a never-written item (exists false) is flagged by validate
         elif pscope == "keep_legacy" and base in ("intermediate", "final") and in_scope_consumers:
             role = "input"
         d["role"] = role
-        # Default new output name (CONTRACTS §4): <producer>/<legacy basename> or <producer>/<id>.<ext>
-        cur = d.get("new")
-        if role != "input" and pb and in_scope(pb["step"]) and (cur is None or cur.get("auto")):
-            lp = (d.get("legacy") or {}).get("path")
-            name = lp.rsplit("/", 1)[-1] if lp else f"{d['id'][3:]}.{NO_EXT.get(d.get('kind'), 'bin')}"
-            d["new"] = {"path": f"{pb['step']}/{name}", "layer": (d.get("legacy") or {}).get("layer"), "auto": True}
-        elif cur is not None and cur.get("auto") and (role == "input" or not pb or not in_scope(pb["step"])):
-            d["new"] = None
+    _default_new_paths(dsets, steps, in_scope)
     graph["steps"].sort(key=lambda s: s["id"])
     graph["datasets"].sort(key=lambda d: d["id"])
     graph["edges"].sort(key=lambda e: e["id"])
@@ -733,6 +793,14 @@ def validate_graph(graph: dict) -> list[str]:
             errs.append(f"{w}.verify.waiver needs reason and by: user")
         _type(errs, f"{w}.compare", d.get("compare", {}), dict)
         _check_evidence(errs, w, d.get("evidence", []))
+    newpaths: dict[str, list[str]] = {}
+    for d in graph["datasets"]:
+        np_ = (d.get("new") or {}).get("path")
+        if np_:
+            newpaths.setdefault(np_, []).append(d["id"])
+    for np_, ids in sorted(newpaths.items()):
+        if len(ids) > 1:
+            errs.append(f"new.path {np_!r} is used by several datasets {sorted(ids)}; each output needs its own file")
     producers: dict[str, set[str]] = {}
     for e in graph["edges"]:
         w = f"edge {e.get('id')}"
@@ -819,6 +887,30 @@ def _cycles(graph: dict, steps: dict, dsets: dict) -> list[str]:
     return errs
 
 
+def _equivalents(graph: dict, ds: str) -> list[str]:
+    return sorted({(e["to"] if e["from"] == ds else e["from"]) for e in graph["edges"]
+                   if e.get("kind") == "equivalent_to" and e.get("state") != "rejected" and ds in (e["from"], e["to"])})
+
+
+def unproducible_inputs(graph: dict, step_ids: Iterable[str] | None = None) -> list[dict]:
+    """In-scope steps reading a dataset that has no legacy file and no in-scope producer: a run must stop (exit 12),
+    so this is an open question (rewire to an existing dataset, e.g. its equivalent_to partner, or ask)."""
+    steps = {s["id"]: s for s in graph["steps"]}
+    dsets = {d["id"]: d for d in graph["datasets"]}
+    out = []
+    for sid in sorted(step_ids if step_ids is not None else steps):
+        s = steps.get(sid)
+        if not s or s.get("scope") != "migrate":
+            continue
+        for ds in s.get("inputs", []):
+            d = dsets[ds]
+            pb = (d.get("produced_by") or {}).get("step")
+            if (d.get("legacy") or {}).get("exists") or (pb and steps[pb].get("scope") == "migrate"):
+                continue
+            out.append({"step": sid, "dataset": ds, "equivalents": _equivalents(graph, ds)})
+    return out
+
+
 def params_yaml_ids(mdir: str | os.PathLike) -> set[str] | None:
     p = paths(mdir)["params"]
     if not p.is_file():
@@ -838,6 +930,12 @@ def validate_full(mdir: str | os.PathLike, graph: dict | None = None) -> dict:
     errors = [f"{IntegrityError.code}: {x}" for x in check_integrity(mdir)["problems"]]
     errors += validate_graph(graph)
     warnings: list[str] = []
+    open_q = unproducible_inputs(graph)
+    for u in open_q:
+        hint = (f"rewire it to {', '.join(u['equivalents'])} (equivalent_to: add_edge + reject_edge)"
+                if u["equivalents"] else "rewire it to a dataset that exists")
+        errors.append(f"UNPRODUCIBLE_INPUT: {u['step']} reads {u['dataset']}, which has no legacy file and no in-scope "
+                      f"producer (a run would stop, exit 12); {hint}, or ask the user")
     ids = params_yaml_ids(mdir)
     refs: dict[str, list[str]] = {}
     for s in graph["steps"]:
@@ -871,7 +969,7 @@ def validate_full(mdir: str | os.PathLike, graph: dict | None = None) -> dict:
             except Exception:  # legacy root unreadable: report once
                 warnings.append("legacy root not readable; legacy paths not checked")
                 break
-    return {"errors": errors, "warnings": warnings}
+    return {"errors": errors, "warnings": warnings, "open_questions": open_q}
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -1155,7 +1253,12 @@ def op_set_scope(g: dict, op: dict, cx: Ctx) -> dict:
     step["scope"], step["scope_reason"], step["scope_set_by"] = op["scope"], reason, "user"
     step["requires_confirmation"] = None
     _record_edit(step, cx, ["scope"])
-    return {"from_kind": step.get("kind")}
+    eff: dict = {"from_kind": step.get("kind")}
+    if op["scope"] == "migrate":
+        miss = unproducible_inputs(g, [step["id"]])
+        if miss:
+            eff["missing_inputs"] = [{"dataset": m["dataset"], "equivalents": m["equivalents"]} for m in miss]
+    return eff
 
 
 def _deletion_impact(g: dict, step: dict) -> dict:
@@ -1808,11 +1911,25 @@ def obligation(rec: dict, graph: dict | None = None) -> dict | None:
                                      f"record the decision in decisions.md")
         if scope == "migrate":
             kind = eff.get("from_kind")
+            miss = eff.get("missing_inputs") or []
+            rewire = ""
+            if miss:
+                rewire = ("; rewire inputs that have no file to datasets that exist (e.g. via equivalent_to: add_edge "
+                          "to the equivalent + reject_edge on the old read) or ask the user: " +
+                          ", ".join(f"{m['dataset']}" + (f" -> {'/'.join(m['equivalents'])}" if m["equivalents"]
+                                                         else " (no equivalent)") for m in miss))
             if kind == "manual":
+                qs = []
+                if graph is not None:
+                    qs = sorted(q["id"] for q in graph.get("questions", []) if q.get("status") == "open"
+                                and q.get("kind") == "manual_step" and tgt in _question_nodes(q))
+                rec = (f"; the user chose Automate on the page but {', '.join(qs)} is still open: record that choice "
+                       f"(confirm it with one AskUserQuestion, recommended option = automate, and answer {qs[0]} "
+                       f"with channel interview + verbatim), do not re-ask the policy from scratch") if qs else ""
                 return ob("automate_manual_step", f"automate manual step {tgt}: derive its rule in params.yaml (an "
                                                   f"interview answer), plan the step, verify it against the hand-made "
-                                                  f"legacy file")
-            return ob("migrate_step", f"{tgt} is back in scope: plan and migrate it")
+                                                  f"legacy file{rec}{rewire}")
+            return ob("migrate_step", f"{tgt} is back in scope: plan and migrate it{rewire}")
         return ob("scope_dropped", f"{tgt} dropped by the user; record it in decisions.md")
     if t == "answer_question":
         return ob("apply_answer", f"write params.yaml (source: answer:{tgt}) and decisions.md for answer "

@@ -34,14 +34,18 @@ axpy graph.py apply <migration> --actor agent --base-rev <N> --ops ops.json --ch
 - `role` = the user's override if any; else lineage's role (`role_lineage`, never changed), adjusted per write. A step
   is *in scope* when its scope is `migrate` or its kind is `bridge` (and it is not dropped):
   an `input` or `unused` dataset written by an in-scope step (an automated manual step, a ported step) becomes
-  `intermediate` (has in-scope consumers) or `final`; an `unused` dataset that an in-scope step reads and no step
+  `intermediate` (has in-scope consumers) or `final`; an `unused` dataset with an existing legacy file that an in-scope step reads and no step
   produces becomes `input` (a raw file a newly ported step reads, so the runner can stage it and `protected` lists it
   under `input_exceptions`); an `intermediate`/`final` of a `keep_legacy` producer consumed in scope becomes `input`
   (bridge). A producer-less `intermediate`/`final` stays as it is (a lineage gap, never a raw input). Dropping the step
   again restores the lineage role.
 - `new` (when unset or auto): `{"path": "<producer step>/<legacy basename>", "layer": <legacy layer>, "auto": true}`
-  for non-input datasets produced by a `migrate` step; datasets without a legacy file get `<step>/<id minus ds.>.<ext>`
-  (`tif|gpkg|csv|txt` by kind). `set_new` replaces it (drops `auto`).
+  for non-input datasets produced by an in-scope step. Container items (a FileGDB member, or one of several layers of
+  one legacy file) get `<step>/<container stem>__<layer>.tif` (raster, layer null) or `.gpkg` (vector/table, layer =
+  legacy layer); datasets without a legacy file get `<step>/<id minus ds.>.<ext>` (`tif|gpkg|csv|txt` by kind); two
+  defaults that would clash fall back to the dataset id, and an explicit `set_new` path always wins (the default steps
+  aside with `__2`). `set_new` replaces it (drops `auto`). Two datasets with the same `new.path` make the graph
+  invalid (exit 2).
 - Lists are kept sorted by id; JSON is written with sorted keys.
 
 ### Edges and evidence
@@ -254,7 +258,8 @@ kept, `state: rejected`, `conflict: true` when code evidence exists; the edit's 
 | `add_dataset` | `investigate_new_dataset` | find producer and evidence |
 | `delete_step`, `set_scope drop` with legacy outputs | `confirm_scope_change` | AskUserQuestion listing affected datasets/finals, then `resolve_confirmation` |
 | `set_scope keep_legacy` | `bridge_step` | legacy outputs become hash-pinned inputs; decisions.md |
-| `set_scope migrate` on a manual step | `automate_manual_step` | rule in params.yaml via an answer; plan; verify against the hand-made file |
+| `set_scope migrate` on a manual step | `automate_manual_step` | rule in params.yaml via an answer; plan; verify against the hand-made file. The page's Automate button also answers the step's open `manual_step` question (channel graph); if one is still open the obligation says so: confirm with one AskUserQuestion and record it, do not re-ask from scratch |
+| `set_scope migrate` on another step | `migrate_step` | plan and migrate it; if it reads datasets with no legacy file and no in-scope producer (the edit's `effect.missing_inputs`), rewire them to datasets that exist (equivalent_to: `add_edge` to the equivalent + `reject_edge` on the old read) or ask. `validate` reports each as `UNPRODUCIBLE_INPUT` (and in `open_questions`) until done |
 | `answer_question` | `apply_answer` | params.yaml (`source: answer:qNN`), decisions.md, evidence, re-derive |
 | `set_reference` | `check_reference` | kind/CRS/grid/schema plausibility; ask if implausible |
 | `waive_verify` | `record_waiver` | add to known-differences.md |
@@ -267,7 +272,9 @@ After acting: `graph.py ack <ack_seq>`. The Stop hook blocks while user edits ar
 `graph.py init <migration> --from draft.json` (rev 1; refuses an existing graph) · `show [--json]` ·
 `diff [--since REV | --since-seq SEQ] [--user-only] [--json]` · `ack [migration] SEQ` · `unacked [--json]` ·
 `derive` (ladder projection from `report/ladder.py compute()`; left untouched when ladder.py is absent) ·
-`ingest-verify --run <run_id>` · `validate [--json]` (exit 2 on errors; checks params.yaml refs) · `render-plan`
+`ingest-verify --run <run_id>` · `validate [--json]` (exit 2 on errors; checks params.yaml refs, integrity, and
+`UNPRODUCIBLE_INPUT`: a `migrate` step reading a dataset with `legacy.exists: false` and no in-scope producer; output
+`{errors, warnings, open_questions[{step, dataset, equivalents}]}`) · `render-plan`
 (writes `migration/plan.md`) · `protected` (writes `.axis/protected.json`: `{schema, graph_revision, legacy_root,
 root_protected: true, paths[], input_exceptions[], legacy_output_dirs[]}`). The migration dir is optional when the cwd
 is inside the project.

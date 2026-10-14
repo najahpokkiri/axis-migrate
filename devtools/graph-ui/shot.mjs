@@ -17,6 +17,7 @@ let i = 1;
 for (const c of clicks) {
   if (c.startsWith('btn:')) await page.getByRole('button', { name: c.slice(4) }).first().click();
   else if (c.startsWith('css:')) await page.locator(c.slice(4)).first().click();
+  else if (c.startsWith('dispatch:')) await page.locator(`.react-flow__node[data-id="${c.slice(9)}"]`).dispatchEvent('click');
   else if (c.startsWith('fill:')) { const [sel, val] = c.slice(5).split('='); await page.locator(sel).first().fill(val); }
   else await page.locator(`.react-flow__node[data-id="${c}"]`).click();
   await page.waitForTimeout(500);

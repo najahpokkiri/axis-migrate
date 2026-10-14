@@ -136,17 +136,35 @@ function Params({ ids, params }) {
   );
 }
 
-function ScopeControl({ s, send }) {
+function ScopeControl({ s, graph, send }) {
   const [scope, setScope] = useState(s.scope);
   const [reason, setReason] = useState('');
   useEffect(() => setScope(s.scope), [s.id, s.scope]);
   const manual = s.kind === 'manual' && s.scope !== 'migrate';
+  const policyQ = (graph.questions || []).find((q) => q.status === 'open' && q.kind === 'manual_step'
+    && (q.node === s.id || (q.nodes || []).includes(s.id)));
+  const qopts = policyQ ? (policyQ.options || []).filter((o) => o.value !== 'dont_know') : [];
+  const recommended = qopts.find((o) => o.recommended) || qopts[0];
+  const [qval, setQval] = useState(recommended ? recommended.value : '');
+  const automate = () => {
+    const ops = [{ type: 'set_scope', id: s.id, scope: 'migrate' }];
+    if (policyQ && qval) ops.push({ type: 'answer_question', id: policyQ.id, value: qval });
+    send(ops, `automate ${s.id}${policyQ && qval ? ` (answers ${policyQ.id})` : ''}`);
+  };
   return (
     <div>
       <Field k="scope">{s.scope}{s.scope_reason ? ` (${s.scope_reason})` : ''} <span className="muted">set by {s.scope_set_by}</span></Field>
       {manual && (
         <div className="callout">
-          This step is done by hand today. <button className="primary" onClick={() => send([{ type: 'set_scope', id: s.id, scope: 'migrate' }], `automate ${s.id}`)}>Automate this manual step</button>
+          This step is done by hand today.
+          {policyQ && (
+            <label className="qinline">This answers <b>{policyQ.id}</b> ({policyQ.header || policyQ.text}):
+              <select value={qval} onChange={(e) => setQval(e.target.value)} aria-label={`answer ${policyQ.id}`}>
+                {qopts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+          )}
+          <button className="primary" onClick={automate}>Automate this manual step</button>
           <div className="muted">The agent derives the rule in code and verifies it against the hand-made legacy file.</div>
         </div>
       )}
@@ -177,7 +195,7 @@ function StepPanel({ s, graph, params, send, onSelect }) {
         <Field k="kind">{s.kind}{s.tool ? ` · ${s.tool}` : ''}</Field>
         <Field k="legacy">{s.legacy && s.legacy.source ? <code>{s.legacy.source}{(s.legacy.lines || []).length ? ':' + s.legacy.lines.map((l) => Array.isArray(l) ? `${l[0]}-${l[1]}` : l).join(',') : ''}</code> : <span className="muted">none</span>}{s.legacy && s.legacy.executed ? ` (executed: ${s.legacy.executed})` : ''}</Field>
         {s.description && <div className="muted">{s.description}</div>}
-        <ScopeControl s={s} send={send} />
+        <ScopeControl s={s} graph={graph} send={send} />
       </Section>
       <Section title="Verification">
         <div className="vrow"><Verdict verify={ver} /> {ver.blame && <span className="chip">{ver.blame === 'inherited' ? 'inherited (hatched)' : ver.blame}</span>}</div>
@@ -285,7 +303,7 @@ function DatasetPanel({ d, graph, params, send, onSelect }) {
           </div>
         )}
       </Section>
-      <Section title="Reference pairing" open={false}><ReferenceControl d={d} graph={graph} send={send} /></Section>
+      <Section title="Reference pairing" open={false}><ReferenceControl key={d.id} d={d} graph={graph} send={send} /></Section>
       <Section title="Compare settings" open={false}><pre className="json">{JSON.stringify(d.compare || {}, null, 1)}</pre></Section>
       <Section title="Evidence" open={false}><Evidence items={d.evidence} /></Section>
       <Section title="Questions"><Questions graph={graph} nodeId={d.id} send={send} /></Section>
@@ -325,9 +343,9 @@ export function Panel({ graph, params, selected, send, onSelect, onClose }) {
         <div><div className="ptitle">{obj.title || obj.id}</div><div className="muted">{isStep ? 'step' : isDs ? 'dataset' : 'edge'}</div></div>
         <button className="close" onClick={onClose} aria-label="close">×</button>
       </div>
-      {isStep && <StepPanel s={obj} graph={graph} params={params} send={send} onSelect={onSelect} />}
-      {isDs && <DatasetPanel d={obj} graph={graph} params={params} send={send} onSelect={onSelect} />}
-      {!isStep && !isDs && <EdgePanel e={obj} send={send} onSelect={onSelect} />}
+      {isStep && <StepPanel key={obj.id} s={obj} graph={graph} params={params} send={send} onSelect={onSelect} />}
+      {isDs && <DatasetPanel key={obj.id} d={obj} graph={graph} params={params} send={send} onSelect={onSelect} />}
+      {!isStep && !isDs && <EdgePanel key={obj.id} e={obj} send={send} onSelect={onSelect} />}
     </aside>
   );
 }
