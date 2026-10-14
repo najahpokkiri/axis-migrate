@@ -151,3 +151,6 @@ def build(trial: Path) -> None:
 
 if __name__ == "__main__":
     build(Path(sys.argv[1]).resolve())
+    import subprocess
+    subprocess.run([str(EVALS.parent / "axis-migrate" / "bin" / "axpy"), str(EVALS / "record_seed_graph_heads.py")],
+                   check=True)
