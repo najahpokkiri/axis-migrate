@@ -115,6 +115,13 @@ class ConflictError(GraphError):
                 "conflicting_seqs": self.conflicting_seqs}
 
 
+class IntegrityError(GraphError):
+    """graph.json or graph-edits.jsonl changed outside graph.py (script half of the H3 graph guard)."""
+    exit_code = 2
+    http_status = 423  # not 409: the editor must not offer a rebase on top of an out-of-band edit
+    code = "GRAPH_EDITED_OUTSIDE_APPLY"
+
+
 class AclError(GraphError):
     exit_code = 4
     http_status = 403
@@ -127,22 +134,81 @@ class AclError(GraphError):
 def paths(mdir: str | os.PathLike) -> dict[str, Path]:
     m = Path(mdir)
     return {"graph": m / "graph.json", "edits": m / "graph-edits.jsonl", "gdir": m / ".graph",
+            "head": m / ".graph" / "head.json",
             "lock": m / ".graph" / "lock", "rev": m / ".graph" / "rev", "layout": m / ".graph" / "layout.json",
             "plan": m / "plan.md", "protected": m / ".axis" / "protected.json", "params": m / "params.yaml",
             "inventory": m / "inventory.json"}
 
 
 @contextlib.contextmanager
-def locked(mdir: str | os.PathLike):
+def locked(mdir: str | os.PathLike, shared: bool = False):
     p = paths(mdir)
     p["gdir"].mkdir(parents=True, exist_ok=True)
     fd = os.open(p["lock"], os.O_RDWR | os.O_CREAT, 0o644)
     try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
+        fcntl.flock(fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
         yield
     finally:
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
+
+
+HEAD_SCHEMA = "axis-migrate.graph-head.v1"
+
+
+def _record_head(mdir: str | os.PathLike, revision: int) -> None:
+    """Called under the lock after every successful write: the exact bytes graph.py left behind."""
+    p = paths(mdir)
+    gbytes = p["graph"].read_bytes()
+    ebytes = p["edits"].read_bytes() if p["edits"].is_file() else b""
+    ac.dump_json(p["head"], {"schema": HEAD_SCHEMA, "revision": revision, "graph_sha256": ac.sha256_bytes(gbytes),
+                             "edits_size": len(ebytes), "edits_sha256": ac.sha256_bytes(ebytes),
+                             "edits_lines": ebytes.count(b"\n")})
+
+
+def integrity_problems(mdir: str | os.PathLike) -> list[str]:
+    """Differences between the live graph.json / graph-edits.jsonl and the last write recorded by graph.py.
+
+    The edit log must equal what was recorded: only graph.py appends to it, under the same lock as the record,
+    so an unrecorded tail is an out-of-band append (or a crash mid-write; either way it needs a human look).
+    """
+    p = paths(mdir)
+    if not p["graph"].is_file():
+        return []
+    if not p["head"].is_file():
+        return ["no write record (.graph/head.json): graph.json was not written by graph.py"]
+    try:
+        head = ac.load_json(p["head"])
+        want_g, want_size, want_e = head["graph_sha256"], int(head["edits_size"]), head["edits_sha256"]
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return [f"write record unreadable: {exc}"]
+    out = []
+    if ac.sha256_bytes(p["graph"].read_bytes()) != want_g:
+        out.append(f"graph.json differs from the bytes graph.py wrote at revision {head.get('revision')}")
+    ebytes = p["edits"].read_bytes() if p["edits"].is_file() else b""
+    if len(ebytes) < want_size or ac.sha256_bytes(ebytes[:want_size]) != want_e:
+        out.append("graph-edits.jsonl was rewritten or truncated (the recorded log is not a prefix of it)")
+    elif len(ebytes) > want_size:
+        out.append(f"graph-edits.jsonl has {len(ebytes) - want_size} byte(s) appended outside graph.py")
+    return out
+
+
+def check_integrity(mdir: str | os.PathLike) -> dict:
+    with locked(mdir, shared=True):
+        probs = integrity_problems(mdir)
+    return {"ok": not probs, "code": None if not probs else IntegrityError.code, "problems": probs}
+
+
+def require_intact(mdir: str | os.PathLike, *, lock: bool = True) -> None:
+    if lock:
+        with locked(mdir, shared=True):
+            probs = integrity_problems(mdir)
+    else:
+        probs = integrity_problems(mdir)
+    if probs:
+        raise IntegrityError("graph edited outside graph.py apply: " + "; ".join(probs) +
+                             ". Restore it from .graph/rev/<n>.json (or ask the user); nothing was applied.",
+                             details=probs)
 
 
 def load_graph(mdir: str | os.PathLike) -> dict:
@@ -758,7 +824,8 @@ def params_yaml_ids(mdir: str | os.PathLike) -> set[str] | None:
 def validate_full(mdir: str | os.PathLike, graph: dict | None = None) -> dict:
     """validate CLI: structure + params refs in params.yaml + edit log integrity. Returns {errors, warnings}."""
     graph = graph if graph is not None else load_graph(mdir)
-    errors = validate_graph(graph)
+    errors = [f"{IntegrityError.code}: {x}" for x in check_integrity(mdir)["problems"]]
+    errors += validate_graph(graph)
     warnings: list[str] = []
     ids = params_yaml_ids(mdir)
     refs: dict[str, list[str]] = {}
@@ -1567,6 +1634,7 @@ def apply(migration_dir: str | os.PathLike, ops: list[dict], actor: str, base_re
         raise ValidationError("base_revision must be an integer", code="bad_value")
     with locked(mdir):
         graph = load_graph(mdir)
+        require_intact(mdir, lock=False)
         rev = graph["revision"]
         if base_revision != rev:
             since = [r for r in read_edits(mdir) if r.get("rev", 0) > base_revision]
@@ -1607,6 +1675,7 @@ def apply(migration_dir: str | os.PathLike, ops: list[dict], actor: str, base_re
                 rec["effect"] = res
             recs.append(rec)
         _append_edits(mdir, recs)
+        _record_head(mdir, new_rev)
     return {"revision": new_rev, "seqs": [r["seq"] for r in recs], "results": results}
 
 
@@ -1644,6 +1713,7 @@ def init(migration_dir: str | os.PathLike, draft: dict) -> dict:
                                   "op": {"type": "init", "draft_sha256": ac.sha256_bytes(ac.cjson(draft)),
                                          "counts": {k: len(g[k]) for k in ("steps", "datasets", "edges",
                                                                            "questions")}}}])
+        _record_head(mdir, 1)
     return {"revision": 1}
 
 
@@ -1838,6 +1908,7 @@ def _load_ladder():
 
 def derive(migration_dir: str | os.PathLike) -> dict:
     mdir = Path(migration_dir)
+    require_intact(mdir)
     note = None
     ladder, why = _load_ladder()
     res = None
@@ -1894,6 +1965,7 @@ def _rel(mdir: Path, p: Path) -> str:
 def ingest_verify(migration_dir: str | os.PathLike, run_id: str) -> dict:
     """Project runs/<id>/verify/compare/*.json + verdict.json into datasets[].verify and steps[].verify."""
     mdir = Path(migration_dir)
+    require_intact(mdir)
     vdir = mdir / "runs" / run_id / "verify"
     cdir = vdir / "compare"
     if not cdir.is_dir():
@@ -2009,6 +2081,7 @@ def ingest_verify(migration_dir: str | os.PathLike, run_id: str) -> dict:
 
 def render_plan(migration_dir: str | os.PathLike) -> Path:
     mdir = Path(migration_dir)
+    require_intact(mdir)
     g = load_graph(mdir)
     steps = {s["id"]: s for s in g["steps"]}
     order = topo_steps(g)
@@ -2095,6 +2168,7 @@ def render_plan(migration_dir: str | os.PathLike) -> Path:
 def protected(migration_dir: str | os.PathLike) -> dict:
     """Write migration/.axis/protected.json: the protected path set R (DESIGN §5)."""
     mdir = Path(migration_dir)
+    require_intact(mdir)
     g = load_graph(mdir)
     prot: set[str] = set()
     inputs: set[str] = set()
@@ -2238,6 +2312,10 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name, help=hlp)
         p.add_argument("migration", nargs="?")
         p.add_argument("--json", action="store_true")
+    p = sub.add_parser("check-integrity", help="exit 2 (GRAPH_EDITED_OUTSIDE_APPLY) if graph.json or the edit log "
+                                               "changed outside graph.py")
+    p.add_argument("migration", nargs="?")
+    p.add_argument("--json", action="store_true")
     p = sub.add_parser("ingest-verify", help="project runs/<id>/verify into datasets[].verify and steps[].verify")
     p.add_argument("migration", nargs="?")
     p.add_argument("--run", required=True)
@@ -2264,11 +2342,18 @@ def main(argv: list[str] | None = None) -> int:
             res = apply(_mdir(a.migration), ops, a.actor, a.base_rev, channel=a.channel, verbatim=a.verbatim)
             _print(res, a.json, f"applied {len(ops)} op(s): revision {res['revision']}, seq "
                                 f"{res['seqs'][0]}..{res['seqs'][-1]}")
+        elif a.cmd == "check-integrity":
+            res = check_integrity(_mdir(a.migration))
+            _print(res, a.json, "graph integrity ok" if res["ok"] else
+                   "\n".join(f"{IntegrityError.code}: {x}" for x in res["problems"]))
+            return 0 if res["ok"] else EXIT["invalid"]
         elif a.cmd == "show":
             m = _mdir(a.migration)
+            require_intact(m)
             g = load_graph(m)
             _print(g, a.json, None if a.json else show_text(g, m))
         elif a.cmd == "diff":
+            require_intact(_mdir(a.migration))
             d = diff(_mdir(a.migration), since_rev=a.since, since_seq=a.since_seq, user_only=a.user_only)
             if a.json:
                 _print(d, True)
@@ -2296,14 +2381,17 @@ def main(argv: list[str] | None = None) -> int:
             res = apply_retry(m, lambda g: [{"type": "ack", "seq": seq}], "agent")
             _print(res, a.json, f"acked up to seq {seq} (revision {res['revision']})")
         elif a.cmd == "unacked":
+            require_intact(_mdir(a.migration))
             recs = unacked_user_edits(_mdir(a.migration))
             _print(recs, a.json, "\n".join(f"seq {r['seq']}: {r['op'].get('type')} {_target(r['op'])}"
                                            for r in recs) or "no unacked user edits")
         elif a.cmd == "derive":
+            require_intact(_mdir(a.migration))
             res = derive(_mdir(a.migration))
             _print(res, a.json, f"derive: revision {res['revision']}{'' if res['changed'] else ' (no change)'}"
                                 f"{'; ' + res['note'] if res.get('note') else ''}")
         elif a.cmd == "ingest-verify":
+            require_intact(_mdir(a.migration))
             res = ingest_verify(_mdir(a.migration), a.run)
             _print(res, a.json, f"ingested {len(res['datasets'])} compare result(s) from {a.run}: revision "
                                 f"{res['revision']}")

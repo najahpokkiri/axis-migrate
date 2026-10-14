@@ -304,3 +304,17 @@ when they touch other (node, field) keys than the edits since `base_rev`) | 400/
 requires_confirmation[], pending_confirmation[], ack_seq, agent_seq}` and exits 0; exit 2 on timeout with
 `{timeout: true, unsent_edits}`. Use `run_in_background` in Claude Code; act on every obligation, then
 `graph.py ack <ack_seq>`.
+
+## 8 Integrity (script half of the graph.json write guard)
+
+On every successful write (`init`, every `apply` incl. a log-only `submit`, and so `ack`, `derive`, `ingest-verify`)
+graph.py records, under the lock, `.graph/head.json = {schema: axis-migrate.graph-head.v1, revision, graph_sha256
+(exact graph.json bytes), edits_size, edits_sha256, edits_lines}`. `graph.py check-integrity [--json]` (shared lock;
+exit 0 / 2) and `graph.py validate` report `GRAPH_EDITED_OUTSIDE_APPLY` when graph.json's bytes differ, when the edit
+log is not byte-identical to the recorded one (rewritten, truncated, or a tail appended outside graph.py), or when
+there is no write record. `apply` (hence the server's `POST /api/ops|submit`, HTTP 423), `show`, `diff`, `ack`,
+`unacked`, `derive`, `ingest-verify`, `render-plan` and `protected` refuse with exit 2 and that code; nothing is
+applied on top. Recovery: restore graph.json from `.graph/rev/<n>.json` (and the log) or ask the user. Test fixtures
+must create graphs with `graph.init()` / `graph.py init`, never by writing graph.json. The hook-facing readers
+`unacked_user_edits` / `hook_summary` and `graph_server.py wait` do not check (speed; they never write).
+
