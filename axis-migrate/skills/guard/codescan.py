@@ -1055,35 +1055,71 @@ def human(rep: dict) -> str:
 # ---------------------------------------------------------------------------------------------------------------
 # Modes
 # ---------------------------------------------------------------------------------------------------------------
+def hook_paths(data: dict) -> list[Path]:
+    """Files a write-tool payload touched: Claude file_path/notebook_path, or every Add/Update (+Move to) target of a
+    Codex apply_patch (tool_name apply_patch, or an `apply_patch <<EOF` heredoc in a Bash command)."""
+    ti = data.get("tool_input") or {}
+    cwd = data.get("cwd") or os.getcwd()
+
+    def ab(p):
+        return Path(p) if os.path.isabs(p) else Path(cwd) / p
+
+    fp = ti.get("file_path") or ti.get("notebook_path") if isinstance(ti, dict) else None
+    if fp:
+        return [ab(fp)]
+    out = []
+    for text in rp.patch_texts(data.get("tool_name"), ti):
+        for op in rp.parse_patch(text):
+            if op.kind == "delete":
+                continue
+            out.append(ab(op.move_to or op.path))
+    return list(dict.fromkeys(out))
+
+
 def run_hook(stdin_text: str) -> int:
     """PostToolUse (H6). JSON on stdout only. Fail closed: any exception -> exit 2 with an ASCII reason."""
     data = json.loads(stdin_text)
     if not isinstance(data, dict):
         raise ValueError("hook input is not a JSON object")
-    ti = data.get("tool_input") or {}
-    fp = ti.get("file_path") or ti.get("notebook_path")
     cwd = data.get("cwd") or os.getcwd()
-    if not fp:
+    try:
+        paths = hook_paths(data)
+    except rp.PatchError:
+        if data.get("tool_name") == "apply_patch":
+            raise  # an apply_patch we cannot read: fail closed
+        paths = []  # a Bash command that merely mentions a patch marker
+    if not paths:
         return 0
-    path = Path(fp) if os.path.isabs(fp) else Path(cwd) / fp
-    mig = ac.find_migration_dir(path.parent) if path.parent.exists() else None
+    mig = None
+    for path in paths:
+        mig = ac.find_migration_dir(path.parent) if path.parent.exists() else None
+        if mig:
+            break
     mig = mig or ac.find_migration_dir(cwd)
     if mig is None:
         return 0
     ctx = Context.load(mig)
-    kind = ctx.kind_of(path)
-    if kind is None or not path.is_file():
+    blocks, warns, errors, rels = [], [], [], []
+    for path in paths:
+        kind = ctx.kind_of(path)
+        if kind is None or not path.is_file():
+            continue
+        f, e = scan_file(path, ctx, kind)
+        f = dedupe(f)
+        blocks += [x for x in f if x.sev == "block"]
+        warns += [x for x in f if x.sev == "warn"]
+        errors += e
+        rels.append(ctx.rel(path))
+    if not rels:
         return 0
-    findings, errors = scan_file(path, ctx, kind)
-    findings = dedupe(findings)
-    blocks = [f for f in findings if f.sev == "block"]
-    warns = [f for f in findings if f.sev == "warn"]
-    rel = ctx.rel(path)
+    label = ", ".join(rels) if len(rels) <= 3 else f"{len(rels)} files"
+    multi = len(rels) > 1
     out: dict = {}
     if errors or blocks:
-        msg = [f"axis-migrate codescan blocked {rel} (fix the file; there is no inline suppression):"]
+        msg = [f"axis-migrate codescan blocked {label} (fix the file; there is no inline suppression):"]
         for f in blocks[:20]:
-            msg.append(f"- {f.rule} {RULES[f.rule][0]} line {f.line}: {f.msg}. Fix: {RULES[f.rule][2]}.")
+            where = f"{f.file} line {f.line}" if multi else f"line {f.line}"
+            msg.append(f"- {f.rule} {RULES[f.rule][0]} {where}: {f.msg}. Fix: {RULES[f.rule][2]}.")
         for e in errors:
             msg.append(f"- rule {e['rule']} raised ({e['error']}); scanner fails closed, report this to the user.")
         if len(blocks) > 20:
@@ -1091,8 +1127,9 @@ def run_hook(stdin_text: str) -> int:
         out["decision"] = "block"
         out["reason"] = ascii("\n".join(msg))
     if warns:
-        w = [f"axis-migrate codescan warnings for {rel}:"]
-        w += [f"- {f.rule} {RULES[f.rule][0]} line {f.line}: {f.msg}. {RULES[f.rule][2]}." for f in warns[:20]]
+        w = [f"axis-migrate codescan warnings for {label}:"]
+        w += [f"- {f.rule} {RULES[f.rule][0]} {(f.file + ' ') if multi else ''}line {f.line}: {f.msg}. "
+              f"{RULES[f.rule][2]}." for f in warns[:20]]
         out["hookSpecificOutput"] = {"hookEventName": "PostToolUse", "additionalContext": ascii("\n".join(w))}
     if out:
         sys.stdout.write(json.dumps(out, ensure_ascii=True) + "\n")

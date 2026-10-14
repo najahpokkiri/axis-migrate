@@ -661,6 +661,24 @@ def main() -> int:
     ctx = Ctx(mig.resolve(), cwd)
     v = Verdict()
     check_command(cmd, ctx, cwd, v)
+    if "*** Begin Patch" in cmd:
+        # Codex can also edit through the shell (`apply_patch <<'EOF' ... EOF`): same per-file rules as guard_write
+        import guard_write
+        import recordparse as rp
+        try:
+            d = guard_write.decide(data)
+        except rp.PatchError as e:
+            d = ("deny", f"axis-migrate: unreadable apply_patch text in the shell command ({e}); refused (fail closed)")
+        if d:
+            (v.deny if d[0] == "deny" else v.ask).append(d[1])
+    if ctx.hidden_globs:
+        lits = {h.name for h in ctx.hidden_files}
+        lits |= {p for g in ctx.hidden_globs for p in re.split(r"[*?/\[\]]+", g) if len(p) >= 8}
+        lits |= {w for g in ctx.hidden_globs for w in re.findall(r"[A-Za-z0-9_-]{8,}", g)}
+        low = cmd.lower()
+        hit = sorted(x for x in lits if x and x.lower() in low)
+        if hit:
+            v.deny.append(f"the command names hidden grader material ({hit[0]}) in eval mode")
     if v.deny:
         uniq = list(dict.fromkeys(v.deny))
         hl.pre_decision("deny", "axis-migrate guard_bash: " + " | ".join(uniq[:6]))

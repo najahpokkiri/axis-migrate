@@ -23,6 +23,8 @@ BIN = PLUGIN / "hooks" / "bin"
 GUARD = PLUGIN / "skills" / "guard"
 PAYLOADS = Path(__file__).resolve().parent / "payloads"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
+import tempfile as _tempfile
+MARKER_DIR = _tempfile.mkdtemp(prefix="axis-hooks-data-")
 SYS_PY = "/usr/bin/python3" if os.path.exists("/usr/bin/python3") else (shutil.which("python3") or sys.executable)
 
 for p in (GUARD, PLUGIN / "lib", BIN):
@@ -72,8 +74,10 @@ class HookResult:
 
 
 def run_hook(script: str, data, env: dict | None = None, timeout: float = 30) -> HookResult:
-    e = {k: v for k, v in os.environ.items() if not k.startswith(("AXIS_MIGRATE_HIDDEN", "AXIS_MIGRATE_CODESCAN"))}
+    e = {k: v for k, v in os.environ.items() if not k.startswith(("AXIS_MIGRATE_HIDDEN", "AXIS_MIGRATE_CODESCAN"))
+         and k not in ("PLUGIN_ROOT", "PLUGIN_DATA", "CLAUDE_PLUGIN_DATA")}
     e["PYTHONIOENCODING"] = "utf-8"
+    e["CLAUDE_PLUGIN_DATA"] = MARKER_DIR  # never write the hooks-active marker into the real ~/.cache
     e.update(env or {})
     stdin = data if isinstance(data, str) else json.dumps(data)
     cwd = data.get("cwd") if isinstance(data, dict) else None

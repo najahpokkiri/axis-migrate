@@ -1,0 +1,13 @@
+{
+ "cwd": "/WORK",
+ "hook_event_name": "PreToolUse",
+ "model": "gpt-5.5-codex",
+ "permission_mode": "default",
+ "session_id": "019a-codex-session",
+ "tool_input": {
+  "command": "ls -la"
+ },
+ "tool_name": "Bash",
+ "tool_use_id": "call_def456",
+ "transcript_path": "/CODEX_HOME/sessions/2026/10/14/rollout.jsonl"
+}

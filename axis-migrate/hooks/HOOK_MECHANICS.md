@@ -1,7 +1,7 @@
 # Hook mechanics HM1–HM7: measured on Claude Code 2.1.296
 
 These are the probes from 08 §6, run on 13 Oct 2026 with headless `claude -p --model haiku`. Each run used a fresh
-`CLAUDE_CONFIG_DIR`, so no user plugins or hooks were loaded, and the session token came from the environment. Three
+`CLAUDE_CONFIG_DIR`, so no user plugins or hooks were loaded, and the session token came from the environment. Four
 invocations in total, out of a budget of 6:
 
 | Run | What | Mode | Plugin |
@@ -9,6 +9,7 @@ invocations in total, out of a budget of 6:
 | 1 | Mechanics probe and stdin capture | `--permission-mode bypassPermissions` | scratch probe plugin (`--plugin-dir`) + a `--settings` hook |
 | 2 | axis-migrate end to end on a synthetic project | default mode, `--allowedTools Bash,Write,Edit,Read` | this plugin (`--plugin-dir axis-migrate`) |
 | 3 | Stop block chain and `systemMessage` | default mode | scratch probe plugin |
+| 4 | the shared hooks.json (`${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}` commands, `apply_patch` in matchers) | bypassPermissions | this plugin |
 
 Evidence comes from `--output-format stream-json --verbose --include-hook-events` (hook_response events, tool
 results, the final text), from marker files that each Bash step would have created, and from per-call stdin dumps.
@@ -75,3 +76,53 @@ Do not re-run on every build; the eval budget is tight. To reproduce:
 
 The probe plugin used for run 1 dumped stdin and returned deny, ask, crash, sleep or block according to a token in
 the tool input. It is not shipped. Its logic is the table above.
+
+## One hooks.json for Claude Code and Codex
+
+`hooks/hooks.json` is the single hook file for both harnesses. Najah decided this on 14 Oct 2026; Codex hooks still
+run only after the user trusts them. It follows the Codex hook contract at https://learn.chatgpt.com/docs/hooks.md.
+There has been no Codex run on this host: the Codex side is covered by `hooks/tests/test_codex.py` and its payload
+fixtures in `payloads/codex_*.json`, which are built from that contract.
+
+**Commands.** Every command is `PYTHONIOENCODING=utf-8 python3 -I "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/<x>.py"`.
+Claude Code passes `CLAUDE_PLUGIN_ROOT` in the environment, which run 4 confirmed: all hooks fired and a legacy
+write was denied. Codex sets both variables. The scripts find the plugin from their own file path in either case.
+
+**Matchers.** The write matcher is `Write|Edit|MultiEdit|NotebookEdit|apply_patch`. Claude Code reads it as a list of
+exact names; Codex reads it as a regex, where it is a plain alternation. PostToolUse also has a `Bash` entry so that a
+Codex `apply_patch <<EOF` written in the shell is scanned; without a patch it returns at once. `Read|Grep|Glob`
+exists only in Claude Code. Codex reads files through the shell, and `guard_bash` covers those reads.
+
+### What differs under Codex, and how the scripts handle it
+
+| Codex behaviour | Handling |
+|---|---|
+| File edits arrive as `tool_name: "apply_patch"`, with the patch text in `tool_input.command`. They can also arrive inside a Bash heredoc. | `recordparse.parse_patch` reads `*** Add / Update / Delete File`, `*** Move to`, `@@` hunks and `*** End of File`, for any number of files. `guard_write.decide` checks every target path with the same rules as Write/Edit. A move counts as a deletion of the source plus a write of the destination. For the files whose content is checked (`decisions.md`, `known-differences.md`, `tolerances.yaml`, `tolerances.proposed.yaml`, `params.yaml`), the hunks are applied to the current text. A hunk that cannot be applied is a deny, with "cannot apply the patch … fail closed". A malformed patch exits 2. `guard_bash` sends heredoc patches through the same checks. `post_scan` scans every file the patch adds, updates or moves into place. |
+| `permissionDecision: "ask"` is parsed but not supported: the run is marked failed and **the tool call continues**. | Under Codex, `_hooklib.pre_decision` turns every ask into a deny, with the note "Codex has no permission prompt … only the person makes or approves this change". |
+| There is no `onFailure`. Codex blocks on exit 2. | The guards already exit 2 on any exception. Codex's behaviour on a hook timeout is not documented and not measured. |
+| Stop with `decision: "block"` continues the session, using the reason as a new prompt. `stop_hook_active` is present. Stop must print JSON when it exits 0. | Same gate and the same 3-block cap. On allow, the gate prints `{}` under Codex. |
+| There is no `CLAUDE_ENV_FILE`. | session_start tells the agent to prefix GDAL commands with `GDAL_PAM_ENABLED=NO`. `bin/axpy` sets it for plugin scripts. |
+
+**Harness detection** (`_hooklib.harness`). The session is Codex if `PLUGIN_ROOT` or `PLUGIN_DATA` is set (Claude
+Code sets only the `CLAUDE_*` names), or if the payload has `tool_name: "apply_patch"` or a `turn_id`. Otherwise it is
+Claude Code. Two signals do not count: `CLAUDE_PLUGIN_ROOT`, because Codex sets it too, and `model`, because Claude
+Code may send it.
+
+### hooks-active marker (contract with the Codex start skill)
+
+SessionStart writes the marker on every session start, in both harnesses, and even before `migration/` exists. Claude
+Code's matcher includes `fork`; Codex's does not:
+
+```
+${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-~/.cache/axis-migrate}}/hooks-active.json      (atomic replace)
+{"schema": "axis-migrate.hooks-active.v1", "at": "2026-10-14T09:12:00Z", "harness": "codex"|"claude",
+ "cwd_sha256": "<sha256 of realpath(session cwd)>", "session_id": "...", "source": "startup|resume|...",
+ "migration_found": true|false, "plugin_root": "...", "hooks": ["session_start", ...]}
+```
+
+The reader is `skills/guard/hooks_active.py [--cwd DIR] [--max-age-h 24] [--json]`. It exits 0 when a marker exists
+for this working directory and is younger than 24 hours, and 1 otherwise.
+
+The start skill should call it at the beginning of a session. On exit 1 the session must be treated as unguarded:
+the script halves still refuse, but late (CODEX.md). Run 4 found the Claude Code marker under
+`<config>/plugins/data/axis-migrate-inline/` with `harness: claude`, `migration_found: true`.

@@ -35,12 +35,30 @@ def ascii_text(s: str, limit: int = 4000) -> str:
     return s if len(s) <= limit else s[: limit - 3] + "..."
 
 
+_INPUT: dict = {}
+ASK_NOTE_CODEX = (" [Codex has no permission prompt for hooks, so this is refused. Tell the user what you wanted to "
+                  "change and why; only the person makes or approves this change.]")
+
+
 def read_input() -> dict:
     raw = sys.stdin.read()
     data = json.loads(raw)
     if not isinstance(data, dict):
         raise ValueError("hook input is not a JSON object")
+    _INPUT.clear()
+    _INPUT.update(data)
     return data
+
+
+def harness(data: dict | None = None) -> str:
+    """'codex' or 'claude'. Codex-only signals: env PLUGIN_ROOT/PLUGIN_DATA (Claude Code sets only CLAUDE_*),
+    tool_name apply_patch, a Stop turn_id. Codex also sets CLAUDE_PLUGIN_ROOT, so that one proves nothing."""
+    d = data if data is not None else _INPUT
+    if os.environ.get("PLUGIN_ROOT") or os.environ.get("PLUGIN_DATA"):
+        return "codex"
+    if d.get("tool_name") == "apply_patch" or "turn_id" in d:
+        return "codex"
+    return "claude"
 
 
 def find_migration_dir(start) -> Path | None:
@@ -75,6 +93,9 @@ def emit(obj: dict) -> None:
 
 
 def pre_decision(decision: str, reason: str) -> None:
+    if decision == "ask" and harness() == "codex":
+        # Codex parses "ask" but does not support it: the hook run is marked failed and the tool call CONTINUES.
+        decision, reason = "deny", reason + ASK_NOTE_CODEX
     emit({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": decision,
                                  "permissionDecisionReason": ascii_text(reason)}})
 
@@ -147,3 +168,43 @@ def graph_integrity(mig: Path) -> list[str] | None:
     if not hasattr(mod, "integrity_problems"):
         return None
     return list(mod.integrity_problems(mig))
+
+
+MARKER_NAME = "hooks-active.json"
+MARKER_SCHEMA = "axis-migrate.hooks-active.v1"
+
+
+def marker_dir() -> Path:
+    """${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-~/.cache/axis-migrate}} (the same expression the start skill uses)."""
+    d = os.environ.get("PLUGIN_DATA") or os.environ.get("CLAUDE_PLUGIN_DATA") or os.path.expanduser(
+        "~/.cache/axis-migrate")
+    return Path(d)
+
+
+def cwd_sha256(cwd: str) -> str:
+    import hashlib
+    return hashlib.sha256(os.path.realpath(cwd).encode("utf-8")).hexdigest()
+
+
+def write_hooks_marker(data: dict, migration: Path | None) -> Path:
+    """SessionStart proof that the hooks run in this harness (read by the Codex start skill, HOOK_MECHANICS.md)."""
+    import datetime
+    cwd = data.get("cwd") or os.getcwd()
+    rec = {
+        "schema": MARKER_SCHEMA,
+        "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "harness": harness(data),
+        "cwd_sha256": cwd_sha256(cwd),
+        "session_id": data.get("session_id"),
+        "source": data.get("source"),
+        "migration_found": migration is not None,
+        "plugin_root": str(PLUGIN),
+        "hooks": ["session_start", "graph_changed", "guard_write", "guard_bash", "guard_hidden", "post_scan",
+                  "stop_gate"],
+    }
+    d = marker_dir()
+    d.mkdir(parents=True, exist_ok=True)
+    tmp = d / f".{MARKER_NAME}.{os.getpid()}"
+    tmp.write_text(json.dumps(rec, sort_keys=True, indent=1) + "\n", encoding="utf-8")
+    os.replace(tmp, d / MARKER_NAME)
+    return d / MARKER_NAME

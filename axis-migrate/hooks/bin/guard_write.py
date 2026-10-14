@@ -7,6 +7,9 @@ deny : legacy root (read-only), eval-hidden siblings, graph.json / graph-edits.j
        pipeline/sNN_*.py before the step's plan is approved in graph.json, any non-append change to
        decisions.md / known-differences.md, an edit of an existing tolerance record after a run recorded the file.
        tolerances.proposed.yaml content with a signed record (agreed_by/agreed_at non-null).
+Codex apply_patch payloads (tool_input.command = patch text; Add/Update/Delete/Move, several files) get the same
+rules per touched file; Update hunks on content-checked files are applied to the current text (unapplicable -> deny).
+Under Codex an `ask` becomes a deny (Codex does not support ask; _hooklib.pre_decision).
 ask  : a new tolerance record after a run; a tolerance record carrying agreed_by (only a human signs);
        a new KD block with owner: human:...; a params entry moving from fitted to source: answer.
 """
@@ -15,6 +18,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _hooklib as hl  # noqa: E402
@@ -143,72 +147,134 @@ def check_pipeline_module(mig, rel: str, path) -> tuple[str, str] | None:
     return None
 
 
-def main() -> int:
-    data = hl.read_input()
-    tool = data.get("tool_name")
-    if tool not in TOOLS:
-        return 0
-    mig = hl.find_migration(data)
-    ti = data.get("tool_input") or {}
-    fp = ti.get("file_path") or ti.get("notebook_path")
-    if not isinstance(fp, str) or not fp:
-        raise ValueError(f"{tool} payload without file_path")
-    path = hl.abs_path(fp, data.get("cwd"))
-    if mig is None:
-        mig = hl.find_migration_dir(path.parent) if path.parent.exists() else None
-        if mig is None:
-            return 0
-    mig = mig.resolve()
+CONTENT_FILES = ("decisions.md", "known-differences.md", "tolerances.yaml", "params.yaml", "tolerances.proposed.yaml")
 
-    ps = hl.protected_set(mig)
+
+def check_target(mig: Path, ps, path: Path, content=None) -> tuple[str, str] | None:
+    """All rules for one target path. `content` is a callable returning (current, proposed) text, or None when the
+    change cannot be judged by content (the tool would fail by itself); it may raise rp.PatchError (fail closed)."""
     if ps.is_hidden(path):
-        hl.pre_decision("deny", "axis-migrate: that path is grader material next to the legacy folder; never write it.")
-        return 0
+        return ("deny", "axis-migrate: that path is grader material next to the legacy folder; never write it.")
     if ps.under_legacy(path):
-        hl.pre_decision("deny", f"axis-migrate: the legacy folder is read-only (LEGACY_READ_ONLY): {path.name}. "
-                                "Write exploration code and copies under migration/analysis/ instead.")
-        return 0
+        return ("deny", f"axis-migrate: the legacy folder is read-only (LEGACY_READ_ONLY): {path.name}. "
+                        "Write exploration code and copies under migration/analysis/ instead.")
     try:
         rel = path.relative_to(mig).as_posix()
     except ValueError:
-        return 0
-
-    decision = None
+        return None
     if rel in ("graph.json", "graph-edits.jsonl") or rel.startswith(".graph/"):
-        decision = ("deny", "axis-migrate: graph.json is written only through `graph.py apply` (D2-9); "
-                            "use an ops file with graph.py apply --actor agent.")
-    elif rel == "runs" or rel.startswith("runs/"):
-        decision = ("deny", "axis-migrate: migration/runs/ is written only by the runner and seal.py (sealed runs, "
-                            "runs/index.jsonl). Start a new run with run_local.py instead.")
-    elif rel.startswith(".axis/"):
-        decision = ("deny", "axis-migrate: migration/.axis/ holds guard state and is written by the scripts only.")
-    elif rel == "inventory.json" or rel.startswith("discover/profiles/"):
-        decision = ("deny", "axis-migrate: inventory.json is the reference pin, written only by scan.py "
-                            "(record findings with scan.py annotate).")
-    elif rel.startswith("report/"):
-        decision = ("deny", "axis-migrate: migration/report/ is rendered by report.py from a sealed run; "
-                            "agent prose goes to migration/narrative.md.")
-    elif rel in ("databricks/target-manifest.json", "databricks/target-check.json"):
-        decision = ("deny", "axis-migrate: target status files are written only by make_databricks.py / "
-                            "target_check.py.")
-    else:
-        decision = check_pipeline_module(mig, rel, path)
-        if decision is None and tool != "NotebookEdit" and rel in ("decisions.md", "known-differences.md",
-                                                                   "tolerances.yaml", "params.yaml",
-                                                                   "tolerances.proposed.yaml"):
-            pc = proposed(tool, ti, path)
-            if pc is not None:
-                cur, new = pc
-                if rel in ("decisions.md", "known-differences.md"):
-                    decision = check_append_only(rel, cur, new)
-                elif rel == "tolerances.yaml":
-                    decision = check_tolerances(mig, cur, new)
-                elif rel == "tolerances.proposed.yaml":
-                    decision = check_proposed_tolerances(new)
+        return ("deny", "axis-migrate: graph.json is written only through `graph.py apply` (D2-9); "
+                        "use an ops file with graph.py apply --actor agent.")
+    if rel == "runs" or rel.startswith("runs/"):
+        return ("deny", "axis-migrate: migration/runs/ is written only by the runner and seal.py (sealed runs, "
+                        "runs/index.jsonl). Start a new run with run_local.py instead.")
+    if rel.startswith(".axis/"):
+        return ("deny", "axis-migrate: migration/.axis/ holds guard state and is written by the scripts only.")
+    if rel == "inventory.json" or rel.startswith("discover/profiles/"):
+        return ("deny", "axis-migrate: inventory.json is the reference pin, written only by scan.py "
+                        "(record findings with scan.py annotate).")
+    if rel.startswith("report/"):
+        return ("deny", "axis-migrate: migration/report/ is rendered by report.py from a sealed run; "
+                        "agent prose goes to migration/narrative.md.")
+    if rel in ("databricks/target-manifest.json", "databricks/target-check.json"):
+        return ("deny", "axis-migrate: target status files are written only by make_databricks.py / "
+                        "target_check.py.")
+    decision = check_pipeline_module(mig, rel, path)
+    if decision is None and content is not None and rel in CONTENT_FILES:
+        try:
+            pc = content()
+        except rp.PatchError as e:
+            return ("deny", f"axis-migrate: cannot apply the patch to {rel} ({e}), so its append-only/tolerance "
+                            "rules cannot be checked; refused (fail closed). Re-read the file and patch again.")
+        if pc is not None:
+            cur, new = pc
+            if rel in ("decisions.md", "known-differences.md"):
+                decision = check_append_only(rel, cur, new)
+            elif rel == "tolerances.yaml":
+                decision = check_tolerances(mig, cur, new)
+            elif rel == "tolerances.proposed.yaml":
+                decision = check_proposed_tolerances(new)
+            else:
+                decision = check_params(cur, new)
+    return decision
+
+
+def _read(p: Path) -> str:
+    return p.read_text(encoding="utf-8") if p.is_file() else ""
+
+
+def patch_targets(data: dict) -> list[tuple[Path, object]]:
+    """(target path, content callable) for every file a Codex apply_patch touches (Add/Update/Delete/Move)."""
+    cwd = data.get("cwd") or os.getcwd()
+    out = []
+    texts = rp.patch_texts(data.get("tool_name"), data.get("tool_input") or {})
+    if data.get("tool_name") == "apply_patch" and not texts:
+        raise rp.PatchError("apply_patch payload without a '*** Begin Patch' text in tool_input.command")
+    for text in texts:
+        for op in rp.parse_patch(text):
+            src = hl.abs_path(op.path, cwd)
+            if op.kind == "add":
+                body = "\n".join(op.add_lines) + ("\n" if op.add_lines else "")
+                out.append((src, lambda src=src, body=body: (_read(src), body)))
+            elif op.kind == "delete":
+                out.append((src, lambda src=src: (_read(src), "")))
+            else:
+                def updated(src=src, hunks=op.hunks):
+                    return rp.apply_patch_update(_read(src), hunks)
+                if op.move_to:
+                    dst = hl.abs_path(op.move_to, cwd)
+                    out.append((src, lambda src=src: (_read(src), "")))          # the source disappears
+                    out.append((dst, lambda dst=dst, f=updated: (_read(dst), f())))
                 else:
-                    decision = check_params(cur, new)
-    if decision:
-        hl.pre_decision(*decision)
+                    out.append((src, lambda src=src, f=updated: (_read(src), f())))
+    return out
+
+
+def combine(decisions: list) -> tuple[str, str] | None:
+    denies = [d for d in decisions if d and d[0] == "deny"]
+    if denies:
+        return ("deny", " | ".join(dict.fromkeys(d[1] for d in denies)))
+    asks = [d for d in decisions if d and d[0] == "ask"]
+    if asks:
+        return ("ask", " | ".join(dict.fromkeys(d[1] for d in asks)))
+    return None
+
+
+def decide(data: dict) -> tuple[str, str] | None:
+    tool = data.get("tool_name")
+    cwd = data.get("cwd")
+    ti = data.get("tool_input") or {}
+    if tool == "apply_patch" or (tool == "Bash" and rp.patch_texts("Bash", ti)):
+        targets = patch_targets(data)
+    elif tool in TOOLS:
+        fp = ti.get("file_path") or ti.get("notebook_path")
+        if not isinstance(fp, str) or not fp:
+            raise ValueError(f"{tool} payload without file_path")
+        path = hl.abs_path(fp, cwd)
+        targets = [(path, None if tool == "NotebookEdit" else (lambda path=path: proposed(tool, ti, path)))]
+    else:
+        return None
+    mig = hl.find_migration(data)
+    if mig is None:
+        for path, _ in targets:
+            if path.parent.exists():
+                mig = hl.find_migration_dir(path.parent)
+                if mig:
+                    break
+    if mig is None:
+        return None
+    mig = mig.resolve()
+    ps = hl.protected_set(mig)
+    return combine([check_target(mig, ps, path, fn) for path, fn in targets])
+
+
+def main() -> int:
+    data = hl.read_input()
+    if data.get("tool_name") not in TOOLS | {"apply_patch"}:
+        return 0
+    d = decide(data)
+    if d:
+        hl.pre_decision(*d)
     return 0
 
 

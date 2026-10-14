@@ -1,0 +1,11 @@
+{
+ "cwd": "/WORK",
+ "hook_event_name": "Stop",
+ "last_assistant_message": "Done.",
+ "model": "gpt-5.5-codex",
+ "permission_mode": "default",
+ "session_id": "019a-codex-session",
+ "stop_hook_active": false,
+ "transcript_path": "/CODEX_HOME/sessions/2026/10/14/rollout.jsonl",
+ "turn_id": "turn-7"
+}

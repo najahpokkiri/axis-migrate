@@ -337,3 +337,131 @@ def apply_edit_payload(tool_name: str, tool_input: dict, current: str) -> str:
             raise EditNotApplicable("old_string not found")
         text = text.replace(old, new) if e.get("replace_all") else text.replace(old, new, 1)
     return text
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Codex apply_patch (tool_name "apply_patch", patch text in tool_input.command; also `apply_patch <<EOF` in Bash)
+# ---------------------------------------------------------------------------------------------------------------
+class PatchError(ValueError):
+    """The patch cannot be read or a hunk cannot be applied: guards fail closed on it."""
+
+
+PATCH_BLOCK_RE = re.compile(r"\*\*\* Begin Patch[ \t]*\n.*?\n\*\*\* End Patch", re.S)
+
+
+@dataclass
+class PatchOp:
+    kind: str                 # add | update | delete
+    path: str
+    move_to: str | None = None
+    add_lines: list = None    # Add File body (without the leading "+")
+    hunks: list = None        # [{"anchor": str, "lines": ["<tag><text>", ...], "eof": bool}]
+
+
+def patch_texts(tool_name: str | None, tool_input) -> list[str]:
+    """Patch texts in a Codex payload: the whole apply_patch command, or `*** Begin Patch` blocks inside a shell
+    command (heredoc form). Empty list when there is none."""
+    cmd = tool_input.get("command") if isinstance(tool_input, dict) else None
+    if cmd is None and isinstance(tool_input, dict):
+        cmd = tool_input.get("patch") or tool_input.get("input")
+    if isinstance(cmd, list):
+        cmd = " ".join(str(c) for c in cmd)
+    if not isinstance(cmd, str):
+        return []
+    cmd = cmd.replace("\r\n", "\n")
+    if tool_name == "apply_patch" and cmd.lstrip().startswith("*** Begin Patch"):
+        return [cmd.strip()]
+    return PATCH_BLOCK_RE.findall(cmd)
+
+
+def parse_patch(text: str) -> list[PatchOp]:
+    lines = text.replace("\r\n", "\n").split("\n")
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    if not lines or lines[0].strip() != "*** Begin Patch":
+        raise PatchError("patch does not start with '*** Begin Patch'")
+    ops: list[PatchOp] = []
+    cur: PatchOp | None = None
+    ended = False
+    for n, ln in enumerate(lines[1:], 2):
+        if ln.strip() == "*** End Patch":
+            ended = True
+            break
+        m = re.match(r"^\*\*\* (Add|Delete|Update) File: (.+?)\s*$", ln)
+        if m:
+            cur = PatchOp(kind=m.group(1).lower(), path=m.group(2), add_lines=[], hunks=[])
+            ops.append(cur)
+            continue
+        if cur is None:
+            if not ln.strip():
+                continue
+            raise PatchError(f"patch line {n} is outside a file section")
+        if ln.startswith("*** Move to: "):
+            if cur.kind != "update":
+                raise PatchError(f"patch line {n}: Move to outside an Update File section")
+            cur.move_to = ln[len("*** Move to: "):].strip()
+        elif ln.strip() == "*** End of File":
+            if cur.hunks:
+                cur.hunks[-1]["eof"] = True
+        elif cur.kind == "add":
+            if ln.startswith("+"):
+                cur.add_lines.append(ln[1:])
+            elif ln.strip():
+                raise PatchError(f"Add File line {n} does not start with '+'")
+        elif cur.kind == "update":
+            if ln.startswith("@@"):
+                cur.hunks.append({"anchor": ln[2:].strip(), "lines": [], "eof": False})
+                continue
+            if not cur.hunks:
+                cur.hunks.append({"anchor": "", "lines": [], "eof": False})
+            if ln == "":
+                ln = " "
+            if ln[0] not in " +-":
+                raise PatchError(f"Update File line {n} is not a context, '+' or '-' line")
+            cur.hunks[-1]["lines"].append(ln)
+        elif ln.strip():
+            raise PatchError(f"patch line {n}: unexpected content in a Delete File section")
+    if not ended:
+        raise PatchError("patch does not end with '*** End Patch'")
+    if not ops:
+        raise PatchError("patch touches no file")
+    return ops
+
+
+def _seek(hay: list[str], needle: list[str], start: int, eof: bool = False) -> int:
+    rng = [len(hay) - len(needle)] if eof else range(start, len(hay) - len(needle) + 1)
+    for norm in (lambda s: s, str.rstrip, str.strip):
+        want = [norm(x) for x in needle]
+        for k in rng:
+            if k >= 0 and [norm(x) for x in hay[k:k + len(needle)]] == want:
+                return k
+    return -1
+
+
+def apply_patch_update(current: str, hunks: list[dict]) -> str:
+    """Apply Update File hunks to `current` (pure). Raises PatchError when a hunk cannot be placed."""
+    trailing_nl = current.endswith("\n") or current == ""
+    out = current.split("\n")
+    if out and out[-1] == "":
+        out = out[:-1]
+    pos = 0
+    for i, h in enumerate(hunks, 1):
+        if h.get("anchor"):
+            k = _seek(out, [h["anchor"]], pos)
+            if k < 0:
+                raise PatchError(f"hunk {i}: @@ anchor not found: {h['anchor'][:60]!r}")
+            pos = k + 1
+        old = [x[1:] for x in h["lines"] if x[0] in " -"]
+        new = [x[1:] for x in h["lines"] if x[0] in " +"]
+        if not old:
+            at = len(out) if (h.get("eof") or not h.get("anchor")) else pos
+            out[at:at] = new
+            pos = at + len(new)
+            continue
+        k = _seek(out, old, pos, eof=bool(h.get("eof")))
+        if k < 0:
+            raise PatchError(f"hunk {i}: context/removed lines not found in the current file")
+        out[k:k + len(old)] = new
+        pos = k + len(new)
+    text = "\n".join(out)
+    return text + "\n" if (out and trailing_nl) else text

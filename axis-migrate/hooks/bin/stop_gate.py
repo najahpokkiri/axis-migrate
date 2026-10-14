@@ -398,6 +398,8 @@ def main() -> int:
         if n:
             st.pop(sid, None)
             save_state(mig, st)
+        if hl.harness(data) == "codex":
+            hl.emit({})  # Codex: Stop expects JSON on stdout when it exits 0
         return 0
     if data.get("stop_hook_active") and n >= 2:
         st.pop(sid, None)

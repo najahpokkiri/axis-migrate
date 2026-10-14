@@ -1,0 +1,13 @@
+{
+ "cwd": "/WORK",
+ "hook_event_name": "PreToolUse",
+ "model": "gpt-5.5-codex",
+ "permission_mode": "default",
+ "session_id": "019a-codex-session",
+ "tool_input": {
+  "command": "*** Begin Patch\n*** Add File: hello.txt\n+hello\n*** Update File: notes.md\n@@ ## Notes\n-old line\n+new line\n*** Delete File: old.txt\n*** Update File: a.py\n*** Move to: b.py\n@@\n x = 1\n-y = 2\n+y = 3\n*** End Patch"
+ },
+ "tool_name": "apply_patch",
+ "tool_use_id": "call_abc123",
+ "transcript_path": "/CODEX_HOME/sessions/2026/10/14/rollout.jsonl"
+}
