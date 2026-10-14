@@ -3,10 +3,10 @@
 # so a single combined pytest session would collide). Exit non-zero if any suite fails.
 PLUGIN="$(cd "$(dirname "$0")" && pwd)"
 rc=0
-for d in "$PLUGIN"/skills/*/tests "$PLUGIN"/hooks/tests; do
+for d in "$PLUGIN"/skills/*/tests "$PLUGIN"/hooks/tests "$PLUGIN"/tests_codex; do
   [ -d "$d" ] || continue
   out="$("$PLUGIN/bin/axpy" -m pytest "$d" -q -p no:cacheprovider "$@" 2>&1 | tail -1)"
-  echo "$(basename "$(dirname "$d")"): $out"
+  echo "$(basename "$(dirname "$d")")/$(basename "$d"): $out"
   case "$out" in *failed*|*error*|*"no tests ran"*) rc=1;; esac
 done
 exit $rc
