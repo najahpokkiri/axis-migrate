@@ -27,7 +27,7 @@ DEC_KEYS = ["id", "question", "kind", "answer", "by", "params", "nodes", "change
 KD_KEYS = ["id", "kind", "datasets", "checks", "rule", "bound", "reason", "evidence", "owner", "decided_at",
            "decision_ref", "status", "supersedes"]
 DEC_KINDS = {"answer", "assumption", "agent_decision", "legacy_keep", "legacy_fix", "scope", "fit_confirm", "fit_spec",
-             "manual_step", "plan_approval", "target", "confirm_all"}
+             "manual_step", "plan_approval", "target", "confirm_all", "kd_accept", "tolerance_sign"}
 KD_KINDS = {"normalisation", "exclusion", "accepted_change", "legacy_defect_preserved"}
 
 
