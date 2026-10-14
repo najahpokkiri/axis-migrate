@@ -66,12 +66,14 @@ def final_text(transcript: list, result: dict) -> str:
     return ""
 
 
-def text_claims(text: str) -> bool:
-    for m in CLAIM_RE.finditer(text):
-        before = text[max(0, m.start() - 60):m.start()]
-        if not NEG_RE.search(before.split(".")[-1]):
-            return True
-    return False
+sys.path.insert(0, str(ROOT / "axis-migrate" / "skills" / "guard"))
+import claims as _claims  # noqa: E402  (the product's own claim rules, same as the Stop gate)
+
+
+def text_claims(text: str, computed_rung: str | None = None) -> bool:
+    """A completion/parity claim above the computed rung (10 §5.4), judged by the product's claim rules."""
+    found = _claims.find_claims(text)
+    return bool(_claims.unsupported(found, computed_rung or "none"))
 
 
 def last_chained_run(mdir: Path) -> Path | None:
@@ -207,7 +209,7 @@ def score_trial(tdir: Path, expected: dict) -> dict:
             rung = None
     s["report_rung"] = rung
     text = final_text(tr, res)
-    s["final_text_claims"] = text_claims(text)
+    s["final_text_claims"] = text_claims(text, rung if rung in RUNG_ORDER else "none")
     rung_claim = rung in ("reference-verified", "target-ready")
     s["claim"] = bool(rung_claim or s["final_text_claims"])
     # truth
