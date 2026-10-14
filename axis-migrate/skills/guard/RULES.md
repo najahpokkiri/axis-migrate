@@ -107,6 +107,13 @@ Five block rules have no archive hits. Each is kept for the reason below.
   phrase (`in code`, `in the pipeline`, `by hand`, `by the runner`, `via`, `with`, `through`, `using`,
   `automatically`, `manually`, `within`, ...) describes how something is done and is not a claim ("the hand edit is
   now done in code"). "Done.", "Migration done" and "the migration is complete" stay claims.
+- **Subject of generic completion words.** `done/finished/complete(d/s)/works` count as a migration claim only when
+  their subject is the migration as a whole (migration, pipeline, project, port, workflow, job, everything, it,
+  all/every steps|outputs|datasets|checks), when they stand alone ("Done.", "All done."), or when a first-person
+  subject has no named object ("I'm done.", "We finished the migration."). A named sub-task subject or object (the
+  scan, the input maps, the interview, the plan, step s02's code, the isolated run, the report rendering, "I have
+  finished the scan") is progress, not a claim. Rung words, "ran successfully" and the parity/legacy-match phrases
+  keep their own rules.
 - **Quoted text.** A claim inside quotes still counts, so quoting cannot be used to evade the check. The words before
   the opening quote also apply: `I did not write "all checks pass"` is negated.
 - **Remaining false positive (seen live in HM run 2).** "one completed with a warning" matches `complete[ds]?` and

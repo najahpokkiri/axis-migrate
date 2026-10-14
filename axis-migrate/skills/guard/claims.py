@@ -56,6 +56,19 @@ COMPLETION_WORDS = {"done", "complete", "completed", "completes", "finished"}
 MANNER_RE = re.compile(r"[ \t]+(?:\w+[ \t]+)?(?:in[ \t]+(?:code|python|the[ \t]+(?:pipeline|code|runner|step)|"
                        r"geopandas|rasterio|numpy|qgis|arcpy)|by[ \t]+(?:hand|the|a|an|code|script|running)|"
                        r"via|with|through|using|automatically|manually|programmatically|inside|within)\b", re.I)
+# Generic completion words are a migration claim only when their subject is the migration as a whole (or they stand
+# alone: "Done."); a named sub-task subject ("the scan", "the input maps", "step s02's code") makes it progress.
+GENERIC_WORDS = COMPLETION_WORDS | {"works"}
+MIGRATION_SUBJECT_RE = re.compile(r"\b(?:migration|migrations|pipeline|project|port|porting|conversion|workflow|"
+                                  r"everything|job|it|its|it's|whole\s+thing)\b|\b(?:all|every)\s+(?:the\s+)?"
+                                  r"(?:steps?|outputs?|datasets?|pairs?|checks?|work)\b|^\W*all\W*$", re.I)
+SUBJECT_FILLER = {
+    "is", "are", "was", "were", "be", "been", "being", "has", "have", "had", "now", "fully", "completely", "entirely",
+    "finally", "and", "so", "then", "just", "already", "also", "all", "now's", "that's", "this", "that", "here",
+    "ok", "okay", "yes", "great", "good", "everything's", "i", "we", "i've", "we've", "i'm", "we're", "am", "the",
+    "as", "well", "basically", "now", "successfully", "properly", "i'd", "we'd",
+}
+PRONOUN_SUBJECTS = {"i", "we", "i've", "we've", "i'm", "we're", "i'd", "we'd"}
 SENTENCE_BREAK_RE = re.compile(r"[.;!?\n]")
 CONDITION_OPENER_RE = re.compile(r"^\W*(?:if|when|once|until|unless|before|whenever)\b", re.I)
 TRAILING_CONDITION_RE = re.compile(r"^[\s,]*(?:\w+\s+){0,2}?(?:only\s+after|until|once|unless|if|requires?|needs?|"
@@ -116,6 +129,34 @@ def _negated(text: str, start: int, end: int | None = None) -> bool:
     return bool(TRAILING_CONDITION_RE.match(after))
 
 
+def _words(t: str) -> list[str]:
+    return [w.lower().replace("\u2019", "'") for w in TOKEN_RE.findall(t)]
+
+
+def _migration_subject(text: str, start: int, end: int) -> bool:
+    """True when a generic completion word ("done", "finished", "works") is about the migration as a whole."""
+    cb = list(CLAUSE_BREAK_RE.finditer(text, 0, start))
+    clause = text[cb[-1].end() if cb else 0:start]
+    if MIGRATION_SUBJECT_RE.search(clause):
+        return True
+    words = _words(clause)
+    content = [w for w in words if w not in SUBJECT_FILLER]
+    if content:
+        return False  # a named subject that is not the migration: progress
+    sb = list(SENTENCE_BREAK_RE.finditer(text, 0, start))
+    sentence = text[sb[-1].end() if sb else 0:start]
+    if MIGRATION_SUBJECT_RE.search(sentence):
+        return True
+    if any(w in PRONOUN_SUBJECTS for w in words):
+        # "I have finished the scan" -> progress; "I'm done." / "We finished the migration." -> claim
+        nb = CLAUSE_BREAK_RE.search(text, end)
+        after = text[end:nb.start() if nb else len(text)]
+        obj = [w for w in _words(after) if w not in SUBJECT_FILLER]
+        return not obj or bool(MIGRATION_SUBJECT_RE.search(after))
+    sent_content = [w for w in _words(sentence) if w not in SUBJECT_FILLER]
+    return not sent_content  # stand-alone ("Done.") is a claim; a subject earlier in the sentence is progress
+
+
 def find_claims(text: str) -> list[Claim]:
     """Un-negated claims, ignoring the quoted status line (08 §5b). Other quoted text still counts (no evasion)."""
     if not text:
@@ -130,6 +171,8 @@ def find_claims(text: str) -> list[Claim]:
                 continue
             if m.group(0).lower() in COMPLETION_WORDS and MANNER_RE.match(clean, m.end()):
                 continue  # "done in code", "completed by the runner": how something is done, not that it is
+            if m.group(0).lower() in GENERIC_WORDS and not _migration_subject(clean, m.start(), m.end()):
+                continue  # "the scan and the input maps are finished": progress on a named sub-task
             # a quoted claim is judged with the words before the quote too ('I did not write "all checks pass"')
             q = next((a for a, b in quotes if a < m.start() < b), None)
             if q is not None and _negated(clean, q):

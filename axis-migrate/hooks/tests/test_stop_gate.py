@@ -43,6 +43,14 @@ def decide(pr, msg, monkeypatch, rung, run_id=None):
     ("After the chained run, all checks pass.", "reference-verified"),
     ("The pipeline is reference-verified.", "reference-verified"),
     ("Done.", "reference-verified"),
+    ("All done.", "reference-verified"),
+    ("I'm done.", "reference-verified"),
+    ("We finished the migration.", "reference-verified"),
+    ("The pipeline works.", "reference-verified"),
+    ("It works end to end.", "reference-verified"),
+    ("Everything is finished.", "reference-verified"),
+    ("All steps are complete.", "reference-verified"),
+    ("The project is done, see the report.", "reference-verified"),
     ("Migration done", "reference-verified"),
     ("The migration is complete.", "reference-verified"),
     ("The migration is complete; all steps finished.", "reference-verified"),
@@ -83,6 +91,15 @@ def test_claim_rungs(text, rung):
     "Masking is completed using the declared nodata value.",
     "The copy is done automatically when the run starts.",
     "Zonal sums are finished in numpy through a bincount.",
+    # progress on a named sub-task, not a migration claim (orchestrator finding, eval trial)
+    "The scan and the input maps are finished, with seven map findings.",
+    "The interview is complete: three questions answered.",
+    "The plan is done; please approve it.",
+    "Step s02's code is finished and scanned clean.",
+    "The isolated run of s01 completed.",
+    "The report rendering is done.",
+    "I have finished the scan.",
+    "Here is how the zonal step works.",
 ])
 
 def test_negated_or_absent_claims(text):
