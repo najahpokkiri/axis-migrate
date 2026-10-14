@@ -119,6 +119,11 @@ Five block rules have no archive hits. Each is kept for the reason below.
   the clause, and sentences opened by `Getting there/To get there/To reach/Next/After that/After you/Once you/Then I
   will` negate rung, verified and validated words: "…and that run gets verified" is not a claim. Past and present
   statements stay claims ("The chained run is verified.", "Run r3 got verified", "was validated in the sandbox").
+- **Modal + assertion verb is a present claim.** `can/could/will/would/shall/may/might/must/should/'ll` followed by
+  `confirm/report/say/state/tell/show that/see that/see it/verify that/assure/announce/declare` keeps the claim
+  ("we can confirm all checks pass", "you will see that all steps pass", "you can see it is reference-verified");
+  only real negation or a genuine condition in that sentence negates it ("I cannot confirm…", "we will confirm in the
+  next run whether…"). "parity is/was/has been achieved|confirmed|passing" also matches now.
 - **Quoted text.** A claim inside quotes still counts, so quoting cannot be used to evade the check. The words before
   the opening quote also apply: `I did not write "all checks pass"` is negated.
 - **Remaining false positive (seen live in HM run 2).** "one completed with a warning" matches `complete[ds]?` and

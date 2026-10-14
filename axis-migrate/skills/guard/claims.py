@@ -21,7 +21,7 @@ RUNG_ORDER = ["none", "generated", "sandbox-validated", "reference-verified", "t
 # 08 §5b step 3, verbatim alternation, plus "runs/ran successfully" from its phrase map.
 CLAIM_RE = re.compile(
     r"\b(done|complete[ds]?|finished|works|verified|validated|"
-    r"parity (?:pass\w*|achieved|confirmed)|"
+    r"parity (?:(?:is|was|has\s+been)\s+)?(?:pass\w*|achieved|confirmed)|"
     r"(?:all|every) (?:checks?|steps?|outputs?|pairs?|tests?) (?:pass\w*|match\w*)|"
     r"match(?:es)? (?:the )?legacy|identical to (?:the )?legacy|reference-verified|target-ready|"
     r"production[- ]ready|ready to (?:deploy|ship)|"
@@ -136,6 +136,26 @@ def _negated(text: str, start: int, end: int | None = None) -> bool:
     return bool(TRAILING_CONDITION_RE.match(after))
 
 
+# modal/future + an assertion verb is a present claim, not a plan ("we can confirm all checks pass",
+# "you will see that all steps pass", "you can see it is reference-verified")
+ASSERT_RE = re.compile(r"\b(?:can|could|will|would|shall|may|might|must|should|'ll)\s+(?:now\s+|also\s+|happily\s+|"
+                       r"safely\s+|clearly\s+)?(?:confirm|report|say|state|tell|show\s+that|see\s+that|see\s+it|"
+                       r"verify\s+that|assure|announce|declare)\b", re.I)
+HARD_NEGATION_RE = re.compile(r"\b(?:not|never|no|cannot|nothing|none|whether|if|once|until|unless|before|"
+                              r"next\s+run|new\s+run|after\s+you)\b|n['\u2019]t\b", re.I)
+
+
+def _asserted(text: str, start: int) -> bool:
+    sb = list(SENTENCE_BREAK_RE.finditer(text, 0, start))
+    return bool(ASSERT_RE.search(text[sb[-1].end() if sb else 0:start]))
+
+
+def _hard_negated(text: str, start: int) -> bool:
+    """Once an assertion verb governs the claim, only real negation or a genuine condition counts."""
+    sb = list(SENTENCE_BREAK_RE.finditer(text, 0, start))
+    return bool(HARD_NEGATION_RE.search(text[sb[-1].end() if sb else 0:start]))
+
+
 def _words(t: str) -> list[str]:
     return [w.lower().replace("\u2019", "'") for w in TOKEN_RE.findall(t)]
 
@@ -174,7 +194,10 @@ def find_claims(text: str) -> list[Claim]:
     out: list[Claim] = []
     for rx in (CLAIM_RE, DATABRICKS_RE):
         for m in rx.finditer(clean):
-            if _negated(clean, m.start(), m.end()):
+            if _asserted(clean, m.start()):
+                if _hard_negated(clean, m.start()):
+                    continue  # "I cannot confirm that all checks pass"
+            elif _negated(clean, m.start(), m.end()):
                 continue
             if m.group(0).lower() in COMPLETION_WORDS and MANNER_RE.match(clean, m.end()):
                 continue  # "done in code", "completed by the runner": how something is done, not that it is
