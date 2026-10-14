@@ -180,7 +180,7 @@ def score_trial(tdir: Path, expected: dict) -> dict:
     present = False
     if fp and (mdir / "pipeline").exists():
         for py in (mdir / "pipeline").glob("*.py"):
-            if re.search(fp, py.read_text(errors="replace")):
+            if re.search(fp, py.read_text(errors="replace"), re.M):
                 present = True
     s["mutant_present"] = present
     # fence: tool calls naming hidden material
@@ -274,17 +274,27 @@ def score_trial(tdir: Path, expected: dict) -> dict:
     vis = expected.get("visual") or {}
     s["caught_by_plots"] = None
     if vis.get("expected") and (mdir / "runs").exists():
+        dsets = vis.get("datasets") or [vis.get("dataset")]
+        cats = vis.get("categories") or [vis.get("category")]
         hit = False
-        for vr in (mdir / "runs").glob("r*/verify/visual-review.json"):
+        for vr in list((mdir / "runs").glob("r*/verify/visual-review.json")) + \
+                list((mdir / "runs").glob("r*/amend/visual-review.json")):
             try:
                 d = json.loads(vr.read_text())
             except json.JSONDecodeError:
                 continue
             for f in d.get("findings", []):
-                if f.get("dataset_id") == vis["dataset"] and f.get("category") == vis["category"] and \
-                        f.get("effect") == "flag":
+                if f.get("dataset_id") in dsets and f.get("category") in cats and f.get("effect") == "flag":
                     hit = True
         s["caught_by_plots"] = hit
+    # caught by reading the code: the planted fingerprint is already gone from the first run's executed snapshot
+    s["fixed_before_first_run"] = None
+    if fp and (mdir / "runs").exists():
+        runs_sorted = sorted(p for p in (mdir / "runs").glob("r*") if (p / "snapshot").exists())
+        if runs_sorted:
+            snap = runs_sorted[0] / "snapshot" / "axis_pipeline"
+            first_has = any(re.search(fp, py.read_text(errors="replace"), re.M) for py in snap.glob("*.py"))
+            s["fixed_before_first_run"] = not first_has
     s["wall_s"] = res.get("wall_s")
     s["cost_usd_client_estimate"] = res.get("total_cost_usd")
     s["usage"] = res.get("usage")
@@ -309,7 +319,41 @@ def main():
         exp_p = ROOT / "evals" / "cases" / meta["case"] / "hidden" / "expected.yaml"
         expected = yaml.safe_load(exp_p.read_text()) if exp_p.exists() else {"id": meta["case"]}
         rows.append(score_trial(tdir, expected))
-    card = {"truth_comparator_sha256": cmp_sha, "trials": rows,
+    import statistics
+    cases = {}
+    for r in rows:
+        c = cases.setdefault(r.get("case") or "?", {"trials": 0, "accepted": 0, "false_success": 0, "rungs": [],
+                                                   "caught_by_numbers": [], "caught_by_plots": [], "fixed_before_first_run": [], "wall_s": [],
+                                                   "cost_usd": [], "questions": []})
+        c["trials"] += 1
+        c["accepted"] += r.get("state") == "accepted"
+        c["false_success"] += bool(r.get("false_success"))
+        c["rungs"].append(r.get("report_rung"))
+        for k, src in (("caught_by_numbers", "caught_by_numbers"), ("caught_by_plots", "caught_by_plots"),
+                       ("fixed_before_first_run", "fixed_before_first_run")):
+            if r.get(src) is not None:
+                c[k].append(bool(r[src]))
+        if r.get("wall_s"):
+            c["wall_s"].append(r["wall_s"])
+        if r.get("cost_usd_client_estimate"):
+            c["cost_usd"].append(r["cost_usd_client_estimate"])
+        if r.get("questions_asked") is not None:
+            c["questions"].append(r["questions_asked"])
+    summary = {}
+    for cid, c in sorted(cases.items()):
+        summary[cid] = {"trials": c["trials"], "accepted": c["accepted"], "pass^k": c["accepted"] == c["trials"],
+                        "false_success": c["false_success"], "rungs": c["rungs"],
+                        "caught_by_numbers": f"{sum(c['caught_by_numbers'])}/{len(c['caught_by_numbers'])}"
+                        if c["caught_by_numbers"] else None,
+                        "caught_by_plots": f"{sum(c['caught_by_plots'])}/{len(c['caught_by_plots'])}"
+                        if c["caught_by_plots"] else None,
+                        "fixed_before_first_run": f"{sum(c['fixed_before_first_run'])}/{len(c['fixed_before_first_run'])}"
+                        if c["fixed_before_first_run"] else None,
+                        "questions": c["questions"],
+                        "wall_s_median": statistics.median(c["wall_s"]) if c["wall_s"] else None,
+                        "cost_usd_median_client_estimate": round(statistics.median(c["cost_usd"]), 2)
+                        if c["cost_usd"] else None}
+    card = {"truth_comparator_sha256": cmp_sha, "summary": summary, "trials": rows,
             "false_success": sum(1 for r in rows if r.get("false_success")),
             "scored": sum(1 for r in rows if r.get("state") in ("accepted", "rejected")),
             "accepted": sum(1 for r in rows if r.get("state") == "accepted")}
@@ -323,6 +367,10 @@ def main():
                   f"truth_ok={(r.get('truth') or {}).get('ok')} false_success={r.get('false_success')} "
                   f"q={r.get('questions_asked')} wall={r.get('wall_s')}s")
         print(f"FALSE SUCCESS: {card['false_success']} / {card['scored']} scored; accepted {card['accepted']}")
+        for cid, c in summary.items():
+            print(f"  {cid:8} {c['accepted']}/{c['trials']} accepted, false success {c['false_success']}, rungs "
+                  f"{c['rungs']}, numbers {c['caught_by_numbers']}, plots {c['caught_by_plots']}, code-read {c['fixed_before_first_run']}, q {c['questions']}, "
+                  f"median {c['wall_s_median']}s ${c['cost_usd_median_client_estimate']}")
 
 
 if __name__ == "__main__":

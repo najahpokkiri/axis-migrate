@@ -12,7 +12,11 @@ inherited:
 - ds.lux_res_exposure_2020
 visual:
   expected: true
-  dataset: ds.lux_res_exposure_2020
-  category: boundary_stripes
+  datasets:
+  - ds.04_factor
+  - ds.lux_res_exposure_2020
+  categories:
+  - boundary_stripes
+  - whole_offset
 expected_status_max: target-ready
 id: L-T1b

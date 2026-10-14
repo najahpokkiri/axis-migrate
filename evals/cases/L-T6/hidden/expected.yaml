@@ -9,7 +9,11 @@ numbers:
   - ATTRIBUTE_VALUE_MISMATCH
 visual:
   expected: true
-  dataset: ds.lux_res_exposure_2020
-  category: uniform_scale
+  datasets:
+  - ds.lux_res_exposure_2020
+  - ds.04_factor
+  - ds.04_canton_factor
+  categories:
+  - uniform_scale
 expected_status_max: target-ready
 id: L-T6

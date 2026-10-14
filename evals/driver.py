@@ -91,7 +91,7 @@ async def main():
         permission_mode=JOB.get("permission_mode", "bypassPermissions"), max_turns=JOB.get("max_turns", 400),
         plugins=[{"type": "local", "path": JOB["plugin_dir"]}], env=env,
         cli_path=os.path.expanduser("~/.local/bin/claude"), setting_sources=JOB.get("setting_sources", ["project"]),
-        effort=JOB.get("effort"),
+        effort=JOB.get("effort"), max_buffer_size=64 * 1024 * 1024,
     )
     result = {"status": "unknown"}
     with open(os.path.join(TRIAL, "transcript.jsonl"), "a") as tr:

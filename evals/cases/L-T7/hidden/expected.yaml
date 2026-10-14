@@ -11,7 +11,11 @@ numbers:
   - ROW_COUNT_MISMATCH
 visual:
   expected: true
-  dataset: ds.lux_res_exposure_2020
-  category: missing_region
+  datasets:
+  - ds.lux_res_exposure_2020
+  - ds.04_factor
+  - ds.04_canton_factor
+  categories:
+  - missing_region
 expected_status_max: target-ready
 id: L-T7
