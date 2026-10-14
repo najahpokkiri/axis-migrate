@@ -91,6 +91,7 @@ def build_workspace_tar(cdir: Path, case: dict, trial_name: str) -> Path:
 
 REMOTE = r'''
 set -eu
+mkdir -p "$HOME/ws"; chmod 311 "$HOME/ws"   # create/traverse only: no listing of sibling trials
 T="$HOME/ws/{trial}"
 rm -rf "$T"; mkdir -p "$T/home" "$T/out"
 P="$HOME/plugins/{sha12}"
@@ -104,7 +105,10 @@ cd "$T"; tar -cf "$T.out.tar" out project
 
 
 def run_trial(case_id, cdir, case, sha, plugin_tar, model, trial_idx, results_root, effort):
-    trial = f"{case_id}-{sha[:8]}-{dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).strftime('%H%M%S')}-t{trial_idx}"
+    import secrets
+    trial = (f"{case_id}-{sha[:8]}-{dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).strftime('%H%M%S')}"
+             f"-t{trial_idx}-{secrets.token_hex(6)}")  # random suffix: sibling trials cannot guess each other's paths
+    print("trial start:", trial, flush=True)
     ws_tar = build_workspace_tar(cdir, case, trial)
     out_tar = DROP / f"out-{trial}.tar"
     driver = DROP / "driver.py"
@@ -157,7 +161,7 @@ def main():
     ap.add_argument("--skip-fence-probe", action="store_true")
     a = ap.parse_args()
     DROP.mkdir(exist_ok=True)
-    os.chmod(DROP, 0o755)
+    os.chmod(DROP, 0o711)   # traverse only: file names (random) are not listable
     if not a.skip_fence_probe:
         if subprocess.run([sys.executable, str(EVALS / "fence_probe.py")]).returncode != 0:
             raise SystemExit("evaluator_error: fence probe failed; batch not run")
