@@ -721,7 +721,8 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                       "basis": norm.get("source") or "categorical classes of both sides"},
             "diff_scale": {"min": -dl, "max": dl, "max_abs_diff": lim, "palette": DIFF_PALETTE + " reversed",
                            "meaning": "orange = new larger, purple = legacy larger, transparent = equal or nodata"},
-            "validity_counts": counts, "places": {"source": src, "items": places}, "views": views}
+            "validity_counts": counts, "bounds_4326": [round(x, 9) for x in bbox],
+            "places": {"source": src, "items": places}, "views": views}
 
 
 def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) -> dict:

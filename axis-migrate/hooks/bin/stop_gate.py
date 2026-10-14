@@ -9,6 +9,9 @@
 3. Claims in last_assistant_message (claims.py); negated ones and the quoted status line are ignored.
 4. Block iff a claim needs a rung above the computed one, or (2) found drift/missing evidence and a claim is present.
    Unacked user graph edits block regardless of claims (DESIGN §4.2, D2-14).
+5. Visual review (regardless of claims): when the latest run in migration/runs has compared raster/vector datasets,
+   block while any of them lacks a counting receipt from that run, PNG or GeoLibre view (lib/visual_receipt.py, the
+   rule compare.py aggregate uses), naming the datasets.
 On the 3rd consecutive block with stop_hook_active: allow and tell the user (systemMessage).
 `onFailure` does not apply to Stop, so errors are handled here: with a claim present -> block; otherwise allow.
 """
@@ -238,6 +241,30 @@ def missing_evidence(mig: Path, run_id: str | None) -> list[str]:
     return out
 
 
+def review_gap(mig: Path) -> tuple[str | None, list[str]]:
+    """(run id, compared raster/vector datasets without a counting visual receipt) of the latest run."""
+    runs = hl.recorded_runs(mig)
+    if not runs:
+        return None, []
+    import visual_receipt as vrc
+    rr = vrc.RunReceipts(runs[-1])
+    return rr.run_id, rr.missing_reviews()
+
+
+def review_text(run_id: str, missing: list[str], status: str) -> str:
+    names = ", ".join(missing[:8]) + (f" and {len(missing) - 8} more" if len(missing) > 8 else "")
+    return hl.ascii_text(
+        f"axis-migrate Stop gate: run {run_id} has {len(missing)} compared raster/vector dataset(s) without a visual "
+        f"review from this run: {names}.\n"
+        "Look before ending the turn. With a map pane (Claude or Codex desktop): views.py url for the overview, worst, "
+        "edges and nodata views, engine maplibre-gl-raster, identify a cell in a cell-<id> project, then "
+        "plot.py review-add with a view receipt (view + project_sha256, views_seen, engine, cells_read). Without a "
+        "pane (terminal, evals): Read every PNG and record PNG receipts. "
+        f"`plot.py review-status --run migration/runs/{run_id}` lists what is missing. You may only flag; a review "
+        "never raises a verdict.\n"
+        f"Status line: {status}", 3000)
+
+
 def open_high_impact(g: dict) -> list[str]:
     out = []
     for q in g.get("questions") or []:
@@ -344,6 +371,8 @@ def save_state(mig: Path, st: dict) -> None:
 def decide(data: dict, mig: Path) -> dict | None:
     text = last_message(data)
     found = cl.find_claims(text)
+    missing: list[str] = []
+    rv_run = None
     try:
         res = ladder_status(mig)
         g = hl.load_graph(mig)
@@ -371,6 +400,13 @@ def decide(data: dict, mig: Path) -> dict | None:
                 c = cl.strongest(bad) if bad else top
                 quote = cl.quote_context(text, c)
                 reason = block_text(quote, rung, res, g, problems)
+        rv_run, missing = review_gap(mig)
+        if missing:
+            rtext = review_text(rv_run, missing, res.get("status_line") or f"axis-migrate status: {rung}")
+            if reason is None:
+                reason, quote = rtext, ""
+            else:
+                reason = hl.ascii_text(reason + "\n" + rtext, 6000)
     except Exception as e:  # noqa: BLE001 - Stop has no onFailure: decide here
         if not found:
             return None
@@ -381,7 +417,7 @@ def decide(data: dict, mig: Path) -> dict | None:
                                "is unknown and run ladder.py.")
     if reason is None:
         return None
-    return {"reason": reason, "quote": quote, "rung": rung}
+    return {"reason": reason, "quote": quote, "rung": rung, "missing_reviews": missing, "review_run": rv_run}
 
 
 def main() -> int:
@@ -404,9 +440,17 @@ def main() -> int:
     if data.get("stop_hook_active") and n >= 2:
         st.pop(sid, None)
         save_state(mig, st)
+        msg = []
+        if d["quote"]:
+            msg.append(f"axis-migrate: the agent's last message claims '{d['quote']}'; computed status is {d['rung']}.")
+        if d.get("missing_reviews"):
+            msg.append(f"axis-migrate: run {d.get('review_run')} still has compared datasets without a visual review "
+                       f"from this run ({', '.join(d['missing_reviews'][:8])}).")
+        tail = ("treat the claim as unsupported." if d["quote"] else "")
+        if d.get("missing_reviews"):
+            tail += (" " if tail else "") + "treat those datasets as not visually assessed (VISUAL_REVIEW_MISSING)."
         hl.emit({"systemMessage": hl.ascii_text(
-            f"axis-migrate: the agent's last message claims '{d['quote']}'; computed status is {d['rung']}. "
-            "The Stop gate blocked this three times and is letting the turn end; treat the claim as unsupported.")})
+            " ".join(msg) + " The Stop gate blocked this three times and is letting the turn end; " + tail)})
         return 0
     st[sid] = {"consecutive": (n + 1) if data.get("stop_hook_active") else 1, "at": int(time.time())}
     save_state(mig, st)

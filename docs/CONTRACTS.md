@@ -202,12 +202,27 @@ Appends `{run_id, chain, executor, status, exit_code, started_at}` to `runs/inde
   ref: "ref:<sha>", tol: ["tol:…"]}` and `by_construction` flags per check. Paths in it relative to the project.
 - `verify/plots/<ds>/*.png` + `plots.json` (06 §4g); `verify/display/<ds>.{legacy,new,diff}.png` + `display.json`
   (07 §9, by `report/map.py display`); `verify/visual-review.json` = `{schema, rubric_id, rubric_sha256, findings[]}`
-  appended **only** by `plot.py review-add`; `verify/verdict.json` (06 §4d, **no rung**); `verify/scan.json`,
+  appended **only** by `plot.py review-add` (after seal: `runs/<id>/amend/visual-review.json` + `seal.py --amend`);
+  `verify/views/` = GeoLibre view projects + COGs + `views.json` (`skills/map/views.py`, display only; after seal
+  `amend/views/`); `verify/verdict.json` (06 §4d, **no rung**); `verify/scan.json`,
   `verify/tests.json` (runner preflight).
 - CLIs: `compare.py run --run <dir> [--dataset ds]…` · `compare.py aggregate --run <dir> [--isolation-run <dir>]…`
   · `compare.py pair --legacy L --new N --spec spec.json [--out x.json]` (standalone, for T0/score/target dry run)
   · `plot.py run --run <dir> [--dataset ds]` · `plot.py review-add --run <dir> --json finding.json`.
   Exit 0 only when every requested dataset is PASS_*.
+- **Visual receipts** (one acceptance rule, `lib/visual_receipt.py`, used by review-add/review-status, aggregate,
+  seal, ladder and the Stop gate). Common: `dataset_id, question_id (Q1…Q7 | Q-all), answer yes|no|cannot_tell,
+  effect flag|none (yes ⇔ flag), category (closed list), note ≤ 200, model`; set by review-add only: `run_id,
+  finding_id, rubric_id, rubric_sha256, created_at` (+ `receipt: "view"`). **PNG receipt**: `plot, plot_sha256, panel,
+  location{crs, bbox}` in the plot's map coordinates, `plots_seen` for Q-all; counts when the sha is a plot of this
+  run. **View receipt**: `view{project, project_sha256}`, `views_seen[{project, project_sha256}]` (raster: overview,
+  worst, edges, nodata + the `cell-<id>` project of each cell read; vector: overview, worst), `engine` (raster:
+  `maplibre-gl-raster`, else refused), `cells_read[{cell, legacy, new}]` (raster: ≥ 1, equal to views.json to ~3
+  significant figures, null = nodata), `layer?`, `location{crs: EPSG:4326, bbox}` and `observations[{what, value,
+  unit?}]` (both required for a yes); paths relative to the run under `verify/views` or `amend/views`; counts while
+  every cited project's bytes equal the receipt's sha and views.json; a Q-all "no" is refused (and does not count)
+  while views.json `validity_counts` has cells valid on one side only. Either kind is a receipt; a flag moves only
+  PASS_* to NEEDS_REVIEW (`VISUAL_FLAG`); nothing moves a verdict or rung up; `cannot_tell` is not a receipt.
 
 ## 8 Records (formats)
 
@@ -227,7 +242,9 @@ Appends `{run_id, chain, executor, status, exit_code, started_at}` to `runs/inde
 ## 9 Evidence, ladder, report (owner: report/)
 
 - `seal.py <migration> --run <run_id>` → `verify/` read-only, `evidence.json` (07 §3.3), `EVIDENCE_ID`, line in
-  `runs/index.jsonl`. `seal.py --amend` adds only `vis`, `dec-e`, `kd-e`, `tgt`.
+  `runs/index.jsonl`. `seal.py --amend` adds only `vis`, `view`, `dec-e`, `kd-e`, `tgt`. `view` objects bind the view
+  projects listed in views.json (`verify/views` at seal, `amend/views` by --amend); a view object whose file changed
+  is `VIEW_CHANGED` (information: its receipts stop counting), never EVIDENCE INCOMPLETE.
 - `ladder.py` (stdlib): `compute(migration_dir, run_id=None) -> {pipeline{rung, suffix, blockers[], counts},
   steps{id: {rung, disposition, caps[], annotations[]}}, integrity[], run_id, status_line}`; CLI
   `ladder.py <migration> [--run id] [--json]`. Uses the newest sealed run in `runs/index.jsonl` by default.

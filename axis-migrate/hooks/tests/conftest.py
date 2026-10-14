@@ -375,3 +375,49 @@ def project(tmp_path) -> Project:
 @pytest.fixture
 def project_run(tmp_path) -> Project:
     return make_project(tmp_path / "b", runs=True)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# A run with compared raster datasets (Stop gate: visual review from the current run)
+# ---------------------------------------------------------------------------------------------------------------
+sys.path.append(str(PLUGIN / "skills" / "verify" / "tests"))   # _viewsbuilder (after this dir: never its conftest)
+
+
+def add_compared_run(pr: Project, run_id: str, datasets=("ds.01_mid",), *, views: bool = True) -> Path:
+    """add_run plus a PASS_EXACT raster compare result, one plot (plots.json) and stand-in GeoLibre views for each
+    dataset. No receipt yet."""
+    import _viewsbuilder as vb
+    rd = add_run(pr, run_id)
+    for ds in datasets:
+        (rd / "verify" / "compare" / f"{ds}.json").write_text(json.dumps({
+            "schema": "axis-migrate.compare-result.v1", "run_id": run_id, "dataset_id": ds, "family": "raster",
+            "verdict": "PASS_EXACT", "reason_codes": [], "checks": [{"id": "raster.values", "state": "PASS_EXACT"}],
+            "result_id": "cmp:" + "1" * 64}))
+        pdir = rd / "verify" / "plots" / ds
+        pdir.mkdir(parents=True)
+        (pdir / "overview.png").write_bytes(b"\x89PNG synthetic " + ds.encode())
+        (pdir / "plots.json").write_text(json.dumps({"dataset_id": ds, "png": [
+            {"name": "overview.png", "kind": "overview", "sha256": sha(pdir / "overview.png")}]}))
+    if views:
+        vb.make_views(rd, {ds: "raster" for ds in datasets})
+    return rd
+
+
+def add_receipt(rd: Path, ds: str, kind: str = "png", **over) -> dict:
+    """Append a receipt as plot.py review-add stores it (the Stop gate re-checks it like compare.py aggregate)."""
+    import _viewsbuilder as vb
+    run_id = json.loads((rd / "manifest.json").read_text())["run_id"]
+    if kind == "png":
+        p = rd / "verify" / "plots" / ds / "overview.png"
+        f = {"dataset_id": ds, "question_id": "Q-all", "answer": "no", "effect": "none", "category": "none",
+             "plot": f"plots/{ds}/overview.png", "plot_sha256": sha(p), "panel": "all", "note": "", "model": "m"}
+    else:
+        doc = json.loads((rd / "verify" / "views" / "views.json").read_text())
+        f = dict(vb.view_receipt(doc, ds), receipt="view")
+    f.update(run_id=run_id, finding_id=f"vf-{ds}-{kind}-{len(over)}", created_at="2026-10-16T12:00:00Z")
+    f.update(over)
+    vr = rd / "verify" / "visual-review.json"
+    doc = json.loads(vr.read_text()) if vr.is_file() else {"schema": "axis-migrate.visual-review.v1", "findings": []}
+    doc["findings"].append(f)
+    vr.write_text(json.dumps(doc))
+    return f

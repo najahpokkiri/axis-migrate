@@ -5,7 +5,10 @@ Subcommands (CONTRACTS §7):
   run           --run <run_dir> [--dataset ds]…     read verify/compare/<ds>.json + both files; write
                                                     verify/plots/<ds>/*.png + plots.json (stale plots removed first)
   review-add    --run <run_dir> --json finding.json the ONLY way a model writes a visual finding: schema-validated,
-                                                    appended atomically to verify/visual-review.json
+                                                    appended atomically to verify/visual-review.json. A PNG receipt
+                                                    cites a plot (plot, plot_sha256); a view receipt cites GeoLibre
+                                                    map views (view, views_seen, engine, cells_read; checked against
+                                                    views.json by lib/visual_receipt.py). Both count the same.
   review-status --run <run_dir> [--json]            which compared raster/vector datasets still lack a receipt
 
 Plots are evidence about verdicts, never inputs to them. Every PNG is rendered with matplotlib Agg at DPI 150 with a
@@ -57,6 +60,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "lib"))
 sys.path.insert(0, str(HERE))
 import axis_common as ac  # noqa: E402
+import visual_receipt as vrc  # noqa: E402
 
 GENERATOR = "axis-migrate.plot"
 VERSION = "1.0.0"
@@ -1829,6 +1833,8 @@ def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple
     errs: list[str] = []
     if not isinstance(f, dict):
         return ["a finding must be a JSON object"], None
+    if vrc.is_view(f):
+        return validate_view_finding(run, f, rubric, existing_ids)
     unknown = sorted(set(f) - set(FINDING_REQUIRED) - set(FINDING_OPTIONAL))
     added = sorted(set(f) & set(FINDING_ADDED))
     if added:
@@ -1969,6 +1975,135 @@ def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple
     return [], out
 
 
+# ---- view receipts (GeoLibre map views, skills/map/views.py; acceptance rule in lib/visual_receipt.py)
+VIEW_REQUIRED = ("dataset_id", "question_id", "category", "answer", "effect", "view", "views_seen", "note", "model")
+VIEW_OPTIONAL = ("finding_id", "run_id", "location", "engine", "cells_read", "layer", "observations")
+VIEW_ADDED = FINDING_ADDED + ("receipt",)
+VIEW_LAYERS = ("legacy", "new", "diff", "validity", "zones")
+OBS_MAX = 20
+
+
+def _finite(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def validate_view_finding(run: Run, f: dict, rubric: dict, existing_ids: set) -> tuple[list[str], dict | None]:
+    """A receipt from the GeoLibre map views: cites view projects by path + sha256 (views.json of this run), the
+    raster engine used and the cells read from the identify popup. Same answer/effect/category rules as a PNG receipt;
+    a reviewer may only flag."""
+    errs: list[str] = []
+    unknown = sorted(set(f) - set(VIEW_REQUIRED) - set(VIEW_OPTIONAL))
+    added = sorted(set(f) & set(VIEW_ADDED))
+    if added:
+        errs.append(f"fields set by review-add, not by the reviewer: {added}")
+        unknown = [u for u in unknown if u not in added]
+    png_only = sorted(set(unknown) & {"plot", "plot_sha256", "panel", "plots_seen"})
+    if png_only:
+        errs.append(f"a view receipt cites views, not plots: drop {png_only} (or send a PNG receipt without `view`)")
+        unknown = [u for u in unknown if u not in png_only]
+    if unknown:
+        errs.append(f"unknown fields: {unknown}")
+    for k in VIEW_REQUIRED:
+        if k not in f:
+            errs.append(f"missing field {k}")
+    if errs:
+        return errs, None
+    ds, q, ans, eff, cat = f["dataset_id"], f["question_id"], f["answer"], f["effect"], f["category"]
+    if f.get("run_id") not in (None, run.run_id):
+        errs.append(f"run_id {f.get('run_id')!r} is not this run ({run.run_id})")
+    res = run.results([ds]).get(ds) if isinstance(ds, str) else None
+    if res is None:
+        errs.append(f"dataset {ds!r} has no compare result in this run")
+    fam = (res or {}).get("family")
+    if res is not None and fam not in vrc.REQUIRED_VIEWS:
+        errs.append(f"{ds} is a {fam} dataset: map views exist only for rasters and vectors")
+    if ans not in ("yes", "no", "cannot_tell"):
+        errs.append("answer must be yes | no | cannot_tell")
+    if eff not in ("flag", "none"):
+        errs.append("effect must be flag | none")
+    if eff == "flag" and ans != "yes":
+        errs.append("effect flag requires answer yes")
+    if ans == "yes" and eff != "flag":
+        errs.append("answer yes (defect present) requires effect flag: a reviewer may only flag")
+    if cat not in ac.VISUAL_CATEGORIES:
+        errs.append(f"category {cat!r} not in the closed list {ac.VISUAL_CATEGORIES}")
+    qs = {x["id"]: x for x in rubric.get("questions", [])}
+    if q == Q_ALL:
+        if ans != "no" or eff != "none" or cat != "none":
+            errs.append(f"{Q_ALL} records 'looked at every view, nothing found': answer no, effect none, "
+                        "category none")
+    elif q not in qs:
+        errs.append(f"question_id {q!r} not in rubric {rubric.get('id')} (Q1…Q7 or {Q_ALL})")
+    else:
+        qd = qs[q]
+        if fam and fam not in qd.get("families", []):
+            errs.append(f"{q} is not asked of {fam} datasets (rubric families {qd.get('families')})")
+        if ans == "yes" and cat not in qd.get("categories", []):
+            errs.append(f"category {cat!r} does not answer {q}; allowed: {qd.get('categories')}")
+        if ans != "yes" and cat != "none":
+            errs.append("category must be none unless the answer is yes")
+        if ans == "no":
+            errs.append(f"a view receipt that found nothing is one {Q_ALL} receipt (answer no) for the dataset")
+    note = f["note"]
+    if not isinstance(note, str) or len(note) > NOTE_MAX:
+        errs.append(f"note must be a string of at most {NOTE_MAX} characters")
+    elif ans == "yes" and not note.strip():
+        errs.append("a yes answer needs a note saying what is seen where")
+    if not isinstance(f["model"], str) or not f["model"].strip():
+        errs.append("model must name the reviewing model")
+    fid = f.get("finding_id")
+    if fid is not None and (not isinstance(fid, str) or not FID_RE.match(fid)):
+        errs.append("finding_id must look like vf-<letters, digits, . _ ->")
+    layer = f.get("layer")
+    if layer is not None and layer not in VIEW_LAYERS:
+        errs.append(f"layer must be one of {VIEW_LAYERS}")
+    obs = f.get("observations")
+    if obs is not None:
+        if not isinstance(obs, list) or len(obs) > OBS_MAX or not all(
+                isinstance(o, dict) and set(o) <= {"what", "value", "unit"} and {"what", "value"} <= set(o)
+                and isinstance(o["what"], str) and 0 < len(o["what"].strip()) <= NOTE_MAX and _finite(o["value"])
+                and (o.get("unit") is None or (isinstance(o["unit"], str) and len(o["unit"]) <= 20))
+                for o in obs):
+            errs.append(f"observations must be a list of at most {OBS_MAX} {{what (≤ {NOTE_MAX} characters), "
+                        "value (a number), unit?}}")
+    if ans == "yes" and not obs:
+        errs.append("a flag from the map needs observations with numbers, e.g. "
+                    "[{\"what\": \"cells valid on legacy only along the west edge\", \"value\": 812, "
+                    "\"unit\": \"cells\"}]")
+    loc = f.get("location")
+    if loc is None:
+        if ans == "yes":
+            errs.append("a yes answer needs location {crs: \"EPSG:4326\", bbox: [west, south, east, north]} "
+                        "(lon/lat as the popup prints them)")
+    elif not isinstance(loc, dict) or set(loc) != {"crs", "bbox"} or loc.get("crs") != "EPSG:4326":
+        errs.append("location must be {crs: \"EPSG:4326\", bbox: [west, south, east, north]} for a view receipt")
+    else:
+        bb = loc.get("bbox")
+        if not (isinstance(bb, list) and len(bb) == 4 and all(_finite(x) for x in bb) and bb[0] <= bb[2]
+                and bb[1] <= bb[3] and -180 <= bb[0] and bb[2] <= 180 and -90 <= bb[1] and bb[3] <= 90):
+            errs.append("location.bbox must be 4 finite lon/lat numbers west ≤ east, south ≤ north")
+    if errs:
+        return errs, None
+    probs = vrc.check_view_on_disk(run.dir, run.run_id, f, fam)
+    if probs:
+        return probs, None
+    out = {k: f[k] for k in VIEW_REQUIRED}
+    out["views_seen"] = sorted(f["views_seen"], key=lambda s: s["project"])
+    out["engine"] = f.get("engine")
+    out["cells_read"] = sorted(f.get("cells_read") or [], key=lambda c: str(c["cell"]))
+    for k in ("location", "layer", "observations"):
+        if f.get(k) is not None:
+            out[k] = f[k]
+    out["run_id"] = run.run_id
+    out["receipt"] = "view"
+    core = {k: out.get(k) for k in ("run_id", "dataset_id", "question_id", "answer", "effect", "category", "view",
+                                     "views_seen", "engine", "cells_read", "location", "note", "model")}
+    out["finding_id"] = fid or ("vf-" + ac.sha256_bytes(ac.cjson(core))[:16])
+    if out["finding_id"] in existing_ids:
+        return [f"finding_id {out['finding_id']} already recorded (identical finding or reused id)"], None
+    return [], out
+
+
 def _locked_update(lock_dir: Path, fn) -> Any:
     fd = os.open(lock_dir, os.O_RDONLY)
     try:
@@ -2058,8 +2193,10 @@ def cmd_review_add(args) -> int:
         return EXIT_REJECTED
     where = "amend/visual-review.json (run sealed)" if sealed else "verify/visual-review.json"
     for f in new:
+        on = f"view {f['view']['project']} ({len(f['views_seen'])} views, engine {f.get('engine')})" \
+            if f.get("receipt") == "view" else f["plot"]
         print(f"recorded {f['finding_id']} in {where}: {f['dataset_id']} {f['question_id']} {f['answer']} "
-              f"({f['effect']}) on {f['plot']}")
+              f"({f['effect']}) on {on}")
     if sealed:
         code, msg = _seal_amend(run)
         print(msg, file=sys.stdout if code == 0 else sys.stderr)
@@ -2078,6 +2215,7 @@ def review_status(run: Run) -> dict:
     avr = run.dir / "amend" / "visual-review.json"
     if avr.is_file():
         findings += list(ac.load_json(avr).get("findings") or [])
+    receipts = vrc.RunReceipts(run.dir)
     out = {"run_id": run.run_id, "rubric_id": rubric["id"], "rubric_sha256": rsha,
            "file_rubric_sha256": vr.get("rubric_sha256"), "datasets": {}, "optional": {}}
     for ds, res in sorted(run.results().items()):
@@ -2094,14 +2232,19 @@ def review_status(run: Run) -> dict:
                 if fp.is_file() and ac.sha256_file(fp) == e.get("sha256"):
                     shas.add(e.get("sha256"))
         mine = [f for f in findings if f.get("dataset_id") == ds and f.get("run_id") == run.run_id]
-        valid = [f for f in mine if f.get("plot_sha256") in shas]
+        views_ok = [f for f in mine if vrc.is_view(f) and receipts.problem(f) is None]
+        valid = [f for f in mine if not vrc.is_view(f) and f.get("plot_sha256") in shas] + views_ok
         required = sorted(q["id"] for q in rubric.get("questions", []) if fam in q.get("families", [])
                           and q.get("required", True))
         answered = sorted({f.get("question_id") for f in valid})
         qall = any(f.get("question_id") == Q_ALL for f in valid)
         missing = [] if qall else [q for q in required if q not in answered]
         receipted = any(f.get("answer") in ("yes", "no") for f in valid)
-        if not doc:
+        by_views = any(f.get("answer") in ("yes", "no") for f in views_ok)   # views_seen covers every view
+        if by_views:
+            missing = []
+            status = "complete"
+        elif not doc:
             status = "no plots"
         elif stale:
             status = "stale plots"
@@ -2115,6 +2258,7 @@ def review_status(run: Run) -> dict:
             status = "complete"
         entry = {"family": fam, "compare_verdict": res.get("verdict"), "status": status, "missing_questions": missing,
                  "answered": answered, "q_all": qall, "invalid_receipts": len(mine) - len(valid),
+                 "view_receipts": len(views_ok), "via": "views" if by_views else ("plots" if valid else None),
                  "flags": sorted(f["finding_id"] for f in valid if f.get("effect") == "flag"),
                  "cannot_tell": sorted(f["finding_id"] for f in valid if f.get("answer") == "cannot_tell")}
         (out["datasets"] if compared else out["optional"])[ds] = entry

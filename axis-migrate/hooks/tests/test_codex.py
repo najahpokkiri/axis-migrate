@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 import pytest
-from conftest import MARKER_DIR, PAYLOADS, add_run, run_hook
+from conftest import MARKER_DIR, PAYLOADS, add_compared_run, add_receipt, add_run, run_hook
 
 import recordparse as rp
 
@@ -199,6 +199,29 @@ def test_stop_codex_block_cap_and_json_on_allow(project):
     r3 = stop(True)
     assert r3.out.get("decision") is None and "systemMessage" in r3.out
     ok = stop(False, "Which option do you prefer?")
+    assert ok.rc == 0 and ok.out == {}
+
+
+def test_stop_codex_visual_review_gate(project):
+    """Same review gate under Codex: block naming the datasets, 3-block cap with a systemMessage, `{}` once every
+    compared dataset has a receipt from the current run (a view receipt here)."""
+    rd = add_compared_run(project, "r20261016T100000Z-00000000", ("ds.01_mid", "ds.02_more"))
+
+    def stop(active, msg="Which option do you prefer?"):
+        return run_hook("stop_gate.py", codex("Stop", cwd=str(project.root), last_assistant_message=msg,
+                                              stop_hook_active=active), env=CODEX_ENV)
+    r1 = stop(False)
+    assert r1.rc == 0 and r1.decision == "block" and "ds.01_mid, ds.02_more" in r1.reason and r1.reason.isascii()
+    assert stop(True).decision == "block"
+    r3 = stop(True)
+    assert r3.out.get("decision") is None and "visual review" in r3.out["systemMessage"]
+    add_receipt(rd, "ds.01_mid", "view")
+    r4 = stop(False)
+    assert r4.decision == "block" and "ds.02_more" in r4.reason and "ds.01_mid" not in r4.reason.split("Look")[0]
+    add_receipt(rd, "ds.02_more", "view", engine="titiler")       # refused engine: does not count
+    assert stop(False).decision == "block"
+    add_receipt(rd, "ds.02_more", "png")
+    ok = stop(False)
     assert ok.rc == 0 and ok.out == {}
 
 

@@ -38,6 +38,7 @@ import numpy as np  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 import axis_common as ac  # noqa: E402
+import visual_receipt as vrc  # noqa: E402
 
 COMPARATOR_ID = "axis-migrate.compare"
 COMPARATOR_VERSION = "1.0.0"
@@ -3248,40 +3249,18 @@ def _recompute_state(r: dict) -> str | None:
 
 
 def _visual(rc: RunContext, results: dict) -> tuple[dict, dict]:
+    """Receipts of this run (lib/visual_receipt.py is the one acceptance rule): a PNG receipt must cite a plot hash
+    of this run, a view receipt the GeoLibre view projects of this run with their current bytes (a project changed
+    after the review does not count). Both count the same: a receipt, and a flag at most moves PASS_* down."""
     vdir = rc.run / "verify"
     vr = ac.load_json(vdir / "visual-review.json") if (vdir / "visual-review.json").exists() else {"findings": []}
     per: dict[str, dict] = collections.defaultdict(lambda: {"receipts": [], "flags": [], "notes": []})
     rejected, not_assessed = [], []
-    plot_cache: dict[str, set] = {}
-
-    def plot_shas(ds):
-        if ds not in plot_cache:
-            pj = vdir / "plots" / ds / "plots.json"
-            shas = set()
-            if pj.exists():
-                for png in ac.load_json(pj).get("png", []):
-                    f = vdir / "plots" / ds / png.get("name", "")
-                    if png.get("sha256") and (not f.exists() or ac.sha256_file(f) == png["sha256"]):
-                        shas.add(png["sha256"])
-            plot_cache[ds] = shas
-        return plot_cache[ds]
+    receipts = vrc.RunReceipts(rc.run)
+    receipts.run_id = rc.run_id
     for f in vr.get("findings", []) or []:
         fid, ds = f.get("finding_id"), f.get("dataset_id")
-        why = None
-        if f.get("run_id") != rc.run_id:
-            why = f"run_id {f.get('run_id')!r} is not this run"
-        elif ds not in results:
-            why = f"dataset {ds!r} has no compare result in this run"
-        elif f.get("answer") not in ("yes", "no", "cannot_tell"):
-            why = "answer must be yes|no|cannot_tell"
-        elif f.get("effect") not in ("flag", "none"):
-            why = "effect must be flag|none"
-        elif f.get("effect") == "flag" and f.get("answer") != "yes":
-            why = "effect flag requires answer yes"
-        elif f.get("plot_sha256") not in plot_shas(ds):
-            why = "plot_sha256 does not match plots.json of this run"
-        elif f.get("plot") and (vdir / f["plot"]).exists() and ac.sha256_file(vdir / f["plot"]) != f["plot_sha256"]:
-            why = "plot_sha256 does not match the plot file"
+        why = receipts.problem(f, results)
         if why:
             rejected.append({"finding_id": fid, "dataset_id": ds, "why": why})
             continue
@@ -3289,9 +3268,12 @@ def _visual(rc: RunContext, results: dict) -> tuple[dict, dict]:
             not_assessed.append({"finding_id": fid, "dataset_id": ds, "question_id": f.get("question_id")})
             continue
         per[ds]["receipts"].append(fid)
+        if vrc.is_view(f):
+            per[ds].setdefault("view_receipts", []).append(fid)
         if f["effect"] == "flag":
             per[ds]["flags"].append({"finding_id": fid, "question_id": f.get("question_id"),
-                                     "category": f.get("category"), "plot": f.get("plot")})
+                                     "category": f.get("category"),
+                                     "plot": f.get("plot") or (f.get("view") or {}).get("project")})
     return per, {"rejected": rejected, "not_visually_assessed": not_assessed,
                  "rubric_sha256": vr.get("rubric_sha256"), "findings": len(vr.get("findings", []) or [])}
 

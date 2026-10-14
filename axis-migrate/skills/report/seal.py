@@ -7,8 +7,10 @@
 Runs once, after compare, plots, display layers and the visual review. Re-hashes everything the run and verify
 produced, writes runs/<id>/verify/evidence.json (axis-migrate.evidence.v1) + EVIDENCE_ID, makes verify/ read-only and
 appends a line to runs/index.jsonl. `--amend` writes evidence.<n>.json with parent_evidence_id and may add only `vis`
-(runs/<id>/amend/visual-review.json), `dec-e`/`kd-e` (new entries in the live decisions.md / known-differences.md)
-and, with --target, `tgt` (migration/databricks/ and runs/<id>/target/).
+(runs/<id>/amend/visual-review.json), `view` (GeoLibre view projects listed in runs/<id>/amend/views/views.json,
+which a view receipt cites), `dec-e`/`kd-e` (new entries in the live decisions.md / known-differences.md) and, with
+--target, `tgt` (migration/databricks/ and runs/<id>/target/). The first seal binds the view projects of
+verify/views/views.json as `view` objects (display only: a changed view project only stops its receipts counting).
 
 Exit: 0 sealed · 2 refused (already sealed, run not found, secret found) · 70 harness error.
 """
@@ -27,6 +29,7 @@ sys.path.insert(0, str(HERE.parents[1] / "lib"))
 sys.path.insert(0, str(HERE))
 import axis_common as ac  # noqa: E402
 import ladder  # noqa: E402
+import visual_receipt as vrc  # noqa: E402
 
 try:
     import yaml  # pinned env
@@ -457,6 +460,8 @@ def build_evidence(migration: Path, run_id: str) -> tuple[dict, Builder]:
                 if m:
                     ds = m.group(1)
                 bd.file_obj("disp", p, dataset=ds, name=p.name)
+    # GeoLibre view projects (skills/map/views.py, display only): bound so that a view receipt can cite them
+    view_ids = view_objects(bd, run_dir)
     # visual review
     vr = verify / "visual-review.json"
     if vr.is_file():
@@ -464,12 +469,11 @@ def build_evidence(migration: Path, run_id: str) -> tuple[dict, Builder]:
         doc = _load(vr) or {}
         for f in sorted(doc.get("findings") or [], key=lambda x: str(x.get("finding_id"))):
             bd.add({"id": ac.object_id("vis", f), "kind": "vis", "path": bd.rel(vr), "finding_id": f.get("finding_id"),
-                    "dataset": f.get("dataset_id"),
-                    "refs": [plot_ids[ladder.hex_of(f.get("plot_sha256"))]]
-                    if ladder.hex_of(f.get("plot_sha256")) in plot_ids else None,
+                    "dataset": f.get("dataset_id"), "refs": vis_refs(f, plot_ids, view_ids),
                     "meta": {"answer": f.get("answer"), "effect": f.get("effect"),
                              "question_id": f.get("question_id"), "category": f.get("category"),
-                             "by": f.get("model") or f.get("by")}})
+                             "by": f.get("model") or f.get("by"),
+                             **({"receipt": "view"} if vrc.is_view(f) else {})}})
     for name, kind in (("verdict.json", "aux"), ("contract.json", "aux"), ("scan.json", "scan"),
                        ("tests.json", "tests")):
         p = verify / name
@@ -566,6 +570,31 @@ def build_evidence(migration: Path, run_id: str) -> tuple[dict, Builder]:
     return _jsonable_ev(ev), bd
 
 
+def view_objects(bd: Builder, run_dir: Path) -> dict[tuple, str]:
+    """`view` objects for every view project listed in verify/views/views.json and amend/views/views.json whose
+    bytes still match the index. Returns {(path relative to the run, sha256): object id}."""
+    out = {}
+    for root in vrc.views_index_rel(run_dir):
+        for v in vrc.sealable_views(run_dir, root):
+            meta = {"view": v["view"], "family": v["family"], "index": f"{root}/views.json"}
+            if v["family"] == "raster" and isinstance(v.get("validity_counts"), dict):
+                meta["validity_counts"] = v["validity_counts"]
+            oid = bd.file_obj("view", v["path"], dataset=v["dataset"], meta=meta)
+            out[(Path(v["path"]).relative_to(run_dir).as_posix(), v["sha256"])] = oid
+    return out
+
+
+def vis_refs(f: dict, plot_ids: dict, view_ids: dict) -> list | None:
+    """A PNG receipt refers to its plot object, a view receipt to the view objects it cites."""
+    if vrc.is_view(f):
+        cited = [f.get("view") or {}] + list(f.get("views_seen") or [])
+        ids = sorted({view_ids[(c.get("project"), c.get("project_sha256"))] for c in cited if isinstance(c, dict)
+                      and (c.get("project"), c.get("project_sha256")) in view_ids})
+        return ids or None
+    h = ladder.hex_of(f.get("plot_sha256"))
+    return [plot_ids[h]] if h in plot_ids else None
+
+
 def ladder_clean(d):
     return _jsonable(d)
 
@@ -614,15 +643,21 @@ def amend(migration: Path, run_id: str, target: bool = False) -> dict:
     # vis: findings added after seal go to runs/<id>/amend/visual-review.json (verify/ is read-only)
     avr = run_dir / "amend" / "visual-review.json"
     plot_by_sha = {ladder.hex_of(o.get("sha256")): o["id"] for o in parent["objects"] if o["kind"] == "plot"}
+    # view projects: those sealed before plus any new ones (amend/views/ after seal; display only)
+    view_ids = {(Path(o["path"]).relative_to(bd.rel(run_dir)).as_posix(), ladder.hex_of(o.get("sha256"))): o["id"]
+                for o in parent["objects"]
+                if o["kind"] == "view" and o.get("path", "").startswith(bd.rel(run_dir) + "/")}
+    for (rel, h), oid in view_objects(bd, run_dir).items():
+        view_ids.setdefault((rel, h), oid)
     if avr.is_file():
         doc = _load(avr) or {}
         for f in sorted(doc.get("findings") or [], key=lambda x: str(x.get("finding_id"))):
             bd.add({"id": ac.object_id("vis", f), "kind": "vis", "path": bd.rel(avr),
                     "finding_id": f.get("finding_id"), "dataset": f.get("dataset_id"),
-                    "refs": [plot_by_sha[ladder.hex_of(f.get("plot_sha256"))]]
-                    if ladder.hex_of(f.get("plot_sha256")) in plot_by_sha else None,
+                    "refs": vis_refs(f, plot_by_sha, view_ids),
                     "meta": {"answer": f.get("answer"), "effect": f.get("effect"), "amended": True,
-                             "question_id": f.get("question_id"), "category": f.get("category")}})
+                             "question_id": f.get("question_id"), "category": f.get("category"),
+                             **({"receipt": "view"} if vrc.is_view(f) else {})}})
     # dec-e / kd-e: entries of the live files that the snapshot does not hold
     known_entries = {(o["kind"], o.get("entry")) for o in parent["objects"] if o["kind"] in ("dec-e", "kd-e")}
     for name, kind, prefix in (("decisions.md", "dec-e", "D"), ("known-differences.md", "kd-e", "KD")):

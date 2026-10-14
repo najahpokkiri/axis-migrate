@@ -6,7 +6,9 @@ Two chained runs of the golden pipeline on fresh fixture copies under tmp (the f
   clean    the golden pipeline as is → compare.py → views.py → check.py → seal.py → views.py again (amend path)
   shifted  the golden pipeline with s02's residential mask shifted one cell east before it is written
            (e2e item 10, numeric half): the validity layer of ds.02_res_mask must show exactly the stripe of
-           1s (legacy only) and 2s (new only) that a one-cell shift implies.
+           1s (legacy only) and 2s (new only) that a one-cell shift implies; scripted half: a view receipt that
+           finds nothing on it is refused, the recorded review flags it, and the shifted run's rung does not rise
+           above the clean run's.
 """
 from __future__ import annotations
 
@@ -29,7 +31,11 @@ PLUGIN = REPO / "axis-migrate"
 MAP = PLUGIN / "skills" / "map"
 sys.path.insert(0, str(REPO / "devtests" / "run" / "lux_project"))
 sys.path.insert(0, str(PLUGIN / "lib"))
+sys.path.insert(0, str(PLUGIN / "skills" / "report"))
+sys.path.append(str(PLUGIN / "skills" / "verify" / "tests"))
+import _viewsbuilder as vb  # noqa: E402
 import axis_common as ac  # noqa: E402
+import ladder  # noqa: E402
 import make_lux_project as mlp  # noqa: E402
 
 AXPY = str(PLUGIN / "bin" / "axpy")
@@ -204,3 +210,80 @@ def test_report_sizes(clean, capsys):
         print(f"\nlux views: {total / 1e6:.2f} MB total; per dataset (layer files): "
               + ", ".join(f"{k} {v / 1e6:.2f} MB" for k, v in sorted(per.items())))
     assert total < 200e6
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# e2e item 10, scripted half: view receipts recorded through review-add (the pane itself is not driven here)
+# ---------------------------------------------------------------------------------------------------------------
+PLOT = PLUGIN / "skills" / "verify" / "plot.py"
+
+
+def review_add(run: Path, tmp: Path, f: dict) -> subprocess.CompletedProcess:
+    p = tmp / f"finding-{f['dataset_id']}.json"
+    p.write_text(json.dumps(f))
+    return subprocess.run([AXPY, str(PLOT), "review-add", "--run", str(run), "--json", str(p)], capture_output=True,
+                          text=True, timeout=600)
+
+
+def review_every_dataset(run: Path, tmp: Path) -> dict:
+    """One view receipt per compared dataset, cells read as the popup shows them; a raster with cells valid on one
+    side only (validity 1/2) is flagged with those counts, everything else is 'looked, nothing found'."""
+    d = doc(run)
+    out = {}
+    for e in d["datasets"]:
+        ds, fam = e["dataset"], e["family"]
+        counts = e.get("validity_counts") or {}
+        one_side = fam == "raster" and (counts.get("1") or counts.get("2"))
+        cells = {c["id"] for ve in e["views"].values() for c in ve["cells_to_identify"]}
+        pick = tuple(sorted(cells & ({"edge", "interior"} if one_side else {"interior"}))) or tuple(sorted(cells))[:1]
+        over = {}
+        if one_side:
+            over = {"observations": [{"what": "cells valid on legacy only (validity 1)", "value": counts["1"],
+                                      "unit": "cells"},
+                                     {"what": "cells valid on new only (validity 2)", "value": counts["2"],
+                                      "unit": "cells"}],
+                    "location": {"crs": "EPSG:4326", "bbox": e["bounds_4326"]},
+                    "note": f"one-cell stripes on the edges view: {counts['1']} legacy-only, {counts['2']} new-only"}
+        f = vb.view_receipt(d, ds, flag=bool(one_side), cells=pick if fam == "raster" else (), **over)
+        cp = review_add(run, tmp, f)
+        assert cp.returncode == 0, (ds, cp.stdout, cp.stderr)
+        out[ds] = bool(one_side)
+    return out
+
+
+def test_shifted_review_flags_and_rung_does_not_rise(clean, shifted, tmp_path, capsys):
+    sh([PY3, MAP / "views.py", "run", "--run", shifted])           # every dataset (the fixture built ds.02 only)
+    d = doc(shifted)
+    e = next(x for x in d["datasets"] if x["dataset"] == "ds.02_res_mask")
+    # a review claiming no issue on the shifted mask is refused, with the counts that contradict it
+    cp = review_add(shifted, tmp_path, vb.view_receipt(d, "ds.02_res_mask"))
+    assert cp.returncode == 2 and "'nothing found' refused" in cp.stderr
+    assert f"{e['validity_counts']['1']} cell(s) valid on legacy only" in cp.stderr
+    # and so is one read with the smoothing engine
+    cp = review_add(shifted, tmp_path, vb.view_receipt(d, "ds.02_res_mask", flag=True, engine="cog-tiler-wasm",
+                                                       location={"crs": "EPSG:4326", "bbox": e["bounds_4326"]}))
+    assert cp.returncode == 2 and "maplibre-gl-raster" in cp.stderr
+    flagged = review_every_dataset(shifted, tmp_path)
+    assert flagged["ds.02_res_mask"] is True
+    sh([AXPY, PLUGIN / "skills" / "verify" / "compare.py", "aggregate", "--run", shifted], ok=(0, 1))
+    v = json.loads((shifted / "verify" / "verdict.json").read_text())
+    m = v["datasets"]["ds.02_res_mask"]
+    assert m["visual"]["flags"] and m["visual"]["view_receipts"] and not v["visual"]["rejected"]
+    assert m["verdict"] not in ("PASS_EXACT", "PASS_WITHIN_TOLERANCE")
+    sh([AXPY, PLUGIN / "skills" / "report" / "seal.py", shifted.parents[1], "--run", shifted.name])
+    # the clean run, reviewed the same way (after its seal, receipts go to amend/ and are sealed by --amend)
+    sealed_before = (clean / "verify" / "evidence.json").exists()
+    flagged_clean = review_every_dataset(clean, tmp_path)
+    if not sealed_before:
+        sh([AXPY, PLUGIN / "skills" / "report" / "seal.py", clean.parents[1], "--run", clean.name])
+    lc, ls = ladder.compute(clean.parents[1]), ladder.compute(shifted.parents[1])
+    with capsys.disabled():
+        print(f"\nrungs: clean {lc['pipeline']['rung']} (flags {sorted(k for k, x in flagged_clean.items() if x)}), "
+              f"shifted {ls['pipeline']['rung']} (flags {sorted(k for k, x in flagged.items() if x)})")
+    assert ladder.rung_index(ls["pipeline"]["rung"]) <= ladder.rung_index(lc["pipeline"]["rung"])
+    sm, cm = ls["datasets"]["ds.02_res_mask"], lc["datasets"]["ds.02_res_mask"]
+    assert "VISUAL_FLAG" in sm["reason_codes"] and sm["visual"]["view_receipts"] >= 1
+    assert sm["state"] not in ("PASS_EXACT", "PASS_WITHIN_TOLERANCE")
+    order = ladder.DISPOSITION_ORDER
+    assert order.index(sm["disposition"]) <= order.index(cm["disposition"])
+    assert not [x for x in ls["integrity"] if x.get("severity") == "incomplete"]

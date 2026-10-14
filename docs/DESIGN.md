@@ -348,7 +348,10 @@ smoothing, angular buffers, missing region, tile seams, boundary ring, saturatio
 where `category` comes from 10's closed list (`whole_offset, boundary_stripes, missing_region, uniform_scale,
 smoothed_blurred, angular_outline, shrunken_features, class_missing, holes, none`). Limits enforced in the aggregator:
 a flag moves only a PASS_* dataset to `NEEDS_REVIEW`; nothing moves a state up; a flag is cleared by a human decision or
-by a new run whose plot no longer triggers it; receipts must cite a plot hash of the same run; shifts and sub-cell
+by a new run whose plot no longer triggers it; receipts must cite a plot hash of the same run, or (view receipts, recorded
+from the GeoLibre map views in a harness pane with the GPU raster engine and at least one identified cell per raster) the
+view projects of the same run by path + sha256 (CONTRACTS §7 "Visual receipts"; a view receipt counts exactly like a PNG
+receipt, never more); the Stop gate refuses to end a turn while a compared dataset of the latest run has neither; shifts and sub-cell
 defects remain code's job (Q1 complements G4 and `DATA_OFFSET_SUSPECTED`). The rubric is calibrated on lux controls and
 mutants before the demo (`calibration/rubric.v1.json`). Section 07's `visual/<ds>.json` per-dataset files are replaced by
 the single `verify/visual-review.json`.
@@ -427,7 +430,7 @@ marker (`skills/guard/hooks_active.py`). The script halves stay as defence in de
 | H4 | PreToolUse · Bash | `guard_bash.py` | deny write verbs on protected paths (shlex-parsed), PAM-writing GDAL tools on legacy files, direct pipeline execution outside the runner (`UNLEDGERED_RUN`), forged graph ops via curl, Databricks deploy/auth commands; `ask` on `graph.py apply` ops that demote a compared dataset or bridge a failing step |
 | H5 | PreToolUse · Read\|Grep\|Glob (eval mode only) | `guard_hidden.py` | deny PROVENANCE and build dirs when `AXIS_MIGRATE_HIDDEN_GLOBS` is set |
 | H6 | PostToolUse · Write\|Edit\|MultiEdit\|NotebookEdit | `codescan.py --hook` | scanner rules on `pipeline/`, `tests/`, `params.yaml` |
-| H7 | Stop | `stop_gate.py` | block a completion claim above the computed rung (claim regex → minimum rung); fixed block text with the status line; 3rd consecutive block → allow + message to the user |
+| H7 | Stop | `stop_gate.py` | block a completion claim above the computed rung (claim regex → minimum rung); block, with or without a claim, while a compared raster/vector of the latest run lacks a visual receipt (PNG or view) from that run, naming the datasets; fixed block text with the status line; 3rd consecutive block → allow + message to the user |
 
 Scanner rules (block unless noted; AST only; each measured on the archive corpus of 312 generated files and on the clean
 fixture scripts with 0 false positives; 08 §4): S01 broad except without raise · S02 except-pass · S03 failure returned

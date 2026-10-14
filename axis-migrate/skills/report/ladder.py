@@ -29,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 import axis_common as ac  # noqa: E402
+import visual_receipt as vrc  # noqa: E402
 
 LADDER_VERSION = "ladder.v1"
 EVIDENCE_SCHEMA = "axis-migrate.evidence.v1"
@@ -37,14 +38,16 @@ GREYED = ac.GREYED_RUNGS
 
 # Object kinds (07 §3.2) + `aux` for supporting JSON (manifest, verdict, contract, plots.json, display.json,
 # visual-review.json, snapshot inventory) and `inv`-free snapshot copies.
-FILE_KINDS = {"in", "ref", "out", "plot", "disp", "params", "tol", "graph", "dec", "kd", "lock", "aux"}
+# `view`: a GeoLibre view project (skills/map/views.py) a view receipt cites; display only, so a changed one is
+# VIEW_CHANGED (info: its receipts stop counting), never EVIDENCE INCOMPLETE.
+FILE_KINDS = {"in", "ref", "out", "plot", "disp", "params", "tol", "graph", "dec", "kd", "lock", "aux", "view"}
 TREE_KINDS = {"code", "tgt"}
 JSON_KINDS = {"cmp", "scan", "tests"}
 INLINE_KINDS = {"envrt"}
 ENTRY_KINDS = {"dec-e", "kd-e"}
 ELEMENT_KINDS = {"vis"}
 ALL_KINDS = FILE_KINDS | TREE_KINDS | JSON_KINDS | INLINE_KINDS | ENTRY_KINDS | ELEMENT_KINDS
-AMENDABLE_KINDS = {"vis", "dec-e", "kd-e", "tgt"}
+AMENDABLE_KINDS = {"vis", "view", "dec-e", "kd-e", "tgt"}
 
 EVIDENCE_KEYS = {"schema", "parent_evidence_id", "amendment", "project", "plugin", "run", "sealed", "objects",
                  "records", "coverage", "secret_scan", "amended_at"}
@@ -438,6 +441,14 @@ def verify_objects(b: Bundle) -> dict[str, bool]:
                         b.problem("EVIDENCE_HASH_MISMATCH", f"visual finding {o.get('finding_id')} changed or "
                                                             f"missing in {rel}", object=oid, path=rel)
                         good = False
+            elif kind == "view":
+                p = b.abspath(rel)
+                h = ac.sha256_file(p) if p.is_file() else None
+                if h is None or hex_of(o.get("sha256")) != h or f"view:{h}" != oid:
+                    b.problem("VIEW_CHANGED", f"view project {rel} missing or changed since seal: receipts citing it "
+                                              "do not count", object=oid, path=rel, dataset=o.get("dataset"),
+                              severity="info")
+                    good = False
             elif kind in ENTRY_KINDS:
                 p = b.abspath(rel)
                 txt = p.read_text(encoding="utf-8") if p.is_file() else None
@@ -764,6 +775,20 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
     for o in b.by_kind.get("plot", []):
         if obj_ok.get(okey(o)):
             plot_sha_by_ds.setdefault(o.get("dataset"), set()).add(hex_of(o.get("sha256")))
+    run_rel = _rel(b.project, b.run_dir) + "/"
+    views_by_ds: dict[str, dict] = {}       # dataset → {path relative to the run: {name, sha256, current, meta}}
+    for o in b.by_kind.get("view", []):
+        rel = str(o.get("path") or "")
+        if not rel.startswith(run_rel):
+            continue
+        key = rel[len(run_rel):]
+        ok = bool(obj_ok.get(okey(o)))
+        cur = views_by_ds.setdefault(o.get("dataset"), {}).get(key)
+        if cur is None or (ok and cur["current"] is None):
+            views_by_ds[o.get("dataset")][key] = {"name": (o.get("meta") or {}).get("view"),
+                                                  "sha256": hex_of(o.get("sha256")),
+                                                  "current": hex_of(o.get("sha256")) if ok else None,
+                                                  "meta": o.get("meta") or {}}
     findings = []
     for o in b.by_kind.get("vis", []):
         rel = o.get("path")
@@ -878,19 +903,34 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
         fr, fc = first_reason(cmp)
         r["first_reason"], r["first_check"] = fr, fc
 
-        # visual review (06 §4h): receipts must cite a plot hash of this run
+        # visual review (06 §4h): a PNG receipt must cite a sealed plot hash of this run, a view receipt sealed
+        # view projects of this run whose bytes still match (lib/visual_receipt.py; both count the same way)
         if r["kind"] in ("raster", "vector"):
             shas = plot_sha_by_ds.get(dsid, set())
             mine = [f for f in findings if f.get("dataset_id") == dsid]
-            # same acceptance rule as compare.py aggregate: this run, closed answer/effect vocabulary, a plot hash
-            # of this run; `cannot_tell` is listed as "not visually assessed" and is not a receipt
-            valid = [f for f in mine if hex_of(f.get("plot_sha256")) in shas and f.get("run_id") == b.run_id
-                     and f.get("answer") in ("yes", "no", "cannot_tell") and f.get("effect") in ("flag", "none")
-                     and not (f.get("effect") == "flag" and f.get("answer") != "yes")]
+            vmap = views_by_ds.get(dsid, {})
+            vcounts = next((x["meta"].get("validity_counts") for x in vmap.values()
+                            if isinstance(x["meta"].get("validity_counts"), dict)), None)
+
+            def counts(f, kind=r["kind"], shas=shas, vmap=vmap, vcounts=vcounts) -> bool:
+                # same acceptance rule as compare.py aggregate: this run, closed answer/effect vocabulary, then the
+                # cited plot or views; `cannot_tell` is listed as "not visually assessed" and is not a receipt
+                if not (f.get("run_id") == b.run_id and f.get("answer") in ("yes", "no", "cannot_tell")
+                        and f.get("effect") in ("flag", "none") and not (f.get("effect") == "flag"
+                                                                         and f.get("answer") != "yes")):
+                    return False
+                if vrc.is_view(f):
+                    return not vrc.check_view_receipt(f, family=kind, lookup=vmap.get,
+                                                      validity_counts=vcounts if kind == "raster" else None)
+                return hex_of(f.get("plot_sha256")) in shas
+            valid = [f for f in mine if counts(f)]
             invalid = [f for f in mine if f not in valid]
             flags = [f for f in valid if f.get("answer") == "yes" and f.get("effect") == "flag"
                      and f.get("finding_id") not in cleared]
-            r["visual"] = {"receipts": sum(1 for f in valid if f.get("answer") in ("yes", "no")), "invalid_receipts": len(invalid),
+            r["visual"] = {"receipts": sum(1 for f in valid if f.get("answer") in ("yes", "no")),
+                           "view_receipts": sum(1 for f in valid if vrc.is_view(f)
+                                                and f.get("answer") in ("yes", "no")),
+                           "invalid_receipts": len(invalid),
                            "flags": [f.get("finding_id") for f in flags],
                            "cleared": sorted(f.get("finding_id") for f in valid if f.get("finding_id") in cleared),
                            "cannot_tell": [f.get("finding_id") for f in valid if f.get("answer") == "cannot_tell"]}

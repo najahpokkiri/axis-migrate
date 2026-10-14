@@ -7,7 +7,8 @@ description: Look at legacy vs new results on a live map (GeoLibre, local only) 
 
 `$P` = plugin root; `<run>` = `migration/runs/<run_id>`. Run every script as `"$P/bin/axpy" "$P/skills/map/<x>.py" …`
 from the project folder (they switch to the map env themselves; first use installs GeoLibre 3.4.0, ~60 MB download,
-outside the plugin folder). Nothing here feeds a verdict: findings still go through `plot.py review-add` on the PNGs.
+outside the plugin folder). Nothing here feeds a verdict: findings go through `plot.py review-add` as a view
+receipt (verify SKILL §3.6: view projects + sha256, engine, cells read) or, without a pane, as PNG receipts.
 
 ## 1 Build and serve
 - `views.py run --run <run>` after `compare.py run`: per compared raster `verify/views/<ds>/` gets `legacy.tif`,

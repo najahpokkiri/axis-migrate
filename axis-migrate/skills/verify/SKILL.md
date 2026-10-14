@@ -27,6 +27,15 @@ black/dark grey = valid on one side only; zone boundaries green), `mask_diff.png
 `per_feature.png`, `worst_features.png`. Table: `residuals.png`. Plots are evidence about verdicts, never inputs.
 
 ## 3 Look (mandatory for every compared raster and vector dataset)
+One receipt kind per harness; both count the same, a flag has the same effect, and the Stop gate refuses to end the
+turn while a compared dataset of the latest run has neither.
+- **Claude desktop**: `map` skill (`views.py run`, `start.py migration`), then per dataset `views.py url --run <run>
+  --dataset <ds> --view overview|worst|edges|nodata` → `mcp__Claude_Browser__preview_start {url}`; switch Add Data →
+  Raster Layer → render engine to `maplibre-gl-raster`, nudge the map once; open a `cell-<id>` project (`views.py url
+  … --cell edge|interior|worst`), click the map centre, read legacy/new from the popup. Record a **view receipt**.
+- **Codex desktop**: the same in the in-app browser through browser use. Record a **view receipt**.
+- **Terminal, no pane, evals**: **PNG receipts** (steps 1–5). Without a pane you still Read the PNGs yourself.
+
 1. `plot.py review-status --run <run>` lists what still lacks a receipt and which questions are missing.
 2. **Read every PNG** of the dataset (Read tool on `migration/runs/<id>/verify/plots/<ds>/<name>.png`; Codex:
    `view_image`). Take `plot_sha256`, `panel_names`, `crs` and `extent` from `plots.json`.
@@ -51,7 +60,24 @@ black/dark grey = valid on one side only; zone boundaries green), `mask_diff.png
    `{"dataset_id": "ds.x", "question_id": "Q-all", "answer": "no", "effect": "none", "category": "none",
    "panel": "all", "plot": "plots/ds.x/overview.png", "plot_sha256": "…", "plots_seen": [{"plot": "…", "plot_sha256":
    "…"}, … every png of the dataset], "note": "", "model": "…"}`. Use it only after reading every listed PNG.
-6. Before sealing, receipts go to `verify/visual-review.json`. After the run is sealed, `review-add` appends to
+6. **View receipt** (same command; it has `view` instead of `plot`):
+   ```json
+   {"dataset_id": "ds.x", "question_id": "Q6", "answer": "yes", "effect": "flag", "category": "boundary_stripes",
+    "view": {"project": "verify/views/ds.x/edges.geolibre.json", "project_sha256": "<views.json>"},
+    "views_seen": [{"project": "verify/views/ds.x/overview.geolibre.json", "project_sha256": "…"}, … worst, edges,
+                   nodata, cell-edge],
+    "engine": "maplibre-gl-raster", "cells_read": [{"cell": "edge", "legacy": 1, "new": null}], "layer": "validity",
+    "location": {"crs": "EPSG:4326", "bbox": [west, south, east, north]},
+    "observations": [{"what": "cells valid on legacy only, west edge", "value": 812, "unit": "cells"}],
+    "note": "one-cell blue stripe west, orange stripe east", "model": "<your model id>"}
+   ```
+   Enforced: `views_seen` holds overview, worst, edges, nodata (vector: overview, worst) and the `cell-<id>` project of
+   every cell read, each sha equal to views.json and to the file; rasters need `engine: maplibre-gl-raster` and at
+   least one cell, values as the popup shows them (checked to ~3 significant figures; null = nodata); a yes needs
+   `location` (lon/lat), a note and `observations` with numbers. Nothing found = one `Q-all` view receipt with answer
+   no, refused while views.json counts cells valid on one side only (validity 1/2): flag those instead. A view
+   project whose bytes change after the review stops counting.
+7. Before sealing, receipts go to `verify/visual-review.json`. After the run is sealed, `review-add` appends to
    `runs/<id>/amend/visual-review.json` and calls `report/seal.py <migration> --run <id> --amend` itself (exit 4 =
    recorded but the amend seal failed: rerun that command).
 
