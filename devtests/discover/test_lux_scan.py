@@ -14,6 +14,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from discover_lux_util import (FIXTURE, PLUGIN, SCAN, copy_fixture, ds, op, provenance_inventory, run,  # noqa: E402
                                tree_state)
 
+
+# OS runtime files the interpreter or its libraries read on their own (narrow, exact): macOS system version plist
+# (stdlib platform / _osx_support via sysconfig, first triggered by importing pandas), mimetypes tables, tz database.
+import mimetypes as _mt
+import re as _re
+OS_RUNTIME = [_re.compile(r"^/System/Library/CoreServices/SystemVersion(Compat)?\.plist$"),
+              _re.compile(r"^/usr/share/zoneinfo/[A-Za-z0-9_+\-/]+$")]
+OS_RUNTIME_FILES = set(_mt.knownfiles) | {"/etc/localtime"}
+
+
+def os_runtime(p: str) -> bool:
+    return p in OS_RUNTIME_FILES or any(r.match(p) for r in OS_RUNTIME)
+
 TEMP_PRODUCERS = {  # AT-3: dataset -> (op id, call line, OUTPUT arg line, tool)
     "ds.01_lux_outline": ("s01_prepare_population.op1", 31, 35, "native:dissolve"),
     "ds.01_pop_lux": ("s01_prepare_population.op2", 40, 54, "gdal:cliprasterbymasklayer"),
@@ -33,11 +46,11 @@ def test_at1_read_only_and_audit(lux):
     assert not any(p.endswith(".aux.xml") and p not in lux["before"] for p in lux["after_all"])
     assert lux["inv"]["scan"]["read_only_verified"] is True
     legacy, mig = str(lux["legacy"]), str(lux["mig"])
-    allowed = (legacy, mig, lux["base_prefix"], lux["prefix"], str(PLUGIN), "/proc", "/dev", "/etc", "/usr",
-               str(lux["root"] / "opens.txt"))
+    allowed = (legacy, mig, lux["base_prefix"], lux["prefix"], str(PLUGIN), str(lux["root"] / "opens.txt"))
     paths = [p for p in lux["opened"] if p.startswith("/")]  # '<unknown>' = in-memory code objects, not files
     assert len(paths) > 30
-    bad = [p for p in paths if not os.path.realpath(p).startswith(allowed) and not p.startswith(allowed)]
+    bad = [p for p in paths if not os.path.realpath(p).startswith(allowed) and not p.startswith(allowed)
+           and not os_runtime(p)]
     assert not bad, bad[:10]
     assert not any("PROVENANCE" in p or ".build" in p for p in lux["opened"])
     assert not any(p.startswith(str(FIXTURE)) for p in lux["opened"])  # the code's absolute BASE is never followed

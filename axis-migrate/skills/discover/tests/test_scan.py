@@ -13,6 +13,19 @@ import pytest
 from scan_synth import AXPY, SCAN, build_project, ds, op_by, run, scan, tree_state
 
 
+# OS runtime files the interpreter or its libraries read on their own (narrow, exact): macOS system version plist
+# (stdlib platform / _osx_support via sysconfig, first triggered by importing pandas), mimetypes tables, tz database.
+import mimetypes as _mt
+import re as _re
+OS_RUNTIME = [_re.compile(r"^/System/Library/CoreServices/SystemVersion(Compat)?\.plist$"),
+              _re.compile(r"^/usr/share/zoneinfo/[A-Za-z0-9_+\-/]+$")]
+OS_RUNTIME_FILES = set(_mt.knownfiles) | {"/etc/localtime"}
+
+
+def os_runtime(p: str) -> bool:
+    return p in OS_RUNTIME_FILES or any(r.match(p) for r in OS_RUNTIME)
+
+
 @pytest.fixture(scope="module")
 def proj(tmp_path_factory):
     root = tmp_path_factory.mktemp("proj")
@@ -236,10 +249,11 @@ open({str(log)!r}, 'w').write('\\n'.join([sys.base_prefix, sys.prefix] + opened)
     base, prefix, *opened = log.read_text().splitlines()
     opened = [p for p in opened if p.startswith("/")]  # '<unknown>' = in-memory code objects
     assert not any(p.endswith(".env") for p in opened)
-    allowed = (str(leg), str(out), base, prefix, str(SCAN.parents[2]), "/proc", "/dev", "/etc", "/usr", str(log))
+    allowed = (str(leg), str(out), base, prefix, str(SCAN.parents[2]), str(log))
     import os.path as osp
     venv = osp.realpath(osp.join(osp.dirname(str(AXPY)), "..", "skills", "run", "env", ".venv"))
-    bad = [p for p in opened if not osp.realpath(p).startswith(allowed + (venv,)) and not p.startswith(allowed)]
+    bad = [p for p in opened if not osp.realpath(p).startswith(allowed + (venv,)) and not p.startswith(allowed)
+           and not os_runtime(p)]
     assert not bad, bad[:10]
 
 
