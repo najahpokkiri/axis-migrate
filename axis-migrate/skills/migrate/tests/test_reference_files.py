@@ -19,6 +19,7 @@ SKILL_DIR = Path(__file__).resolve().parents[1]
 PLUGIN = SKILL_DIR.parents[1]
 REF = SKILL_DIR / "reference"
 SKILL_MD = SKILL_DIR / "SKILL.md"
+BUILD_MD = SKILL_DIR / "BUILD.md"   # plan + step loop + router (the entry SKILL.md points to it)
 TEMPLATE = SKILL_DIR / "templates" / "step_template.py"
 
 # DESIGN §6: file names and the entry-id prefix each file owns.
@@ -78,7 +79,8 @@ PENDING_SCRIPTS = {"plot.py"}
 
 
 def _shipped_texts():
-    out = {SKILL_MD.name: SKILL_MD.read_text(encoding="utf-8"), TEMPLATE.name: TEMPLATE.read_text(encoding="utf-8")}
+    out = {SKILL_MD.name: SKILL_MD.read_text(encoding="utf-8"), BUILD_MD.name: BUILD_MD.read_text(encoding="utf-8"),
+           TEMPLATE.name: TEMPLATE.read_text(encoding="utf-8")}
     for name in FILES:
         out[name] = (REF / name).read_text(encoding="utf-8")
     return out
@@ -148,17 +150,19 @@ def test_guarded_mentions_carry_the_correct_rule():
 def test_skill_md_frontmatter_and_budget():
     text = SKILL_MD.read_text(encoding="utf-8")
     assert len(text.splitlines()) <= 80
-    fm = re.match(r"^---\nname: migrate\ndescription: (.+?)\n---\n", text, re.S)
+    fm = re.match(r"^---\nname: migrate\ndescription: (.+?)\n(?:[a-z-]+: .+\n)*---\n", text, re.S)
     assert fm and len(fm.group(1)) > 50
 
 
 def test_skill_md_router_names_every_file():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = SKILL_MD.read_text(encoding="utf-8") + BUILD_MD.read_text(encoding="utf-8")
     for name in FILES:
         assert f"`{name}`" in text, f"router misses {name}"
     for ref in re.findall(r"`((?:reference|templates)/[^`]+)`", text):
         assert (SKILL_DIR / ref).is_file(), ref
     for ref in re.findall(r"\$P/([^`\s\"]+)", text):
+        if "<" in ref:          # a pattern such as skills/<skill>/<script>.py, not a path
+            continue
         if ref.rstrip("/").endswith("reference"):
             assert (PLUGIN / ref).is_dir(), ref
         else:
@@ -179,7 +183,7 @@ def _help(script: Path, sub: str | None) -> str:
 
 def test_skill_md_commands_are_real():
     """Every `<script>.py …` span in SKILL.md: the script exists and each flag it uses is in its --help."""
-    text = SKILL_MD.read_text(encoding="utf-8").replace("\n", " ")
+    text = (SKILL_MD.read_text(encoding="utf-8") + BUILD_MD.read_text(encoding="utf-8")).replace("\n", " ")
     spans = [s for s in re.findall(r"`([^`]*\b[\w]+\.py\b[^`]*)`", text) if not s.startswith(("templates/", "pipeline/"))]
     assert spans
     checked = 0

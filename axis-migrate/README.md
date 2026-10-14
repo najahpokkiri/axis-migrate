@@ -62,6 +62,6 @@ person signs, the affected checks stay NEEDS_DECISION and the rung stays below r
 
 ## Layout
 
-`commands/migrate.md` (entry) · `skills/{discover,interview,migrate,run,verify,report,target}/` (SKILL.md + scripts) ·
+`skills/migrate/SKILL.md` (the entry: `/axis-migrate:migrate`) · `skills/{discover,interview,migrate,run,verify,report,target,map}/` ·
 `skills/guard/` (code scanner, protected paths, claim rules) · `hooks/` (Claude Code guards; each has a script half) ·
 `lib/axis_common.py` (shared stdlib helpers) · `bin/axpy` (the pinned interpreter) · `run_tests.sh`.
