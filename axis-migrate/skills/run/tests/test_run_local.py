@@ -424,3 +424,15 @@ def test_scan_binds_to_the_snapshot(runner, project, monkeypatch, tmp_path):
     time.sleep(1.05)
     code, man = runner()
     assert code == 11 and "SCAN_TARGET_CHANGED:pipeline" in man["reason_codes"] and man["steps"] == []
+
+
+def test_tolerance_proposals_are_snapshotted_but_optional(runner, project):
+    code, man = runner()
+    assert code == 0 and man["tolerances_proposed"] is None
+    prop = project / "tolerances.proposed.yaml"
+    prop.write_text("version: 1\nrecords: []\n")
+    time.sleep(1.05)
+    code, man = runner()
+    assert code == 0 and man["tolerances_proposed"] == {"sha256": rl.sha256_file(prop)}
+    assert (runner.run_dir(man) / "snapshot" / "tolerances.proposed.yaml").read_bytes() == prop.read_bytes()
+    assert man["code"]["worktree_changed_during_run"] is False

@@ -645,7 +645,7 @@ class Run:
 
     LIVE_FILES = {"params.yaml": "params.yaml", "graph.json": "graph.json", "inventory.json": "inventory.json",
                   "tolerances.yaml": "tolerances.yaml", "known-differences.md": "known-differences.md",
-                  "decisions.md": "decisions.md"}
+                  "decisions.md": "decisions.md", "tolerances.proposed.yaml": "tolerances.proposed.yaml"}
 
     def snapshot(self) -> None:
         snap = self.dir / "snapshot"
@@ -1522,6 +1522,9 @@ class Run:
                       "revision": self.graph.get("revision")},
             "inventory": {"sha256": self.snapshot_hashes.get("inventory.json")},
             "tolerances": {"sha256": self.snapshot_hashes.get("tolerances.yaml")},
+            # unsigned proposals: not part of the contract; compare uses them only for NEEDS_DECISION vs FAIL
+            "tolerances_proposed": ({"sha256": self.snapshot_hashes["tolerances.proposed.yaml"]}
+                                    if self.snapshot_hashes.get("tolerances.proposed.yaml") else None),
             "known_differences": {"sha256": self.snapshot_hashes.get("known-differences.md")},
             "decisions": {"sha256": self.snapshot_hashes.get("decisions.md")},
             "env": self.env_record, "reference_env": self.reference_env, "env_comparison": self.env_cmp,
