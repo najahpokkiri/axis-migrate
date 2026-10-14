@@ -1,0 +1,8 @@
+{
+  "name": "axis-migrate-dev",
+  "owner": {"name": "Axis Spatial"},
+  "plugins": [
+    {"name": "axis-migrate", "source": "./axis-migrate",
+     "description": "Migrate legacy GIS projects to geopandas/rasterio with per-step parity proof and computed, honest status."}
+  ]
+}
