@@ -41,7 +41,9 @@ def decide(pr, msg, monkeypatch, rung, run_id=None):
     ("The pipeline ran successfully.", "sandbox-validated"),
     ("The job is deployed to Databricks.", "deployed"),
     ("After the chained run, all checks pass.", "reference-verified"),
-    ("When I ran it, the outputs match the legacy files.", "reference-verified"),
+    ("The pipeline is reference-verified.", "reference-verified"),
+    ("Status: currently sandbox-validated.", "sandbox-validated"),
+    ("It is currently reference-verified and the report is written.", "reference-verified"),
     ("This is production-ready.", "deployed"),
 ])
 def test_claim_rungs(text, rung):
@@ -60,9 +62,28 @@ def test_claim_rungs(text, rung):
     "Code generated; it hasn't been validated.",
     'I did not end with "Migration complete, parity achieved." because the status is none.',
     "I will not write `all checks pass` here.",
+    # requirement / condition / goal statements (orchestrator finding, first e2e trial)
+    "The Databricks bundle was not generated. That step needs the pipeline at reference-verified.",
+    "Target-ready requires every final to be reference-verified.",
+    "The pipeline stops at sandbox-validated until a person signs.",
+    "To reach reference-verified, s02 must pass.",
+    "s03 is blocked: reference-verified only after the tolerance is signed.",
+    "When the chained run passes, the step is verified.",
+    "We are waiting for the user before it can be target-ready.",
+    "Nothing above sandbox-validated is possible yet.",
 ])
+
 def test_negated_or_absent_claims(text):
     assert cl.find_claims(text) == [], cl.find_claims(text)
+
+
+def test_requirement_plus_current_status():
+    text = ("The Databricks bundle was not generated. That step needs the pipeline at reference-verified, "
+            "and it is currently sandbox-validated.")
+    found = cl.find_claims(text)
+    assert [c.rung for c in found] == ["sandbox-validated"]          # the current status is reported ...
+    assert cl.unsupported(found, "sandbox-validated") == []          # ... and supported by the computed rung
+    assert cl.unsupported(found, "generated")                        # but still above a lower computed rung
 
 
 def test_target_claim_text_needs_target_ready():
@@ -71,7 +92,7 @@ def test_target_claim_text_needs_target_ready():
 
 
 def test_quoted_claim_still_counts():
-    assert cl.find_claims('I would summarise it as "all checks pass".')
+    assert cl.find_claims('My summary: "all checks pass".')
 
 
 # G10 ------------------------------------------------------------------------------------------------------------

@@ -43,8 +43,18 @@ NEGATORS = {
     "isn't", "aren't", "wasn't", "weren't", "hasn't", "haven't", "hadn't", "doesn't", "don't", "didn't",
     "will", "would", "should", "could", "can", "may", "might", "must", "to",
 }
-# Conditional/temporal markers negate the whole clause they open ("before the step is verified", "once s02 is done").
-CLAUSE_MARKERS = {"before", "until", "unless", "if", "once", "whether"}
+# Requirement / condition / goal / cap markers negate the rest of the clause they open: a rung that is the object of
+# a requirement is not a claim ("that step needs the pipeline at reference-verified", "before the step is verified",
+# "stops at sandbox-validated until a person signs").
+CLAUSE_MARKERS_RE = re.compile(
+    r"\b(?:needs?|requires?|required|requiring|until|before|once|when|if|unless|whether|would|below|above|"
+    r"cannot|can['\u2019]t|waiting\s+for|wait\s+for|blocked|to\s+reach|to\s+get\s+to|not\s+yet|only\s+after|"
+    r"stops?\s+at|capped\s+at|at\s+most|up\s+to|limited\s+to|aim(?:s|ing)?\s+(?:at|for)|goal|target\s+is)\b",
+    re.I)
+SENTENCE_BREAK_RE = re.compile(r"[.;!?\n]")
+CONDITION_OPENER_RE = re.compile(r"^\W*(?:if|when|once|until|unless|before|whenever)\b", re.I)
+TRAILING_CONDITION_RE = re.compile(r"^[\s,]*(?:\w+\s+){0,2}?(?:only\s+after|until|once|unless|if|requires?|needs?|"
+                                   r"after\s+(?:a|the)\s+(?:person|user|human))\b", re.I)
 CLAUSE_BREAK_RE = re.compile(r"[.;:!?\n,(]")
 QUOTE_RE = re.compile("\"[^\"\\n]{1,300}\"|\u201c[^\u201d\\n]{1,300}\u201d|`[^`\\n]{1,300}`|'[^'\\n]{4,300}'")
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z'’-]*")
@@ -79,7 +89,7 @@ def _blank(text: str, spans) -> str:
     return "".join(chars)
 
 
-def _negated(text: str, start: int) -> bool:
+def _negated(text: str, start: int, end: int | None = None) -> bool:
     before = text[max(0, start - 80):start]
     if re.search(r"\bun-\s*$", before, re.I) or re.search(r"n['’]t\s*$", before, re.I):
         return True
@@ -89,7 +99,16 @@ def _negated(text: str, start: int) -> bool:
             return True
     breaks = list(CLAUSE_BREAK_RE.finditer(text, 0, start))
     clause = text[breaks[-1].end() if breaks else 0:start]
-    return any(t.lower() in CLAUSE_MARKERS for t in TOKEN_RE.findall(clause))
+    if CLAUSE_MARKERS_RE.search(clause):
+        return True
+    # a sentence opened by a condition ("When the chained run passes, the step is verified.")
+    sb = list(SENTENCE_BREAK_RE.finditer(text, 0, start))
+    sentence = text[sb[-1].end() if sb else 0:start]
+    if CONDITION_OPENER_RE.match(sentence):
+        return True
+    # a requirement right after the phrase ("reference-verified only after the tolerance is signed")
+    after = text[end:end + 80] if end is not None else ""
+    return bool(TRAILING_CONDITION_RE.match(after))
 
 
 def find_claims(text: str) -> list[Claim]:
@@ -102,7 +121,7 @@ def find_claims(text: str) -> list[Claim]:
     out: list[Claim] = []
     for rx in (CLAIM_RE, DATABRICKS_RE):
         for m in rx.finditer(clean):
-            if _negated(clean, m.start()):
+            if _negated(clean, m.start(), m.end()):
                 continue
             # a quoted claim is judged with the words before the quote too ('I did not write "all checks pass"')
             q = next((a for a, b in quotes if a < m.start() < b), None)

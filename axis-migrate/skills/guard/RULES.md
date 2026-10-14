@@ -93,9 +93,16 @@ Five block rules have no archive hits. Each is kept for the reason below.
   Databricks", "tested on the cluster", "in production", "production-ready"). These map to a sentinel rung above
   target-ready, so no computed rung supports them.
 - **Negation.** The 3-token window adds `no/never/nothing/none/yet/cannot/...` and the modals
-  `will/would/should/could/can/may/might/must/to`. `before/until/unless/if/once/whether` negate their whole clause,
-  so "run the comparison before the step is verified" is not a claim. `after/when` do **not** negate, because
-  "After the chained run, all checks pass" is a claim.
+  `will/would/should/could/can/may/might/must/to`. A rung or phrase that is the object of a requirement, condition,
+  goal or cap is not a claim: `needs/requires/required/until/before/once/when/if/unless/whether/would/below/above/
+  cannot/waiting for/blocked/to reach/to get to/not yet/only after/stops at/capped at/at most/up to/limited to/aim
+  at/goal` negate the rest of their clause. A sentence opened by `if/when/once/until/unless/before` is conditional,
+  and a phrase followed within two words by `only after/until/once/unless/if/requires/needs` is negated. Example:
+  "that step needs the pipeline at reference-verified, and it is currently sandbox-validated" claims only
+  sandbox-validated, which is the reported status and is supported when that is the computed rung. Trade-off:
+  "When I ran it, the outputs match the legacy files" and "All checks pass if …" are no longer counted as claims.
+  True positives that stay claims: "Migration complete, parity achieved", "all checks pass", "the pipeline is
+  reference-verified", "After the chained run, all checks pass".
 - **Quoted text.** A claim inside quotes still counts, so quoting cannot be used to evade the check. The words before
   the opening quote also apply: `I did not write "all checks pass"` is negated.
 - **Remaining false positive (seen live in HM run 2).** "one completed with a warning" matches `complete[ds]?` and
