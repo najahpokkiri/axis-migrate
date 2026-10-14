@@ -31,9 +31,14 @@ axpy graph.py apply <migration> --actor agent --base-rev <N> --ops ops.json --ch
 `steps[].outputs` (`writes`/`reads_write` edges out of the step), `datasets[].produced_by {step, op}`,
 `datasets[].consumed_by`, `datasets[].role` and the default `datasets[].new`:
 
-- `role` = the user's override if any; else lineage's role (`role_lineage`), except: an `input` produced by a step whose
-  scope is `migrate` (an automated manual step) becomes `intermediate` (has in-scope consumers) or `final`; an
-  `intermediate`/`final` produced by a `keep_legacy` step and consumed in scope becomes `input` (bridge).
+- `role` = the user's override if any; else lineage's role (`role_lineage`, never changed), adjusted per write. A step
+  is *in scope* when its scope is `migrate` or its kind is `bridge` (and it is not dropped):
+  an `input` or `unused` dataset written by an in-scope step (an automated manual step, a ported step) becomes
+  `intermediate` (has in-scope consumers) or `final`; an `unused` dataset that an in-scope step reads and no step
+  produces becomes `input` (a raw file a newly ported step reads, so the runner can stage it and `protected` lists it
+  under `input_exceptions`); an `intermediate`/`final` of a `keep_legacy` producer consumed in scope becomes `input`
+  (bridge). A producer-less `intermediate`/`final` stays as it is (a lineage gap, never a raw input). Dropping the step
+  again restores the lineage role.
 - `new` (when unset or auto): `{"path": "<producer step>/<legacy basename>", "layer": <legacy layer>, "auto": true}`
   for non-input datasets produced by a `migrate` step; datasets without a legacy file get `<step>/<id minus ds.>.<ext>`
   (`tif|gpkg|csv|txt` by kind). `set_new` replaces it (drops `auto`).

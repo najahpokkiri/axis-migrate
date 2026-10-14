@@ -540,28 +540,39 @@ def derive_structure(graph: dict) -> None:
         p = sorted(prod[did], key=lambda t: (t[0], t[1], t[2] or ""))
         d["produced_by"] = {"step": p[0][1], "op": p[0][2]} if p else None
         d["consumed_by"] = sorted(cons[did])
-    # Role: user override wins; otherwise lineage's role, adjusted for the producer's scope (02 §4.5):
-    # an automated manual step's output stops being an input; a kept-legacy producer's consumed output becomes one.
+    # Role: user override wins; otherwise lineage's role, adjusted for the I/O and scopes (02 §4.5):
+    # - an `input`/`unused` dataset written by an in-scope step (an automated manual step, a ported step that now
+    #   produces it) becomes intermediate (has in-scope consumers) or final;
+    # - an `unused` dataset that an in-scope step reads and no step produces becomes `input` (e.g. a raw file a
+    #   newly ported manual step reads; without this the runner cannot stage it). Produced-less `intermediate`/
+    #   `final` datasets are NOT turned into inputs: that is a lineage gap (a legacy output), never a raw input;
+    # - an intermediate/final of a kept-legacy producer that is consumed in scope becomes `input` (bridge).
+    def in_scope(sid: str | None) -> bool:
+        st = steps.get(sid) if sid else None
+        return bool(st) and st.get("scope") != "drop" and (st.get("scope") == "migrate" or st.get("kind") == "bridge")
+
     for d in dsets.values():
         if _user_owned(d, "role"):
             continue
         base = d.get("role_lineage") or d.get("role")
         pb = d.get("produced_by")
         pscope = steps[pb["step"]].get("scope") if pb and pb["step"] in steps else None
-        in_scope_consumers = [c for c in d["consumed_by"] if steps[c].get("scope") == "migrate"]
+        in_scope_consumers = [c for c in d["consumed_by"] if in_scope(c)]
         role = base
-        if pscope == "migrate" and base == "input":
+        if pb and in_scope(pb["step"]) and base in ("input", "unused"):
             role = "intermediate" if in_scope_consumers else "final"
+        elif not pb and base == "unused" and in_scope_consumers:
+            role = "input"
         elif pscope == "keep_legacy" and base in ("intermediate", "final") and in_scope_consumers:
             role = "input"
         d["role"] = role
         # Default new output name (CONTRACTS §4): <producer>/<legacy basename> or <producer>/<id>.<ext>
         cur = d.get("new")
-        if role != "input" and pb and pscope == "migrate" and (cur is None or cur.get("auto")):
+        if role != "input" and pb and in_scope(pb["step"]) and (cur is None or cur.get("auto")):
             lp = (d.get("legacy") or {}).get("path")
             name = lp.rsplit("/", 1)[-1] if lp else f"{d['id'][3:]}.{NO_EXT.get(d.get('kind'), 'bin')}"
             d["new"] = {"path": f"{pb['step']}/{name}", "layer": (d.get("legacy") or {}).get("layer"), "auto": True}
-        elif cur is not None and cur.get("auto") and (role == "input" or not pb or pscope != "migrate"):
+        elif cur is not None and cur.get("auto") and (role == "input" or not pb or not in_scope(pb["step"])):
             d["new"] = None
     graph["steps"].sort(key=lambda s: s["id"])
     graph["datasets"].sort(key=lambda d: d["id"])
@@ -2178,7 +2189,7 @@ def protected(migration_dir: str | os.PathLike) -> dict:
         if not lp:
             continue
         side = [s for s in leg.get("sidecars") or [] if isinstance(s, str)]
-        if d.get("role") == "input" and (d.get("role_lineage") or d.get("role")) == "input":
+        if d.get("role") == "input" and (d.get("role_lineage") or d.get("role")) in ("input", "unused"):
             inputs.add(lp)
             inputs.update(side)
         else:

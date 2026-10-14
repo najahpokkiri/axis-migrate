@@ -427,3 +427,38 @@ def test_cli_show_and_help(mdir: Path):
     r = gs.run_cli("show", str(mdir), "--json")
     assert json.loads(r.stdout)["revision"] == 1
     assert gs.run_cli("--help").returncode == 0
+
+
+# ------------------------------------------------------------------------------------------------ derived roles
+def test_unused_dataset_read_in_scope_becomes_input(mdir: Path):
+    """NC2: the hand-edited file is absent; the agent ports the manual step as a new step reading the raw file."""
+    agent(mdir, [{"type": "add_dataset", "id": "ds.raw_boundaries", "kind": "vector", "role": "unused",
+                  "legacy": {"path": "in/zones_raw.geojson", "exists": True}}])
+    assert node(mdir, "ds.raw_boundaries")["role"] == "unused"
+    agent(mdir, [{"type": "add_step", "id": "m00_zone_names", "title": "Zone names in code", "kind": "manual"},
+                 {"type": "add_edge", "from": "ds.raw_boundaries", "to": "m00_zone_names", "kind": "reads",
+                  "evidence": [{"ref": "NOTES.txt:3", "summary": "edited from the raw boundaries"}]}])
+    d = node(mdir, "ds.raw_boundaries")
+    assert d["role"] == "input" and d["role_lineage"] == "unused" and d["new"] is None
+    out = G.protected(mdir)
+    assert "in/zones_raw.geojson" in out["input_exceptions"] and "in/zones_raw.geojson" not in out["paths"]
+    # an in-scope step that writes an `unused` dataset makes it an output
+    agent(mdir, [{"type": "add_dataset", "id": "ds.spare", "kind": "raster", "role": "unused",
+                  "legacy": {"path": "out/spare.tif", "exists": False}},
+                 {"type": "add_edge", "from": "s03_stats", "to": "ds.spare", "kind": "writes",
+                  "evidence": [{"ref": "scripts/03_stats.py:58"}]}])
+    sp = node(mdir, "ds.spare")
+    assert sp["role"] == "final" and sp["new"]["path"] == "s03_stats/spare.tif"
+    # out of scope again -> lineage role comes back
+    user(mdir, [{"type": "delete_step", "id": "m00_zone_names"}])
+    assert node(mdir, "m00_zone_names")["scope"] == "drop" and node(mdir, "ds.raw_boundaries")["role"] == "unused"
+    # the user's override still wins
+    user(mdir, [{"type": "set_field", "id": "ds.spare", "field": "role", "value": "intermediate"}])
+    assert node(mdir, "ds.spare")["role"] == "intermediate"
+
+
+def test_producerless_intermediate_is_not_made_an_input(mdir: Path):
+    user(mdir, [{"type": "reject_edge", "id": "e.s01_clip>ds.a_clip"}])  # producer edge gone: a lineage gap
+    a = node(mdir, "ds.a_clip")
+    assert a["produced_by"] is None and a["consumed_by"] == ["s02_mask"] and a["role"] == "intermediate"
+    assert "tmp/a_clip.tif" in G.protected(mdir)["paths"]
