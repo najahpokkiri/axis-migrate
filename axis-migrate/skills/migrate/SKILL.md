@@ -14,9 +14,7 @@ decide verdicts and status; you never do.**
 `$P` below means `${CLAUDE_PLUGIN_ROOT}`. Run every plugin script as `"$P/bin/axpy" "$P/skills/<skill>/<script>.py" …`
 (the one pinned environment). Work from the project directory (the parent of the legacy folder); everything you
 create goes under `./migration/`. The legacy folder is read-only: never write, move, `touch` or `gdalinfo -stats`
-anything in it.
-Codex: skills get no `${CLAUDE_PLUGIN_ROOT}`; `$P` is the folder holding `.codex-plugin/plugin.json`; start with
-`$axis-migrate:start`.
+anything in it. Codex: `$P` is the folder holding `.codex-plugin/plugin.json`; start with `$axis-migrate:start`.
 
 ## Hard rules (the hooks and scripts enforce them; do not try to work around a refusal)
 
@@ -42,8 +40,8 @@ own pane; never ask them to open a browser or copy a URL.
   input maps, the verify plots and `report/index.html` there, in a second tab (`tabs_create`, then `navigate` with
   its `tabId`) so the graph stays open. Show the map or plot a question is about before you ask it. Never write the
   token in chat.
-- **Codex desktop app**: give the URL once as a clickable link and open it in the in-app browser with browser use
-  (the servers need sandbox approval to bind 127.0.0.1).
+- **Codex desktop app**: give the URL once as a clickable link, open it in the in-app browser, then read and click
+  as in Claude (the servers may need sandbox approval to bind 127.0.0.1).
 - **Terminal Claude Code, Codex CLI, any harness without a pane**: give the URL once and name the file paths.
 - The pane is for the person. Your own judgement of a plot still comes from Reading the PNG (skill `verify`).
 
@@ -56,8 +54,8 @@ own pane; never ask them to open a browser or copy a URL.
    `graph.json`, start the graph page and show it in the side pane (§Showing).
 2. **Investigate and interview** — skill `interview`: fill `params.yaml` for every output-changing parameter with
    citations; run `params_check.py`; ask the few remaining questions one at a time (AskUserQuestion, recommended
-   option first, explicit "Don't know"); `confirm_all` then the target question last. Codex (no AskUserQuestion): ask
-   it as plain text with numbered options, recommended first, plus "Don't know"; then stop and wait.
+   option first, explicit "Don't know"); `confirm_all` then the target question last. Codex: `request_user_input_async`
+   when it exists, else plain-text numbered options (recommended first, "Don't know"); stop and wait.
 3. **Plan** — `BUILD.md` §1 (this skill's folder): one `plan` block per step, `graph.py render-plan`, one approval
    question. No `pipeline/` file may exist before approval. Plans cite reference-entry ids (`G-1`, `N-2`, …) in
    `risks[]`. After approval, once: `run_local.py migration --vendor-runtime` (never edit the vendored runtime).

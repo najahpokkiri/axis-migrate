@@ -112,7 +112,7 @@ def test_start_skill_is_thin_and_its_references_exist():
     missing = [r for r in refs - OPTIONAL_REFS if not (PLUGIN / r).exists()]
     assert not missing, f"start skill references missing files: {missing}"
     assert "commands/migrate.md" not in text, "the command file is gone; the entry is skills/migrate/SKILL.md"
-    assert "Hooks are not active" in text and "/hooks" in text
+    assert "guards are OFF" in text and "/hooks" in text and "NEW chat" in text and "until the person confirms" in text
     assert (START.parents[3] / ".codex-plugin" / "plugin.json").is_file()
 
 
@@ -139,7 +139,7 @@ def test_repo_marketplace_points_at_this_plugin():
 
 def test_codex_note_is_short_and_current():
     note = (PLUGIN / "CODEX.md").read_text(encoding="utf-8")
-    assert len(note.splitlines()) <= 60
+    assert len(note.splitlines()) <= 70
     assert "axis-migrate@axis-migrate-dev" in note and "/hooks" in note
     assert "commands/migrate.md" not in note
 

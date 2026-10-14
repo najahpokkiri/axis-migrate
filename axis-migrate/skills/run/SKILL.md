@@ -58,8 +58,8 @@ the cause; fix the code. A refenv run never earns a rung.
 ## E2B (opt-in, explicit consent)
 Local is the default. To run in an E2B sandbox, first ask the user with AskUserQuestion, showing the upload list
 (run once without `--confirm-upload`: it prints every file, size and hash and stops with exit 13
-`UPLOAD_NOT_CONFIRMED`). Only on a yes:
-Codex (no AskUserQuestion): ask it as plain text with numbered options, recommended first, plus "Don't know"; stop, wait.
+`UPLOAD_NOT_CONFIRMED`). Codex: `request_user_input_async` when it exists, else plain-text numbered options,
+recommended first, plus "Don't know"; stop and wait (an elapsed wait is never an answer). Only on a yes:
 ```
 set -a; . ~/.config/axis-migrate/secrets.env; set +a      # puts E2B_API_KEY in the environment; never cat the file
 $PLUGIN/bin/axpy $PLUGIN/skills/run/run_e2b.py migration --confirm-upload [same flags as run_local]

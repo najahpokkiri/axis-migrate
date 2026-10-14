@@ -20,8 +20,8 @@ family, measure, checks, `tolerance_ids`, empty = exact) · `risks[]` (`skill_re
 summarise `migration/plan.md` in a few lines, and ask ONE AskUserQuestion: "Approve the plan (Recommended)" /
 "Change something". Approve → `{"type": "approve_plan", "steps": "*"}` via `graph.py apply … --channel interview
 --verbatim "<the user's words>"`. Change → revise with `set_plan`, re-render, ask again. Never approve without the user.
-Codex: the same question as plain text, numbered, "Approve the plan (Recommended)" first; stop and wait; record the
-user's words as `--verbatim`.
+Codex: the same question with `request_user_input_async` when it exists, else as plain text, numbered, "Approve the
+plan (Recommended)" first; stop and wait (an elapsed wait is never an answer); record the user's words as `--verbatim`.
 After approval, once: `run_local.py migration --vendor-runtime` (copies the runtime into `pipeline/`; never edit it).
 
 ## 2 Per-step loop (topological order; a failure stops the walk at that step)
