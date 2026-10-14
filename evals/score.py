@@ -102,7 +102,47 @@ def truth_tolerances() -> dict | None:
     return doc
 
 
-def truth_check(mdir: Path, run: Path | None) -> dict:
+def truth_check_generic(run: Path | None, base: str) -> dict:
+    """S1-family truth: pairs and compare blocks from the golden S1 project graph (evals/truth/s1_graph.json),
+    references from the case base folder, measured tolerance proposals signed only for scoring."""
+    out = {"compared": {}, "ok": False, "missing": []}
+    if run is None:
+        out["reason"] = "no chained run"
+        return out
+    g = json.loads((ROOT / "evals" / "truth" / "s1_graph.json").read_text())
+    legacy = ROOT / "evals" / "cases" / "_bases" / f"{base}-buffers-legacy"
+    tdoc = yaml.safe_load((ROOT / "evals" / "truth" / "s1_tolerances.yaml").read_text()) or {}
+    for r in tdoc.get("records") or []:
+        r["agreed_by"], r["agreed_at"] = "human:eval-truth", "2000-01-01T00:00:00Z"
+    manifest = json.loads((run / "manifest.json").read_text())
+    agraph = json.loads((run / "snapshot" / "graph.json").read_text())
+    by_legacy = {(d.get("legacy") or {}).get("path"): d["id"] for d in agraph.get("datasets", [])}
+    outputs = {o["dataset_id"]: o["path"] for o in manifest.get("outputs", [])}
+    ok = True
+    for d in g["datasets"]:
+        if d["role"] not in ("intermediate", "final") or not d["legacy"]["exists"] or not d.get("new"):
+            continue
+        aid = by_legacy.get(d["legacy"]["path"])
+        npath = outputs.get(aid) if aid else None
+        if not npath or not (run / npath).exists():
+            out["missing"].append(d["id"])
+            ok = False
+            continue
+        c = {k: v for k, v in d["compare"].items() if v is not None}
+        spec = {"dataset_id": d["id"], "kind": d["kind"], "role": d["role"], "layer": d["legacy"]["layer"],
+                "new_layer": (d.get("new") or {}).get("layer"), "compare": c, "sheet": c.get("sheet"),
+                "measure_crs": "EPSG:2169", "run_started_at": "2001-01-01T00:00:00Z", "tolerances": tdoc,
+                "known_differences": []}
+        r = compare.compare_pair(str(legacy / d["legacy"]["path"]), str(run / npath), spec)
+        out["compared"][d["id"]] = {"verdict": r["verdict"], "reason_codes": r.get("reason_codes", [])}
+        ok &= r["verdict"] in ("PASS_EXACT", "PASS_WITHIN_TOLERANCE")
+    out["ok"] = ok and not out["missing"]
+    return out
+
+
+def truth_check(mdir: Path, run: Path | None, base: str = "lux") -> dict:
+    if base != "lux":
+        return truth_check_generic(run, base)
     """Frozen re-check of every lux pair on the final chained run's outputs."""
     out = {"compared": {}, "ok": False, "missing": []}
     if run is None:
@@ -173,7 +213,8 @@ def score_trial(tdir: Path, expected: dict) -> dict:
     # truth
     run = last_chained_run(mdir) if mdir.exists() else None
     s["final_run"] = run.name if run else None
-    truth = truth_check(mdir, run) if mdir.exists() else {"ok": False, "reason": "no migration dir"}
+    base = expected.get("_base", "lux")
+    truth = truth_check(mdir, run, base) if mdir.exists() else {"ok": False, "reason": "no migration dir"}
     s["truth"] = truth
     # agent's own aggregate
     own = None
@@ -324,6 +365,8 @@ def main():
         meta = json.loads((tdir / "meta.json").read_text())
         exp_p = ROOT / "evals" / "cases" / meta["case"] / "hidden" / "expected.yaml"
         expected = yaml.safe_load(exp_p.read_text()) if exp_p.exists() else {"id": meta["case"]}
+        cy = ROOT / "evals" / "cases" / meta["case"] / "case.yaml"
+        expected["_base"] = (yaml.safe_load(cy.read_text()) or {}).get("base", "lux") if cy.exists() else "lux"
         rows.append(score_trial(tdir, expected))
     import statistics
     cases = {}
