@@ -210,9 +210,9 @@ def hidden_files(mig: Path) -> list[Path]:
     globs = hl_hidden_globs()
     root = mig.parent
     out = []
-    for base in [root] + [d for d in root.iterdir() if d.is_dir() and d.name != "migration"]:
+    for base in [root] + sorted(d for d in root.iterdir() if d.is_dir() and d.name != "migration"):
         try:
-            entries = list(base.iterdir())
+            entries = sorted(base.iterdir())
         except OSError:
             continue
         for e in entries:

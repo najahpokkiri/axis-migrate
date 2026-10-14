@@ -50,3 +50,23 @@ def test_yaml_items_both_indent_styles():
         items = rp.yaml_list_items(t, "params")
         assert [i.id for i in items] == ["p.a", "p.b"]
         assert rp.item_scalar(items[0], "source") == "fitted"
+
+
+def test_run_dirs_ignore_index_and_listing_order(project_run, apfs_order):
+    import _hooklib
+    from conftest import add_run
+    import os
+    add_run(project_run, "r20261013T090000Z-0000beef")
+    (project_run.mig / "runs" / "tmp-scratch").mkdir()
+    (project_run.mig / "runs" / "zz.txt").write_text("x")
+    # the fixture really does list files first
+    assert os.listdir(project_run.mig / "runs")[0] in ("index.jsonl", "zz.txt")
+    names = [d.name for d in _hooklib.run_dirs(project_run.mig)]
+    assert names == ["r20261013T090000Z-0000beef", "r20261014T100000Z-abcdef12"]
+    assert [d.name for d in _hooklib.recorded_runs(project_run.mig)] == names
+
+
+def test_protected_hidden_siblings_order_independent(project, apfs_order):
+    rec = prot.compute(project.mig)
+    ps = prot.ProtectedSet(project.mig, rec)
+    assert [h.name for h in ps.hidden] == ["legacy-demo.PROVENANCE.md", "legacy-demo.build"]

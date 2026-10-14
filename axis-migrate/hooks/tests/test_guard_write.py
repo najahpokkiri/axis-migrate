@@ -1,7 +1,7 @@
 """H3 guard_write (08 §5c/§5g): G1, G3, G4, G5, G6, G7, plan gate, params fitted->answer, G12, G13."""
 from __future__ import annotations
 
-from conftest import add_run, run_hook, tool_payload
+from conftest import add_run, run_hook, run_ids, tool_payload
 
 
 def write(pr, path, content="x", tool="Write", **ti):
@@ -44,7 +44,7 @@ def test_analysis_write_allowed(project):
 
 # G3 / G7 / other script-owned files ----------------------------------------------------------------------------
 def test_g3_runs_denied(project_run):
-    rd = next((project_run.mig / "runs").iterdir())
+    rd = project_run.mig / "runs" / run_ids(project_run)[0]
     r = edit(project_run, rd / "manifest.json", "succeeded", "x")
     assert r.decision == "deny"
     assert write(project_run, project_run.mig / "runs" / "index.jsonl", "{}").decision == "deny"

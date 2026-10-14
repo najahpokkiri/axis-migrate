@@ -326,7 +326,7 @@ def add_run(pr: Project, run_id: str, *, sealed: bool = True) -> Path:
     (snap / "axis_pipeline").mkdir(parents=True)
     for name in ("params.yaml", "tolerances.yaml", "known-differences.md", "decisions.md", "graph.json"):
         shutil.copy(pr.mig / name, snap / name)
-    for p in (pr.mig / "pipeline").glob("*.py"):
+    for p in sorted((pr.mig / "pipeline").glob("*.py")):
         shutil.copy(p, snap / "axis_pipeline" / p.name)
     man = {"run_id": run_id, "chain": "chained", "executor": "local", "status": "succeeded",
            "tolerances": {"sha256": sha(pr.mig / "tolerances.yaml")}, "params": {"sha256": sha(pr.mig / "params.yaml")},
@@ -339,6 +339,27 @@ def add_run(pr: Project, run_id: str, *, sealed: bool = True) -> Path:
         fh.write(json.dumps({"run_id": run_id, "chain": "chained", "status": "succeeded",
                              "evidence_id": "evidence:abc" if sealed else None}) + "\n")
     return rd
+
+
+def run_ids(pr: Project) -> list[str]:
+    """Run ids of the project, by name (never the listing order; runs/index.jsonl is not a run)."""
+    import _hooklib
+    return [d.name for d in _hooklib.run_dirs(pr.mig)]
+
+
+@pytest.fixture
+def apfs_order(monkeypatch):
+    """Listing order with files first and names reversed (what APFS can return), for Path.iterdir and os.listdir."""
+    import pathlib
+    real_iterdir = pathlib.Path.iterdir
+    real_listdir = os.listdir
+
+    def key(p):
+        return (not os.path.isfile(p), [-ord(c) for c in os.path.basename(str(p))])
+
+    monkeypatch.setattr(pathlib.Path, "iterdir", lambda self: iter(sorted(real_iterdir(self), key=key)))
+    monkeypatch.setattr(os, "listdir", lambda path=".": sorted(real_listdir(path),
+                                                              key=lambda n: key(os.path.join(path, n))))
 
 
 @pytest.fixture

@@ -118,16 +118,21 @@ def protected_set(mig: Path):
     return prot.ProtectedSet(mig, prot.compute(mig))
 
 
-def recorded_runs(mig: Path) -> list[Path]:
-    """Run directories that recorded snapshot hashes (manifest.json or snapshot/)."""
+RUN_ID_RE = __import__("re").compile(r"^r\d{8}T\d{6}Z-[0-9a-f]{8}$")
+
+
+def run_dirs(mig: Path) -> list[Path]:
+    """Run directories under migration/runs (name r<UTC>-<8hex>, directories only), sorted by name: never rely on
+    the file system's listing order (APFS and ext4 differ) and never pick up runs/index.jsonl."""
     runs = mig / "runs"
     if not runs.is_dir():
         return []
-    out = []
-    for d in sorted(runs.iterdir()):
-        if d.is_dir() and ((d / "manifest.json").is_file() or (d / "snapshot").is_dir()):
-            out.append(d)
-    return out
+    return sorted((d for d in runs.iterdir() if RUN_ID_RE.match(d.name) and d.is_dir()), key=lambda d: d.name)
+
+
+def recorded_runs(mig: Path) -> list[Path]:
+    """Run directories that recorded snapshot hashes (manifest.json or snapshot/), oldest first."""
+    return [d for d in run_dirs(mig) if (d / "manifest.json").is_file() or (d / "snapshot").is_dir()]
 
 
 def graph_integrity(mig: Path) -> list[str] | None:

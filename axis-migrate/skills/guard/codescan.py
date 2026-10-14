@@ -181,7 +181,7 @@ class Context:
         """Module names of the code under test: pipeline/*.py stems (S12)."""
         if self.migration is None or not (self.migration / "pipeline").is_dir():
             return set()
-        return {p.stem for p in (self.migration / "pipeline").glob("*.py")}
+        return {p.stem for p in sorted((self.migration / "pipeline").glob("*.py"))}
 
     def kind_of(self, path: Path) -> str | None:
         if self.migration is None:

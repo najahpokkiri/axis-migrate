@@ -4,10 +4,14 @@ from __future__ import annotations
 import json
 
 import pytest
-from conftest import add_run, payload, run_hook
+from conftest import add_run, payload, run_hook, run_ids
 
 import claims as cl
 import stop_gate as sg
+
+# every in-process test here runs with an APFS-like listing order (files first, names reversed): the gate must
+# never depend on directory listing order or pick up runs/index.jsonl as a run directory
+pytestmark = pytest.mark.usefixtures("apfs_order")
 
 
 def stop(pr, msg, active=False, session="s-1", env=None):
@@ -167,7 +171,7 @@ def test_g10_honest_messages_pass(project, monkeypatch, msg):
 
 
 def test_g10_supported_claim_passes(project_run, monkeypatch):
-    rid = next((project_run.mig / "runs").iterdir()).name
+    rid = run_ids(project_run)[0]
     rd = project_run.mig / "runs" / rid
     for ds in ("ds.01_mid", "ds.final"):
         (rd / "verify" / "compare" / f"{ds}.json").write_text("{}")
@@ -178,7 +182,7 @@ def test_g10_supported_claim_passes(project_run, monkeypatch):
 
 
 def test_g10_missing_compare_blocks_verified_claim(project_run, monkeypatch):
-    rid = next((project_run.mig / "runs").iterdir()).name
+    rid = run_ids(project_run)[0]
     d = decide(project_run, "All checks pass.", monkeypatch, "reference-verified", rid)
     assert d is not None and "NOT_COMPARED" in d["reason"]
 
@@ -189,7 +193,7 @@ def test_g10_deployed_claim_always_blocks(project, monkeypatch):
 
 # G11 drift ------------------------------------------------------------------------------------------------------
 def _verified_bundle(pr):
-    rid = next((pr.mig / "runs").iterdir()).name
+    rid = run_ids(pr)[0]
     rd = pr.mig / "runs" / rid
     for ds in ("ds.01_mid", "ds.final"):
         (rd / "verify" / "compare" / f"{ds}.json").write_text("{}")
