@@ -1062,17 +1062,20 @@ def hook_paths(data: dict) -> list[Path]:
     cwd = data.get("cwd") or os.getcwd()
 
     def ab(p):
-        return Path(p) if os.path.isabs(p) else Path(cwd) / p
+        """stdin cwd first; a relative path is also tried from the hook process cwd (Codex desktop cwd trap)."""
+        if os.path.isabs(p):
+            return [Path(p)]
+        return list(dict.fromkeys([Path(cwd) / p, Path(os.getcwd()) / p]))
 
     fp = ti.get("file_path") or ti.get("notebook_path") if isinstance(ti, dict) else None
     if fp:
-        return [ab(fp)]
+        return ab(fp)
     out = []
     for text in rp.patch_texts(data.get("tool_name"), ti):
         for op in rp.parse_patch(text):
             if op.kind == "delete":
                 continue
-            out.append(ab(op.move_to or op.path))
+            out += ab(op.move_to or op.path)
     return list(dict.fromkeys(out))
 
 

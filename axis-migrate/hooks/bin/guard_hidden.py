@@ -21,7 +21,7 @@ TOOLS = {"Read", "Grep", "Glob"}
 
 def main() -> int:
     data = hl.read_input()
-    tool = data.get("tool_name")
+    tool = hl.require_tool_payload(data)
     if tool not in TOOLS:
         return 0
     mig = hl.find_migration(data)
@@ -33,7 +33,8 @@ def main() -> int:
     target = ti.get("file_path") if tool == "Read" else (ti.get("path") or cwd)
     if not isinstance(target, str) or not target:
         raise ValueError(f"{tool} payload without a path")
-    p = hl.abs_path(target, cwd)
+    paths = hl.abs_paths(target, cwd)
+    p = paths[0]
     secrets = Path(os.path.realpath(os.path.expanduser("~/.config/axis-migrate/secrets.env")))
     if p == secrets or (tool != "Read" and p in secrets.parents and
                         fnmatch.fnmatch("secrets.env", (ti.get("glob") or ti.get("pattern") or "*").split("/")[-1])):
@@ -43,7 +44,7 @@ def main() -> int:
     globs = hl_hidden_globs()
     if not globs:
         return 0
-    if matches_hidden(p, globs):
+    if any(matches_hidden(q, globs) for q in paths):
         hl.pre_decision("deny", "axis-migrate (eval mode): that path is hidden grader material.")
         return 0
     hidden = [h for h in hidden_files(mig.resolve()) if p == h or p in h.parents]

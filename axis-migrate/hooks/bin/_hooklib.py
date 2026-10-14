@@ -73,11 +73,37 @@ def find_migration_dir(start) -> Path | None:
 
 
 def find_migration(data: dict) -> Path | None:
-    cwd = data.get("cwd") or os.getcwd()
-    try:
-        return find_migration_dir(cwd)
-    except OSError:
-        return None
+    """migration/ for this session: from stdin `cwd` first, then the hook process cwd (the Codex desktop app runs hook
+    processes in the session root while the shell may be in a subfolder, and vice versa)."""
+    bases = [data.get("cwd"), os.getcwd()]
+    for b in dict.fromkeys(x for x in bases if x):
+        try:
+            m = find_migration_dir(b)
+        except OSError:
+            m = None
+        if m is not None:
+            return m
+    return None
+
+
+def require_tool_payload(data: dict) -> str:
+    """PreToolUse guards: a payload without a tool name is malformed -> the guard fails closed (exit 2)."""
+    tool = data.get("tool_name")
+    if not isinstance(tool, str) or not tool:
+        raise ValueError("PreToolUse payload without tool_name (missing, empty or unparseable stdin)")
+    return tool
+
+
+def abs_paths(p: str, cwd: str | None) -> list[Path]:
+    """Every place a relative path could land: against stdin `cwd` (primary) and against the hook process cwd when
+    that differs. Guards deny when ANY of them is protected (Codex desktop cwd trap)."""
+    out = [abs_path(p, cwd)]
+    q = os.path.expanduser(p)
+    if not os.path.isabs(q):
+        alt = Path(os.path.realpath(os.path.join(os.getcwd(), q)))
+        if alt not in out:
+            out.append(alt)
+    return out
 
 
 def abs_path(p: str, cwd: str | None) -> Path:

@@ -213,6 +213,8 @@ def patch_targets(data: dict) -> list[tuple[Path, object]]:
     for text in texts:
         for op in rp.parse_patch(text):
             src = hl.abs_path(op.path, cwd)
+            for raw in [op.path] + ([op.move_to] if op.move_to else []):
+                out += [(alt, None) for alt in hl.abs_paths(raw, cwd)[1:]]  # relative path from the process cwd
             if op.kind == "add":
                 body = "\n".join(op.add_lines) + ("\n" if op.add_lines else "")
                 out.append((src, lambda src=src, body=body: (_read(src), body)))
@@ -250,8 +252,10 @@ def decide(data: dict) -> tuple[str, str] | None:
         fp = ti.get("file_path") or ti.get("notebook_path")
         if not isinstance(fp, str) or not fp:
             raise ValueError(f"{tool} payload without file_path")
-        path = hl.abs_path(fp, cwd)
+        paths = hl.abs_paths(fp, cwd)
+        path = paths[0]
         targets = [(path, None if tool == "NotebookEdit" else (lambda path=path: proposed(tool, ti, path)))]
+        targets += [(alt, None) for alt in paths[1:]]  # path rules from the hook process cwd too (Codex desktop)
     else:
         return None
     mig = hl.find_migration(data)
@@ -270,7 +274,7 @@ def decide(data: dict) -> tuple[str, str] | None:
 
 def main() -> int:
     data = hl.read_input()
-    if data.get("tool_name") not in TOOLS | {"apply_patch"}:
+    if hl.require_tool_payload(data) not in TOOLS | {"apply_patch"}:
         return 0
     d = decide(data)
     if d:

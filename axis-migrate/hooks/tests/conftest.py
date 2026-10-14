@@ -73,7 +73,7 @@ class HookResult:
         return hso.get("permissionDecisionReason") or self.out.get("reason") or hso.get("additionalContext") or ""
 
 
-def run_hook(script: str, data, env: dict | None = None, timeout: float = 30) -> HookResult:
+def run_hook(script: str, data, env: dict | None = None, timeout: float = 30, proc_cwd: str | None = None) -> HookResult:
     e = {k: v for k, v in os.environ.items() if not k.startswith(("AXIS_MIGRATE_HIDDEN", "AXIS_MIGRATE_CODESCAN"))
          and k not in ("PLUGIN_ROOT", "PLUGIN_DATA", "CLAUDE_PLUGIN_DATA")}
     e["PYTHONIOENCODING"] = "utf-8"
@@ -82,6 +82,7 @@ def run_hook(script: str, data, env: dict | None = None, timeout: float = 30) ->
     stdin = data if isinstance(data, str) else json.dumps(data)
     cwd = data.get("cwd") if isinstance(data, dict) else None
     cwd = cwd if cwd and os.path.isdir(cwd) else "/"
+    cwd = str(proc_cwd) if proc_cwd else cwd  # the hook PROCESS cwd (may differ from stdin cwd under Codex desktop)
     t0 = time.perf_counter()
     cp = subprocess.run([SYS_PY, "-I", str(BIN / script)], input=stdin, capture_output=True, text=True, env=e,
                         timeout=timeout, cwd=cwd)

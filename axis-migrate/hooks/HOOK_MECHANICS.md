@@ -126,3 +126,37 @@ for this working directory and is younger than 24 hours, and 1 otherwise.
 The start skill should call it at the beginning of a session. On exit 1 the session must be treated as unguarded:
 the script halves still refuse, but late (CODEX.md). Run 4 found the Claude Code marker under
 `<config>/plugins/data/axis-migrate-inline/` with `harness: claude`, `migration_found: true`.
+
+### Codex probe on the founder's laptop (desktop app and CLI 0.162.0)
+
+These results override the docs where they differ.
+
+- **Payloads.** They match `payloads/codex_*.json`. The stdin keys are `cwd, hook_event_name, model, permission_mode,
+  session_id, tool_input, tool_name, tool_use_id, transcript_path, turn_id`. Bash sends `tool_input.command`.
+  `apply_patch` sends `tool_input.command` = the full patch text, with **absolute** paths. There is no Read tool: reads
+  are Bash `cat` and similar. Exit 2 with a reason on stderr is shown to the agent.
+- **The cwd trap.** In the desktop app the hook **process** ran in the session root (`~/Documents/projects`) while the
+  shell ran in a subfolder. The fixes:
+  - `guard_bash`, `guard_write`, `guard_hidden` and `post_scan` resolve relative paths against stdin `cwd`, and
+    **also** against the hook process cwd when the two differ. A deny from either base stands. `guard_bash` runs the
+    whole command check once per base.
+  - `migration/` is located from stdin `cwd` first, then from the process cwd.
+  - Tests: `hooks/tests/test_cwd_and_payloads.py`, both directions.
+- **Plugin data folder.** `PLUGIN_DATA`/`CLAUDE_PLUGIN_DATA` point at `~/.codex/plugins/data/<plugin>-<marketplace>`,
+  which may not exist yet. The only writer there is the hooks-active marker, and it runs `mkdir -p` (tested). Codex
+  passes `PLUGIN_DATA` to hooks, not to the shell, so `hooks_active.py` also looks under
+  `${CODEX_HOME:-~/.codex}/plugins/data/axis-migrate-*` (orchestrator change b915c38).
+- **Installing is not trusting.**
+  - Each hook is trusted separately in `/hooks`: select the definitions, then press `t`.
+  - A changed hook definition needs to be reviewed again. A plugin update can therefore **silently drop the guards**
+    until the user trusts them again, so check `hooks_active.py` after every update.
+  - A chat that is already open does not load a newly installed plugin. Start a new chat.
+
+### Payload failure modes (all hooks, both harnesses)
+
+| Hook | Missing, empty or unparseable stdin, or a payload without `tool_name` | Exception inside the hook |
+|---|---|---|
+| guard_write, guard_bash, guard_hidden (PreToolUse) | **deny**: exit 2 with an ASCII reason on stderr. Also for a Bash payload without `command`, or an `apply_patch` payload without patch text. | deny (exit 2). Under Claude Code `onFailure: block` also covers crashes and timeouts. |
+| post_scan (PostToolUse) | exit 2 (block feedback). The write has already happened; this is fail-safe feedback, not prevention. | block (exit 2) |
+| stop_gate (Stop) | exit 2. Claude Code shows the reason and the turn continues; the built-in 8-continuation cap applies. | handled internally: with a claim present it blocks with "status could not be computed", otherwise it allows |
+| session_start, graph_changed (informational) | fail open: exit 0 | fail open, with a one-line note |

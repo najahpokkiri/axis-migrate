@@ -649,7 +649,7 @@ def check_command(cmd: str, ctx: Ctx, cwd: str, v: Verdict, depth: int = 0) -> N
 
 def main() -> int:
     data = hl.read_input()
-    if data.get("tool_name") != "Bash":
+    if hl.require_tool_payload(data) != "Bash":
         return 0
     mig = hl.find_migration(data)
     if mig is None:
@@ -661,6 +661,11 @@ def main() -> int:
     ctx = Ctx(mig.resolve(), cwd)
     v = Verdict()
     check_command(cmd, ctx, cwd, v)
+    proc_cwd = os.getcwd()
+    if os.path.realpath(proc_cwd) != os.path.realpath(cwd):
+        # Codex desktop: the hook process may run in the session root while the shell runs in a subfolder (or the
+        # reverse). Relative paths are judged from both bases; a deny from either one stands.
+        check_command(cmd, ctx, proc_cwd, v)
     if "*** Begin Patch" in cmd:
         # Codex can also edit through the shell (`apply_patch <<'EOF' ... EOF`): same per-file rules as guard_write
         import guard_write
