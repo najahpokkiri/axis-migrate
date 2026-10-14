@@ -3,7 +3,7 @@
 
 Dev-only tool (not shipped). Runs `qgis_process --json list`, then `qgis_process --json help <alg>` for every
 algorithm of the native:, gdal: and qgis: providers, and keeps only what discover/scan.py needs:
-alg id -> {params: {NAME: {type, is_destination, optional[, options]}}, outputs: {NAME: type}}.
+alg id -> {params: {NAME: {type, is_destination, optional[, parent][, options]}}, outputs: {NAME: type}}.
 Stamped with the QGIS / GDAL / PROJ versions. Deterministic output (sorted keys).
 
 Usage: python3 devtools/make_qgis_algs.py [--out PATH] [--mamba ~/.local/bin/micromamba] [--env qgis] [--jobs 8]
@@ -41,6 +41,9 @@ def slim(help_doc):
         if not isinstance(t, dict):
             t = {"id": str(t)}
         rec = {"type": t.get("id"), "is_destination": bool(p.get("is_destination")), "optional": bool(p.get("optional"))}
+        parent = (p.get("raw_definition") or {}).get("parent_layer")
+        if parent:  # field/band/expression parameters name the layer parameter they belong to
+            rec["parent"] = parent
         if t.get("id") == "enum" and p.get("available_options"):
             rec["options"] = {str(k): v for k, v in sorted(p["available_options"].items(), key=lambda kv: int(kv[0]))}
         params[name] = rec

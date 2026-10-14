@@ -569,6 +569,9 @@ class PyAnalyzer:
         self.param_lines: dict[tuple, str] = {}
         self.top_level = True
         self.exists_checks: list[dict] = []
+        self.branches: dict[tuple, dict] = {}
+        self.loop_stack: list[tuple] = []
+        self.last_arms = ([], [])
         self.env["__file__"] = V("const", rel)  # paths built from __file__ stay legacy-root relative
         if star_env:
             self.env.update(star_env)
@@ -761,11 +764,14 @@ class PyAnalyzer:
 
     def branch(self, bodies):
         before = dict(self.env)
-        envs = []
+        envs, arm_ops = [], []
         for b in bodies:
             self.env = dict(before)
+            k0 = set(self.ctx.ops)
             self.exec_body(b)
             envs.append(self.env)
+            arm_ops.append([k for k in self.ctx.ops if k not in k0])
+        self.last_arms = [{k: v for k, v in e.items() if before.get(k) is not v} for e in envs], arm_ops
         merged = {}
         for k in set().union(*[set(e) for e in envs]):
             vals = [e.get(k) for e in envs]
@@ -774,7 +780,8 @@ class PyAnalyzer:
             else:
                 alts = [v for v in vals if v is not None]
                 same = all(a.k == alts[0].k and a.v == alts[0].v for a in alts if a.k == "const")
-                merged[k] = alts[0] if (same and all(a.k == "const" for a in alts)) else V("phi", alts)
+                merged[k] = alts[0] if (same and all(a.k == "const" for a in alts)) else \
+                    V("phi", alts, merge_chain(*[a.chain for a in alts]))
         self.env = merged
 
     def st_If(self, st):
@@ -783,10 +790,37 @@ class PyAnalyzer:
             self.exec_body(st.body)
             return
         n_checks = len(self.exists_checks)
-        self.ev(t)
+        tv = self.ev(t)
         checks = self.exists_checks[n_checks:]
         before_ops = set(self.ctx.ops)
         self.branch([st.body, st.orelse])
+        assigns, arm_ops = self.last_arms
+        rec = self.branches.setdefault((self.cell, st.lineno), {
+            "line": st.lineno, "cell": self.cell, "end_line": getattr(st, "end_lineno", st.lineno),
+            "condition": self.seg(t), "arms": [
+                {"arm": "if", "lines": [st.body[0].lineno, max(getattr(b, "end_lineno", b.lineno) for b in st.body)],
+                 "assign_lines": {}, "values": {}, "op_keys": []},
+                {"arm": "elif" if len(st.orelse) == 1 and isinstance(st.orelse[0], ast.If) else "else",
+                 "lines": [st.orelse[0].lineno, max(getattr(b, "end_lineno", b.lineno) for b in st.orelse)]
+                 if st.orelse else None, "assign_lines": {}, "values": {}, "op_keys": []}],
+            "visits": []})
+        for arm, asg, ks in zip(rec["arms"], assigns, arm_ops):
+            for name, v in asg.items():
+                if v.k in ("func", "mod"):
+                    continue
+                if v.chain:
+                    arm["assign_lines"].setdefault(name, v.chain[0])
+                val = self.vjson(v)
+                lst = arm["values"].setdefault(name, [])
+                if val not in lst:
+                    lst.append(val)
+            for k in ks:
+                if k not in arm["op_keys"]:
+                    arm["op_keys"].append(k)
+        visit = {"loop": [{"var": n, "line": ln, "value": self.vjson(val)} for n, ln, val in self.loop_stack],
+                 "taken": ("if" if tv.v else rec["arms"][1]["arm"]) if tv.k == "const" else None}
+        if visit not in rec["visits"]:
+            rec["visits"].append(visit)
         new_ops = [self.ctx.ops[k] for k in self.ctx.ops if k not in before_ops]
         for op in new_ops:
             if "conditional" not in op["flags"]:
@@ -819,7 +853,10 @@ class PyAnalyzer:
             before = dict(self.env)
             for item in items:
                 self.assign_to(st.target, item, st.lineno)
+                name = st.target.id if isinstance(st.target, ast.Name) else self.seg(st.target)
+                self.loop_stack.append((name, st.lineno, item))
                 self.exec_body(st.body)
+                self.loop_stack.pop()
         else:
             reason = it.x.get("reason") if it.k == "unknown" else None
             self.assign_to(st.target, V("unknown", reason or "loop_variable"), st.lineno)
@@ -1014,7 +1051,21 @@ class PyAnalyzer:
 
     def ev_Compare(self, node):
         vals = [self.ev(node.left)] + [self.ev(c) for c in node.comparators]
-        return self._raster_algebra(vals) or V("unknown", "compare")
+        ra = self._raster_algebra(vals)
+        if ra is not None:
+            return ra
+        if all(v.k == "const" or (v.k == "list" and all(i.k == "const" for i in v.v)) for v in vals):
+            import operator
+            fns = {ast.Eq: operator.eq, ast.NotEq: operator.ne, ast.Lt: operator.lt, ast.LtE: operator.le,
+                   ast.Gt: operator.gt, ast.GtE: operator.ge, ast.In: lambda a, b: a in b,
+                   ast.NotIn: lambda a, b: a not in b, ast.Is: operator.is_, ast.IsNot: operator.is_not}
+            py = [v.v if v.k == "const" else [i.v for i in v.v] for v in vals]
+            try:
+                ok = all(fns[type(o)](py[i], py[i + 1]) for i, o in enumerate(node.ops))
+                return V("const", bool(ok), merge_chain(*[v.chain for v in vals]))
+            except (KeyError, TypeError):
+                pass
+        return V("unknown", "compare")
 
     def _raster_algebra(self, vals):
         rs = [v for v in vals if v.k == "obj" and v.v == "arcraster"]
@@ -1943,7 +1994,8 @@ class PyAnalyzer:
                 for fv in vals:
                     if is_str(fv) and fv.v:
                         for f in fv.v.split(";"):
-                            fields.append({"field": f, "param": pname, "line": line, "of_param": "INPUT"})
+                            fields.append({"field": f, "param": pname, "line": line,
+                                           "of_param": (ps or {}).get("parent") or "INPUT"})
             params[pname] = self.pjson(val, line, nodes.get(pname), refs if (is_dest or layerish) else None)
             if is_dest and mem_out and any("memory" in r for r in refs):
                 params[pname]["value"] = {"memory": mem_out}
@@ -1956,13 +2008,15 @@ class PyAnalyzer:
                 if n not in op["nested"]:
                     op["nested"].append(n)
         if key and fields:
-            src = next((r for r in reads if r.get("param") == "INPUT" and r.get("ref")), None)
-            if src:
-                lst = self.ctx.ops[key].setdefault("fields_read", [])
-                for f in fields:
-                    rec = {"ref": src["ref"], "field": f["field"], "line": f["line"], "param": f["param"]}
-                    if rec not in lst:
-                        lst.append(rec)
+            lst = self.ctx.ops[key].setdefault("fields_read", [])
+            for f in fields:  # the layer the field belongs to (qgis_algs.json `parent`), never a guess
+                src = next((r for r in reads if r.get("param") == f["of_param"] and r.get("ref")), None)
+                if src is None:
+                    continue  # parent is a memory layer or unresolved: nothing on disk to check against
+                rec = {"ref": src["ref"], "field": f["field"], "line": f["line"], "param": f["param"],
+                       "of_param": f["of_param"]}
+                if rec not in lst:
+                    lst.append(rec)
         out = {}
         for k, v in outputs.items():
             out[k] = v
@@ -3106,6 +3160,7 @@ class Scan:
         self.code_records(code_entries, other_code)
         self.step_order()
         self.classify_roles()
+        self.collect_branches()
         self.finish_settings()
         self.finish_params()
         self.grids()
@@ -3459,6 +3514,8 @@ class Scan:
                 fields_read = []
                 for f in op.get("fields_read", []):
                     d = {"dataset": self.ds_of_ref(f["ref"]), "field": f["field"], "line": f["line"], "param": f["param"]}
+                    if f.get("of_param"):
+                        d["of_param"] = f["of_param"]
                     if d not in fields_read:
                         fields_read.append(d)
                 comments = []
@@ -3854,6 +3911,45 @@ class Scan:
                 ".shp": "ESRI Shapefile", ".xlsx": "XLSX", ".xlsm": "XLSX", ".xls": "XLS", ".csv": "CSV",
                 ".gdb": "OpenFileGDB", ".parquet": "Parquet", ".vrt": "VRT", ".nc": "netCDF"}.get(ext, ext.lstrip(".")
                                                                                                   or "unknown")
+
+    # ------------------------------------------------------------------ branches (10 §10 branches[])
+    def collect_branches(self) -> None:
+        """Conditionals whose arms run different I/O ops or assign values that reach an op parameter."""
+        out = []
+        for rel, an in sorted(self.analysers.items()):
+            c = self.codes.get(rel)
+            if not c or not getattr(an, "branches", None):
+                continue
+            file_ops = [o for o in self.ops if o["file"] == rel]
+            for (cell, line), rec in sorted(an.branches.items(), key=lambda kv: (kv[0][0] or -1, kv[0][1])):
+                arms, affected = [], set()
+                for arm in rec["arms"]:
+                    ids = sorted(self.op_by_key[k]["id"] for k in arm["op_keys"] if k in self.op_by_key)
+                    lines = set(arm["assign_lines"].values())
+                    used = {}
+                    for o in file_ops:
+                        if o.get("cell") != cell and cell is not None:
+                            continue
+                        for pname, pv in o["params"].items():
+                            hit = lines & set(pv.get("chain") or []) if isinstance(pv, dict) else set()
+                            for name, ln in arm["assign_lines"].items():
+                                if ln in hit:
+                                    used.setdefault(name, set()).add(o["id"])
+                    affected |= set(ids) | {x for v in used.values() for x in v}
+                    arms.append({"arm": arm["arm"], "lines": arm["lines"], "ops": ids,
+                                 "values": {k: v for k, v in sorted(arm["values"].items()) if k in used},
+                                 "values_reach": {k: sorted(v) for k, v in sorted(used.items())}})
+                if not affected:
+                    continue
+                sid = c.get("step_id") or "s00_x"
+                bid = f"br.{short_step(sid)}." + (f"c{cell}." if cell is not None else "") + f"L{line}"
+                writes = sorted({w["dataset"] for o in self.ops if o["id"] in affected for w in o["writes"]})
+                out.append({"id": bid, "code": c["id"], "step": sid, "file": rel, "line": line,
+                            "end_line": rec["end_line"], "cell": cell, "condition": rec["condition"], "arms": arms,
+                            "affects_ops": sorted(affected), "affects_datasets": writes, "visits": rec["visits"],
+                            "code_status": c["status"], "status": "unknown", "state": "directly_observed",
+                            "ref": f"{rel}:{line}-{rec['end_line']}" if cell is None else f"{rel}#c{cell}:L{line}"})
+        self.branch_list = out
 
     # ------------------------------------------------------------------ settings and params
     def finish_settings(self) -> None:
@@ -4762,6 +4858,7 @@ class Scan:
             "extent_relations": self.extents,
             "aoi": self.aoi,
             "join_coverage": self.joins,
+            "branches": self.branch_list,
             "legacy_output_dirs": self.legacy_output_dirs,
             "open_items": self.items,
             "map": prev.get("map") or {"pngs": [], "findings": []},

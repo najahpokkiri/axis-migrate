@@ -8,6 +8,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "COMPUTE_EDGES": {
@@ -92,6 +93,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "GEOMETRY": {
@@ -441,6 +443,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "COLOR_TABLE": {
@@ -493,6 +496,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATE_3D": {
@@ -550,6 +554,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATE_3D": {
@@ -709,6 +714,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "GEOMETRY": {
@@ -739,6 +745,7 @@
 "STATISTICS_ATTRIBUTE": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -806,6 +813,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -961,6 +969,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CSV": {
@@ -1109,6 +1118,7 @@
 "Z_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -1198,6 +1208,7 @@
 "Z_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -1289,6 +1300,7 @@
 "Z_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -1370,6 +1382,7 @@
 "Z_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -1431,6 +1444,7 @@
 "Z_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -1502,6 +1516,7 @@
 "Z_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -1524,6 +1539,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "COMBINED": {
@@ -1693,6 +1709,7 @@
 "PRIMARY_KEY": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "PROMOTETOMULTI": {
@@ -1793,6 +1810,7 @@
 "FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "GEOCOLUMN": {
@@ -1887,6 +1905,7 @@
 "PRIMARY_KEY": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "PROMOTETOMULTI": {
@@ -2192,6 +2211,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "GEOMETRY": {
@@ -2322,6 +2342,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "INPUT": {
@@ -2381,6 +2402,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "EIGHT_CONNECTEDNESS": {
@@ -2418,6 +2440,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -2498,31 +2521,37 @@
 "BAND_A": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_A",
 "type": "band"
 },
 "BAND_B": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT_B",
 "type": "band"
 },
 "BAND_C": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT_C",
 "type": "band"
 },
 "BAND_D": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT_D",
 "type": "band"
 },
 "BAND_E": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT_E",
 "type": "band"
 },
 "BAND_F": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT_F",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -2664,6 +2693,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "HEIGHT": {
@@ -2735,6 +2765,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -2789,6 +2820,7 @@
 "BANDS": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -2962,6 +2994,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "COMPUTE_EDGES": {
@@ -3041,6 +3074,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "COMPUTE_EDGES": {
@@ -3141,6 +3175,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "COMPUTE_EDGES": {
@@ -3235,6 +3270,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "COMPUTE_EDGES": {
@@ -3267,6 +3303,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -3425,6 +3462,7 @@
 "GROUP_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -3450,6 +3488,7 @@
 "SORT_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "expression"
 },
 "SORT_NULLS_FIRST": {
@@ -3550,6 +3589,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "FIELD_NAME": {
@@ -3671,11 +3711,13 @@
 "AGGREGATES": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "aggregates"
 },
 "GROUP_BY": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "expression"
 },
 "INPUT": {
@@ -4077,11 +4119,13 @@
 "FILENAME_EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "FILTER_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "FOLDER": {
@@ -4112,6 +4156,7 @@
 "SORTBY_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "SORTBY_REVERSE": {
@@ -4142,6 +4187,7 @@
 "FILTER_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "FORCE_RASTER": {
@@ -4186,6 +4232,7 @@
 "OUTPUT_FILENAME": {
 "is_destination": false,
 "optional": true,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "OUTPUT_FOLDER": {
@@ -4201,6 +4248,7 @@
 "SORTBY_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "SORTBY_REVERSE": {
@@ -4243,6 +4291,7 @@
 "FILTER_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "FORCE_RASTER": {
@@ -4297,6 +4346,7 @@
 "SORTBY_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "COVERAGE_LAYER",
 "type": "expression"
 },
 "SORTBY_REVERSE": {
@@ -4362,6 +4412,7 @@
 "FIELD_NAME": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_LAYER",
 "type": "field"
 },
 "INPUT_LAYER": {
@@ -4389,6 +4440,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -4700,6 +4752,7 @@
 "VALUE_RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "VALUE_LAYER",
 "type": "band"
 }
 }
@@ -4871,6 +4924,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -4909,6 +4963,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -4947,6 +5002,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -4980,6 +5036,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5013,6 +5070,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5046,6 +5104,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5079,6 +5138,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5117,6 +5177,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5171,6 +5232,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5209,6 +5271,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5242,6 +5305,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5280,6 +5344,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5313,6 +5378,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5346,6 +5412,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5384,6 +5451,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5416,6 +5484,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5448,6 +5517,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5486,6 +5556,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5519,6 +5590,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5552,6 +5624,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5595,6 +5668,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -5697,6 +5771,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -5971,6 +6046,7 @@
 "CLASSFIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "POINTS",
 "type": "field"
 },
 "FIELD": {
@@ -5996,6 +6072,7 @@
 "WEIGHT": {
 "is_destination": false,
 "optional": true,
+"parent": "POINTS",
 "type": "field"
 }
 }
@@ -6075,6 +6152,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -6214,6 +6292,7 @@
 "MFIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "OUTPUT": {
@@ -6229,16 +6308,19 @@
 "XFIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "YFIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "ZFIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -6764,6 +6846,7 @@
 "COLUMN": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -6887,6 +6970,7 @@
 "COMPARE_ATTRIBUTES": {
 "is_destination": false,
 "optional": true,
+"parent": "ORIGINAL",
 "type": "field"
 },
 "DELETED": {
@@ -6955,6 +7039,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -6987,6 +7072,7 @@
 "INPUT_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "MATRIX_TYPE": {
@@ -7017,6 +7103,7 @@
 "TARGET_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "TARGET",
 "type": "field"
 },
 "USE_ELLIPSOID": {
@@ -7035,6 +7122,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "HUBS",
 "type": "field"
 },
 "HUBS": {
@@ -7189,6 +7277,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -7379,6 +7468,7 @@
 "INPUT_VALUE_RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_VALUE_RASTER",
 "type": "band"
 },
 "OUTPUT": {
@@ -7406,6 +7496,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -7761,11 +7852,13 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "FILENAME": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "expression"
 },
 "FOLDER": {
@@ -7794,6 +7887,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -7840,6 +7934,7 @@
 "EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "expression"
 },
 "FAIL_OUTPUT": {
@@ -8023,6 +8118,7 @@
 "DIRECTION_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "ENDPOINT_DEFINITION": {
@@ -8250,6 +8346,7 @@
 "FORMULA": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "expression"
 },
 "INPUT": {
@@ -8323,6 +8420,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -8357,6 +8455,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -8589,6 +8688,7 @@
 "PART_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "REPORT": {
@@ -8599,6 +8699,7 @@
 "RING_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "TOLERANCE": {
@@ -8609,11 +8710,13 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "VERTEX_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -8637,6 +8740,7 @@
 "MERGE_ATTRIBUTE": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "METHOD": {
@@ -8657,6 +8761,7 @@
 "PART_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "REPORT": {
@@ -8667,6 +8772,7 @@
 "RING_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "TOLERANCE": {
@@ -8677,11 +8783,13 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "VERTEX_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -8715,6 +8823,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -8743,6 +8852,7 @@
 "PART_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "REPORT": {
@@ -8753,6 +8863,7 @@
 "RING_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "TOLERANCE": {
@@ -8763,11 +8874,13 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "VERTEX_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -8781,6 +8894,7 @@
 "ERROR_ID_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "GAPS",
 "type": "field"
 },
 "GAPS": {
@@ -8826,6 +8940,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -8854,6 +8969,7 @@
 "PART_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "REPORT": {
@@ -8864,6 +8980,7 @@
 "RING_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "TOLERANCE": {
@@ -8874,11 +8991,13 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "VERTEX_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -8907,6 +9026,7 @@
 "PART_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "REPORT": {
@@ -8917,6 +9037,7 @@
 "RING_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "TOLERANCE": {
@@ -8927,11 +9048,13 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "VERTEX_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -8970,6 +9093,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -8988,6 +9112,7 @@
 "ERROR_VALUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "INPUT": {
@@ -9003,6 +9128,7 @@
 "OVERLAP_FEATURE_UNIQUE_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "REPORT": {
@@ -9018,6 +9144,7 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -9055,6 +9182,7 @@
 "PART_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "REPORT": {
@@ -9065,16 +9193,19 @@
 "RING_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "SEGMENT_1": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "SEGMENT_2": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "TOLERANCE": {
@@ -9085,11 +9216,13 @@
 "UNIQUE_ID": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 },
 "VERTEX_IDX": {
 "is_destination": false,
 "optional": false,
+"parent": "ERRORS",
 "type": "field"
 }
 }
@@ -9175,6 +9308,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -9217,6 +9351,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -9259,6 +9394,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -9301,6 +9437,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -9343,6 +9480,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -9390,6 +9528,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -9531,6 +9670,7 @@
 "EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "expression"
 },
 "INPUT": {
@@ -9624,6 +9764,7 @@
 "INPUT_VALUE_RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_VALUE_RASTER",
 "type": "band"
 },
 "OUTPUT": {
@@ -9692,11 +9833,13 @@
 "RADIUS_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "WEIGHT_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -9858,11 +10001,13 @@
 "HUB_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "HUBS",
 "type": "field"
 },
 "HUB_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "HUBS",
 "type": "field"
 },
 "OUTPUT": {
@@ -9878,11 +10023,13 @@
 "SPOKE_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "SPOKES",
 "type": "field"
 },
 "SPOKE_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "SPOKES",
 "type": "field"
 }
 }
@@ -9976,6 +10123,7 @@
 "PRIMARY_KEY": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "SCHEMA": {
@@ -10041,6 +10189,7 @@
 "PRIMARY_KEY": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "TABLENAME": {
@@ -10101,6 +10250,7 @@
 "PRIMARY_KEY": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "TABLENAME": {
@@ -10178,6 +10328,7 @@
 "INPUT_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "OUTPUT": {
@@ -10193,6 +10344,7 @@
 "OVERLAY_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "OVERLAY",
 "type": "field"
 },
 "OVERLAY_FIELDS_PREFIX": {
@@ -10227,6 +10379,7 @@
 "JOIN_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "JOIN",
 "type": "field"
 },
 "METHOD": {
@@ -10286,16 +10439,19 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "FIELDS_TO_COPY": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT_2",
 "type": "field"
 },
 "FIELD_2": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_2",
 "type": "field"
 },
 "INPUT": {
@@ -10357,6 +10513,7 @@
 "JOIN_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "JOIN",
 "type": "field"
 },
 "OUTPUT": {
@@ -10422,6 +10579,7 @@
 "FIELDS_TO_COPY": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT_2",
 "type": "field"
 },
 "INPUT": {
@@ -10541,6 +10699,7 @@
 "GROUP_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "expression"
 },
 "INPUT": {
@@ -10551,6 +10710,7 @@
 "NAME_EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "expression"
 }
 }
@@ -10591,6 +10751,7 @@
 "INPUT_VALUE_RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_VALUE_RASTER",
 "type": "band"
 },
 "OUTPUT": {
@@ -10638,6 +10799,7 @@
 "WEIGHT": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -10655,6 +10817,7 @@
 "INPUT_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "INTERSECT": {
@@ -10665,6 +10828,7 @@
 "INTERSECT_FIELDS": {
 "is_destination": false,
 "optional": true,
+"parent": "INTERSECT",
 "type": "field"
 },
 "INTERSECT_FIELDS_PREFIX": {
@@ -10717,6 +10881,7 @@
 "FIELDS": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -10796,11 +10961,13 @@
 "UID": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "WEIGHT": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -11061,6 +11228,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -11131,6 +11299,7 @@
 "EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "LAYERS",
 "type": "expression"
 },
 "EXTENT": {
@@ -11168,6 +11337,7 @@
 "EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "LAYERS",
 "type": "expression"
 },
 "EXTENT": {
@@ -11396,6 +11566,7 @@
 "EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "expression"
 },
 "INPUT": {
@@ -11535,6 +11706,7 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 }
 }
@@ -11562,6 +11734,7 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 }
 }
@@ -11635,6 +11808,7 @@
 "GROUP_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "expression"
 },
 "INPUT": {
@@ -11650,6 +11824,7 @@
 "ORDER_EXPRESSION": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "expression"
 },
 "OUTPUT": {
@@ -12062,6 +12237,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -12263,6 +12439,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -12373,6 +12550,7 @@
 "EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "LAYERS",
 "type": "expression"
 },
 "EXTENT": {
@@ -12400,6 +12578,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -12452,6 +12631,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -12543,6 +12723,7 @@
 "BAND": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "band"
 },
 "INPUT": {
@@ -12568,6 +12749,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "INPUT": {
@@ -12597,6 +12779,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "INPUT": {
@@ -12630,6 +12813,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "INPUT": {
@@ -12659,6 +12843,7 @@
 "ZONES_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "ZONES",
 "type": "band"
 }
 }
@@ -12737,6 +12922,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "EXTRACT": {
@@ -12846,6 +13032,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "INPUT": {
@@ -12923,11 +13110,13 @@
 "MAX_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_TABLE",
 "type": "field"
 },
 "MIN_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_TABLE",
 "type": "field"
 },
 "NODATA_FOR_MISSING": {
@@ -12959,11 +13148,13 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 },
 "VALUE_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_TABLE",
 "type": "field"
 }
 }
@@ -13031,6 +13222,7 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 },
 "TABLE": {
@@ -13095,6 +13287,7 @@
 "FIELDS_MAPPING": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "fields_mapping"
 },
 "INPUT": {
@@ -13163,6 +13356,7 @@
 "FIELDS": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -13301,6 +13495,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -13377,6 +13572,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "CREATION_OPTIONS": {
@@ -13419,6 +13615,7 @@
 "FIELDS": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -13502,6 +13699,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "BASE_N": {
@@ -13704,6 +13902,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -13772,6 +13971,7 @@
 "DIRECTION_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "INCLUDE_BOUNDS": {
@@ -13807,6 +14007,7 @@
 "SPEED_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "START_POINTS": {
@@ -13874,6 +14075,7 @@
 "DIRECTION_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "INCLUDE_BOUNDS": {
@@ -13904,6 +14106,7 @@
 "SPEED_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "START_POINT": {
@@ -14073,6 +14276,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "RASTER",
 "type": "band"
 },
 "INPUT": {
@@ -14137,6 +14341,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "RASTER",
 "type": "band"
 },
 "INPUT": {
@@ -14258,6 +14463,7 @@
 "DIRECTION_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "END_POINT": {
@@ -14288,6 +14494,7 @@
 "SPEED_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "START_POINTS": {
@@ -14350,6 +14557,7 @@
 "DIRECTION_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "END_POINTS": {
@@ -14380,6 +14588,7 @@
 "SPEED_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "START_POINT": {
@@ -14442,6 +14651,7 @@
 "DIRECTION_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "END_POINT": {
@@ -14467,6 +14677,7 @@
 "SPEED_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "START_POINT": {
@@ -14788,6 +14999,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -14838,6 +15050,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "FILE_TYPE": {
@@ -14922,6 +15135,7 @@
 "DATETIME_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "DBSCAN*": {
@@ -15676,6 +15890,7 @@
 "DIRECTION_FIELD": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "ENDPOINTS_ONLY": {
@@ -15748,6 +15963,7 @@
 "EXPRESSION": {
 "is_destination": false,
 "optional": false,
+"parent": "LAYERS",
 "type": "expression"
 },
 "EXTENT": {
@@ -15963,6 +16179,7 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 }
 }
@@ -15990,6 +16207,7 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 }
 }
@@ -16017,6 +16235,7 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 },
 "STATISTICS": {
@@ -16068,6 +16287,7 @@
 "RASTER_BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT_RASTER",
 "type": "band"
 },
 "STATISTICS": {
@@ -16164,6 +16384,7 @@
 "NAME_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "OUTPUT": {
@@ -16179,6 +16400,7 @@
 "VALUE_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "XAXIS_TITLE": {
@@ -16216,6 +16438,7 @@
 "NAME_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "OUTPUT": {
@@ -16231,6 +16454,7 @@
 "VALUE_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "XAXIS_TITLE": {
@@ -16253,6 +16477,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "HUBS",
 "type": "field"
 },
 "HUBS": {
@@ -16292,6 +16517,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "HUBS",
 "type": "field"
 },
 "HUBS": {
@@ -16459,6 +16685,7 @@
 "NAME_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "OUTPUT": {
@@ -16469,6 +16696,7 @@
 "VALUE_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -16523,6 +16751,7 @@
 "VALUE_FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -16662,6 +16891,7 @@
 "BAND": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "band"
 },
 "BINS": {
@@ -16689,6 +16919,7 @@
 "HEIGHT": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -16704,6 +16935,7 @@
 "ROTATION": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 },
 "SEGMENTS": {
@@ -16724,6 +16956,7 @@
 "WIDTH": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -16798,6 +17031,7 @@
 "XFIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "YAXIS_TITLE": {
@@ -16808,6 +17042,7 @@
 "YFIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "ZAXIS_TITLE": {
@@ -16818,6 +17053,7 @@
 "ZFIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -16830,6 +17066,7 @@
 "CATEGORIES_FIELD_NAME": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -16845,6 +17082,7 @@
 "VALUES_FIELD_NAME": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "field"
 }
 }
@@ -16857,6 +17095,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -16973,6 +17212,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -17020,6 +17260,7 @@
 "FIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "INPUT": {
@@ -17042,6 +17283,7 @@
 "HOVERTEXT": {
 "is_destination": false,
 "optional": true,
+"parent": "INPUT",
 "type": "expression"
 },
 "INPUT": {
@@ -17072,6 +17314,7 @@
 "XFIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 },
 "YAXIS_LOG": {
@@ -17087,6 +17330,7 @@
 "YFIELD": {
 "is_destination": false,
 "optional": false,
+"parent": "INPUT",
 "type": "field"
 }
 }

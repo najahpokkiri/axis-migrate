@@ -375,6 +375,10 @@ class Lineage:
              "legacy_output_dirs": inv.get("legacy_output_dirs", []),
              "scope_facts": sorted(self.scope_facts, key=lambda f: (f["node"], f["fact"])),
              "lineage_checks": self.checks, "intra_step_reads": self.intra_step,
+             # 10 §10: every branch of an in-scope step is ported, dropped or deferred later; discover leaves it unknown
+             "branches": [dict({k: v for k, v in b.items() if k not in ("code_status", "state")},
+                               evidence=[ev("directly_observed", b["ref"], f"if {b['condition']}")])
+                          for b in inv.get("branches", []) if b["step"] in self.step_ids and b["code_status"] == "live"],
              "open_items_from_scan": [i["id"] for i in inv.get("open_items", [])]}
         for f in inv.get("open_items", []):
             if f["kind"] == "unused_branch":
