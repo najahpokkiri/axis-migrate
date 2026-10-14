@@ -10,7 +10,7 @@ planted:
   step: s02_buffer_landuse
   dataset: ds.02_buffers
   file: pipeline/s02_buffer_landuse.py
-  fingerprint: "to_crs(3857)"
+  fingerprint: "to_crs\\(3857\\)"
   patch: evals/mutants/S1-T5.patch         # applied to evals/golden/s1/pipeline by evals/golden/s1/make_seeds.py
   also_datasets: [ds.02_buf_industrial, ds.02_buf_other]
 numbers:                                   # frozen compare.py vs the real-QGIS reference (evals/calib/t0_s1.json)
