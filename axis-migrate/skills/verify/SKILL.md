@@ -1,9 +1,9 @@
 ---
 name: verify
-description: Prove per-step parity of a pipeline run against the legacy run's own intermediates and finals. Compare every lineage pair (compare.py), render legacy | new | difference plots (plot.py), LOOK at every plot and answer the calibrated rubric (review-add; you may only flag), aggregate verdicts and blame, run the repair loop within its limits, and propose (never sign) tolerance records. Use after every isolated step run while migrating and after the chained run.
+description: Prove per-step parity of a pipeline run against the legacy run's own intermediates and finals. Compare every lineage pair (compare.py), render legacy | new | difference plots (plot.py), LOOK at every compared dataset — on the GeoLibre map views (map skill) where the harness has a browser pane, else at the PNG plots — and answer the calibrated rubric (review-add; you may only flag), aggregate verdicts and blame, run the repair loop within its limits, and propose (never sign) tolerance records. Use after every isolated step run while migrating and after the chained run.
 ---
 
-# Verify: numbers decide, plots show, you look and may only flag
+# Verify: numbers decide, map views and plots show, you look and may only flag
 
 `$P` = plugin root. Run every script as `"$P/bin/axpy" "$P/skills/verify/<script>.py" …` from the project directory.
 `<run>` = `migration/runs/<run_id>` (printed by `run_local.py`). One verify per run: a changed tolerance, known
@@ -25,20 +25,23 @@ Raster: `overview.png` (legacy | new | diff; ONE shared colour scale; diff orang
 black/dark grey = valid on one side only; zone boundaries green), `mask_diff.png`, `hist.png`, `worst_tiles.png`
 (native resolution, cell grid; `grid_overlay` mode draws both grids when the grid gate failed). Vector: `overlay.png`,
 `per_feature.png`, `worst_features.png`. Table: `residuals.png`. Plots are evidence about verdicts, never inputs.
+Always run it: the plots are the look's fallback and the report and evals use them, also when you look on the map.
 
 ## 3 Look (mandatory for every compared raster and vector dataset)
-One receipt kind per harness; both count the same, a flag has the same effect, and the Stop gate refuses to end the
-turn while a compared dataset of the latest run has neither.
-- **Claude desktop**: `map` skill (`views.py run`, `start.py migration`), then per dataset `views.py url --run <run>
-  --dataset <ds> --view overview|worst|edges|nodata` → `mcp__Claude_Browser__preview_start {url}`; switch Add Data →
-  Raster Layer → render engine to `maplibre-gl-raster`, nudge the map once; open a `cell-<id>` project (`views.py url
-  … --cell edge|interior|worst`), click the map centre, read legacy/new from the popup. Record a **view receipt**.
-- **Codex desktop**: the same in the in-app browser through browser use. Record a **view receipt**.
-- **Terminal, no pane, evals**: **PNG receipts** (steps 1–5). Without a pane you still Read the PNGs yourself.
+**Primary where a browser pane exists: the map views → view receipts. Fallback (terminal, headless, evals): the PNG
+plots → PNG receipts.** Both count the same, a flag has the same effect, the report lists both, and the Stop gate
+refuses to end the turn while a compared dataset of the latest run has neither.
+- **Claude desktop** (primary): `map` skill (`views.py run`, `start.py migration`), then per dataset `views.py url
+  --run <run> --dataset <ds> --view overview|worst|edges|nodata` → `mcp__Claude_Browser__preview_start {url}`; switch
+  Add Data → Raster Layer → render engine to `maplibre-gl-raster`, nudge the map once; open a `cell-<id>` project
+  (`views.py url … --cell edge|interior|worst`), click the map centre, read legacy/new from the popup. Record a
+  **view receipt**.
+- **Codex desktop** (primary): the same in the in-app browser through browser use. Record a **view receipt**.
+- **Fallback — terminal, no pane, headless, evals**: **PNG receipts** (steps 1–5); you still Read the PNGs yourself.
 
 1. `plot.py review-status --run <run>` lists what still lacks a receipt and which questions are missing.
-2. **Read every PNG** of the dataset (Read tool on `migration/runs/<id>/verify/plots/<ds>/<name>.png`; Codex:
-   `view_image`). Take `plot_sha256`, `panel_names`, `crs` and `extent` from `plots.json`.
+2. (PNG fallback) **Read every PNG** of the dataset (Read tool on `migration/runs/<id>/verify/plots/<ds>/<name>.png`;
+   Codex: `view_image`). Take `plot_sha256`, `panel_names`, `crs` and `extent` from `plots.json`.
 3. Answer every rubric question of `$P/skills/verify/rubric.v1.yaml` that applies to the family (raster Q1, Q2, Q4,
    Q5, Q6, Q7; vector Q1, Q3, Q4), from the plots the rubric names, following its `look` guidance. Yes means
    **defect present**. Answer from what you see, not from the verdict printed in the title; a failing check does not

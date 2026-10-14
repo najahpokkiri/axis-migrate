@@ -931,6 +931,7 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
                            "view_receipts": sum(1 for f in valid if vrc.is_view(f)
                                                 and f.get("answer") in ("yes", "no")),
                            "invalid_receipts": len(invalid),
+                           "counted": sorted(str(f.get("finding_id")) for f in valid),
                            "flags": [f.get("finding_id") for f in flags],
                            "cleared": sorted(f.get("finding_id") for f in valid if f.get("finding_id") in cleared),
                            "cannot_tell": [f.get("finding_id") for f in valid if f.get("answer") == "cannot_tell"]}

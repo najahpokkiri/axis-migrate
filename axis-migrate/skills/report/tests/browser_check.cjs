@@ -33,7 +33,10 @@ const { chromium } = require(path.join(modDir, "playwright-core"));
     const fb = document.getElementById("map-fallback");
     return { failures: box("#failures"), items, detailsAncestor, hiddenAncestor, verdict: (document.getElementById("verdict") || {}).innerText,
       fallbackShown: fb ? !fb.hidden : null, caption: (document.getElementById("map-caption") || {}).innerText,
-      compare: !!(window.AXIS_MAPS && window.AXIS_MAPS.compare), sections: Array.from(document.querySelectorAll("body > main > section, body > main > header, body > div#integrity")).map((s) => s.id) };
+      compare: !!(window.AXIS_MAPS && window.AXIS_MAPS.compare),
+      views: Array.from(document.querySelectorAll("div.views")).map((v) => { const r = v.getBoundingClientRect(); const t = v.querySelector("table.views-table"); return { id: v.id, rows: v.querySelectorAll("tr.view-row").length, changed: v.querySelectorAll("tr.view-row:not([data-state='ok'])").length, receipts: Array.from(v.querySelectorAll("tr.receipt")).map((x) => x.dataset.kind + ":" + x.dataset.status), shaTitles: Array.from(v.querySelectorAll("code.sha")).filter((c) => /^[0-9a-f]{64}$/.test(c.title) && c.innerText === c.title.slice(0, 12)).length, w: r.width, h: r.height, tableW: t ? t.getBoundingClientRect().width : null, text: v.innerText }; }),
+      mapViewLinks: Array.from(document.querySelectorAll("#map-views-links a")).map((a) => a.getAttribute("href")),
+      sections: Array.from(document.querySelectorAll("body > main > section, body > main > header, body > div#integrity")).map((s) => s.id) };
   });
   out.mapReady = mapReady;
   if (swipe && out.compare) {

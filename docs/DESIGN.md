@@ -339,7 +339,12 @@ only — **no rung** (reconciled: rungs are `ladder.py`'s alone).
 symmetric diverging diff scale; max-|d| downsampling for diffs; `mask_diff.png`; histogram with tolerance lines and
 per-zone bars; **worst tiles at native resolution with the cell grid drawn** (the only view where a one-cell edge offset
 is visible); vector overlay with symmetric difference filled; table residuals. Plots are evidence about verdicts, never
-inputs to them.
+inputs to them. They are always rendered (the report and evals use them) and are the visual review's fallback.
+
+**Where the model looks**: where the harness has a browser pane (Claude desktop, Codex desktop) the primary visual review
+is the GeoLibre map views (`skills/map/views.py`: overview, worst, edges, nodata, validity layer, cell projects) →
+view receipts; the PNG plots → PNG receipts are the fallback for terminal and headless harnesses and evals. Both kinds
+count the same way.
 
 **The model's visual review** (06 §4h, 10 D10-7, reconciled): rubric `rubric.v1.yaml`, questions Q1–Q7 (offset stripes,
 smoothing, angular buffers, missing region, tile seams, boundary ring, saturation under shared scale), each answered
@@ -385,6 +390,14 @@ loop) (06 §6.2).
   map → failed steps in full → parity table → passing step cards → assumptions and decisions → known differences → not
   checked → run history (failing runs kept) → "Agent notes (model-written, not evidence)" → reproducibility (07 §4.1).
   Verdict wording only from `phrases.v1.yaml` keyed by reason code.
+- Map views block (per compared raster/vector, in its step card; the swipe map links to it): the projects of
+  `verify/views/views.json` (and `amend/views/views.json` after the seal) with path relative to the run, sha256 (short,
+  full on hover), whether the sealed bundle binds it and whether the bytes still match ("changed after the review"
+  when a receipt cited it: that receipt does not count); the dataset's sealed receipts (PNG or view: engine, views
+  seen, cells read, flags with observations, counts or why not); and the commands to open them (`start.py migration`,
+  `views.py url --run migration/runs/<id> --dataset <ds> --view <v>`). The page never holds the server's address or
+  port, embeds no GeoLibre and fetches nothing; without views.json it says "No map views for this run" and the PNG
+  plots remain.
 - Swipe map: MapLibre GL 4.7.1 + maplibre-gl-compare 0.5.0 vendored; full-resolution PNGs pre-warped to EPSG:3857 by
   nearest neighbour on one shared scale (`map.py display`), no basemap by default, works from `file://` offline. Caption:
   "Display only: warped to Web Mercator, nearest neighbour. Verdicts are computed on the native grid." (Corrects 07's

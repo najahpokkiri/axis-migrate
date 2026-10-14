@@ -1,6 +1,6 @@
 ---
 name: report
-description: Seal a verified run into a hash-checked evidence bundle, compute the status rung with ladder.py and render migration/report/index.html (failures first, swipe map, parity table, run history). Use after compare, plot, visual review and aggregate have finished on a CHAINED run, after target_check.py (to seal target evidence), and whenever you need the current status line.
+description: Seal a verified run into a hash-checked evidence bundle, compute the status rung with ladder.py and render migration/report/index.html (failures first, swipe map, per-dataset map views and receipts, parity table, run history). Use after compare, plot, visual review and aggregate have finished on a CHAINED run, after target_check.py (to seal target evidence), and whenever you need the current status line.
 ---
 
 # Seal, compute the status, render the report
@@ -11,8 +11,10 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
 
 ## Order (one verify per run; the run must be `chained`)
 
-1. **Preconditions**: `compare.py run --run migration/runs/<id>` has run, `plot.py run` has run, your visual review
-   receipts have been added with `plot.py review-add`, and `compare.py aggregate --run migration/runs/<id>` has run.
+1. **Preconditions**: `compare.py run --run migration/runs/<id>` has run, `plot.py run` has run, where a browser
+   pane exists `views.py run` (map skill) has run, your visual review receipts have been added with `plot.py
+   review-add` (view receipts from the map views where a pane exists; PNG receipts are the terminal/headless/eval
+   fallback), and `compare.py aggregate --run migration/runs/<id>` has run.
    An isolated run is for diagnosis: it can never reach a rung above `generated`.
 2. **Display layers**: `axpy map.py display --run migration/runs/<id> [--dataset ds.x]…`. This writes
    `verify/display/` (EPSG:3857, nearest neighbour, one shared colour scale). It is for display only and must run before
@@ -55,6 +57,12 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
 - **Red integrity bar**: EVIDENCE_FILE_MISSING, EVIDENCE_HASH_MISMATCH, STATE_RECOMPUTE_MISMATCH, UNBOUND_COMPARE and
   LEGACY_REF_CHANGED mean no rung is shown. `*_CHANGED_AFTER_RUN` means stale, and the steps are capped at
   sandbox-validated until a new run.
+- **Map views** (in each compared raster/vector's card; the swipe map links to them): the views of `views.json` with
+  path and sha256, sealed or not, `matches` or `changed after the review` (its receipts then do not count), the
+  dataset's receipts (PNG or view: engine, views seen, cells read, flag observations, counts or why not) and the two
+  commands to open the views. The page holds no server address and embeds no GeoLibre. No `views.json` → "No map
+  views for this run" and the PNG plots are the visual record. Never say a dataset was looked at on the map unless
+  its block says a view receipt counts.
 - **Step cards**: caps (`→ at most <rung>`) and annotations (assumptions, "fitted, held-out pass",
   UPSTREAM_NOT_VERIFIED) explain why a step stopped where it did.
 - **Run history**: every run, including failing ones, with its computed rung and FAIL count. When you cite numbers,

@@ -252,6 +252,11 @@ Appends `{run_id, chain, executor, status, exit_code, started_at}` to `runs/inde
   NOT_COMPARED, <r> needs review | report migration/report/index.html`.
 - `report.py <migration> [--run id]` → `report/index.html`, `report/assets/…`, `report/REPORT.json{status, rung,
   steps{id: disposition}, assumptions[], known_differences[], files{path: sha256}, evidence_id}`; exit 0/2/3.
+  Per compared raster/vector the page has a "Map views" block (`id="views-<ds>"`, linked from the swipe map): the
+  views.json projects (`verify/views`, `amend/views`) with path, sha256, sealed yes/no and `matches` / `changed after
+  the review` / `changed since views.json` / `missing`, the validity layer with its counts, the dataset's sealed
+  receipts (PNG or view) with counts-or-why-not (ladder `visual.counted`), and the open commands; no port, server
+  address or network URL; no views.json → "No map views for this run". Static, offline, deterministic.
 
 ## 10 Target (owner: target/)
 

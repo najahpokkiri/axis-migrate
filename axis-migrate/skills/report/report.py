@@ -31,6 +31,7 @@ sys.path.insert(0, str(HERE))
 import axis_common as ac  # noqa: E402
 import ladder  # noqa: E402
 import seal as sealmod  # noqa: E402
+import visual_receipt as vrc  # noqa: E402
 
 import jinja2  # noqa: E402
 import yaml  # noqa: E402
@@ -224,6 +225,180 @@ def key_metric(cmp: dict) -> str:
     return "exact" if ladder.declared_state(cmp) == "PASS_EXACT" else "—"
 
 
+# ------------------------------------------------------------------------------------------------------------------
+# GeoLibre map views (skills/map/views.py): listed, hash-checked and explained; never embedded, never fetched
+# ------------------------------------------------------------------------------------------------------------------
+VIEW_ORDER = ("overview", "worst", "edges", "nodata", "validity")
+VIEW_PURPOSE = {"overview": "legacy and new over the whole extent",
+                "worst": "camera on the largest difference (rasters: diff layer on top)",
+                "edges": "where cells valid on one side only concentrate",
+                "nodata": "the validity layer alone over the whole extent",
+                "validity": "layer: 1 legacy only (blue) · 2 new only (orange) · 3 both (green)"}
+STATE_LABEL = {"ok": "matches", "changed": "changed since views.json", "missing": "missing",
+               "reviewed_changed": "changed after the review"}
+
+
+def _cell(v) -> str:
+    """A cell value as views.json / the identify popup has it; None = nodata on that side."""
+    return "nodata" if v is None else fmt(v)
+
+
+def _view_rank(name: str) -> tuple:
+    return (VIEW_ORDER.index(name), "") if name in VIEW_ORDER else (len(VIEW_ORDER), name)
+
+
+def map_views(project: Path, rd: Path, run_id: str, by_kind: dict, findings_by_ds: dict, lad: dict) -> dict:
+    """Per dataset: the views of verify/views/views.json (sealed with the run, read-only) and amend/views/views.json
+    (written after the seal), each project's path relative to the run, its indexed sha256, whether the sealed bundle
+    binds it and whether the bytes still match; plus the dataset's sealed receipts (PNG or view). Deterministic: no
+    clock, sorted iteration, paths relative to the run. The server's port is never read or shown."""
+    run_rel = rd.relative_to(project).as_posix() + "/"
+    sealed = set()
+    for o in by_kind.get("view", []):
+        p = str(o.get("path") or "")
+        if p.startswith(run_rel):
+            sealed.add((p[len(run_rel):], ladder.hex_of(o.get("sha256"))))
+    cache: dict[str, str | None] = {}
+
+    def now(rel: str) -> str | None:
+        if rel not in cache:
+            parts = rel.split("/")
+            safe = ("/".join(parts[:2]) in vrc.VIEW_ROOTS and len(parts) == 4 and "\\" not in rel
+                    and not ({"..", ".", ""} & set(parts)) and rel.endswith((".geolibre.json", ".tif")))
+            p = rd / rel
+            cache[rel] = ac.sha256_file(p) if safe and p.is_file() else None
+        return cache[rel]
+
+    indexes, ignored = [], []
+    for root in vrc.VIEW_ROOTS:
+        if not (rd / root / "views.json").is_file():
+            continue
+        doc = vrc.load_index(rd, root)
+        if doc and doc.get("schema") == vrc.VIEWS_SCHEMA and doc.get("run_id") == run_id:
+            indexes.append((root, doc))
+        else:
+            ignored.append(f"{root}/views.json")
+    names: dict[str, str] = {}
+    for _, doc in indexes:
+        for e in doc.get("datasets") or []:
+            if isinstance(e, dict):
+                for rel, info in vrc.entry_projects(e)[0].items():
+                    names[rel] = info["name"]
+    out: dict[str, dict] = {}
+    for dsid, d in sorted(lad["datasets"].items()):
+        if d.get("kind") not in ("raster", "vector"):
+            continue
+        counted = set((d.get("visual") or {}).get("counted") or [])
+        mine = findings_by_ds.get(dsid, [])
+        cited = {}
+        for f in mine:
+            if vrc.is_view(f):
+                for c in [f.get("view")] + list(f.get("views_seen") or []):
+                    if isinstance(c, dict) and isinstance(c.get("project"), str):
+                        cited.setdefault(c["project"], set()).add(str(c.get("project_sha256")))
+        tables = []
+        skipped = []
+        for root, doc in indexes:
+            e = vrc.index_entry(doc, dsid)
+            if e is None:
+                skipped += [str(s.get("reason")) for s in doc.get("skipped") or []
+                            if isinstance(s, dict) and s.get("dataset") == dsid]
+                continue
+            projects, cells = vrc.entry_projects(e)
+            rows = []
+            for rel, info in projects.items():
+                cur = now(rel)
+                state = "missing" if cur is None else ("ok" if cur == info["sha256"] else "changed")
+                if state == "changed" and info["sha256"] in cited.get(rel, ()):
+                    state = "reviewed_changed"
+                purpose = VIEW_PURPOSE.get(info["name"], "")
+                if info["name"].startswith("cell-"):
+                    c = cells.get(info["name"][5:]) or {}
+                    purpose = (f"centred on the {info['name'][5:]} cell to identify: views.json legacy "
+                               f"{_cell(c.get('legacy_value'))} · new {_cell(c.get('new_value'))}")
+                rows.append({"name": info["name"], "kind": "project", "path": rel, "sha256": info["sha256"],
+                             "sealed": (rel, info["sha256"]) in sealed, "state": state, "label": STATE_LABEL[state],
+                             "cited": rel in cited, "purpose": purpose})
+            vf = (e.get("files") or {}).get("validity") if e.get("family") == "raster" else None
+            if isinstance(vf, dict) and isinstance(vf.get("file"), str):
+                cur = now(vf["file"])
+                state = "missing" if cur is None else ("ok" if cur == vf.get("sha256") else "changed")
+                vc = e.get("validity_counts") or {}
+                rows.append({"name": "validity", "kind": "layer", "path": vf["file"], "sha256": vf.get("sha256"),
+                             "sealed": None, "state": state, "label": STATE_LABEL[state], "cited": False,
+                             "purpose": VIEW_PURPOSE["validity"] + (
+                                 f"; cells: {fmt(vc.get('1', 0))} legacy only, {fmt(vc.get('2', 0))} new only, "
+                                 f"{fmt(vc.get('3', 0))} both" if isinstance(vc, dict) and vc else "")})
+            rows.sort(key=lambda r: _view_rank(r["name"]))
+            cell_ids = sorted(n[5:] for n in (r["name"] for r in rows) if n.startswith("cell-"))
+            tables.append({"index": f"{root}/views.json", "after_seal": root.startswith("amend/"), "rows": rows,
+                           "views": [r["name"] for r in rows if r["kind"] == "project"
+                                     and not r["name"].startswith("cell-")],
+                           "cells": cell_ids,
+                           "changed": [r["name"] for r in rows if r["state"] != "ok"]})
+        states = {r["path"]: r for t in tables for r in t["rows"]}
+        receipts = []
+        for f in mine:  # sorted by finding_id in build_context
+            fid = str(f.get("finding_id"))
+            view = vrc.is_view(f)
+            seen = []
+            for c in (f.get("views_seen") or []) if view else []:
+                if not isinstance(c, dict):
+                    continue
+                rel = str(c.get("project"))
+                st = states.get(rel)
+                ok_sha = st is not None and st["sha256"] == c.get("project_sha256")
+                seen.append({"name": names.get(rel) or Path(rel).name.replace(".geolibre.json", ""), "path": rel,
+                             "sha256": c.get("project_sha256"),
+                             "state": (st["state"] if ok_sha else "not_indexed"),
+                             "label": st["label"] if ok_sha else "not in views.json with this sha256"})
+            if f.get("answer") == "cannot_tell" and fid in counted:
+                status, why = "cannot_tell", "not visually assessed (not a receipt)"
+            elif fid in counted:
+                status, why = "counts", ""
+            elif view:
+                bad = [s for s in seen if s["state"] != "ok"]
+                status = "void"
+                if any(s["state"] in ("reviewed_changed", "changed", "missing") for s in bad):
+                    why = "does not count: a view it cites changed after the review (" + ", ".join(
+                        s["name"] for s in bad) + ")"
+                elif bad:
+                    why = "does not count: it cites views not in this run's views.json (" + ", ".join(
+                        s["name"] for s in bad) + ")"
+                elif not all((s["path"], s["sha256"]) in sealed for s in seen):
+                    why = "does not count: it cites views the sealed bundle does not bind"
+                else:
+                    why = "does not count: it fails the receipt rule (lib/visual_receipt.py)"
+            else:
+                status, why = "void", "does not count: its plot is not a sealed, unchanged plot of this run"
+            seen.sort(key=lambda s: (_view_rank(s["name"]), s["path"]))
+            receipts.append({
+                "id": fid, "kind": "view" if view else "PNG", "amended": f.get("amended"),
+                "question": f.get("question_id"), "answer": f.get("answer"), "effect": f.get("effect"),
+                "category": f.get("category"), "engine": f.get("engine") if view else None,
+                "main": (names.get(str((f.get("view") or {}).get("project"))) if view else None),
+                "seen": seen, "plot": None if view else f.get("plot"),
+                "plot_sha256": None if view else f.get("plot_sha256"),
+                "plots_seen": len(f.get("plots_seen") or []) if not view else None,
+                "cells": [{"cell": c.get("cell"), "legacy": _cell(c.get("legacy")), "new": _cell(c.get("new"))}
+                          for c in f.get("cells_read") or [] if isinstance(c, dict)] if view else [],
+                "observations": [{"what": o.get("what"), "value": fmt(o.get("value")), "unit": o.get("unit") or ""}
+                                 for o in f.get("observations") or [] if isinstance(o, dict)],
+                "layer": f.get("layer"),
+                "bbox": fmt((f.get("location") or {}).get("bbox")) if isinstance(f.get("location"), dict) and
+                (f.get("location") or {}).get("bbox") else None,
+                "crs": (f.get("location") or {}).get("crs") if isinstance(f.get("location"), dict) else None,
+                "note": f.get("note"), "status": status, "why": why,
+                "flag": f.get("answer") == "yes" and f.get("effect") == "flag"})
+        n_view = sum(1 for r in receipts if r["kind"] == "view" and r["status"] == "counts")
+        n_png = sum(1 for r in receipts if r["kind"] == "PNG" and r["status"] == "counts")
+        n_void_view = sum(1 for r in receipts if r["kind"] == "view" and r["status"] == "void")
+        out[dsid] = {"tables": tables, "skipped": skipped, "ignored": ignored, "has_index": bool(indexes),
+                     "receipts": receipts, "n_view": n_view, "n_png": n_png, "n_void_view": n_void_view,
+                     "anchor": "views-" + re.sub(r"[^A-Za-z0-9_.-]", "-", dsid)}
+    return out
+
+
 def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
     project = migration.parent
     run_id = lad["run_id"]
@@ -283,6 +458,7 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
                     (o.get("meta") or {}).get("amended"))})
     for v in findings_by_ds.values():
         v.sort(key=lambda f: (str(f.get("finding_id"))))
+    views = map_views(project, rd, run_id, by_kind, findings_by_ds, lad)
 
     # datasets
     drows = []
@@ -326,7 +502,7 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
                        "name": Path(p["path"]).name, "sha256": p.get("sha256"),
                        "ok": p.get("path") not in bad_paths} for p in plots_by_ds.get(dsid, [])],
             "visual": d.get("visual") or {}, "findings": findings_by_ds.get(dsid, []), "kd": d.get("kd") or [],
-            "notes": d.get("notes") or [], "integrity": missing_here,
+            "notes": d.get("notes") or [], "integrity": missing_here, "views": views.get(dsid),
             "units": g.get("units") or ""})
     sev = {s: i for i, s in enumerate(ladder.DISPOSITION_ORDER + ["NO_REFERENCE", "BRIDGED", "NOT_PORTED"])}
     order = lad["pipeline"].get("order") or sorted(lad["steps"])
@@ -421,7 +597,8 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
         "not_compared": [r for r in drows if r["disposition"] == "NOT_COMPARED"],
         "bridged": [r for r in drows if r["disposition"] == "BRIDGED"],
         "compare_not_checked": [(r["id"], x) for r in drows for x in r["not_checked"]],
-        "cannot_tell": [(r["id"], f.get("question_id"), f.get("plot")) for r in drows for f in r["findings"]
+        "cannot_tell": [(r["id"], f.get("question_id"), f.get("plot") or (f.get("view") or {}).get("project"))
+                        for r in drows for f in r["findings"]
                         if f.get("answer") == "cannot_tell"],
         "sweep": sorted(sweep), "dropped": dropped,
         "histogram": lad["pipeline"]["counts"]["histogram"]}
@@ -516,6 +693,9 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
         "stale": [x for x in integrity if x.get("severity") == "stale"],
         "failures": failures, "pipe_items": pipe_items, "caveats": caveats,
         "graph_svg": graph_svg(graph, lad), "layers": layers, "default_layer": default_layer,
+        "views_links": [(ds, v["anchor"]) for ds, v in sorted(views.items())
+                        if (lad["datasets"].get(ds) or {}).get("state")],
+        "run_rel": f"migration/runs/{run_id}",
         "caption_default": CAPTION.format(crs=next((l["crs"] for l in layers if l["dataset"] == default_layer),
                                                    "native CRS")),
         "failing_steps": failing_steps, "passing_steps": passing_steps, "parity": parity,

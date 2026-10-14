@@ -59,5 +59,7 @@ receipt (verify SKILL §3.6: view projects + sha256, engine, cells read) or, wit
 - Never claim what the map shows unless you saw it in this session (popup text, page text or screenshot). If no
   pane or browser is available, say the views were checked headlessly only (`check.py`).
 - Never edit views, projects or COGs by hand; rerun `views.py run`. Never write into the legacy folder.
+- The report (report skill) lists every view with its sha256 and whether the bytes still match, and the receipts; it
+  never holds the server's port and never embeds the app.
 - The app loads its default basemap style from tiles.openfreemap.org once at start-up; the migration's data is only
   ever served from 127.0.0.1.

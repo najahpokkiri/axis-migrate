@@ -287,3 +287,26 @@ def test_shifted_review_flags_and_rung_does_not_rise(clean, shifted, tmp_path, c
     order = ladder.DISPOSITION_ORDER
     assert order.index(sm["disposition"]) <= order.index(cm["disposition"])
     assert not [x for x in ls["integrity"] if x.get("severity") == "incomplete"]
+
+
+def test_report_lists_the_views_and_receipts(shifted):
+    """GeoLibre step 5: the sealed shifted run's report lists the real views.json (projects + validity layer with its
+    counts), each sha with its match state, and the flagging view receipt; no server address, nothing fetched."""
+    if not (shifted / "verify" / "evidence.json").exists():
+        pytest.skip("needs the sealed shifted run of test_shifted_review_flags_and_rung_does_not_rise")
+    mig = shifted.parents[1]
+    sh([AXPY, PLUGIN / "skills" / "report" / "report.py", mig], ok=(0, 2))
+    html = (mig / "report" / "index.html").read_text(encoding="utf-8")
+    i = html.index('id="views-ds.02_res_mask"')
+    b = html[i:html.index('<div class="small"><a href="assets/compare/', i)]
+    e = next(x for x in doc(shifted)["datasets"] if x["dataset"] == "ds.02_res_mask")
+    for v in ("overview", "worst", "edges", "nodata"):
+        sha = e["views"][v]["project_sha256"]
+        assert f'data-view="{v}" data-state="ok"' in b and f'title="{sha}">{sha[:12]}</code>' in b, v
+    c = e["validity_counts"]
+    assert 'data-view="validity" data-state="ok"' in b
+    assert f"{c['1']} legacy only, {c['2']} new only" in b
+    assert 'data-kind="view" data-status="counts"' in b and "cells valid on legacy only (validity 1)" in b
+    assert "Looked at on the map:" in b and f"--run migration/runs/{shifted.name} --dataset ds.02_res_mask" in b
+    for needle in ("127.0.0.1", "localhost", "https://", "/data/runs"):
+        assert needle not in html, needle

@@ -27,6 +27,7 @@ th{background:var(--soft);font-weight:600;font-size:12.5px}
 .badge{display:inline-block;border:1px solid var(--c);color:var(--c);background:var(--cb);border-radius:10px;padding:0 8px;font-size:12px;font-weight:600;white-space:nowrap}
 .integrity-bar{background:var(--bad);color:#fff;padding:8px 20px;font-weight:600}
 .integrity-bar.stale{background:#9a3412}
+.integrity-bar.info{background:#57606a}
 .integrity-bar a{color:#fff}
 .integrity-bar ul{margin:2px 0 0;padding-left:20px;font-weight:400;font-size:13px}
 #headline{padding:10px 0 0}
@@ -78,6 +79,11 @@ ol.ladder li.greyed span{font-size:10.5px}
 .plots img{max-width:380px;max-height:260px;border:1px solid var(--line);image-rendering:pixelated}
 .plots figcaption{font-size:11.5px;color:var(--muted)}
 .small{font-size:12.5px}
+.views{border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin:8px 0;background:var(--soft)}
+.views h4{font-size:13.5px;margin:0 0 4px}
+.views .cmd{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0;padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:4px;font:12px/1.4 ui-monospace,monospace}
+.views table{background:#fff}
+.views code.sha{white-space:nowrap}
 .notes{background:#eef0f2;border:1px solid var(--line);border-radius:6px;padding:10px}
 .notes pre{white-space:pre-wrap;margin:0;font:13px/1.45 ui-monospace,monospace}
 .claim{border:2px solid var(--blue);background:var(--blue-bg);padding:10px 12px;border-radius:6px;white-space:pre-wrap}
@@ -87,8 +93,8 @@ footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid va
 <body>
 {% set p = pipeline %}
 {% if integrity %}
-<div id="integrity" class="integrity-bar{% if not incomplete %} stale{% endif %}" role="alert">
-{% if incomplete %}EVIDENCE INCOMPLETE — {{ integrity|selectattr('severity','equalto','incomplete')|list|length }} finding(s){% else %}STALE — the project changed after run {{ run_id }}{% endif %}
+<div id="integrity" class="integrity-bar{% if not incomplete %} stale{% endif %}{% if not incomplete and not stale %} info{% endif %}" role="alert">
+{% if incomplete %}EVIDENCE INCOMPLETE — {{ integrity|selectattr('severity','equalto','incomplete')|list|length }} finding(s){% elif stale %}STALE — the project changed after run {{ run_id }}{% else %}NOTE — display files changed after run {{ run_id }} (receipts citing them do not count; no effect on the evidence){% endif %}
 <ul>
 {% for x in integrity %}<li><code>{{ x.code }}</code> {{ x.detail }}{% if x.path %} · <code>{{ x.path }}</code>{% endif %}{% if x.expected %} · expected <code>{{ x.expected }}</code>{% endif %}{% if x.dataset %} · <a href="#ds-{{ x.dataset|anchor }}">{{ x.dataset }}</a>{% endif %}</li>
 {% endfor %}
@@ -149,7 +155,40 @@ footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid va
 {% else %}
 <p class="small">No display layers in this bundle (run <code>map.py display</code> before sealing).</p>
 {% endif %}
+{% if views_links %}<p class="small" id="map-views-links">GeoLibre map views per dataset (live map from the map server, not embedded in this page): {% for ds, a in views_links %}<a href="#{{ a }}">{{ ds }}</a>{{ ' · ' if not loop.last }}{% endfor %}</p>{% endif %}
 </section>
+
+{% macro sha(h) %}<code class="sha" title="{{ h or '' }}">{{ h|short }}</code>{% endmacro %}
+
+{% macro views_block(d) %}
+{% set v = d.views %}
+<div class="views" id="{{ v.anchor }}">
+<h4>Map views <span class="meta">(GeoLibre, display only; nothing here feeds a verdict)</span></h4>
+{% if not v.tables %}
+<p class="small views-none">{% if v.has_index %}No map views of this dataset in this run{% if v.skipped %} (views.py skipped it: {{ v.skipped|join('; ') }}){% endif %}{% else %}No map views for this run (no views.json){% endif %}. The PNG plots above are the visual record.</p>
+{% else %}
+{% for t in v.tables %}
+<p class="small"><code>{{ t.index }}</code> · {{ 'written after the seal (amend)' if t.after_seal else 'written before the seal' }} · paths relative to <code>{{ run_rel }}/</code>{% if t.changed %} · <strong class="missing">changed: {{ t.changed|join(', ') }}</strong>{% endif %}</p>
+<div class="scroll"><table class="small views-table"><thead><tr><th>view</th><th>project / layer</th><th>sha256</th><th>sealed</th><th>bytes now</th><th>what it shows</th></tr></thead><tbody>
+{% for r in t.rows %}<tr class="view-row" data-view="{{ r.name }}" data-state="{{ r.state }}"><td><code>{{ r.name }}</code></td><td><code>{{ r.path }}</code></td><td>{{ sha(r.sha256) }}</td><td>{% if r.sealed is none %}—{% elif r.sealed %}yes{% else %}no{% endif %}</td><td>{% if r.state == 'ok' %}<span class="badge ok">✓ {{ r.label }}</span>{% else %}<span class="badge bad">✗ {{ r.label }}</span>{% endif %}</td><td>{{ r.purpose }}</td></tr>
+{% endfor %}</tbody></table></div>
+{% endfor %}
+{% set t0 = v.tables[0] %}
+<div class="small views-open">Open them (from the project folder; <code>$P</code> = plugin root; the server prints its own address, this page holds none):
+<pre class="cmd">"$P/bin/axpy" "$P/skills/map/start.py" migration
+"$P/bin/axpy" "$P/skills/map/views.py" url --run {{ run_rel }} --dataset {{ d.id }} --view {{ t0.views[0] if t0.views else 'overview' }}</pre>
+each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not loop.last }}{% endfor %}{% if t0.cells %} · cells: {% for c in t0.cells %}<code>--cell {{ c }}</code>{{ ' · ' if not loop.last }}{% endfor %}{% endif %}</div>
+{% endif %}
+<p class="small views-review">{% if v.n_view %}Looked at on the map: {{ v.n_view }} view receipt(s) count.{% elif v.n_void_view %}<strong class="missing">View receipt(s) recorded but none counts</strong>: not reviewed on the map.{% else %}No view receipt for this dataset in this run.{% endif %}{% if v.n_png %} {{ v.n_png }} PNG receipt(s) count (fallback: plots).{% endif %}</p>
+{% if v.receipts %}<div class="scroll"><table class="small receipts"><thead><tr><th>receipt</th><th>kind</th><th>question · answer · effect · category</th><th>looked at</th><th>cells read (legacy · new)</th><th>flag observations</th><th>counts</th><th>note (model-written)</th></tr></thead><tbody>
+{% for r in v.receipts %}<tr class="receipt" data-kind="{{ r.kind }}" data-status="{{ r.status }}"><td><code>{{ r.id }}</code>{% if r.amended %} (amended){% endif %}</td><td>{{ r.kind }}{% if r.engine %}<br><span class="meta">engine <code>{{ r.engine }}</code></span>{% endif %}</td><td>{{ r.question }} · {{ r.answer }} · {{ r.effect }} · {{ r.category }}</td>
+<td>{% if r.kind == 'view' %}{% if r.main %}on <code>{{ r.main }}</code>; {% endif %}seen: {% for s in r.seen %}<code>{{ s.name }}</code> {{ sha(s.sha256) }}{% if s.state != 'ok' %} <strong class="missing">({{ s.label }})</strong>{% endif %}{{ ', ' if not loop.last }}{% endfor %}{% else %}<code>{{ r.plot }}</code> {{ sha(r.plot_sha256) }}{% if r.plots_seen %} · {{ r.plots_seen }} plot(s) seen{% endif %}{% endif %}</td>
+<td>{% for c in r.cells %}<code>{{ c.cell }}</code>: {{ c.legacy }} · {{ c.new }}{{ '; ' if not loop.last }}{% else %}—{% endfor %}</td>
+<td>{% if r.flag %}{% if r.layer %}layer <code>{{ r.layer }}</code>; {% endif %}{% for o in r.observations %}{{ o.what }}: {{ o.value }}{% if o.unit %} {{ o.unit }}{% endif %}{{ '; ' if not loop.last }}{% endfor %}{% if r.bbox %} · at {{ r.bbox }}{% if r.crs %} ({{ r.crs }}){% endif %}{% endif %}{% else %}—{% endif %}</td>
+<td>{% if r.status == 'counts' %}<span class="badge ok">✓ counts</span>{% elif r.status == 'cannot_tell' %}<span class="badge grey">– {{ r.why }}</span>{% else %}<span class="badge bad">✗ no</span> {{ r.why }}{% endif %}</td><td>{{ r.note }}</td></tr>
+{% endfor %}</tbody></table></div>{% endif %}
+</div>
+{% endmacro %}
 
 {% macro step_card(s) %}
 <article class="card {{ s.style[0] }}" id="step-{{ s.id }}">
@@ -176,10 +215,8 @@ footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid va
 {% for k in d.kd %}<div class="small">Known difference <code>{{ k.kd }}</code>: {{ 'accepted' if k.accepted else 'not accepted' }}{% if k.why_not %} — {{ k.why_not|join('; ') }}{% endif %} · owner {{ k.owner }} · bound held: {{ 'yes' if k.bound_held else 'no' }}</div>{% endfor %}
 {% if d.plots %}<div class="plots">{% for pl in d.plots %}<figure>{% if pl.ok %}<img src="{{ pl.asset }}" alt="{{ d.id }} {{ pl.name }}" loading="lazy">{% else %}<div class="missing">plot missing or changed: <code>{{ pl.path }}</code> expected <code>{{ pl.sha256 }}</code></div>{% endif %}<figcaption>{{ pl.name }} · <code>{{ pl.sha256|short }}</code></figcaption></figure>{% endfor %}</div>{% endif %}
 {% if d.kind in ('raster','vector') and d.state %}
-<div class="small">Visual review: {{ d.visual.receipts or 0 }} receipt(s){% if d.visual.invalid_receipts %}, {{ d.visual.invalid_receipts }} citing a plot not in this run (ignored){% endif %}{% if d.visual.flags %}, <strong>flag(s): {{ d.visual.flags|join(', ') }}</strong>{% endif %}{% if d.visual.cleared %}, cleared by a person: {{ d.visual.cleared|join(', ') }}{% endif %}.</div>
-{% if d.findings %}<table class="small"><thead><tr><th>finding</th><th>question</th><th>answer</th><th>effect</th><th>category</th><th>plot</th><th>note (model-written)</th></tr></thead><tbody>
-{% for f in d.findings %}<tr><td><code>{{ f.finding_id }}</code>{% if f.amended %} (amended){% endif %}</td><td>{{ f.question_id }}</td><td>{{ f.answer }}</td><td>{{ f.effect }}</td><td>{{ f.category }}</td><td><code>{{ f.plot }}</code> <code>{{ f.plot_sha256|short }}</code></td><td>{{ f.note }}</td></tr>{% endfor %}
-</tbody></table>{% endif %}
+<div class="small">Visual review: {{ d.visual.receipts or 0 }} receipt(s){% if d.visual.invalid_receipts %}, {{ d.visual.invalid_receipts }} that do not count (a plot or view not in this run, or changed; ignored){% endif %}{% if d.visual.flags %}, <strong>flag(s): {{ d.visual.flags|join(', ') }}</strong>{% endif %}{% if d.visual.cleared %}, cleared by a person: {{ d.visual.cleared|join(', ') }}{% endif %}.</div>
+{% if d.views %}{{ views_block(d) }}{% endif %}
 {% endif %}
 {% if d.compare_asset %}<div class="small"><a href="{{ d.compare_asset }}">compare result (JSON)</a></div>{% endif %}
 </div>
