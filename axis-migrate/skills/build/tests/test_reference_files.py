@@ -148,7 +148,7 @@ def test_guarded_mentions_carry_the_correct_rule():
 def test_skill_md_frontmatter_and_budget():
     text = SKILL_MD.read_text(encoding="utf-8")
     assert len(text.splitlines()) <= 80
-    fm = re.match(r"^---\nname: migrate\ndescription: (.+?)\n---\n", text, re.S)
+    fm = re.match(r"^---\nname: build\ndescription: (.+?)\n---\n", text, re.S)
     assert fm and len(fm.group(1)) > 50
 
 
@@ -218,7 +218,7 @@ def test_template_runs_on_the_runtime(tmp_path):
     from rasterio.transform import from_origin
     from shapely.geometry import box
 
-    spec = importlib.util.spec_from_file_location("_axis_runtime_t", PLUGIN / "skills/migrate/runtime/_axis_runtime.py")
+    spec = importlib.util.spec_from_file_location("_axis_runtime_t", PLUGIN / "skills/build/runtime/_axis_runtime.py")
     rt = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = rt
     spec.loader.exec_module(rt)

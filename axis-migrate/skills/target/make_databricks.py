@@ -54,7 +54,7 @@ RUNTIMES = HERE / "runtimes"
 TEMPLATES = HERE / "templates"
 SCHEMA_CLI_VERSION = "v1.20.0"
 SCHEMA_FILE = HERE / "schema" / f"bundle.subset.cli-{SCHEMA_CLI_VERSION}.json"
-RUNTIME_SRC = PLUGIN / "skills" / "migrate" / "runtime" / "_axis_runtime.py"
+RUNTIME_SRC = PLUGIN / "skills" / "build" / "runtime" / "_axis_runtime.py"
 PLUGIN_LOCK = PLUGIN / "skills" / "run" / "env" / "uv.lock"
 
 PACKAGE = "axis_pipeline"

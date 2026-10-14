@@ -1,6 +1,6 @@
 ---
 name: start
-description: Codex entry point for axis-migrate (what /migrate is under Claude Code). Use first whenever the user asks to migrate, port or verify a legacy GIS project folder (PyQGIS, ArcPy, notebooks, Excel) with axis-migrate, or to resume one that already has a migration/ folder. Sets the plugin root, the chat question fallback and the finish rule, then hands over to commands/migrate.md and the discover, interview, migrate, run, verify, report and target skills.
+description: Codex entry point for axis-migrate (what /migrate is under Claude Code). Use first whenever the user asks to migrate, port or verify a legacy GIS project folder (PyQGIS, ArcPy, notebooks, Excel) with axis-migrate, or to resume one that already has a migration/ folder. Sets the plugin root, the chat question fallback and the finish rule, then hands over to commands/migrate.md and the discover, interview, build (plan + write the codebase), run, verify, report and target skills.
 ---
 
 # axis-migrate under Codex

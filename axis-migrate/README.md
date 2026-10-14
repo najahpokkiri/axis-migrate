@@ -10,27 +10,37 @@ Inside, the new codebase uses open-source GIS libraries (geopandas, rasterio, GD
 
 ## Install
 
+**Claude desktop app (Code tab)** — the intended harness: the graph editor, input maps, plots and the report open in
+the app's side pane.
 ```
-/plugin install axis-migrate --marketplace najahpokkiri/axis-migrate
+/plugin marketplace add najahpokkiri/axis-migrate        # or a local path to this repository
+/plugin install axis-migrate@axis-migrate-dev
 ```
-(private repository; or locally: `claude --plugin-dir ./axis-migrate`).
+Success looks like: `/axis-migrate:migrate` appears in the slash-command list, and the first run prints the preflight
+(`bin/axpy --doctor`: uv found, cache writable, local port bind OK, read ledger strace or audit+cpl_debug) before it
+scans.
+
+**Terminal Claude Code**: the same two commands, or `claude --plugin-dir ./axis-migrate` from a checkout; pages are then
+given as local links.
+
 Requirements: Linux or macOS, `uv` on PATH (the plugin builds one pinned environment from `skills/run/env/uv.lock`
-on first use; no other installs at run time), `strace` on Linux for the read ledger (without it a run is capped at
-sandbox-validated). Optional: an E2B API key for sandboxed runs (`run_e2b.py`, explicit upload consent per run).
-Codex: script halves only, see `CODEX.md`.
+on first use, in the plugin data/cache directory; no other installs at run time), `strace` on Linux for the read
+ledger (macOS uses the audit-hook + GDAL-debug ledger and caps runs at sandbox-validated). Optional: an E2B API key for
+sandboxed runs (`run_e2b.py`, explicit upload consent per run). Codex: script halves only, see `CODEX.md`.
 
 ## Use
 
 ```
 /axis-migrate:migrate ./my-legacy-project
 ```
-Run it from the folder that contains the legacy project; everything is written to `./migration/`, the legacy folder
-is never written. The agent: scans and maps the inputs → builds the workflow graph (editable in the browser page it
-starts) → resolves every output-changing parameter from the files with citations → asks only what the files cannot
-answer (one question at a time) → plans each step and asks for one approval → writes one step at a time, runs it in
-isolation and verifies it → runs the whole pipeline from raw inputs → compares every intermediate and final with the
-legacy files, draws legacy | new | difference maps and reviews them → seals the evidence and renders
-`migration/report/index.html` → optionally writes a Databricks Asset Bundle and dry-runs it (never deploys).
+Run it from the folder that contains the legacy project; everything is written to `./migration/`, the legacy folder is
+never written. The agent: scans and maps the inputs → builds the workflow graph (editable in a page that opens in the
+Claude desktop app's side pane, or a browser link in Terminal) → resolves every output-changing parameter from the
+files with citations → asks only what the files cannot answer (one question at a time) → plans each step and asks for
+one approval → writes one step at a time, runs it in isolation and verifies it → runs the whole pipeline from raw
+inputs → compares every intermediate and final with the legacy files, draws legacy | new | difference maps and reviews
+them → seals the evidence and renders `migration/report/index.html` → optionally writes a Databricks Asset Bundle and
+dry-runs it (never deploys).
 
 ## Honest status
 

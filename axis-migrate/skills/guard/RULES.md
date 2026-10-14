@@ -4,7 +4,7 @@ Engine: `skills/guard/codescan.py` (stdlib-only AST; hook H6 via `hooks/bin/post
 `codescan.py --all <migration>`). Rules and severities follow 08 §4 and DESIGN §5. Block rules have **no inline
 suppression**. Their only exceptions are declared ones: an S11 bridge param (`role: bridge` + `decision: D-n` + a
 `keep_legacy`/`kind: bridge` step) and S14 inside a `keep_legacy` step. A vendored `_axis_runtime.py`/`__main__.py`
-that is byte-identical to `skills/migrate/runtime/` is skipped. A modified copy is scanned.
+that is byte-identical to `skills/build/runtime/` is skipped. A modified copy is scanned.
 
 Exit codes: 0 clean (warnings allowed) · 2 block · 3 rule error (fails closed; in hook mode a rule error blocks).
 

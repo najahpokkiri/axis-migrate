@@ -303,8 +303,8 @@ idempotent and never invents a rung: without ladder.py the projection is left un
 
 ## 7 graph_server.py
 
-`axpy graph_server.py serve <migration> [--port 0]` prints `http://127.0.0.1:<port>/?t=<token>` (give the user this
-line; run it in the background). API (token in `X-Axis-Token` or `?t=`; POSTs need a same-origin `Origin` and JSON):
+`axpy graph_server.py serve <migration> [--port 0]` prints `http://127.0.0.1:<port>/?t=<token>` (show it in the
+harness's side pane per the /migrate command's §Showing; run it in the background). API (token in `X-Axis-Token` or `?t=`; POSTs need a same-origin `Origin` and JSON):
 `GET /api/graph` → `{revision, graph, layout, params|null, edits{unacked, unsent, submitted_waiting}}` ·
 `GET /api/events?after=<rev>` (long poll ≤ 25 s) → `{revision, changed}` · `POST /api/ops {base_rev, ops}` → 200
 `{revision, seqs, results}` | 409 `{revision, conflicting_seqs, conflicting_ops}` (user ops are rebased automatically

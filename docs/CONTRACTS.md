@@ -129,10 +129,10 @@ Op types (minimum): `add_step, add_dataset, add_edge, set_field, set_scope, add_
 set_plan, approve_plan, set_new, set_reference, waive_verify, reject_edge, add_note, confirm, rename, submit` — exact
 JSON shapes are defined and documented by the graph builder in `skills/discover/GRAPH_OPS.md`.
 
-## 5 Pipeline package and the step contract (owner: migrate/runtime/_axis_runtime.py)
+## 5 Pipeline package and the step contract (owner: build/runtime/_axis_runtime.py)
 
 `migration/pipeline/` = package directory: `__init__.py`, `_axis_runtime.py` (vendored copy of
-`$PLUGIN/skills/migrate/runtime/_axis_runtime.py`, byte-identical), `__main__.py` (vendored), `sNN_*.py` / `mNN_*.py`
+`$PLUGIN/skills/build/runtime/_axis_runtime.py`, byte-identical), `__main__.py` (vendored), `sNN_*.py` / `mNN_*.py`
 (model-written, one per step). It is imported as **`axis_pipeline`** (runner snapshot copies `pipeline/` to
 `snapshot/axis_pipeline/`; the wheel maps it the same way). Step modules import only stdlib, the lock's libraries and
 nothing from the package (they receive `ctx`).

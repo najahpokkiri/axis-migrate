@@ -88,7 +88,7 @@ def test_skill_paths_exist_and_skills_are_wellformed():
             assert 0 < len(fm.get("description", "")) <= 1024, f"{d}: description missing or too long"
             names.append(fm["name"])
     assert len(names) == len(set(names)), f"duplicate skill names across roots: {names}"
-    for required in ("discover", "interview", "migrate", "run", "verify", "report", "target", "start"):
+    for required in ("discover", "interview", "build", "run", "verify", "report", "target", "start"):
         assert required in names, f"skill {required} is not reachable from the Codex manifest"
 
 

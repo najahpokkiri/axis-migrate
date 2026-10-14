@@ -1,5 +1,5 @@
 ---
-name: migrate
+name: build
 description: Plan the new pipeline and write it one step at a time after discover and interview are done. One plan block per in-scope step, approved once by the user; then, in topological order, one step module on the axis_pipeline Ctx contract, an isolated run and that step's verify; then a chained run from raw inputs. Also covers manual steps, bridges, unported and dropped code, and routes each legacy operation to the GIS reference file to read before writing it.
 ---
 
@@ -64,7 +64,7 @@ fails chained is upstream drift to report, never to widen. Smoke tests (`migrati
   them as UNPRODUCIBLE_INPUT), verify it against the equivalent step's references (the user pairs them on the graph
   page) and record every difference as a proposed KD with `record.py kd`; a difference is never a pass.
 
-## 6 Router: legacy operation → reference file (`$P/skills/migrate/reference/`)
+## 6 Router: legacy operation → reference file (`$P/skills/build/reference/`)
 | Legacy operation | Read |
 |---|---|
 | snap raster, cell size, extent, output CRS env; QGIS extent/resolution options; clip, warp, window; ≥2 rasters | `F1-raster-grid-alignment.md` |

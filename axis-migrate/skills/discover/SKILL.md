@@ -64,7 +64,7 @@ graph already exists: change it only with `graph.py apply` (see `GRAPH_OPS.md`).
 
 ## 4 The editor and the "Send to agent" channel
 ```
-$AXPY $D/graph_server.py serve migration          # run in the background; give the user the printed URL
+$AXPY $D/graph_server.py serve migration          # in the background; show the URL in the side pane (§Showing)
 $AXPY $D/graph_server.py wait migration           # run_in_background; you are re-invoked when it exits
 ```
 `wait` exits 0 with the user's edits and your obligation per edit (exit 2 on timeout: start it again). Act on every

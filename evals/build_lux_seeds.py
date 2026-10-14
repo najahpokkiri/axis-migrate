@@ -126,7 +126,7 @@ def build(trial: Path) -> None:
             (shutil.copytree if item.is_dir() else shutil.copy2)(item, dst)
         (seed / "tolerances.yaml").write_text(yaml.safe_dump(TOLERANCES, sort_keys=False))
         (seed / ".graph" / "lock").unlink(missing_ok=True)
-        rt = EVALS.parent / "axis-migrate" / "skills" / "migrate" / "runtime"
+        rt = EVALS.parent / "axis-migrate" / "skills" / "build" / "runtime"
         for f in ("_axis_runtime.py", "__main__.py", "__init__.py"):
             shutil.copy2(rt / f, seed / "pipeline" / f)      # current vendored runtime (byte-identical rule)
         patches = spec.get("patches") or CASES[spec.get("same_patches_as", cid)].get("patches") or []

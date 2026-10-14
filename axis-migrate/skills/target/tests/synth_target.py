@@ -267,7 +267,7 @@ def build_project(root: Path) -> Path:
     pipe = mig / "pipeline"
     pipe.mkdir(parents=True)
     for f in ("_axis_runtime.py", "__main__.py", "__init__.py"):
-        (pipe / f).write_bytes((PLUGIN / "skills" / "migrate" / "runtime" / f).read_bytes())
+        (pipe / f).write_bytes((PLUGIN / "skills" / "build" / "runtime" / f).read_bytes())
     (pipe / "s01_clip_population.py").write_text(S01)
     (pipe / "s02_zone_report.py").write_text(S02)
     (mig / "tests").mkdir()
