@@ -9,9 +9,10 @@
 3. Claims in last_assistant_message (claims.py); negated ones and the quoted status line are ignored.
 4. Block iff a claim needs a rung above the computed one, or (2) found drift/missing evidence and a claim is present.
    Unacked user graph edits block regardless of claims (DESIGN §4.2, D2-14).
-5. Visual review (regardless of claims): when the latest run in migration/runs has compared raster/vector datasets,
-   block while any of them lacks a counting receipt from that run, PNG or GeoLibre view (lib/visual_receipt.py, the
-   rule compare.py aggregate uses), naming the datasets.
+5. Visual review, on a finishing message only (a claim, or the ladder status line the final message starts with; a
+   turn that stops to ask the user a question is never blocked): when the latest run in migration/runs has compared
+   raster/vector datasets, block while any of them lacks a counting receipt from that run, PNG or GeoLibre view
+   (lib/visual_receipt.py, the rule compare.py aggregate uses), naming the datasets.
 On the 3rd consecutive block with stop_hook_active: allow and tell the user (systemMessage).
 `onFailure` does not apply to Stop, so errors are handled here: with a claim present -> block; otherwise allow.
 """
@@ -368,6 +369,9 @@ def save_state(mig: Path, st: dict) -> None:
         pass
 
 
+STATUS_MARK = "axis-migrate status:"
+
+
 def decide(data: dict, mig: Path) -> dict | None:
     text = last_message(data)
     found = cl.find_claims(text)
@@ -400,7 +404,8 @@ def decide(data: dict, mig: Path) -> dict | None:
                 c = cl.strongest(bad) if bad else top
                 quote = cl.quote_context(text, c)
                 reason = block_text(quote, rung, res, g, problems)
-        rv_run, missing = review_gap(mig)
+        if found or STATUS_MARK in text:          # finishing; a question to the user is not
+            rv_run, missing = review_gap(mig)
         if missing:
             rtext = review_text(rv_run, missing, res.get("status_line") or f"axis-migrate status: {rung}")
             if reason is None:

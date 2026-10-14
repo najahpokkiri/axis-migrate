@@ -332,14 +332,22 @@ def test_stop_state_is_not_in_sealed_paths(project):
     add_run(project, "r20261016T100000Z-00000000")
 
 
-# visual review from the current run (regardless of claims) -------------------------------------------------------
+# visual review from the current run, on a finishing message (claim or status line) --------------------------------
 RID = "r20261016T100000Z-00000000"
 QUESTION = "Here is the plan for s02. Shall I proceed?"
+FINISH = ("axis-migrate status: sandbox-validated | run r20261016T100000Z-00000000 | 2 pass\n"
+          "That is where the migration stands.")
 
 
-def test_review_missing_blocks_without_claim(project):
+def test_review_missing_never_blocks_a_question(project):
     add_compared_run(project, RID, ("ds.01_mid", "ds.02_more"))
     r = stop(project, QUESTION)
+    assert r.rc == 0 and r.raw == ""
+
+
+def test_review_missing_blocks_the_finishing_status_message(project):
+    add_compared_run(project, RID, ("ds.01_mid", "ds.02_more"))
+    r = stop(project, FINISH)
     assert r.rc == 0 and r.decision == "block" and r.reason.isascii()
     assert f"run {RID} has 2 compared raster/vector dataset(s) without a visual review" in r.reason
     assert "ds.01_mid, ds.02_more" in r.reason and "maplibre-gl-raster" in r.reason
@@ -349,10 +357,10 @@ def test_review_missing_blocks_without_claim(project):
 def test_review_png_or_view_receipt_allows(project):
     rd = add_compared_run(project, RID, ("ds.01_mid", "ds.02_more"))
     add_receipt(rd, "ds.01_mid", "png")
-    r = stop(project, QUESTION)
+    r = stop(project, FINISH)
     assert r.decision == "block" and "ds.02_more" in r.reason and "ds.01_mid" not in r.reason.split("Look")[0]
     add_receipt(rd, "ds.02_more", "view")
-    r = stop(project, QUESTION)
+    r = stop(project, FINISH)
     assert r.rc == 0 and r.raw == ""
 
 
@@ -366,17 +374,17 @@ def test_review_png_or_view_receipt_allows(project):
 def test_review_that_does_not_count_still_blocks(project, over, kind):
     rd = add_compared_run(project, RID)
     add_receipt(rd, "ds.01_mid", kind, **over)
-    r = stop(project, QUESTION)
+    r = stop(project, FINISH)
     assert r.decision == "block" and "ds.01_mid" in r.reason
 
 
 def test_view_project_changed_after_review_blocks(project):
     rd = add_compared_run(project, RID)
     add_receipt(rd, "ds.01_mid", "view")
-    assert stop(project, QUESTION).raw == ""
+    assert stop(project, FINISH).raw == ""
     p = rd / "verify" / "views" / "ds.01_mid" / "worst.geolibre.json"
     p.write_text(p.read_text() + " ")
-    r = stop(project, QUESTION)
+    r = stop(project, FINISH)
     assert r.decision == "block" and "ds.01_mid" in r.reason
 
 
@@ -388,15 +396,15 @@ def test_review_after_seal_in_amend_counts(project):
     (rd / "amend").mkdir()
     (rd / "amend" / "visual-review.json").write_text(vr.read_text())
     vr.write_text(json.dumps({"findings": []}))
-    assert f["finding_id"] and stop(project, QUESTION).raw == ""
+    assert f["finding_id"] and stop(project, FINISH).raw == ""
 
 
 def test_only_the_latest_run_counts(project):
     add_compared_run(project, "r20261015T100000Z-11111111")          # older run never reviewed
     add_run(project, RID)                                           # latest run: not compared yet
-    assert stop(project, QUESTION).raw == ""
+    assert stop(project, FINISH).raw == ""
     add_compared_run(project, "r20261017T100000Z-22222222", views=False)
-    r = stop(project, QUESTION)
+    r = stop(project, FINISH)
     assert r.decision == "block" and "r20261017T100000Z-22222222" in r.reason
 
 
@@ -407,7 +415,7 @@ def test_tables_and_uncompared_need_no_review(project):
     d = json.loads(p.read_text())
     for change in ({"family": "table"}, {"verdict": "BLOCKED"}, {"checks": []}):
         p.write_text(json.dumps(dict(d, **change)))
-        assert stop(project, QUESTION).raw == "", change
+        assert stop(project, FINISH).raw == "", change
 
 
 def test_review_block_cap_and_claim_together(project):
@@ -415,8 +423,8 @@ def test_review_block_cap_and_claim_together(project):
     msg = "Migration complete, parity achieved."
     r1 = stop(project, msg)
     assert r1.decision == "block" and "computed status is" in r1.reason and "without a visual review" in r1.reason
-    assert stop(project, QUESTION, active=True).decision == "block"
-    r3 = stop(project, QUESTION, active=True)
+    assert stop(project, FINISH, active=True).decision == "block"
+    r3 = stop(project, FINISH, active=True)
     assert r3.out.get("decision") is None and r3.out["systemMessage"].isascii()
     assert "ds.01_mid" in r3.out["systemMessage"] and "not visually assessed" in r3.out["systemMessage"]
-    assert stop(project, QUESTION).decision == "block"              # a new turn counts again
+    assert stop(project, FINISH).decision == "block"              # a new turn counts again

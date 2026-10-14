@@ -207,7 +207,11 @@ def test_stop_codex_visual_review_gate(project):
     compared dataset has a receipt from the current run (a view receipt here)."""
     rd = add_compared_run(project, "r20261016T100000Z-00000000", ("ds.01_mid", "ds.02_more"))
 
-    def stop(active, msg="Which option do you prefer?"):
+    assert run_hook("stop_gate.py", codex("Stop", cwd=str(project.root), stop_hook_active=False,
+                                          last_assistant_message="Which option do you prefer?"),
+                    env=CODEX_ENV).out == {}             # a question to the user is never blocked
+
+    def stop(active, msg="axis-migrate status: sandbox-validated | run r20261016T100000Z-00000000\nThat is where it stands."):
         return run_hook("stop_gate.py", codex("Stop", cwd=str(project.root), last_assistant_message=msg,
                                               stop_hook_active=active), env=CODEX_ENV)
     r1 = stop(False)
