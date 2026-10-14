@@ -41,7 +41,8 @@ DATABRICKS_RE = re.compile(
 NEGATORS = {
     "not", "no", "never", "nothing", "none", "neither", "nor", "without", "yet", "cannot", "can't", "won't",
     "isn't", "aren't", "wasn't", "weren't", "hasn't", "haven't", "hadn't", "doesn't", "don't", "didn't",
-    "will", "would", "should", "could", "can", "may", "might", "must", "to",
+    "will", "would", "should", "could", "can", "may", "might", "must", "to", "shall", "get", "gets", "getting",
+    "gonna",
 }
 # Requirement / condition / goal / cap markers negate the rest of the clause they open: a rung that is the object of
 # a requirement is not a claim ("that step needs the pipeline at reference-verified", "before the step is verified",
@@ -49,7 +50,10 @@ NEGATORS = {
 CLAUSE_MARKERS_RE = re.compile(
     r"\b(?:needs?|requires?|required|requiring|until|before|once|when|if|unless|whether|would|below|above|"
     r"cannot|can['\u2019]t|waiting\s+for|wait\s+for|blocked|to\s+reach|to\s+get\s+to|not\s+yet|only\s+after|"
-    r"stops?\s+at|capped\s+at|at\s+most|up\s+to|limited\s+to|aim(?:s|ing)?\s+(?:at|for)|goal|target\s+is)\b",
+    r"stops?\s+at|capped\s+at|at\s+most|up\s+to|limited\s+to|aim(?:s|ing)?\s+(?:at|for)|goal|target\s+is|"
+    # future / modal phrasing: a plan, not a claim ("that run gets verified", "takes ... to", "after you sign")
+    r"will|shall|going\s+to|gets?|getting|takes?|could|should|can|must|to\s+be|next\s+run|new\s+run|"
+    r"after\s+you|after\s+(?:the\s+)?(?:user|person|human|founder)|once\s+you|plan(?:s|ned)?\s+to)\b",
     re.I)
 # "done/complete(d)/finished" followed by a manner or means phrase describes HOW, not THAT (orchestrator finding)
 COMPLETION_WORDS = {"done", "complete", "completed", "completes", "finished"}
@@ -70,7 +74,10 @@ SUBJECT_FILLER = {
 }
 PRONOUN_SUBJECTS = {"i", "we", "i've", "we've", "i'm", "we're", "i'd", "we'd"}
 SENTENCE_BREAK_RE = re.compile(r"[.;!?\n]")
-CONDITION_OPENER_RE = re.compile(r"^\W*(?:if|when|once|until|unless|before|whenever)\b", re.I)
+CONDITION_OPENER_RE = re.compile(r"^\W*(?:if|when|once|until|unless|before|whenever|getting\s+there|to\s+get\s+there|"
+                                 r"to\s+reach|to\s+get\s+to|next|after\s+that|afterwards|then\s+(?:i|we)\s+will|"
+                                 r"after\s+you|after\s+(?:the\s+)?(?:user|person|human|founder)|once\s+you)\b",
+                                 re.I)
 TRAILING_CONDITION_RE = re.compile(r"^[\s,]*(?:\w+\s+){0,2}?(?:only\s+after|until|once|unless|if|requires?|needs?|"
                                    r"after\s+(?:a|the)\s+(?:person|user|human))\b", re.I)
 CLAUSE_BREAK_RE = re.compile(r"[.;:!?\n,(]")

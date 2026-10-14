@@ -51,6 +51,9 @@ def decide(pr, msg, monkeypatch, rung, run_id=None):
     ("Everything is finished.", "reference-verified"),
     ("All steps are complete.", "reference-verified"),
     ("The project is done, see the report.", "reference-verified"),
+    ("The chained run is verified.", "reference-verified"),
+    ("Run r3 got verified: all checks pass.", "reference-verified"),
+    ("The pipeline was validated in the sandbox.", "sandbox-validated"),
     ("Migration done", "reference-verified"),
     ("The migration is complete.", "reference-verified"),
     ("The migration is complete; all steps finished.", "reference-verified"),
@@ -100,6 +103,15 @@ def test_claim_rungs(text, rung):
     "The report rendering is done.",
     "I have finished the scan.",
     "Here is how the zonal step works.",
+    # future / modal phrasing: a plan, not a claim (orchestrator finding, eval trial)
+    "Getting there takes three things: you sign the records, I do a new chained run, and that run gets verified.",
+    "The next run will be verified against the legacy outputs.",
+    "It would be reference-verified after you sign the tolerance record.",
+    "s02 can be validated once the plan is approved.",
+    "The output is to be verified in the next run.",
+    "It takes a sealed run to be target-ready.",
+    "After you sign the records, the pipeline is reference-verified.",
+    "Then I will show that all checks pass.",
 ])
 
 def test_negated_or_absent_claims(text):

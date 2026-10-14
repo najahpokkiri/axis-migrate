@@ -114,6 +114,11 @@ Five block rules have no archive hits. Each is kept for the reason below.
   scan, the input maps, the interview, the plan, step s02's code, the isolated run, the report rendering, "I have
   finished the scan") is progress, not a claim. Rung words, "ran successfully" and the parity/legacy-match phrases
   keep their own rules.
+- **Future and modal phrasing is a plan.** `will/would/shall/can/could/should/must/to be/get/gets/getting` within 3
+  tokens, the same words plus `takes/going to/next run/new run/after you/after the user/once you/plan to` earlier in
+  the clause, and sentences opened by `Getting there/To get there/To reach/Next/After that/After you/Once you/Then I
+  will` negate rung, verified and validated words: "…and that run gets verified" is not a claim. Past and present
+  statements stay claims ("The chained run is verified.", "Run r3 got verified", "was validated in the sandbox").
 - **Quoted text.** A claim inside quotes still counts, so quoting cannot be used to evade the check. The words before
   the opening quote also apply: `I did not write "all checks pass"` is negated.
 - **Remaining false positive (seen live in HM run 2).** "one completed with a warning" matches `complete[ds]?` and
