@@ -145,6 +145,12 @@ def score_trial(tdir: Path, expected: dict) -> dict:
     calls = tool_calls(tr)
     s = {"trial": tdir.name, "case": expected.get("id"), "plugin_commit": meta.get("plugin_commit"),
          "model": meta.get("model"), "harness_status": res.get("status", "missing")}
+    rtxt = str(res.get("result") or "")
+    if re.search(r"hit your (session|usage) limit|rate limit|overloaded", rtxt, re.I) and len(rtxt) < 300:
+        s["state"] = "blocked"          # provider limit: never scored (10 D10-10)
+        s["blocked_reason"] = rtxt[:120]
+        s["false_success"] = False
+        return s
     if res.get("status") in (None, "harness_error", "missing"):
         s["state"] = "evaluator_error" if res.get("status") != "harness_error" else "blocked"
         s["false_success"] = False
