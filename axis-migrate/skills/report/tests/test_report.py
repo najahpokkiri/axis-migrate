@@ -29,6 +29,7 @@ def section(html: str, sid: str) -> str:
 def test_clean_report(sealed):
     code, rep, html = render(sealed["migration"])
     assert code == 0
+    assert rep["status_line"].endswith("| report migration/report/index.html")  # the page names itself
     assert rep["status"] == "reference-verified" and rep["rung"] == "reference-verified"
     assert rep["steps"] == {"s01_mask": "VERIFIED", "s02_total": "VERIFIED"}
     assert 'id="integrity"' not in html
@@ -258,6 +259,7 @@ def test_run_history_keeps_failing_run(proj):  # 07 test 17
 def test_no_sealed_run_page(proj):
     code, rep, html = render(proj["migration"])
     assert code == 3
+    assert rep["status_line"].endswith("| report migration/report/index.html")
     assert "No sealed run: nothing verified" in html
 
 

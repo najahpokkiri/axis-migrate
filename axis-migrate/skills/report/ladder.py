@@ -671,14 +671,15 @@ def ancestors(sid: str, steps: dict, datasets: dict) -> set[str]:
 # ------------------------------------------------------------------------------------------------------------------
 # compute()
 # ------------------------------------------------------------------------------------------------------------------
-def _empty_result(run_id, headline, blockers, integrity=None):
+def _empty_result(run_id, headline, blockers, integrity=None, migration: Path | None = None):
     rung = "none"
     res = {"ladder_version": LADDER_VERSION, "run_id": run_id, "evidence_id": None,
            "pipeline": {"rung": rung, "suffix": "", "headline": headline, "blockers": blockers,
                         "counts": {"pass": 0, "fail": 0, "not_compared": 0, "needs_review": 0,
                                    "histogram": {s: 0 for s in ac.VERDICTS}, "compared": 0},
                         "bridged": 0, "incomplete": bool(integrity), "greyed": list(GREYED), "drift": [],
-                        "target": {"state": "not_attempted", "reasons": []}},
+                        "target": {"state": "not_attempted", "reasons": []},
+                        "report": report_path(migration) if migration else None},
            "steps": {}, "datasets": {}, "integrity": integrity or []}
     res["status_line"] = status_line(res)
     return res
@@ -695,7 +696,12 @@ def status_line(res: dict) -> str:
     suffix = p.get("suffix") or ""
     return (f"axis-migrate status: {rung}{suffix} | run {res.get('run_id') or 'none'} | {c['pass']} pass, "
             f"{c['fail']} FAIL, {c['not_compared']} NOT_COMPARED, {c['needs_review']} needs review | "
-            f"report migration/report/index.html")
+            + (f"report {p['report']}" if p.get("report") else "no report"))
+
+
+def report_path(migration: Path) -> str | None:
+    """'migration/report/index.html' when it exists, else None (the status line then says 'no report')."""
+    return "migration/report/index.html" if (migration / "report" / "index.html").is_file() else None
 
 
 def compute(migration_dir, run_id: str | None = None) -> dict:
@@ -706,11 +712,12 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
         run_id = newest_sealed_run(migration)
     if run_id is None:
         return _empty_result(None, "NO SEALED RUN", [{"code": "NO_SEALED_RUN", "detail": "no sealed run in "
-                                                      "runs/index.jsonl: nothing verified"}])
+                                                      "runs/index.jsonl: nothing verified"}], migration=migration)
     b = load_bundle(migration, run_id)
     if b.evidence is None:
         return _empty_result(run_id, "EVIDENCE INCOMPLETE", [{"code": "EVIDENCE_INCOMPLETE",
-                                                              "detail": "bundle unreadable"}], b.integrity)
+                                                              "detail": "bundle unreadable"}], b.integrity,
+                             migration=migration)
     ev = b.evidence
     obj_ok = verify_objects(b)
 
@@ -1135,7 +1142,8 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
                         "counts": counts, "bridged": len(bridged), "incomplete": incomplete,
                         "greyed": list(GREYED), "drift": drift, "target": target,
                         "full": bool(run.get("full")), "chain": run.get("chain"), "executor": run.get("executor"),
-                        "isolation": run.get("isolation"), "order": [s for s in order if s in sres]},
+                        "isolation": run.get("isolation"), "order": [s for s in order if s in sres],
+                        "report": report_path(migration)},
            "steps": sres, "datasets": dres, "integrity": b.integrity}
     assert rung in RUNGS  # never deployed / live-target-verified / customer-accepted
     res["status_line"] = status_line(res)
@@ -1143,7 +1151,8 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
 
 
 def _finish_incomplete(b: Bundle) -> dict:
-    return _empty_result(b.run_id, "EVIDENCE INCOMPLETE", [{"code": "EVIDENCE_INCOMPLETE"}], b.integrity)
+    return _empty_result(b.run_id, "EVIDENCE INCOMPLETE", [{"code": "EVIDENCE_INCOMPLETE"}], b.integrity,
+                         migration=b.migration)
 
 
 def _load_json_quiet(p: Path):

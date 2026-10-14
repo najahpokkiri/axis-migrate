@@ -265,7 +265,7 @@ def make_readonly(root: Path):
         for fn in filenames:
             p = Path(dirpath) / fn
             p.chmod(p.stat().st_mode & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH))
-    for dirpath, dirnames, filenames in sorted(os.walk(root), key=lambda t: -len(t[0])):
+    for dirpath, dirnames, filenames in sorted(os.walk(root), key=lambda t: (-len(t[0]), t[0])):
         p = Path(dirpath)
         p.chmod(p.stat().st_mode & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH))
 
@@ -550,7 +550,7 @@ def build_evidence(migration: Path, run_id: str) -> tuple[dict, Builder]:
     coverage = {"datasets_with_legacy": len(with_legacy), "compared": len([d for d in with_legacy if d in cmp_ids]),
                 "not_compared": not_compared, "no_reference": no_ref, "state_histogram": hist}
 
-    scan_paths = [p for p in run_dir.rglob("*") if p.is_file() and "outputs" not in p.relative_to(run_dir).parts
+    scan_paths = [p for p in sorted(run_dir.rglob("*")) if p.is_file() and "outputs" not in p.relative_to(run_dir).parts
                   and "stage" not in p.relative_to(run_dir).parts]
     sec = secret_scan(scan_paths, bd.project)
 

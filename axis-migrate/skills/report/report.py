@@ -612,6 +612,8 @@ def build(migration: Path, run_id: str | None = None) -> tuple[int, dict]:
     phrases = Phrases(HERE / "phrases.v1.yaml")
     lad = ladder.compute(migration, run_id)
     if lad["run_id"] is None or (run_id is None and not ladder.newest_sealed_run(migration)):
+        lad["pipeline"]["report"] = "migration/report/index.html"
+        lad["status_line"] = ladder.status_line(lad)
         page = no_run_page(migration)
         rep = {"schema": "axis-migrate.report.v1", "status": "none", "rung": "none", "headline": "NO SEALED RUN",
                "steps": {}, "assumptions": [], "known_differences": [], "evidence_id": None,
@@ -621,6 +623,9 @@ def build(migration: Path, run_id: str | None = None) -> tuple[int, dict]:
         files["REPORT.json"] = (json.dumps(rep, sort_keys=True, indent=1) + "\n").encode()
         _write_tree(migration, files)
         return 3, rep
+    # this render is the report the status line points at: render it with the path, not "no report"
+    lad["pipeline"]["report"] = "migration/report/index.html"
+    lad["status_line"] = ladder.status_line(lad)
     ctx = build_context(migration, lad, phrases)
     files: dict[str, bytes] = {}
     # copy hash-checked assets (bad paths were excluded in build_context)

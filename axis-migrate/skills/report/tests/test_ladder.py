@@ -30,7 +30,15 @@ def test_clean_run_reaches_reference_verified(sealed):
     assert res["integrity"] == []
     assert {s: e["disposition"] for s, e in res["steps"].items()} == {"s01_mask": "VERIFIED", "s02_total": "VERIFIED"}
     assert res["status_line"] == (f"axis-migrate status: reference-verified | run {sealed['run_id']} | 4 pass, 0 FAIL, "
-                                  "0 NOT_COMPARED, 0 needs review | report migration/report/index.html")
+                                  "0 NOT_COMPARED, 0 needs review | no report")
+    import report
+    report.build(sealed["migration"])
+    assert ladder.compute(sealed["migration"])["status_line"].endswith("| report migration/report/index.html")
+
+
+def test_status_line_no_report_without_run(proj):
+    assert ladder.compute(proj["migration"])["status_line"] == (
+        "axis-migrate status: none | run none | 0 pass, 0 FAIL, 0 NOT_COMPARED, 0 needs review | no report")
 
 
 def test_ladder_is_stdlib_only_and_fast(sealed):
