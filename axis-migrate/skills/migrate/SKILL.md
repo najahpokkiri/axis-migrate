@@ -59,8 +59,7 @@ fails chained is upstream drift to report, never to widen. Smoke tests (`migrati
   hash-pinned inputs, shown `BRIDGED` (never a pass); finals downstream read "partial migration (n bridged)". Turning a
   step that failed verify into a bridge needs the user's decision (the hook asks). A migrated output that a kept legacy
   consumer reads gets a `bNN_*` step of `kind: bridge` that writes the legacy format, compared after the round trip.
-  Unported code raises `NotImplementedError("<what and why>")`, never a `pass` body.
-- `drop` steps (dead code, alternative implementations) are not ported. If the user switches one to `migrate`, translate
+- Unported code raises `NotImplementedError`. `drop` steps (dead or alternative code) are not ported. If the user switches one to `migrate`, translate
   it, rewire inputs that have no file to existing datasets via its `equivalent_to` edges (`graph.py validate` lists
   them as UNPRODUCIBLE_INPUT), verify it against the equivalent step's references (the user pairs them on the graph
   page) and record every difference as a proposed KD with `record.py kd`; a difference is never a pass.
