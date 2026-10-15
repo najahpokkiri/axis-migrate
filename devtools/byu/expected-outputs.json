@@ -1,0 +1,12 @@
+{"_note": "Reference output content of the BYU fixture (QGIS 4.2.3 run of flood_impact_qgisModel.model3 with the published amen_group). Geometry and the absolute `path` column are not compared.",
+ "Agriculture_Flood": [{"Hectares": 88.38}],
+ "Population_Flood": [{"Population": 8267}],
+ "OSM_Flood": [{"Amenity_Count": "5", "Amenity": null, "Amen_Group": "food"},
+               {"Amenity_Count": "1", "Amenity": "ferry_terminal", "Amen_Group": "transportation"},
+               {"Amenity_Count": "1", "Amenity": "police", "Amen_Group": "public_service"}],
+ "Merged_Flood_Impact": [
+   {"Hectares": 88.38, "Population": null, "Amenity_Count": null, "Amenity": null, "Amen_Group": null, "layer": "Agriculture_Flood"},
+   {"Hectares": null, "Population": 8267, "Amenity_Count": null, "Amenity": null, "Amen_Group": null, "layer": "Population_Flood"},
+   {"Hectares": null, "Population": null, "Amenity_Count": "5", "Amenity": null, "Amen_Group": "food", "layer": "OSM_Flood"},
+   {"Hectares": null, "Population": null, "Amenity_Count": "1", "Amenity": "ferry_terminal", "Amen_Group": "transportation", "layer": "OSM_Flood"},
+   {"Hectares": null, "Population": null, "Amenity_Count": "1", "Amenity": "police", "Amen_Group": "public_service", "layer": "OSM_Flood"}]}

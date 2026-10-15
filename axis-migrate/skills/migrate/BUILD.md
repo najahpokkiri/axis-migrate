@@ -17,7 +17,7 @@ Per in-scope step (`scope: migrate`), read its legacy lines and the reference fi
 the legacy semantics it reproduces, `skill_refs`) · `params` (every `p.*` it reads) · `outputs_checked[]` (dataset,
 family, measure, checks, `tolerance_ids`, empty = exact) · `risks[]` (`skill_ref` + risk + evidence, or `"risk": "none"`)
 · `isolation` (`possible`, `legacy_inputs`, `missing` = inputs with no legacy file). Then `graph.py render-plan migration`,
-summarise `migration/plan.md` in a few lines, and ask ONE AskUserQuestion: "Approve the plan (Recommended)" /
+show `migration/plan.md` in the file pane (SKILL.md §Showing), summarise it in a few lines, and ask ONE AskUserQuestion: "Approve the plan (Recommended)" /
 "Change something". Approve → `{"type": "approve_plan", "steps": "*"}` via `graph.py apply … --channel interview
 --verbatim "<the user's words>"`. Change → revise with `set_plan`, re-render, ask again. Never approve without the user.
 Codex: the same question with `request_user_input_async` when it exists, else as plain text, numbered, "Approve the

@@ -49,6 +49,17 @@ GDAL-debug ledger and caps runs at sandbox-validated). The plugin builds one pin
 is set for hooks but **not** in the agent's Bash tool, so the agent's commands always use the cache folder;
 `scripts/axpy --doctor` prints the path. No other installs at run time. Optional: an E2B API key for sandboxed runs.
 
+**E2B sandbox (optional; bring your own key).** Local runs are the default and keep everything on your machine. On
+a Mac (no strace) local runs stop at sandbox-validated; an E2B sandbox runs each step under strace in Linux, which can
+reach reference-verified. Get a key at e2b.dev (Hobby: a one-time $100 credit, sandboxes up to 1 h, 8 vCPU / 8 GiB),
+then either enter it as the plugin's `e2b_api_key` setting (Claude) or run `scripts/axpy --configure e2b` in your own
+terminal (any harness; stored owner-only in the plugin data folder or `~/.config/axis-migrate/secrets.env`). The first
+`/axis-migrate:migrate` asks once "Local only / E2B sandbox"; every E2B run still shows you the upload list first.
+Runs use the public template `abdulnajahp/axis-geo-migrate-<lock8>` (only public packages from the plugin's lock: no
+data, no keys); `scripts/axpy --doctor --online` checks that your key can see it. A package outside the lock is refused
+by design (`TEMPLATE_LOCK_MISMATCH`); adding one means changing the lock in a fork and building your own template with
+`skills/run/e2b/build_template.py --from abdulnajahp/axis-geo-migrate-<lock8>`.
+
 Many installed plugins? Claude Code fits all skill descriptions into a shared budget (1% of the context window) and
 lists the least-used skills by name only when it overflows. The flow still works (it names each skill), but raising
 `skillListingBudgetFraction` in your settings keeps every description visible.

@@ -10,8 +10,8 @@ description: Use first, before the migrate skill (this is the Codex entry point 
    environment sync starts inside the sandbox. If the JSON has `plugin_root`, that is `P` from now on. Wherever a text
    says `${CLAUDE_PLUGIN_ROOT}`, `$PLUGIN` or `$P`, write `P` literally; `$ARGUMENTS` = the legacy folder the user
    named (none named: ask, then stop). Exit 0: say the hooks are active and go on.
-   Exit 1: say plainly "The axis-migrate guards are OFF: its hooks are not active in this chat", give the trust
-   steps — open `/hooks` (desktop: Review hooks), select axis-migrate's definitions, press `t`, then start a NEW chat
+   Exit 1: run `python3 -I "<P>/skills/guard/codex_trust.py" --cwd "$PWD"` (which hooks are missing or untrusted),
+   say plainly "The axis-migrate guards are OFF: its hooks are not active in this chat", give the trust steps — open `/hooks` (desktop: Review hooks), select axis-migrate's definitions, press `t`, then start a NEW chat
    (an open chat never loads a newly installed plugin; every plugin update needs re-trust) — and do not write
    anything under `migration/` or run a pipeline until the person confirms (trusted and restarted, or "go on
    unguarded", recorded as a decision). Never claim or imply that guards are on.

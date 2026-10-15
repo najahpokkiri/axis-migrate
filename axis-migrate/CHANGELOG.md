@@ -10,6 +10,39 @@ Nothing yet.
 
 ## 0.3.0 — 15 Oct 2026
 
+Hooks and the Stop gate
+- Every hook starts through `hooks/run-hook.sh` (POSIX sh): outside a migration no Python is needed and nothing runs;
+  inside one the plugin's own environment, then a `python3` or `python` that really runs, else a clear
+  `NEEDS_PYTHON3` refusal (the macOS Command Line Tools stub is never started). Tested as each app launches the
+  command (`sh`, `bash`, `zsh`, `dash`; Claude and Codex variables; python3, python or none).
+- The Stop gate applies only to the session that works on the migration (sessions recorded by the guards), checks
+  for a claim before any hashing, caches hashes by size and mtime (`lib/hashcache.py`), and reads imperative and
+  planning phrasing ("rerun … and confirm it still matches") as a to-do, not a claim.
+- Windows groundwork: backslash, drive-letter, UNC and Git Bash paths are normalised before every protected-path
+  match; `Bash|PowerShell` matchers; guard_bash reads PowerShell commands (the PowerShell launcher comes later).
+- Inline Python that rewrites `params.yaml`, `decisions.md`, `known-differences.md` or tolerances is refused (use
+  `record.py`). SessionStart also shows the newest unsealed run (`ladder.py --brief`).
+- `skills/guard/codex_trust.py`: which axis-migrate hooks Codex has not registered or trusted.
+- `migrate` step 0 runs `hooks_active.py` (Claude and Codex): with the guards off, nothing is written.
+
+E2B and runs
+- `run_e2b.py` loads the key itself (environment, the plugin-data `secrets.env` from the `e2b_api_key` setting, or
+  `~/.config/axis-migrate/secrets.env` from `scripts/axpy --configure e2b`; owner-only files only); the agent never
+  sources or reads it. Public template `abdulnajahp/axis-geo-migrate-1eb65b36` (4 vCPU / 8 GB); `TEMPLATE_NOT_FOUND`,
+  `E2B_KEY_REJECTED`, `UPLOAD_TOO_LARGE` and friends instead of a runner bug; `--upload-cap-mb`,
+  `--sandbox-timeout-s` (default 3600 s); `build_template.py --from` for a fork's lock.
+- Doctor: `e2b`, `refenv` and `rung` (highest status this machine can reach) lines; first-run choice "Local only /
+  E2B sandbox" stored with `--record-sandbox`; one plain sentence about the agent sandbox's two exceptions.
+- The reference-environment control is optional and explained; the step timeout default is 600 s and documented
+  (`timeout_s` per step through `graph.py apply`).
+
+Interview and status
+- `record.py answer` writes the decision and the params.yaml change of a question together; `record.py param` is the
+  one writer for every other params.yaml change. `params_check.py` applies the runtime's `PARAM_MISSING` rule.
+- The question budget is a soft limit (`BUDGET_EXCEEDED` warns); an `assumed` output-changing parameter that parity
+  cannot see caps the status at sandbox-validated (`ASSUMED_PARITY_BLIND`) and the status line names it.
+- `ladder.py --brief`: one line of compare states for stage ends; `plot.py review-template` prints prefilled receipts.
+
 Install and discovery
 - `axpy` moved from a top-level `bin/` to `scripts/axpy`: claude.ai and Cowork refuse a plugin with a top-level `bin/`.
 - Skill descriptions rewritten short and intent-first ("Use when …"), with "not for" lines on migrate, verify, map,
