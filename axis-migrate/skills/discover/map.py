@@ -94,9 +94,41 @@ def km_scalebar(ax, extent, geographic: bool) -> None:
     ax.text(xs + L / 2, ys + 0.015 * (y1 - y0), f"{km} km", ha="center", va="bottom", fontsize=8)
 
 
+def map_datasets(inv: dict) -> tuple[list[dict], str | None]:
+    """Datasets the input maps draw: the inputs that exist; when lineage found none, every raster/vector on disk that
+    no code writes (role unknown/unused), with a note for the caption (B4). VRT aliases of a drawn file are skipped."""
+    ds = [d for d in inv["datasets"] if d["role"] == "input" and d["exists"] and d["kind"] in ("raster", "vector")]
+    if ds:
+        return ds, None
+    ds = [d for d in inv["datasets"] if d["exists"] and d["kind"] in ("raster", "vector")
+          and d["role"] in ("unknown", "unused") and not d.get("alias_of")]
+    if not ds:
+        return [], None
+    return ds, (f"no dataset has role input: drawing all {len(ds)} on-disk rasters/vectors no code writes "
+                f"(roles unknown/unused); their roles are not established")
+
+
+def aoi_dataset(inv: dict, ds: list[dict], migration: Path) -> tuple[dict | None, str | None]:
+    """The inventory's AOI; when it is null, the single polygon layer among the drawn datasets (said in the caption)."""
+    by_id = {d["id"]: d for d in inv["datasets"]}
+    if inv.get("aoi") and inv["aoi"] in by_id:
+        return by_id[inv["aoi"]], None
+    polys = []
+    for d in ds:
+        if d["kind"] != "vector":
+            continue
+        gt = (inv_profile(migration, d) or {}).get("geom_types") or {}
+        if gt and all("Polygon" in k for k in gt):
+            polys.append(d)
+    if len(polys) == 1:
+        return polys[0], f"AOI: {polys[0]['id']} (the only polygon layer drawn; the inventory names no AOI)"
+    return None, None
+
+
 def inputs_overview(inv: dict, legacy: Path, out: Path) -> dict:
     from pyproj import CRS
-    ds = [d for d in inv["datasets"] if d["role"] == "input" and d["exists"] and d["kind"] in ("raster", "vector")]
+    ds, fallback = map_datasets(inv)
+    aoi, aoi_note = aoi_dataset(inv, ds, out.parent)
     profiles = {}
     for d in ds:
         pr = inv_profile(out.parent.parent, d)
@@ -113,7 +145,7 @@ def inputs_overview(inv: dict, legacy: Path, out: Path) -> dict:
         (CRS.from_user_input(p["crs"]["authid"]) for p in inv.get("projects", []) if (p.get("crs") or {}).get("authid")),
         crss[0] if crss else CRS.from_epsg(4326))
     fig, ax = plt.subplots(figsize=(10, 9))
-    handles, notes = [], []
+    handles, notes = [], [x for x in (fallback, aoi_note) if x]
     rasters = sorted([d for d in ds if d["kind"] == "raster"], key=lambda d: d["id"])
     vectors = sorted([d for d in ds if d["kind"] == "vector"], key=lambda d: d["id"])
     all_bounds = []
@@ -138,7 +170,10 @@ def inputs_overview(inv: dict, legacy: Path, out: Path) -> dict:
             notes.append(f"{d['id']}: not drawn ({exc})")
             continue
         lw = 2.4 - 0.5 * (i % 3) if len(g) <= 200 else 0.4
-        g.boundary.plot(ax=ax, color=col, lw=lw, ls=style, zorder=3 + i)
+        if len(g) and all(t.endswith("Point") for t in g.geom_type.dropna().unique()):
+            g.plot(ax=ax, color=col, markersize=4 if len(g) <= 200 else 1, zorder=3 + i)  # points have no boundary
+        else:
+            g.boundary.plot(ax=ax, color=col, lw=lw, ls=style, zorder=3 + i)
         b = g.total_bounds
         all_bounds.append((b[0], b[2], b[1], b[3]))
         handles.append(plt.Line2D([0], [0], color=col, lw=2, ls=style, label=f"{d['id']} ({len(g)} features)"))
@@ -166,16 +201,79 @@ def inputs_overview(inv: dict, legacy: Path, out: Path) -> dict:
             rel_lines.append(f"{r['a']} NoData cells inside {r['b']}: {r['nodata_cells_inside_aoi']} "
                              f"({r['nodata_inside_aoi_km2']:.2f} km2, cell centre)")
     ax.legend(handles=handles, loc="upper right", fontsize=7, framealpha=0.9)
-    ax.set_title(f"Inputs overview ({disp.to_string()}; display only, nothing reprojected for checks)", fontsize=9)
+    ax.set_title(f"Inputs overview ({disp.to_string()}; display only, nothing reprojected for checks)"
+                 + (" — no inputs: all on-disk data" if fallback else ""), fontsize=9)
     ax.set_xlabel("x" if not geographic else "longitude")
     ax.set_ylabel("y" if not geographic else "latitude")
+    zoom = aoi_zoom(fig, ax, legacy, aoi, rasters, vectors, disp, all_bounds, geographic)
+    if zoom:
+        notes.append(zoom)
     caption = "\n".join(rel_lines + notes)
     fig.text(0.01, 0.01, caption, fontsize=7, va="bottom", family="monospace")
     fig.subplots_adjust(bottom=0.06 + 0.017 * len(caption.splitlines()))
     path = out / "inputs_overview.png"
     save(fig, path)
     return {"path": "discover/inputs_overview.png", "kind": "inputs_overview", "datasets": [d["id"] for d in ds],
-            "metrics": rel_lines}
+            "metrics": rel_lines + [x for x in (fallback, aoi_note) if x], "fallback": bool(fallback),
+            "aoi": aoi["id"] if aoi else None}
+
+
+def aoi_zoom(fig, ax, legacy: Path, aoi: dict | None, rasters: list, vectors: list, disp, all_bounds: list,
+             geographic: bool) -> str | None:
+    """When the AOI covers under 1 % of the drawn extent it would be a speck: an inset zoomed to the AOI (+25 %),
+    rasters read for that window only (nearest), vectors on top."""
+    import rasterio
+    from pyproj import CRS
+    from rasterio.windows import from_bounds
+    if aoi is None or not all_bounds:
+        return None
+    try:
+        g = read_vec(legacy, aoi, disp)
+    except Exception:  # noqa: BLE001
+        return None
+    b = g.total_bounds
+    x0, x1 = min(x[0] for x in all_bounds), max(x[1] for x in all_bounds)
+    y0, y1 = min(x[2] for x in all_bounds), max(x[3] for x in all_bounds)
+    full = max((x1 - x0) * (y1 - y0), 1e-12)
+    if (b[2] - b[0]) * (b[3] - b[1]) / full >= 0.01:
+        return None
+    pad = 0.25 * max(b[2] - b[0], b[3] - b[1])
+    zx0, zx1, zy0, zy1 = b[0] - pad, b[2] + pad, b[1] - pad, b[3] + pad
+    ins = ax.inset_axes([0.58, 0.04, 0.40, 0.40])
+    ins.set_facecolor("#f4f4f4")
+    for d in rasters:
+        with rasterio.open(legacy / d["legacy_path"]) as src:
+            if src.crs is not None and not CRS.from_wkt(src.crs.to_wkt()).equals(disp):
+                continue
+            w = from_bounds(zx0, zy0, zx1, zy1, src.transform).round_offsets().round_lengths()
+            if w.width <= 0 or w.height <= 0:
+                continue
+            f = max(1, math.ceil(max(w.width, w.height) / 600))
+            a = src.read(1, window=w, out_shape=(max(1, int(w.height) // f), max(1, int(w.width) // f)),
+                         boundless=True, masked=True,
+                         resampling=rasterio.enums.Resampling.nearest).astype("float64")
+            wb = rasterio.windows.bounds(w, src.transform)
+            lo, hi = stretch(a) if a.count() else (0, 1)
+            ins.imshow(a, extent=(wb[0], wb[2], wb[1], wb[3]), cmap="Greys", vmin=lo, vmax=hi,
+                       interpolation="nearest", alpha=0.6)
+    for i, d in enumerate(vectors):
+        try:
+            gv = read_vec(legacy, d, disp)
+        except Exception:  # noqa: BLE001
+            continue
+        col = PALETTE[i % len(PALETTE)]
+        if all(t.endswith("Point") for t in gv.geom_type.unique()):
+            gv.plot(ax=ins, color=col, markersize=6, zorder=4 + i)
+        else:
+            gv.boundary.plot(ax=ins, color=col, lw=1.2, zorder=4 + i)
+    ins.set_xlim(zx0, zx1)
+    ins.set_ylim(zy0, zy1)
+    if geographic:
+        ins.set_aspect(1 / math.cos(math.radians((zy0 + zy1) / 2)))
+    ins.tick_params(labelsize=5)
+    ins.set_title(f"zoom to AOI {aoi['id']}", fontsize=7)
+    ax.indicate_inset_zoom(ins, edgecolor="red")
+    return f"inset: zoom to the AOI {aoi['id']} (it covers under 1 % of the drawn extent)"
 
 
 def inv_profile(migration: Path, d: dict) -> dict | None:
@@ -191,7 +289,7 @@ def grid_corners(inv: dict, legacy: Path, out: Path, cells: int = 14) -> dict:
     migration = out.parent
     by_id = {d["id"]: d for d in inv["datasets"]}
     fams = inv.get("grids", [])
-    aoi = by_id.get(inv.get("aoi")) if inv.get("aoi") else None
+    aoi, _ = aoi_dataset(inv, map_datasets(inv)[0], migration)
     aoi_g = None
     if aoi:
         try:
@@ -289,6 +387,8 @@ def grid_corners(inv: dict, legacy: Path, out: Path, cells: int = 14) -> dict:
 def legacy_rasters(inv: dict, legacy: Path, out: Path) -> dict:
     ds = sorted([d for d in inv["datasets"] if d["kind"] == "raster" and d["exists"]
                  and d["role"] in ("intermediate", "final")], key=lambda d: (d["role"] != "intermediate", d["id"]))
+    if not ds:
+        return legacy_vectors(inv, legacy, out)
     n = max(1, len(ds))
     cols = min(3, n)
     rows = math.ceil(n / cols)
@@ -317,6 +417,48 @@ def legacy_rasters(inv: dict, legacy: Path, out: Path) -> dict:
     path = out / "legacy_rasters.png"
     save(fig, path)
     return {"path": "discover/legacy_rasters.png", "kind": "legacy_rasters", "datasets": [d["id"] for d in ds]}
+
+
+def legacy_vectors(inv: dict, legacy: Path, out: Path) -> dict:
+    """No intermediate or final raster exists: legacy_rasters.png draws the intermediate/final vectors instead (the
+    references), each with its feature count, and says so; with none at all it says that in words."""
+    ds = sorted([d for d in inv["datasets"] if d["kind"] == "vector" and d["exists"]
+                 and d["role"] in ("intermediate", "final")], key=lambda d: (d["role"] != "intermediate", d["id"]))
+    n = max(1, len(ds))
+    cols = min(3, n)
+    rows = math.ceil(n / cols)
+    fig, axes = plt.subplots(rows, cols, figsize=(5.2 * cols, 4.6 * rows + 0.4), squeeze=False)
+    for i in range(rows * cols):
+        ax = axes[i // cols][i % cols]
+        if i >= len(ds):
+            ax.axis("off")
+            if not ds:
+                ax.text(0.5, 0.5, "No intermediate or final raster or vector exists in the legacy folder",
+                        ha="center", va="center", fontsize=9, wrap=True)
+            continue
+        d = ds[i]
+        try:
+            g = read_vec(legacy, d)
+        except Exception as exc:  # noqa: BLE001
+            ax.text(0.5, 0.5, f"{d['id']}: not drawn ({exc})"[:120], ha="center", fontsize=7)
+            continue
+        kinds = set(g.geom_type.dropna().unique())
+        if kinds and all(k.endswith("Point") for k in kinds):
+            g.plot(ax=ax, color=PALETTE[i % len(PALETTE)], markersize=8)
+        elif len(g):
+            g.plot(ax=ax, color=PALETTE[i % len(PALETTE)], alpha=0.5, edgecolor="black", lw=0.6)
+        ax.set_title(f"{d['id']} [{d['role']}]\n{len(g)} feature(s), {', '.join(sorted(kinds)) or 'no geometry'}; "
+                     f"columns {', '.join(c for c in g.columns if c != 'geometry')[:60]}", fontsize=7)
+        if g.crs is not None and g.crs.is_geographic and len(g):
+            b = g.total_bounds
+            ax.set_aspect(1 / math.cos(math.radians((b[1] + b[3]) / 2)))
+        ax.tick_params(labelsize=5)
+    fig.suptitle("Legacy intermediate and final datasets: no raster among them, the vectors are drawn", fontsize=10)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    path = out / "legacy_rasters.png"
+    save(fig, path)
+    return {"path": "discover/legacy_rasters.png", "kind": "legacy_rasters", "datasets": [d["id"] for d in ds],
+            "fallback": "vectors"}
 
 
 def run_inputs(migration: Path) -> tuple[int, dict]:

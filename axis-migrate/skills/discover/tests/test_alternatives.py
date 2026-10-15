@@ -167,3 +167,30 @@ def test_large_rasters_get_sampled_statistics(tmp_path, monkeypatch):
 def test_existing_project_unchanged_by_alternative_pass(tmp_path):
     inv = scan(build_project(tmp_path), tmp_path / "migration")
     assert not [t for t in inv["twins"] if t["kind"] == "alternative_impl"]
+
+
+def ink(png) -> float:
+    """Share of non-background pixels in a PNG (0 = blank)."""
+    import matplotlib.image as mpimg
+    a = mpimg.imread(png)[..., :3]
+    return float((a.min(axis=2) < 0.85).mean())
+
+
+def test_maps_fall_back_to_on_disk_data_and_the_single_polygon_aoi(tmp_path):
+    """No code at all: no input role, no AOI. The overview still draws every on-disk raster/vector and says so."""
+    import pyogrio
+    from scan_synth import MAP
+    leg = tmp_path / "legacy_nocode"
+    write_raster(leg / "data" / "dem.tif", np.arange(600).reshape(20, 30))
+    pyogrio.write_dataframe(zones_gdf(), leg / "data" / "zones.gpkg", layer="zones", driver="GPKG")
+    mig = tmp_path / "migration"
+    inv = scan(leg, mig)
+    assert inv["aoi"] is None and not [d for d in inv["datasets"] if d["role"] == "input"]
+    r = run(MAP, "inputs", mig, "--json")
+    pngs = {p["kind"]: p for p in json.loads(r.stdout)["pngs"]}
+    ov = pngs["inputs_overview"]
+    assert ov["fallback"] and set(ov["datasets"]) == {"ds.dem", "ds.zones"} and ov["aoi"] == "ds.zones"
+    assert any("no dataset has role input" in m for m in ov["metrics"])
+    assert ink(mig / "discover" / "inputs_overview.png") > 0.05
+    assert "corners and centre" not in " ".join(pngs["grid_corners"]["metrics"])  # AOI windows, not corners
+    assert ink(mig / "discover" / "legacy_rasters.png") > 0.001  # says in words that nothing exists
