@@ -49,7 +49,8 @@ The dumps are saved, with paths sanitised, as `hooks/tests/payloads/*.json`; the
 
 ### Latency (this host, `python3 -I`, 5 runs each)
 
-Idle (no `migration/`): about 21–34 ms for every hook, within the < 100 ms of G13. Active, on the synthetic project:
+Idle (no `migration/`): about 21–34 ms for every hook, within the < 100 ms of G13 (15 Oct: about 10 ms through
+`run-hook.sh`, which no longer starts Python when there is no migration). Active, on the synthetic project:
 guard_write 64–75 ms, guard_bash 75–88 ms, post_scan 85 ms, session_start 68–88 ms (includes `ladder.compute`),
 stop_gate 90–118 ms (ladder plus drift checks).
 
@@ -84,9 +85,46 @@ run only after the user trusts them. It follows the Codex hook contract at https
 There has been no Codex run on this host: the Codex side is covered by `hooks/tests/test_codex.py` and its payload
 fixtures in `payloads/codex_*.json`, which are built from that contract.
 
-**Commands.** Every command is `PYTHONIOENCODING=utf-8 python3 -I "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/<x>.py"`.
+**Commands.** Every command is `sh "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh" <x>`, which runs
+`hooks/bin/<x>.py` (15 Oct 2026; before, the commands were `PYTHONIOENCODING=utf-8 python3 -I …/hooks/bin/<x>.py`).
 Claude Code passes `CLAUDE_PLUGIN_ROOT` in the environment, which run 4 confirmed: all hooks fired and a legacy
 write was denied. Codex sets both variables. The scripts find the plugin from their own file path in either case.
+
+### The sh wrapper: hooks without a working python3 (`hooks/run-hook.sh`)
+
+A fresh Mac has no python3 but the Xcode Command Line Tools stub at `/usr/bin/python3`, which opens an install
+dialog and fails; Windows may have no Python at all. With `python3` in the commands and `onFailure: block`, such a
+machine would have had every Write and Bash blocked in **every** project. The wrapper is POSIX sh (macOS `/bin/sh`,
+dash, `bash --posix` and Git Bash; tested under the first three):
+
+1. It reads stdin once and passes it to Python byte for byte.
+2. It looks for `migration/graph.json` walking up from every `cwd` in the payload, from the folder of every
+   `file_path`/`notebook_path`, and from the hook process cwd (not for Stop). JSON values are pulled out with
+   grep/sed; a value with `\u`/`\n`/`\t` escapes cannot be decoded in sh and goes on to Python. **No migration/ →
+   exit 0 at once, without Python** (about 10 ms here, against 21–34 ms for an idle Python hook). Always on to Python:
+   `session_start` (hooks-active marker and secrets file, even before migration/ exists) and a payload holding an
+   apply_patch text (absolute paths).
+3. Interpreter: the plugin's own uv environment first, by the `scripts/axpy` rule
+   (`${CLAUDE_PLUGIN_DATA}/env-<lock8>`, `${PLUGIN_DATA}/env-<lock8>`, `${XDG_CACHE_HOME:-~/.cache}/axis-migrate/env-<lock8>`,
+   then any `env-*` there, since the hooks need the standard library only; `Scripts/python.exe` too), then `python3`
+   and `python` from PATH (on macOS also `/opt/homebrew/bin/python3` and `/usr/local/bin/python3`). A PATH python is
+   used only if `python -I -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)'` exits 0 within 3 s
+   (a watchdog kills it otherwise). On macOS `/usr/bin/python3` is not even started unless `xcode-select -p`
+   succeeds, so the stub's dialog never opens.
+4. No interpreter inside a migration: **NEEDS_PYTHON3**, naming the fix (install uv; run
+   `"$P/scripts/axpy" --print-python` once, which builds the plugin environment the hooks then use; then
+   `"$P/scripts/axpy" --doctor`).
+
+| Hook | NEEDS_PYTHON3 behaviour |
+|---|---|
+| guard_write, guard_bash, guard_hidden (PreToolUse) | deny: exit 2, reason on stderr. Only the two fix commands pass, written exactly as `"<plugin>/scripts/axpy" --print-python` or `--doctor` (also with `${CLAUDE_PLUGIN_ROOT}`). |
+| post_scan (PostToolUse) | exit 2 (block feedback; the write has happened). |
+| stop_gate (Stop) | exit 2 once, only for a session listed in `migration/.axis/sessions.json` and only while `stop_hook_active` is false (grep, no Python); otherwise allow (`{}` under Codex). |
+| session_start | allow, with the reason as `additionalContext`. |
+| graph_changed | allow, silent. |
+
+Not verified: a real macOS CLT stub (simulated here with a fake `uname`/`xcode-select`), and Windows (Git Bash
+runs hooks there per the Claude Code docs; not run).
 
 **Matchers.** The write matcher is `Write|Edit|MultiEdit|NotebookEdit|apply_patch`. Claude Code reads it as a list of
 exact names; Codex reads it as a regex, where it is a plain alternation. PostToolUse also has a `Bash` entry so that a
@@ -152,7 +190,26 @@ These results override the docs where they differ.
     until the user trusts them again, so check `hooks_active.py` after every update.
   - A chat that is already open does not load a newly installed plugin. Start a new chat.
 
+### Stop gate scope: the session, not the folder (15 Oct 2026, review §3)
+
+The Stop gate used to apply to any session whose cwd sat at or below a folder holding `migration/`, so an
+orchestrator session talking about an eval project was gated as if it were migrating. Now `guard_bash`,
+`guard_write` and `post_scan` record the payload `session_id` in `migration/.axis/sessions.json`
+(`_hooklib.touch_session`; never raises) when a tool call writes or reads under `migration/` (a Write/Edit/patch
+target, or a Bash token that resolves under it from either base) or runs a plugin script (`scripts/axpy`,
+`skills/<x>/<y>.py`). `stop_gate` allows every session not listed there, and finds `migration/` from the payload
+`cwd` only. The read and write guards stay global: they protect the legacy folder for every session. A Read-tool
+read under `migration/` does not record a session; a Bash read (`cat migration/graph.json`) does. Sessions are
+per session id: after `/clear` the new session is gated from its first tool call that touches the migration.
+
+Cost: `stop_gate.decide` returns at once for a message with no claim and no status line and no unacked user graph
+edits (no ladder, no hashing). `legacy_drift` hashes through `lib/hashcache.py` (sha256 by path, size and mtime_ns
+in `migration/.axis/hash-cache.json`); a second Stop over a 300 MB legacy tree costs a stat per file (test).
+
 ### Payload failure modes (all hooks, both harnesses)
+
+Outside a migration (no `migration/graph.json` from any base) the wrapper exits 0 before Python runs, whatever the
+payload, so the rows below apply inside a migration only.
 
 | Hook | Missing, empty or unparseable stdin, or a payload without `tool_name` | Exception inside the hook |
 |---|---|---|

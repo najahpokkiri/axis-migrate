@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/session_start.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" session_start",
             "timeout": 5
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/graph_changed.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" graph_changed",
             "timeout": 3
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/guard_write.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" guard_write",
             "timeout": 5,
             "onFailure": "block"
           }
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/guard_bash.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" guard_bash",
             "timeout": 5,
             "onFailure": "block"
           }
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/guard_hidden.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" guard_hidden",
             "timeout": 3,
             "onFailure": "block"
           }
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/post_scan.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" post_scan",
             "timeout": 10,
             "onFailure": "block"
           }
@@ -75,7 +75,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/post_scan.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" post_scan",
             "timeout": 10,
             "onFailure": "block"
           }
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PYTHONIOENCODING=utf-8 python3 -I \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/bin/stop_gate.py\"",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" stop_gate",
             "timeout": 15
           }
         ]

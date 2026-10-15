@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""hooks_active.py: did the axis-migrate hooks run in this session? (stdlib only; for the Codex start skill).
+"""hooks_active.py: did the axis-migrate hooks run in this session? (stdlib only; the Codex start skill and the
+migrate skill's step 0, both harnesses).
 
 SessionStart (hooks/bin/session_start.py) writes, in every harness and even before migration/ exists:
 
     ${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-~/.cache/axis-migrate}}/hooks-active.json
-    (the checker also looks in ~/.cache/axis-migrate and ${CODEX_HOME:-~/.codex}/plugins/data/axis-migrate-*/,
-    because Codex sets PLUGIN_DATA for hooks but not for the agent's shell)
+    (the checker also looks in ~/.cache/axis-migrate, ${CODEX_HOME:-~/.codex}/plugins/data/axis-migrate-*/ and
+    ${CLAUDE_CONFIG_DIR:-~/.claude}/plugins/data/axis-migrate*/, because both harnesses set the plugin data variable
+    for hooks but not necessarily for the agent's shell)
     {"schema": "axis-migrate.hooks-active.v1", "at": "<UTC ISO>", "harness": "codex"|"claude",
      "cwd_sha256": sha256(realpath(session cwd)), "session_id", "source", "migration_found", "plugin_root", "hooks"}
 
@@ -32,6 +34,10 @@ def marker_paths() -> list[Path]:
             os.path.expanduser("~/.cache/axis-migrate")]
     codex_home = Path(os.environ.get("CODEX_HOME") or os.path.expanduser("~/.codex"))
     dirs += sorted(str(d) for d in (codex_home / "plugins" / "data").glob("axis-migrate-*") if d.is_dir())
+    # Claude Code: hooks get CLAUDE_PLUGIN_DATA = <config>/plugins/data/axis-migrate-<marketplace|inline>/, the shell
+    # may not (run 4 found the marker there), so the migrate skill's step 0 check looks there too
+    claude_home = Path(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude"))
+    dirs += sorted(str(d) for d in (claude_home / "plugins" / "data").glob("axis-migrate*") if d.is_dir())
     out: list[Path] = []
     for d in dirs:
         if d and Path(d) / "hooks-active.json" not in out:

@@ -18,10 +18,10 @@ def entries():
 
 def test_command_paths_exist_and_form():
     for event, matcher, h in entries():
-        m = re.fullmatch(r'PYTHONIOENCODING=utf-8 python3 -I "\$\{CLAUDE_PLUGIN_ROOT:-\$PLUGIN_ROOT\}/(hooks/bin/\w+\.py)"',
-                         h["command"])
+        # every hook goes through the POSIX sh wrapper (no python3 needed outside a migration; NEEDS_PYTHON3 inside)
+        m = re.fullmatch(r'sh "\$\{CLAUDE_PLUGIN_ROOT:-\$PLUGIN_ROOT\}/hooks/run-hook\.sh" (\w+)', h["command"])
         assert m, h["command"]
-        assert (PLUGIN / m.group(1)).is_file(), m.group(1)
+        assert (PLUGIN / "hooks" / "bin" / f"{m.group(1)}.py").is_file(), m.group(1)
 
 
 def test_matchers_and_failure_modes():

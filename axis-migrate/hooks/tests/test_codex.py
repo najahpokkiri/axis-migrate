@@ -285,3 +285,22 @@ def test_hooks_active_finds_codex_plugin_data_without_env(project, tmp_path):
     gone = subprocess.run([SYS_PY, "-I", str(GUARD / "hooks_active.py"), "--cwd", str(project.root)],
                           capture_output=True, text=True, env=env)
     assert gone.returncode == 1
+
+
+def test_hooks_active_finds_claude_plugin_data_without_env(project, tmp_path):
+    """Claude Code sets CLAUDE_PLUGIN_DATA for hooks (<config>/plugins/data/axis-migrate-<mkt|inline>/, run 4); the
+    migrate skill's step 0 check from the agent's shell must find the marker there without the variable."""
+    import shutil
+    import subprocess
+    from conftest import GUARD, SYS_PY, payload
+    run_hook("session_start.py", payload("SessionStart", cwd=str(project.root)))
+    cfg = tmp_path / "claude-config"
+    data = cfg / "plugins" / "data" / "axis-migrate-inline"
+    data.mkdir(parents=True)
+    shutil.copy(Path(MARKER_DIR) / "hooks-active.json", data / "hooks-active.json")
+    env = {"CLAUDE_CONFIG_DIR": str(cfg), "HOME": str(tmp_path / "home"), "PATH": "/usr/bin:/bin"}
+    res = subprocess.run([SYS_PY, "-I", str(GUARD / "hooks_active.py"), "--cwd", str(project.root), "--json"],
+                         capture_output=True, text=True, env=env)
+    assert res.returncode == 0, res.stdout
+    rec = json.loads(res.stdout)
+    assert rec["marker"].startswith(str(data)) and rec["harness"] == "claude"

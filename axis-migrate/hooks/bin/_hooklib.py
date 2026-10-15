@@ -5,6 +5,9 @@
 - `pre_decision()`      PreToolUse JSON decision (deny/ask) on stdout, ASCII only
 - `run_guard()`         fail closed: any exception -> exit 2 with an ASCII reason on stderr
 - `run_inform()`        fail open: any exception -> exit 0 (informational hooks)
+- `touch_session()`     record a session that works on the migration (migration/.axis/sessions.json); the Stop gate
+                        applies only to recorded sessions (`sessions()`)
+Started by hooks/run-hook.sh (POSIX sh): no Python at all outside a migration, NEEDS_PYTHON3 inside one without it.
 """
 from __future__ import annotations
 

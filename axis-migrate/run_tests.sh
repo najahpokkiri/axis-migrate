@@ -24,6 +24,28 @@ for d in "$PLUGIN"/skills/*/tests "$PLUGIN"/hooks/tests "$PLUGIN"/tests_codex; d
 $(grep -E '^(FAILED|ERROR) ' "$log" | head -40)"
   fi
 done
+# Manifest validation with the Claude Code CLI (warnings are errors). The repo marketplace is checked too when this
+# plugin sits in its repository (an installed copy has no ../.claude-plugin). No CLI (Mac/CI without it): skipped.
+if command -v claude >/dev/null 2>&1; then
+  for target in "$PLUGIN" "$PLUGIN/.."; do
+    [ "$target" = "$PLUGIN/.." ] && [ ! -f "$PLUGIN/../.claude-plugin/marketplace.json" ] && continue
+    what="plugin"; [ "$target" = "$PLUGIN/.." ] && what="marketplace"
+    log="$LOGS/validate-$what.log"
+    claude plugin validate --strict "$target" >"$log" 2>&1
+    code=$?
+    if [ $code -eq 0 ]; then
+      echo "validate ($what): passed (claude plugin validate --strict)"
+    else
+      echo "validate ($what): FAILED (exit $code)"
+      rc=1
+      summary="$summary
+== validate $what ($log)
+$(tail -20 "$log")"
+    fi
+  done
+else
+  echo "validate: skipped (claude CLI not found; install Claude Code to run claude plugin validate --strict)"
+fi
 echo "logs: $LOGS"
 if [ $rc -ne 0 ]; then
   echo "FAILURES:$summary"
