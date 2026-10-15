@@ -709,3 +709,12 @@ def test_status_suffix_standing_instruction_and_open_questions(proj):
         "axis-migrate status: reference-verified · plan approved by standing instruction · 1 open question | run ")
     assert [q["id"] for q in res["pipeline"]["open_questions"]] == ["q99"]
     assert res["pipeline"]["plan_approval"]["by"] == ladder.STANDING_INSTRUCTION
+
+
+def test_open_question_suffix_before_any_run(proj):
+    """BYU re-run 2: the plan gate stopped the run at an open question; the status line must say so with no run."""
+    synth.update_graph(proj["migration"], lambda g: g.setdefault("questions", []).append(
+        {"id": "q07", "kind": "legacy_bug", "status": "open", "node": "s01_mask", "header": "Empty amenity"}))
+    res = ladder.compute(proj["migration"])
+    assert res["status_line"].startswith("axis-migrate status: none · 1 open question | run none")
+    assert [q["id"] for q in res["pipeline"]["open_questions"]] == ["q07"]

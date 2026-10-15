@@ -769,6 +769,10 @@ def _empty_result(run_id, headline, blockers, integrity=None, migration: Path | 
                         "target": {"state": "not_attempted", "reasons": []},
                         "report": report_path(migration) if migration else None},
            "steps": {}, "datasets": {}, "integrity": integrity or []}
+    if migration is not None:   # an open question shows before any run too (the plan gate stops the run there)
+        attention = owner_attention(migration, None)
+        res["pipeline"].update(suffix="".join(f" · {t}" for t in attention["suffix"]),
+                               open_questions=attention["open_questions"], plan_approval=attention["plan_approval"])
     res["status_line"] = status_line(res)
     return res
 
