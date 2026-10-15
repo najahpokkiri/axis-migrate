@@ -164,6 +164,27 @@ def sha256_file(path: str | os.PathLike) -> str:
     return h.hexdigest()
 
 
+class ForeignInputError(ValueError):
+    """An input file (--json, --ops, --spec) that another account owns or anyone may write (B7)."""
+
+
+def read_own_text(path: str | os.PathLike, what: str = "input") -> str:
+    """Text of an input file the agent named on a command line, only when this user owns it and it is not
+    world-writable. A stale file of another project in a shared folder (/tmp/q05.json, /tmp/axf/mf1.json from an
+    eval account) has the same name as the one the agent meant to write; reading it would record foreign content.
+    Checked on the open descriptor. Pass '-' and stdin instead."""
+    with open(path, "r", encoding="utf-8") as fh:
+        st = os.fstat(fh.fileno())
+        if hasattr(os, "getuid") and st.st_uid != os.getuid():
+            raise ForeignInputError(f"{what} {path} is owned by uid {st.st_uid}, not by you (uid {os.getuid()}): "
+                                    "refused (a stale file of another project?). Pass it on stdin with '-' (a quoted "
+                                    "heredoc), or write it under migration/analysis/")
+        if st.st_mode & 0o002:
+            raise ForeignInputError(f"{what} {path} is world-writable (mode {st.st_mode & 0o777:o}): refused. Pass "
+                                    "it on stdin with '-', or write it under migration/analysis/")
+        return fh.read()
+
+
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 

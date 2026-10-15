@@ -2250,8 +2250,8 @@ def cmd_review_add(args) -> int:
         print("refused: verify/ missing (run compare.py and plot.py first)", file=sys.stderr)
         return EXIT_REJECTED
     try:
-        raw = json.loads(Path(args.json).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as e:
+        raw = json.loads(ac.read_own_text(args.json, "--json"))
+    except (OSError, ValueError) as e:   # incl. ac.ForeignInputError (another account's file) and bad JSON
         print(f"rejected: cannot read {args.json}: {e}", file=sys.stderr)
         return EXIT_REJECTED
     items = raw if isinstance(raw, list) else [raw]

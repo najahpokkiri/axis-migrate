@@ -79,6 +79,12 @@ what changes downstream"`; options: recommended first labelled "(Recommended)", 
 
 A free-text "Other" answer is restated as a concrete params change and confirmed once ("Recorded as X = …, correct?").
 
+**Left for a person.** A question only a person can settle (e.g. "keep or fix this legacy behaviour? record it as a
+question for Najah") is a graph question (`add_question`, linked nodes and `param_ids`) that stays `open`; never only
+prose in a decision or param (`params_check` blocks that: `OPEN_QUESTION_NOT_IN_GRAPH`). `approve_plan` refuses while
+it is open on an in-scope node, so the run stops there: state the exact question and stop, even under a standing
+"carry on" instruction. Assume it (`assume_question`) only if the user said a visible assumption is acceptable.
+
 **`confirm_all`** (last question): write `migration/confirm_all.md`, a Markdown table (one row per item: what, value,
 source `file:line`, why it matters) of every assumption, inferred and fitted value, every proposed scope decision
 (dropped/alternative code, display-only inputs, unused classes or branches), the proposed **parity scope** (which

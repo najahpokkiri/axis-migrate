@@ -2454,21 +2454,13 @@ def _print(obj: Any, as_json: bool, text: str | None = None) -> None:
 
 def read_ops_file(path: str) -> str:
     """An --ops file this user owns and nobody else may write (B7: a stale /tmp/q05.json of another project, owned
-    by another account, was read and applied). Checked on the open descriptor; prefer `--ops -` (stdin)."""
+    by another account, was read and applied). Prefer `--ops -` (stdin)."""
     try:
-        fh = open(path, "r", encoding="utf-8")
+        return ac.read_own_text(path, "--ops")
+    except ac.ForeignInputError as exc:
+        raise ValidationError(f"{exc} (for graph.py: --ops -)", code="ops_not_owned")
     except OSError as exc:
         raise ValidationError(f"--ops {path}: {exc.strerror or exc}", code="bad_ops")
-    with fh:
-        st = os.fstat(fh.fileno())
-        if hasattr(os, "getuid") and st.st_uid != os.getuid():
-            raise ValidationError(f"--ops {path} is owned by uid {st.st_uid}, not by you (uid {os.getuid()}): "
-                                  "refused (it may be another project's ops). Pass the ops on stdin: --ops -",
-                                  code="ops_not_owned")
-        if st.st_mode & 0o002:
-            raise ValidationError(f"--ops {path} is world-writable (mode {st.st_mode & 0o777:o}): refused. "
-                                  "Pass the ops on stdin: --ops -", code="ops_not_owned")
-        return fh.read()
 
 
 def main(argv: list[str] | None = None) -> int:

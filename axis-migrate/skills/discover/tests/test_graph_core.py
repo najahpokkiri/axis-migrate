@@ -576,3 +576,16 @@ def test_ops_file_must_be_own_and_not_world_writable(tmp_path: Path, monkeypatch
     with pytest.raises(G.ValidationError) as e:
         G.read_ops_file(str(tmp_path / "missing.json"))
     assert e.value.code == "bad_ops"
+
+
+def test_scan_annotate_refuses_a_foreign_json(tmp_path: Path, monkeypatch, capsys):
+    """B7 again in the BYU re-run: `scan.py annotate --json /tmp/axf/mf1.json` read another account's stale file
+    after the agent's own write was denied. Every --json/--ops input goes through ac.read_own_text."""
+    import scan
+    p = tmp_path / "mf1.json"
+    p.write_text('{"id": "MF-01"}')
+    p.chmod(0o644)
+    real = G.os.getuid()
+    monkeypatch.setattr(G.os, "getuid", lambda: real + 1)
+    assert scan.main(["annotate", str(tmp_path), "map-finding", "--json", str(p)]) == 2
+    assert "not by you" in capsys.readouterr().err

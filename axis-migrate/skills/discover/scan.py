@@ -5885,7 +5885,12 @@ def main(argv=None) -> int:
         a = ap.parse_args(argv[1:])
         payload = None
         if a.json_path:
-            payload = json.loads(sys.stdin.read() if a.json_path == "-" else Path(a.json_path).read_text())
+            try:
+                payload = json.loads(sys.stdin.read() if a.json_path == "-" else ac.read_own_text(a.json_path,
+                                                                                                   "--json"))
+            except (OSError, ValueError) as e:     # ForeignInputError and JSONDecodeError are ValueErrors
+                print(f"scan.py annotate: refused: {e}", file=sys.stderr)
+                return 2
         code, msg = annotate(a.migration.resolve(), a.what, payload, a.path, a.kind)
         print(msg, file=sys.stderr if code else sys.stdout)
         return code

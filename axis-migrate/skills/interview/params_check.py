@@ -56,6 +56,7 @@ REF_LINES_RE = re.compile(r"^(?P<path>[^:#]+?):(?P<a>\d+)(?:-(?P<b>\d+))?$")
 DEC_HEAD_RE = re.compile(r"^## (D-\d{3}) · (.+?) · (\S+)\s*$")
 KD_HEAD_RE = re.compile(r"^## (KD-\d{3}) · (.+?)\s*$")
 YAML_BLOCK_RE = re.compile(r"```yaml\n(.*?)```", re.S)
+OPEN_Q_RE = re.compile(r"open[ _-]questions?\b(?!s? *(?:is|are) +(?:none|closed|answered))", re.I)
 
 
 class Findings:
@@ -429,6 +430,23 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False,
     check_coverage(mdir, graph, data, f)
 
     records = check_records(mdir, set(by_id), f, overrides.get("decisions.md"))
+    # a question left for a person lives in the graph, open: prose ("an OPEN QUESTION for Najah", open_question_for:)
+    # is invisible to approve_plan's open-question gate, the status line and the report's open items (BYU re-run)
+    open_graph = [q["id"] for q in questions.values() if q.get("status") == "open"]
+    if not open_graph:
+        said = []
+        for pid, p in by_id.items():
+            if OPEN_Q_RE.search(json.dumps(p, default=str)):
+                said.append(pid)
+        for d in records["decisions"]:
+            if OPEN_Q_RE.search(json.dumps(d, default=str)) and str(d.get("id")) not in \
+                    {str(x) for e in records["decisions"] for x in _as_list(e.get("supersedes"))}:
+                said.append(str(d.get("id")))
+        for w in said:
+            f.block("OPEN_QUESTION_NOT_IN_GRAPH", w, "says a question stays open for a person, but graph.json has no "
+                                                     "open question: add it (graph.py apply add_question, linked "
+                                                     "nodes and param_ids) and leave it open, so the plan gate, the "
+                                                     "status line and the report show it")
     # an assumption recorded in decisions.md is an assumption in params.yaml too (B6: a param named by a kind:
     # assumption decision stayed `confirmed`, so the report undercounted the assumptions)
     withdrawn = {str(x) for d in records["decisions"] for x in _as_list(d.get("supersedes"))}

@@ -236,3 +236,20 @@ def test_assumption_decision_on_a_confirmed_param_blocks(tmp_path):
                                     "by": "agent", "params": ["p.cell_area_ha"]})
     codes = {(i["code"], i["where"]) for i in pc.check(mig, "investigate")[0].blocking}
     assert ("ASSUMPTION_NOT_ASSUMED", "p.cell_area_ha") in codes
+
+
+def test_open_question_in_prose_must_be_a_graph_question(tmp_path):
+    """BYU re-run: 'an OPEN QUESTION for Najah' written into a decision and a param, no graph question: blocked."""
+    mig = make(tmp_path)
+    record.append(mig, "decision", {"title": "Empty amenity kept", "kind": "legacy_keep", "by": "agent",
+                                    "answer": "keep for parity", "params": ["p.other"],
+                                    "changes": "kept for parity; whether intended is an OPEN QUESTION for Najah"})
+    g = json.loads((mig / "graph.json").read_text())
+    g["questions"][0]["status"] = "answered"          # no open question left in the graph
+    (mig / "graph.json").write_text(json.dumps(g))
+    blocking = {(i["code"], i["where"]) for i in pc.check(mig, "investigate")[0].blocking}
+    assert ("OPEN_QUESTION_NOT_IN_GRAPH", "D-001") in blocking
+    g["questions"].append({"id": "q05", "status": "open", "kind": "legacy_bug", "nodes": ["s01_a"]})
+    (mig / "graph.json").write_text(json.dumps(g))
+    blocking = {(i["code"], i["where"]) for i in pc.check(mig, "investigate")[0].blocking}
+    assert not any(c == "OPEN_QUESTION_NOT_IN_GRAPH" for c, _ in blocking)

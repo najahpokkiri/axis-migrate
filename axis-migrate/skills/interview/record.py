@@ -373,7 +373,7 @@ def main(argv=None) -> int:
         return 0
     if not a.json:
         ap.error("--json is required")
-    raw = sys.stdin.read() if a.json == "-" else Path(a.json).read_text(encoding="utf-8")
+    raw = sys.stdin.read() if a.json == "-" else ac.read_own_text(a.json, "--json")
     try:
         entry = json.loads(raw)
         if not isinstance(entry, dict):

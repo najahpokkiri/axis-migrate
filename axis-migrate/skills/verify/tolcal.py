@@ -378,7 +378,7 @@ def main(argv=None) -> int:
     p.add_argument("--version", type=int, default=1)
     a = ap.parse_args(argv)
     if a.cmd == "mutate":
-        spec = json.loads(Path(a.spec).read_text()) if a.spec else None
+        spec = json.loads(ac.read_own_text(a.spec, "--spec")) if a.spec else None
         recipe = json.loads(Path(a.recipe).read_text()) if a.recipe else None
         res = mutate(a.legacy, a.kind, a.out, spec=spec, recipe=recipe,
                      key=a.key or None)

@@ -3488,7 +3488,7 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  {s:32s} {x['verdict']:22s} blame={x['blame']} {','.join(x['reason_codes'])}")
                 print(f"first failing steps: {v['first_failing_steps']}")
             return rc
-        spec = json.loads(Path(a.spec).read_text(encoding="utf-8"))
+        spec = json.loads(ac.read_own_text(a.spec, "--spec"))
         mpath = None
         if a.out:
             mpath = str(Path(a.out).with_suffix("")) + ".mismatches.parquet"
