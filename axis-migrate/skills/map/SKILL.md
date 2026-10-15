@@ -5,7 +5,7 @@ description: Look at legacy vs new results on a live map (GeoLibre, local only) 
 
 # Map: you look, the person watches; numbers still decide
 
-`$P` = plugin root; `<run>` = `migration/runs/<run_id>`. Run every script as `"$P/bin/axpy" "$P/skills/map/<x>.py" …`
+`$P` = plugin root; `<run>` = `migration/runs/<run_id>`. Run every script as `"$P/scripts/axpy" "$P/skills/map/<x>.py" …`
 from the project folder (they switch to the map env themselves; first use installs GeoLibre 3.4.0, ~60 MB download,
 outside the plugin folder). Nothing here feeds a verdict: findings go through `plot.py review-add` as a view
 receipt (verify SKILL §3.6: view projects + sha256, engine, cells read) or, without a pane, as PNG receipts.

@@ -1,6 +1,6 @@
 """GeoLibre map views on real lux runs (dev-only; encodes lux facts).
 
-    ~/axis-migrate-dev/axis-migrate/bin/axpy -m pytest ~/axis-migrate-dev/devtests/map -q
+    ~/axis-migrate-dev/axis-migrate/scripts/axpy -m pytest ~/axis-migrate-dev/devtests/map -q
 
 Two chained runs of the golden pipeline on fresh fixture copies under tmp (the fixture itself is never touched):
   clean    the golden pipeline as is → compare.py → views.py → check.py → seal.py → views.py again (amend path)
@@ -38,7 +38,7 @@ import axis_common as ac  # noqa: E402
 import ladder  # noqa: E402
 import make_lux_project as mlp  # noqa: E402
 
-AXPY = str(PLUGIN / "bin" / "axpy")
+AXPY = str(PLUGIN / "scripts" / "axpy")
 PY3 = shutil.which("python3")
 GOLDEN = REPO / "evals" / "golden" / "lux" / "pipeline"
 RASTERS = ["ds.01_pop_lux", "ds.02_res_mask", "ds.03_pop_res", "ds.04_factor", "ds.lux_res_exposure_2020"]

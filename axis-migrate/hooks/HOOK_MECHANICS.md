@@ -101,7 +101,7 @@ exists only in Claude Code. Codex reads files through the shell, and `guard_bash
 | `permissionDecision: "ask"` is parsed but not supported: the run is marked failed and **the tool call continues**. | Under Codex, `_hooklib.pre_decision` turns every ask into a deny, with the note "Codex has no permission prompt … only the person makes or approves this change". |
 | There is no `onFailure`. Codex blocks on exit 2. | The guards already exit 2 on any exception. Codex's behaviour on a hook timeout is not documented and not measured. |
 | Stop with `decision: "block"` continues the session, using the reason as a new prompt. `stop_hook_active` is present. Stop must print JSON when it exits 0. | Same gate (claims, and the visual-review check on the latest run) and the same 3-block cap. On allow, the gate prints `{}` under Codex. |
-| There is no `CLAUDE_ENV_FILE`. | session_start tells the agent to prefix GDAL commands with `GDAL_PAM_ENABLED=NO`. `bin/axpy` sets it for plugin scripts. |
+| There is no `CLAUDE_ENV_FILE`. | session_start tells the agent to prefix GDAL commands with `GDAL_PAM_ENABLED=NO`. `scripts/axpy` sets it for plugin scripts. |
 
 **Harness detection** (`_hooklib.harness`). The session is Codex if `PLUGIN_ROOT` or `PLUGIN_DATA` is set (Claude
 Code sets only the `CLAUDE_*` names), or if the payload has `tool_name: "apply_patch"` or a `turn_id`. Otherwise it is

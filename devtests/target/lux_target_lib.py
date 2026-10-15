@@ -18,7 +18,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 PLUGIN = REPO / "axis-migrate"
-AXPY = str(PLUGIN / "bin" / "axpy")
+AXPY = str(PLUGIN / "scripts" / "axpy")
 sys.path.insert(0, str(REPO / "devtests" / "run" / "lux_project"))
 import make_lux_project as mlp  # noqa: E402
 

@@ -1,6 +1,6 @@
-"""axis-migrate preflight: can this machine run the pipeline environment? (stdlib only; `bin/axpy --doctor`)
+"""axis-migrate preflight: can this machine run the pipeline environment? (stdlib only; `scripts/axpy --doctor`)
 
-    bin/axpy --doctor [--no-sync] [--json]
+    scripts/axpy --doctor [--no-sync] [--json]
 
 Checks, one line each (OK / WARN / FAIL):
   uv          uv is installed (the environment is made only by `uv sync --frozen`; no pip, no system Python)

@@ -1,5 +1,5 @@
 """Synthetic project + run for the map tests (generic; no fixture facts). Built with the verify tests' run builder,
-compared with the real compare.py (pipeline env via bin/axpy).
+compared with the real compare.py (pipeline env via scripts/axpy).
 
     s1 -> ds.a  raster, new identical to legacy
     s2 -> ds.b  raster, new shifted one cell east (data offset on the same grid)
@@ -105,7 +105,7 @@ def build(root: Path, *, compare: bool = True) -> Path:
     run = rb.build(root, g, outputs={"ds.a": newd / "a.tif", "ds.b": newd / "b.tif", "ds.v": newd / "v.gpkg",
                                      "ds.c": newd / "c.csv"})
     if compare:
-        cp = subprocess.run([str(PLUGIN / "bin" / "axpy"), str(PLUGIN / "skills" / "verify" / "compare.py"), "run",
+        cp = subprocess.run([str(PLUGIN / "scripts" / "axpy"), str(PLUGIN / "skills" / "verify" / "compare.py"), "run",
                              "--run", str(run)], capture_output=True, text=True)
         if not (run / "verify" / "compare" / "ds.a.json").is_file():
             raise RuntimeError(f"compare.py failed: {cp.stdout[-1500:]} {cp.stderr[-1500:]}")

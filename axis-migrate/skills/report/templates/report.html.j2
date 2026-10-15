@@ -175,8 +175,8 @@ footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid va
 {% endfor %}
 {% set t0 = v.tables[0] %}
 <div class="small views-open">Open them (from the project folder; <code>$P</code> = plugin root; the server prints its own address, this page holds none):
-<pre class="cmd">"$P/bin/axpy" "$P/skills/map/start.py" migration
-"$P/bin/axpy" "$P/skills/map/views.py" url --run {{ run_rel }} --dataset {{ d.id }} --view {{ t0.views[0] if t0.views else 'overview' }}</pre>
+<pre class="cmd">"$P/scripts/axpy" "$P/skills/map/start.py" migration
+"$P/scripts/axpy" "$P/skills/map/views.py" url --run {{ run_rel }} --dataset {{ d.id }} --view {{ t0.views[0] if t0.views else 'overview' }}</pre>
 each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not loop.last }}{% endfor %}{% if t0.cells %} · cells: {% for c in t0.cells %}<code>--cell {{ c }}</code>{{ ' · ' if not loop.last }}{% endfor %}{% endif %}</div>
 {% endif %}
 <p class="small views-review">{% if v.n_view %}Looked at on the map: {{ v.n_view }} view receipt(s) count.{% elif v.n_void_view %}<strong class="missing">View receipt(s) recorded but none counts</strong>: not reviewed on the map.{% else %}No view receipt for this dataset in this run.{% endif %}{% if v.n_png %} {{ v.n_png }} PNG receipt(s) count (fallback: plots).{% endif %}</p>
@@ -334,9 +334,9 @@ each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not lo
 {% for o in refs %}<tr><td><code>{{ o.path }}</code></td><td><code>{{ o.dataset }}</code></td><td><code>{{ o.sha256 }}</code></td><td>{{ (o.meta or {}).reference_kind }}</td><td>{{ (o.meta or {}).independence }}</td></tr>{% endfor %}
 </tbody></table>
 <h3>Commands</h3>
-<pre class="small"><code>$PLUGIN/bin/axpy $PLUGIN/skills/run/run_local.py migration --chain chained
+<pre class="small"><code>$PLUGIN/scripts/axpy $PLUGIN/skills/run/run_local.py migration --chain chained
 python3 $PLUGIN/skills/report/ladder.py migration --run {{ run_id }} --json     # re-verify this bundle
-$PLUGIN/bin/axpy $PLUGIN/skills/report/report.py migration --run {{ run_id }}</code></pre>
+$PLUGIN/scripts/axpy $PLUGIN/skills/report/report.py migration --run {{ run_id }}</code></pre>
 </section>
 <footer>
 <p>Evidence <code>{{ evidence_id }}</code> · {{ limit_note }}</p>

@@ -5,7 +5,7 @@ description: Seal a verified run into a hash-checked evidence bundle, compute th
 
 # Seal, compute the status, render the report
 
-`$P` = plugin root. Every script runs as `"$P/bin/axpy" "$P/skills/report/<script>.py" …`, except `ladder.py`, which is
+`$P` = plugin root. Every script runs as `"$P/scripts/axpy" "$P/skills/report/<script>.py" …`, except `ladder.py`, which is
 stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run from the project folder (the parent of
 `migration/`).
 

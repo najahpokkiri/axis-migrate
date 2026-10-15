@@ -16,7 +16,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-AXPY = REPO / "axis-migrate" / "bin" / "axpy"
+AXPY = REPO / "axis-migrate" / "scripts" / "axpy"
 CASES = REPO / "evals" / "cases"
 PROPOSED = REPO / "evals" / "calib" / "s1" / "tolerances.proposed.yaml"
 # case: (patch, carry the T0 proposals). S1-T5 gets none: their nearest-wrong labels would hint at the planted defect.

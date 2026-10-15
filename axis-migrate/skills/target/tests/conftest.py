@@ -31,7 +31,7 @@ needs_reference_verified = pytest.mark.skipif(
     NO_STRACE, reason="target-ready needs a reference-verified run, which needs the strace read ledger (Linux); "
                       "without strace the runner caps runs at sandbox-validated")
 needs_strace = pytest.mark.skipif(NO_STRACE, reason="needs strace for the dry run's seek trace (T13)")
-AXPY = str(PLUGIN / "bin" / "axpy")
+AXPY = str(PLUGIN / "scripts" / "axpy")
 MAKE = TARGET / "make_databricks.py"
 CHECK = TARGET / "target_check.py"
 SEAL = PLUGIN / "skills" / "report" / "seal.py"

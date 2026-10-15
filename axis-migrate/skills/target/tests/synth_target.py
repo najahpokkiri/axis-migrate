@@ -25,7 +25,7 @@ PLUGIN = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PLUGIN / "lib"))
 import axis_common as ac  # noqa: E402
 
-AXPY = str(PLUGIN / "bin" / "axpy")
+AXPY = str(PLUGIN / "scripts" / "axpy")
 LEGACY = "legacy_tgt"
 CRS = "EPSG:32631"
 NODATA_IN = -99999.0

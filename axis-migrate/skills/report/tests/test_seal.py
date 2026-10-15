@@ -14,7 +14,7 @@ import seal as sealmod
 import synth
 
 HERE = Path(__file__).resolve().parent
-AXPY = HERE.parents[2] / "bin" / "axpy"
+AXPY = HERE.parents[2] / "scripts" / "axpy"
 
 
 def test_evidence_shape_and_ids(sealed):

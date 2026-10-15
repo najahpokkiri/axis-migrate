@@ -35,7 +35,7 @@ import axis_common as ac  # noqa: E402
 
 RUN_DIR = Path(__file__).resolve().parent
 ENV_DIR = RUN_DIR / "env"
-VENV_PY = ac.env_python()            # one resolver (lib/axis_common.py), same rule as bin/axpy
+VENV_PY = ac.env_python()            # one resolver (lib/axis_common.py), same rule as scripts/axpy
 LOCK = ENV_DIR / "uv.lock"
 PYPROJECT = ENV_DIR / "pyproject.toml"
 LOCK_MARK = ac.env_lock_marker()

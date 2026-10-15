@@ -2,7 +2,7 @@
 content-identical. Needs E2B_API_KEY in the environment (source the secrets file; never read it here):
 
     set -a; . ~/.config/axis-migrate/secrets.env; set +a
-    ~/axis-migrate-dev/axis-migrate/bin/axpy -m pytest ~/axis-migrate-dev/devtests/run/test_lux_e2b.py -q -s
+    ~/axis-migrate-dev/axis-migrate/scripts/axpy -m pytest ~/axis-migrate-dev/devtests/run/test_lux_e2b.py -q -s
 """
 from __future__ import annotations
 

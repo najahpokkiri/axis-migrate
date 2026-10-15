@@ -22,7 +22,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
-AXPY = REPO / "axis-migrate" / "bin" / "axpy"
+AXPY = REPO / "axis-migrate" / "scripts" / "axpy"
 RUN_LOCAL = REPO / "axis-migrate" / "skills" / "run" / "run_local.py"
 MAKE = REPO / "devtests" / "run" / "lux_project" / "make_lux_project.py"
 

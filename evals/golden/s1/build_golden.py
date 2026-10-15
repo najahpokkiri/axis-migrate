@@ -25,7 +25,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 PLUGIN = REPO / "axis-migrate"
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 RUN_LOCAL = PLUGIN / "skills" / "run" / "run_local.py"
 COMPARE = PLUGIN / "skills" / "verify" / "compare.py"
 PROPOSED = REPO / "evals" / "calib" / "s1" / "tolerances.proposed.yaml"

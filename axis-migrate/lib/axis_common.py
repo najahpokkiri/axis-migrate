@@ -354,7 +354,7 @@ def graph_contract_sha256(graph_or_path) -> str:
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# The one pinned environment: location resolver (shared by bin/axpy, the runner, doctor, dry runs and tests)
+# The one pinned environment: location resolver (shared by scripts/axpy, the runner, doctor, dry runs and tests)
 # ---------------------------------------------------------------------------------------------------------------
 def env_project_dir() -> Path:
     """skills/run/env: pyproject.toml + uv.lock (the lock is the identity of the environment)."""
@@ -368,7 +368,7 @@ def env_lock_sha256() -> str:
 def env_venv_dir() -> Path:
     """The synced venv lives OUTSIDE the plugin folder, keyed by the lock:
     ${CLAUDE_PLUGIN_DATA}/env-<lock8> when set, else ${XDG_CACHE_HOME:-~/.cache}/axis-migrate/env-<lock8>.
-    Must stay identical to bin/axpy's shell logic."""
+    Must stay identical to scripts/axpy's shell logic."""
     lock8 = env_lock_sha256()[:8]
     data = os.environ.get("CLAUDE_PLUGIN_DATA")
     if data:
@@ -382,5 +382,5 @@ def env_python() -> Path:
 
 
 def env_lock_marker() -> Path:
-    """Written by bin/axpy after a successful `uv sync --frozen`: holds the lock sha the venv was synced from."""
+    """Written by scripts/axpy after a successful `uv sync --frozen`: holds the lock sha the venv was synced from."""
     return env_venv_dir() / ".axis-lock-sha256"

@@ -35,7 +35,7 @@ the payload's `cwd` and deny when either base could reach a protected path; a mi
 - `permissionDecision: "ask"` is not supported by Codex (the call goes ahead), so under Codex the guards turn it into
   a `deny` saying a person must make or approve the change.
 - No `onFailure: block`: guards exit 2 themselves on any error (Codex blocks on exit 2); timeouts are unmeasured.
-- No `CLAUDE_ENV_FILE`: `GDAL_PAM_ENABLED=NO` reaches plugin scripts through `bin/axpy` only.
+- No `CLAUDE_ENV_FILE`: `GDAL_PAM_ENABLED=NO` reaches plugin scripts through `scripts/axpy` only.
 - No Read/Grep/Glob tools: the hidden-path read guard runs inside `guard_bash`.
 - Stop `decision: block` makes Codex continue once with the reason as the next prompt, as in Claude Code.
 - Questions: `request_user_input_async` (options, asynchronous reply) when it exists during work, else one plain
@@ -51,7 +51,7 @@ no Stop gate, so the agent must quote `ladder.py`'s status line.
 
 ## Sandbox (`workspace-write`: no network, no writes outside the workspace) — unverified in the default mode
 
-Approve, once each, with escalated permissions: `bin/axpy --doctor` (first `uv sync --frozen` of the pinned
+Approve, once each, with escalated permissions: `scripts/axpy --doctor` (first `uv sync --frozen` of the pinned
 environment into `~/.cache/axis-migrate/`: network + an outside write); the map environment's first sync
 (`skills/map/`, GeoLibre 3.4.0: same); `graph_server.py serve migration` and `skills/map/start.py migration` (bind
 127.0.0.1); `run_local.py` if `--doctor` says strace cannot trace inside the sandbox. Refused: the script prints one

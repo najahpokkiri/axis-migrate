@@ -82,7 +82,7 @@ def test_L1_pair_cli_every_dataset(tmp_path):
         shutil.copy2(src, dst)
         spec = tmp_path / f"{did}.spec.json"
         spec.write_text(json.dumps(L.pair_spec(did)))
-        p = subprocess.run([str(L.PLUGIN / "bin" / "axpy"), str(L.VERIFY / "compare.py"), "pair", "--legacy", str(src),
+        p = subprocess.run([str(L.PLUGIN / "scripts" / "axpy"), str(L.VERIFY / "compare.py"), "pair", "--legacy", str(src),
                             "--new", str(dst), "--spec", str(spec), "--out", str(tmp_path / f"{did}.json")],
                            capture_output=True, text=True)
         assert p.returncode == 0, (did, p.stdout, p.stderr)

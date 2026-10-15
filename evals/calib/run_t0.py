@@ -36,7 +36,7 @@ import yaml
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 PLUGIN = REPO / "axis-migrate"
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 sys.path.insert(0, str(PLUGIN / "lib"))
 import axis_common as ac  # noqa: E402
 

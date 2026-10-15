@@ -11,7 +11,7 @@ codebase that will run on the customer's cloud platform, proving step by step th
 intermediates and finals. You write code, read files, propose parameters, ask questions and look at plots. **Scripts
 decide verdicts and status; you never do.**
 
-`$P` below means `${CLAUDE_PLUGIN_ROOT}`. Run every plugin script as `"$P/bin/axpy" "$P/skills/<skill>/<script>.py" …`
+`$P` below means `${CLAUDE_PLUGIN_ROOT}`. Run every plugin script as `"$P/scripts/axpy" "$P/skills/<skill>/<script>.py" …`
 (the one pinned environment). Work from the project directory (the parent of the legacy folder); everything you
 create goes under `./migration/`. The legacy folder is read-only: never write, move, `touch` or `gdalinfo -stats`
 anything in it. Codex: `$P` is the folder holding `.codex-plugin/plugin.json`; start with `$axis-migrate:start`.
@@ -47,7 +47,7 @@ own pane; never ask them to open a browser or copy a URL.
 
 ## Flow (follow the skills in this order; each SKILL.md has the exact commands)
 
-0. **Preflight** — `"$P/bin/axpy" --doctor` once: uv, a writable environment cache, the pinned environment, the read
+0. **Preflight** — `"$P/scripts/axpy" --doctor` once: uv, a writable environment cache, the pinned environment, the read
    ledger (strace, or the macOS fallback that caps runs at sandbox-validated) and a local port bind. Fix any FAIL first.
    Codex: the first `--doctor` needs escalated permissions (network + writes to the environment cache).
 1. **Discover** — skill `discover`: scan, input map (look at every PNG and record findings with numbers), lineage →

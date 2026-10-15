@@ -1,6 +1,6 @@
 # Plan, then build the codebase step by step (read from SKILL.md §Flow 3–5)
 
-`$P` = plugin root. Run scripts as `"$P/bin/axpy" <script> …`: `$P/skills/discover/graph.py`,
+`$P` = plugin root. Run scripts as `"$P/scripts/axpy" <script> …`: `$P/skills/discover/graph.py`,
 `$P/skills/run/run_local.py`, `$P/skills/verify/compare.py`, `$P/skills/guard/codescan.py`,
 `$P/skills/interview/params_check.py`. Graph writes only via `graph.py apply migration --actor agent --base-rev N --ops ops.json`
 (op shapes: `$P/skills/discover/GRAPH_OPS.md`). Step contract and example: `reference/F10-pipeline-runtime-contract.md`,

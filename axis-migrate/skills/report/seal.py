@@ -51,7 +51,7 @@ class SealError(Exception):
 # ------------------------------------------------------------------------------------------------------------------
 def _yaml_load(text: str):
     if yaml is None:
-        raise SealError("pyyaml missing: run seal.py with bin/axpy")
+        raise SealError("pyyaml missing: run seal.py with scripts/axpy")
     return yaml.safe_load(text)
 
 

@@ -9,7 +9,7 @@ description: Generate the Databricks job files (Asset Bundle + committed wheel) 
 has `target.platform: databricks` (the end-of-interview answer). Any other platform (Glue, GCP, Snowflake, …) →
 `TARGET_NOT_SUPPORTED`: nothing is written and the status stays `reference-verified`. Say so; do not improvise files.
 
-**Commands** (`$PLUGIN/bin/axpy`, from the project folder):
+**Commands** (`$PLUGIN/scripts/axpy`, from the project folder):
 
 ```
 axpy $PLUGIN/skills/target/make_databricks.py migration              # writes migration/databricks/

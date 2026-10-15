@@ -17,7 +17,7 @@ the app's side pane.
 /plugin install axis-migrate@axis-migrate-dev
 ```
 Success looks like: `/axis-migrate:migrate` appears in the slash-command list, and the first run prints the preflight
-(`bin/axpy --doctor`: uv found, cache writable, local port bind OK, read ledger strace or audit+cpl_debug) before it
+(`scripts/axpy --doctor`: uv found, cache writable, local port bind OK, read ledger strace or audit+cpl_debug) before it
 scans.
 
 **Terminal Claude Code**: the same two commands, or `claude --plugin-dir ./axis-migrate` from a checkout; pages are then
@@ -30,7 +30,7 @@ codex plugin marketplace add najahpokkiri/axis-migrate --ref main
 codex plugin add axis-migrate@axis-migrate-dev
 ```
 Or from a **fresh clone**, never a working tree: Codex copies the plugin folder as it is, git-ignored files included (a
-stale `skills/run/env/.venv` made one install 460 MB instead of 5 MB; `bin/axpy --doctor` warns `PLUGIN_NOT_CLEAN`).
+stale `skills/run/env/.venv` made one install 460 MB instead of 5 MB; `scripts/axpy --doctor` warns `PLUGIN_NOT_CLEAN`).
 With a fresh clone the deeplink also works:
 `codex://plugins/axis-migrate?marketplacePath=<url-encoded absolute path of .agents/plugins/marketplace.json>`
 (print it from the clone's root with `python3 -c 'import os,urllib.parse as u;print("codex://plugins/axis-migrate?marketplacePath="+u.quote(os.path.abspath(".agents/plugins/marketplace.json"),safe=""))'`).
@@ -78,4 +78,4 @@ person signs, the affected checks stay NEEDS_DECISION and the rung stays below r
 
 `skills/migrate/SKILL.md` (the entry: `/axis-migrate:migrate`) · `skills/{discover,interview,migrate,run,verify,report,target,map}/` ·
 `skills/guard/` (code scanner, protected paths, claim rules) · `hooks/` (Claude Code guards; each has a script half) ·
-`lib/axis_common.py` (shared stdlib helpers) · `bin/axpy` (the pinned interpreter) · `run_tests.sh`.
+`lib/axis_common.py` (shared stdlib helpers) · `scripts/axpy` (the pinned interpreter) · `run_tests.sh`.

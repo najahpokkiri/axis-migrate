@@ -14,7 +14,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 PLUGIN = REPO / "axis-migrate"
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 DISCOVER = PLUGIN / "skills" / "discover"
 SCAN, MAP, LINEAGE, GRAPH = (DISCOVER / n for n in ("scan.py", "map.py", "lineage.py", "graph.py"))
 FIXTURE = REPO / "fixtures" / "lux-exposure-legacy"

@@ -11,7 +11,7 @@ with `uv sync --frozen` into
     ${CLAUDE_PLUGIN_DATA:-${PLUGIN_DATA:-${XDG_CACHE_HOME:-~/.cache}/axis-migrate}}/map-env-<lock8>
 
 (UV_PROJECT_ENVIRONMENT), and a marker `.axis-lock-sha256` records the lock it was synced from (same rule as
-bin/axpy). Nothing is ever written into the plugin folder; uv's own cache stays wherever uv keeps it.
+scripts/axpy). Nothing is ever written into the plugin folder; uv's own cache stays wherever uv keeps it.
 Exit: 0 ok · 13 uv missing / sync failed / cache not writable.
 """
 from __future__ import annotations

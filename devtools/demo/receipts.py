@@ -46,6 +46,6 @@ out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(json.dumps(findings, indent=1))
 print(f"{len(findings)} findings -> {out}")
 if not dry:
-    r = subprocess.run([str(plugin / "bin/axpy"), str(plugin / "skills/verify/plot.py"), "review-add", "--run", str(run),
+    r = subprocess.run([str(plugin / "scripts/axpy"), str(plugin / "skills/verify/plot.py"), "review-add", "--run", str(run),
                         "--json", str(out)], cwd=proj, capture_output=True, text=True)
     print(r.stdout.strip()[-3000:], r.stderr.strip()[-2000:], f"exit {r.returncode}", sep="\n")

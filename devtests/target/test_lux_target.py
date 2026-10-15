@@ -1,6 +1,6 @@
 """Lux target devtest (dev-only; encodes lux facts): AT9-01 on a copy of lux with the golden pipeline.
 
-    ~/axis-migrate-dev/axis-migrate/bin/axpy -m pytest ~/axis-migrate-dev/devtests/target -q -s
+    ~/axis-migrate-dev/axis-migrate/scripts/axpy -m pytest ~/axis-migrate-dev/devtests/target -q -s
 
 Path: fixture copy + golden pipeline (run builder's make_lux_project) → devtest-only tolerance records signed by a
 TEST identity inside the tmp project → chained run → compare → plots → Q-all receipts → aggregate → seal

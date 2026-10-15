@@ -87,7 +87,7 @@ def main() -> int:
                          "GDAL_PAM_ENABLED=NO")
     elif hl.harness(data) == "codex":
         notes.append("Codex: no CLAUDE_ENV_FILE; prefix every GDAL/rasterio command with GDAL_PAM_ENABLED=NO "
-                     "(bin/axpy sets it for plugin scripts). Codex cannot ask for permission: changes that need the "
+                     "(scripts/axpy sets it for plugin scripts). Codex cannot ask for permission: changes that need the "
                      "user's approval are refused; ask in chat and let the user make them.")
     else:
         notes.append("CLAUDE_ENV_FILE not provided; prefix GDAL commands with GDAL_PAM_ENABLED=NO")

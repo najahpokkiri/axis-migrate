@@ -1,6 +1,6 @@
 """Seeds are constructed by us (dev), not by the agent: record graph.py's write record (.graph/head.json) for every
 seed/migration so graph.py's out-of-band-edit check accepts them. Run with the plugin interpreter:
-    axis-migrate/bin/axpy evals/record_seed_graph_heads.py
+    axis-migrate/scripts/axpy evals/record_seed_graph_heads.py
 """
 import json
 import sys

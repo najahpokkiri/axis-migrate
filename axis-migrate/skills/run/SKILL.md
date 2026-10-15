@@ -10,14 +10,14 @@ description: Execute the migrated pipeline (migration/pipeline/) step by step in
 GDAL settings. The result is `migration/runs/<run_id>/` — evidence of execution, never a verdict.
 
 ```
-$PLUGIN/bin/axpy $PLUGIN/skills/run/run_local.py migration [--chain chained|isolated] [--steps a,b]
+$PLUGIN/scripts/axpy $PLUGIN/skills/run/run_local.py migration [--chain chained|isolated] [--steps a,b]
                  [--env pipeline|refenv] [--resume-from <run_id>] [--json]
-$PLUGIN/bin/axpy $PLUGIN/skills/run/run_local.py migration --vendor-runtime     # once, before the first run
-$PLUGIN/bin/axpy $PLUGIN/skills/run/run_local.py migration --check-sealed <run_id>
+$PLUGIN/scripts/axpy $PLUGIN/skills/run/run_local.py migration --vendor-runtime     # once, before the first run
+$PLUGIN/scripts/axpy $PLUGIN/skills/run/run_local.py migration --check-sealed <run_id>
 ```
 
 ## Before the first run
-- `$PLUGIN/bin/axpy --doctor` checks uv, the environment cache (outside the plugin: `${CLAUDE_PLUGIN_DATA}` or
+- `$PLUGIN/scripts/axpy --doctor` checks uv, the environment cache (outside the plugin: `${CLAUDE_PLUGIN_DATA}` or
   `~/.cache/axis-migrate/env-<lock8>`), the locked env, strace and a local port. Without strace (macOS) the read and
   write ledger is `audit+cpl_debug` (Python audit hook + GDAL CPL_DEBUG): runs still refuse undeclared reads, and the
   rung is capped at sandbox-validated (`read_ledger_rung_cap` in the manifest).
@@ -62,7 +62,7 @@ Local is the default. To run in an E2B sandbox, first ask the user with AskUserQ
 recommended first, plus "Don't know"; stop and wait (an elapsed wait is never an answer). Only on a yes:
 ```
 set -a; . ~/.config/axis-migrate/secrets.env; set +a      # puts E2B_API_KEY in the environment; never cat the file
-$PLUGIN/bin/axpy $PLUGIN/skills/run/run_e2b.py migration --confirm-upload [same flags as run_local]
+$PLUGIN/scripts/axpy $PLUGIN/skills/run/run_e2b.py migration --confirm-upload [same flags as run_local]
 ```
 Uploads only staged declared inputs (+ legacy feeds when isolated) and the snapshot; no internet in the sandbox;
 the template must match the local lock (`TEMPLATE_LOCK_MISMATCH` otherwise); the sandbox is always destroyed.

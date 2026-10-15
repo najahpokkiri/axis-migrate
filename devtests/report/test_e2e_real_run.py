@@ -1,7 +1,7 @@
 """End-to-end with the real runner and comparator (dev-only): run/tests/synth project → run_local.py → compare.py
 run → map.py display → stand-in plots + receipts (plot.py not built yet) → seal.py → ladder.py → report.py.
 
-Run: axis-migrate/bin/axpy -m pytest devtests/report -q
+Run: axis-migrate/scripts/axpy -m pytest devtests/report -q
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import pytest
 
 DEV = Path(__file__).resolve().parents[2]
 PLUGIN = DEV / "axis-migrate"
-AXPY = str(PLUGIN / "bin" / "axpy")
+AXPY = str(PLUGIN / "scripts" / "axpy")
 sys.path.insert(0, str(PLUGIN / "skills" / "report"))
 sys.path.insert(0, str(PLUGIN / "lib"))
 

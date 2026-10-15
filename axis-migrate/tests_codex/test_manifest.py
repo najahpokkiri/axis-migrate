@@ -108,7 +108,7 @@ def test_start_skill_is_thin_and_its_references_exist():
     assert len(text.splitlines()) <= 40, "codex/skills/start stays a thin layer"
     refs = {r.rstrip(".") for r in re.findall(r"<P>/([A-Za-z0-9_./-]+)", text)}
     assert {"skills/migrate/SKILL.md", "skills/migrate/BUILD.md", "skills/guard/hooks_active.py", "CODEX.md",
-            "bin/axpy", "skills/report/ladder.py"} <= refs
+            "scripts/axpy", "skills/report/ladder.py"} <= refs
     missing = [r for r in refs - OPTIONAL_REFS if not (PLUGIN / r).exists()]
     assert not missing, f"start skill references missing files: {missing}"
     assert "commands/migrate.md" not in text, "the command file is gone; the entry is skills/migrate/SKILL.md"

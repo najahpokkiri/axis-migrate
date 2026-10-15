@@ -45,7 +45,7 @@ Study area content: 14 communes; 444 landuse polygons intersect them (160 reside
 
 - Host: Ubuntu 24.04.4 LTS, user `migrate`, micromamba 2.9.0, env `qgis` (conda-forge)
 - QGIS 4.2.3 'Belém do Pará' (Qt 6.11.2, Python 3.14.8), GDAL 3.13.3, PROJ 9.9.0, GEOS 3.14.1
-- Checks and the golden pipeline: the plugin's locked env (`axis-migrate/bin/axpy`: Python 3.12.15, shapely 2.2.0 with
+- Checks and the golden pipeline: the plugin's locked env (`axis-migrate/scripts/axpy`: Python 3.12.15, shapely 2.2.0 with
   GEOS 3.14.1, geopandas 1.2.0, pyproj 3.8.0 / PROJ 9.8.1, pyogrio 0.13.0)
 
 ## Exact commands
@@ -56,7 +56,7 @@ $B/build_all.sh            # for s1 and s1L: rm -rf the base; 20_assemble.sh; 10
                            # run A (40_run_legacy.sh); copy A aside; delete 04_FINAL/05_TEMP; run B;
                            # inputs unchanged check; byte, table (42) and row-order-free content (43) comparison A vs B
 $B/41_hash_outputs.sh s1   # sha256 of 03_INPUT, 04_FINAL, 05_TEMP
-~/axis-migrate-dev/axis-migrate/bin/axpy $B/60_inventory.py ~/axis-migrate-dev/evals/cases/_bases/s1-buffers-legacy
+~/axis-migrate-dev/axis-migrate/scripts/axpy $B/60_inventory.py ~/axis-migrate-dev/evals/cases/_bases/s1-buffers-legacy
 ```
 
 Step wall times (QGIS start-up included, run B of the final build): s1 01 2.95 s · 02 2.49 s · 03 2.53 s · 04 2.15 s;

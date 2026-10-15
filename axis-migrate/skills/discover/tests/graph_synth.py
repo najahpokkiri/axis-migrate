@@ -22,7 +22,7 @@ PLUGIN = DISCOVER.parents[1]
 GRAPH_PY = DISCOVER / "graph.py"
 SERVER_PY = DISCOVER / "graph_server.py"
 HOOK_PY = PLUGIN / "hooks" / "bin" / "graph_changed.py"
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 
 if str(DISCOVER) not in sys.path:
     sys.path.insert(0, str(DISCOVER))

@@ -17,7 +17,7 @@ sys.path.append(str(PLUGIN / "skills" / "verify" / "tests"))
 import _viewsbuilder as vb  # noqa: E402
 import visual_receipt as vrc  # noqa: E402
 
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 PLOT = PLUGIN / "skills" / "verify" / "plot.py"
 COMPARE = PLUGIN / "skills" / "verify" / "compare.py"
 

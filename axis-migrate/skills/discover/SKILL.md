@@ -6,7 +6,7 @@ description: First step of /migrate. Scan a read-only legacy GIS folder into mig
 # Discover
 
 Evidence first, interpretation second. Scripts write the facts; you read them, look at the maps and record what you
-see through `scan.py annotate`. `$AXPY` = `${CLAUDE_PLUGIN_ROOT}/bin/axpy`, `$D` = `${CLAUDE_PLUGIN_ROOT}/skills/discover`.
+see through `scan.py annotate`. `$AXPY` = `${CLAUDE_PLUGIN_ROOT}/scripts/axpy`, `$D` = `${CLAUDE_PLUGIN_ROOT}/skills/discover`.
 
 ## Hard rules
 - The legacy folder is read-only. Never write, move or touch anything in it; never run `gdalinfo -stats`, QGIS or

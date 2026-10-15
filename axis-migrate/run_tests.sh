@@ -13,7 +13,7 @@ for d in "$PLUGIN"/skills/*/tests "$PLUGIN"/hooks/tests "$PLUGIN"/tests_codex; d
   name="$(basename "$(dirname "$d")")"
   [ "$name" = "axis-migrate" ] && name="codex"
   log="$LOGS/$name.log"
-  "$PLUGIN/bin/axpy" -m pytest "$d" -q -p no:cacheprovider -rfEs "$@" >"$log" 2>&1
+  "$PLUGIN/scripts/axpy" -m pytest "$d" -q -p no:cacheprovider -rfEs "$@" >"$log" 2>&1
   code=$?
   last="$(tail -1 "$log")"
   echo "$name: $last"

@@ -1,7 +1,7 @@
 """Build (or reuse) the E2B template `axis-geo-migrate-<lock8>` from the one lock (05 D5-16).
 
     set -a; . ~/.config/axis-migrate/secrets.env; set +a     # E2B_API_KEY into the environment (never printed)
-    $PLUGIN/bin/axpy $PLUGIN/skills/run/e2b/build_template.py [--force] [--json]
+    $PLUGIN/scripts/axpy $PLUGIN/skills/run/e2b/build_template.py [--force] [--json]
 
 Image: Debian stable + strace + uv 0.13.0; uv-managed CPython 3.12 under /opt/axis/python; `uv sync --frozen
 --no-dev` of the SAME skills/run/env/{pyproject.toml,uv.lock} into /opt/axis/env/.venv; no apt GDAL (the wheels

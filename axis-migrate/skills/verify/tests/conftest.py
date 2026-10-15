@@ -169,7 +169,7 @@ def check(result, cid):
 
 
 def run_cli(*args):
-    return subprocess.run([str(PLUGIN / "bin" / "axpy"), str(VERIFY / "compare.py"), *map(str, args)],
+    return subprocess.run([str(PLUGIN / "scripts" / "axpy"), str(VERIFY / "compare.py"), *map(str, args)],
                           capture_output=True, text=True)
 
 

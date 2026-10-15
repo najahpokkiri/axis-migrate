@@ -5,7 +5,7 @@
 # Visual-review receipts are NOT produced here: a model (or person) must read the PNGs and call plot.py review-add.
 set -u
 PLUGIN=${PLUGIN:-$HOME/axis-migrate-dev/axis-migrate}
-AXPY="$PLUGIN/bin/axpy"
+AXPY="$PLUGIN/scripts/axpy"
 cd "$1" || exit 70
 RID=$2; R=migration/runs/$RID
 t() { local s=$(date +%s.%N); "$@"; local rc=$?; printf '  [%.1f s, exit %d] %s\n' "$(echo "$(date +%s.%N) - $s" | bc)" "$rc" "${*: -3}" >&2; return 0; }

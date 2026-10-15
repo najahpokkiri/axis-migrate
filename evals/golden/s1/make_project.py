@@ -29,7 +29,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 PLUGIN = REPO / "axis-migrate"
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 DISC = PLUGIN / "skills" / "discover"
 RUN_LOCAL = PLUGIN / "skills" / "run" / "run_local.py"
 BASES = REPO / "evals" / "cases" / "_bases"

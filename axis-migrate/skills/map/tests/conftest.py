@@ -1,6 +1,6 @@
 """Map-view tests (synthetic data only; no fixture facts).
 
-Runs under either interpreter: `bin/axpy -m pytest skills/map/tests` (run_tests.sh) or the map env's python.
+Runs under either interpreter: `scripts/axpy -m pytest skills/map/tests` (run_tests.sh) or the map env's python.
 Everything that needs geolibre goes through the CLIs (views.py / check.py re-execute themselves in the map env) or
 through `map_py()`, which runs a snippet in the map env.
 """

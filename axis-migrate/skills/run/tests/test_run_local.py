@@ -207,7 +207,7 @@ def test_at8_edit_during_run_is_recorded_and_snapshot_code_runs(project):
     slow = synth.S01.replace("def run(ctx):\n", "def run(ctx):\n    import time\n    time.sleep(4)\n")
     synth.set_step(project, S01, slow)
     original_s02 = (project / "pipeline" / f"{S02}.py").read_bytes()
-    axpy = RUN_SKILL.parents[1] / "bin" / "axpy"
+    axpy = RUN_SKILL.parents[1] / "scripts" / "axpy"
     proc = subprocess.Popen([str(axpy), str(RUN_SKILL / "run_local.py"), str(project), "--json"],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     deadline = time.time() + 60

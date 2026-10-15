@@ -5,9 +5,9 @@ description: Investigate every output-changing parameter of a legacy GIS workflo
 
 # Investigate, then interview
 
-`$P` = plugin root. Scripts: `"$P/bin/axpy" "$P/skills/interview/params_check.py" migration [--stage investigate|wired]`,
-`"$P/bin/axpy" "$P/skills/interview/fit.py" declare|run migration --param p.x`. Graph writes only through
-`"$P/bin/axpy" "$P/skills/discover/graph.py" apply migration --actor agent --base-rev N --ops ops.json` (op shapes:
+`$P` = plugin root. Scripts: `"$P/scripts/axpy" "$P/skills/interview/params_check.py" migration [--stage investigate|wired]`,
+`"$P/scripts/axpy" "$P/skills/interview/fit.py" declare|run migration --param p.x`. Graph writes only through
+`"$P/scripts/axpy" "$P/skills/discover/graph.py" apply migration --actor agent --base-rev N --ops ops.json` (op shapes:
 `$P/skills/discover/GRAPH_OPS.md`). One owner per fact: values in `params.yaml`, questions and node state in
 `graph.json`, reasoning in `decisions.md` (append-only).
 
@@ -59,7 +59,7 @@ what changes downstream"`; options: recommended first labelled "(Recommended)", 
 - `answer_question` via `graph.py apply … --channel interview --verbatim "<the user's exact words>"`;
 - update `params.yaml` (`source: answer`, `question: qNN`, `status: confirmed`; "Don't know" → `source: assumption`,
   `status: assumed`), increment `budget.asked`;
-- record the decision with `"$P/bin/axpy" "$P/skills/interview/record.py" decision migration --json entry.json`
+- record the decision with `"$P/scripts/axpy" "$P/skills/interview/record.py" decision migration --json entry.json`
   (fields `title, question, kind, answer, by, params, nodes, changes, supersedes, evidence`; it assigns `D-nnn`, writes
   the heading and a serialiser-made yaml block, so quoting cannot break). Never hand-write or edit an entry; correct
   one, even a malformed one, by recording a new entry with `supersedes: D-nnn`.

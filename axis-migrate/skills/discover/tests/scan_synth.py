@@ -21,7 +21,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 DISCOVER = HERE.parent
 PLUGIN = DISCOVER.parents[1]
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 SCAN = DISCOVER / "scan.py"
 MAP = DISCOVER / "map.py"
 LINEAGE = DISCOVER / "lineage.py"

@@ -83,8 +83,8 @@ def test_views_block_lists_views_with_sha_and_match_state(proj):
     assert "Looked at on the map: 1 view receipt(s) count." in b
     # how to open them: the exact commands (views.py url needs --view or --cell)
     rid = r["run_id"]
-    assert '"$P/bin/axpy" "$P/skills/map/start.py" migration' in b
-    assert (f'"$P/bin/axpy" "$P/skills/map/views.py" url --run migration/runs/{rid} --dataset ds.a_mask '
+    assert '"$P/scripts/axpy" "$P/skills/map/start.py" migration' in b
+    assert (f'"$P/scripts/axpy" "$P/skills/map/views.py" url --run migration/runs/{rid} --dataset ds.a_mask '
             "--view overview") in b
     assert "<code>--cell interior</code>" in b and "<code>--view nodata</code>" in b
     # vector: overview and worst, no cells, no engine required

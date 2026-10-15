@@ -1,6 +1,6 @@
 """Lux runner tests (dev-only; encode lux facts): AT-4, AT-5, AT-7, AT-12 (local half), AT-13, golden parity.
 
-    ~/axis-migrate-dev/axis-migrate/bin/axpy -m pytest ~/axis-migrate-dev/devtests/run -q
+    ~/axis-migrate-dev/axis-migrate/scripts/axpy -m pytest ~/axis-migrate-dev/devtests/run -q
 
 Each test assembles a fresh project (fixture copy + migration/ with the lux graph fixture and the golden pipeline)
 under tmp; the fixture itself is never touched.
@@ -27,7 +27,7 @@ import make_lux_project as mlp  # noqa: E402
 import runlib as rl  # noqa: E402
 
 os.environ.setdefault("GDAL_PAM_ENABLED", "NO")
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 RUN_LOCAL = PLUGIN / "skills" / "run" / "run_local.py"
 FINAL_TIF = "04_FINAL/lux_res_exposure_2020.tif"
 

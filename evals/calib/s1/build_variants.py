@@ -23,7 +23,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 PLUGIN = REPO / "axis-migrate"
-AXPY = PLUGIN / "bin" / "axpy"
+AXPY = PLUGIN / "scripts" / "axpy"
 RUN_LOCAL = PLUGIN / "skills" / "run" / "run_local.py"
 MAKE = REPO / "evals" / "golden" / "s1" / "make_project.py"
 WORK = REPO / "evals" / "work" / "calib-s1"

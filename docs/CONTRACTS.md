@@ -16,10 +16,10 @@ your report (do not silently diverge).
   PROVENANCE as an oracle.
 - Never modify `fixtures/lux-exposure-legacy/`. Tests copy it to a tmp dir (`shutil.copytree`) before any mutation.
   `GDAL_PAM_ENABLED=NO` always (a stats read writes `.aux.xml` sidecars into the folder).
-- Interpreter: every non-hook script runs as `$PLUGIN/bin/axpy <script.py> …` (the one pinned env,
+- Interpreter: every non-hook script runs as `$PLUGIN/scripts/axpy <script.py> …` (the one pinned env,
   `skills/run/env/uv.lock`, Python 3.12.15, numpy 2.5.4, rasterio 1.5.2 (GDAL 3.12.2), pyogrio 0.13.0 (GDAL 3.12.4),
   shapely 2.2.0, pyproj 3.8.0 (PROJ 9.8.1), geopandas 1.2.0, pandas 3.0.6, openpyxl, matplotlib, pyyaml, jinja2,
-  pyarrow, pytest, defusedxml, e2b). Run tests with `$PLUGIN/bin/axpy -m pytest <dir> -q`. Adding a dependency =
+  pyarrow, pytest, defusedxml, e2b). Run tests with `$PLUGIN/scripts/axpy -m pytest <dir> -q`. Adding a dependency =
   edit `skills/run/env/pyproject.toml` + `uv lock` — ask the orchestrator first (one lock, one owner).
 - Hooks run as `python3 -I` (system 3.12, **stdlib only**). `skills/report/ladder.py` and `lib/axis_common.py` must stay
   stdlib-only because hooks import them.

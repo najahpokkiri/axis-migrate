@@ -52,7 +52,7 @@ Never work in `demo/`. Build two stage workspaces next to it, for example under 
 
 **Stage A: history, guard and final status** (the main workspace on the projector):
 ```
-P=~/axis-migrate-dev/axis-migrate; AX=$P/bin/axpy
+P=~/axis-migrate-dev/axis-migrate; AX=$P/scripts/axpy
 cp -a ~/axis-migrate-dev/demo/lux-exposure ~/axis-migrate-dev/stage/A && cd ~/axis-migrate-dev/stage/A
 python3 ~/axis-migrate-dev/devtools/demo/plant_s01_snap.py . plant          # 'tidy grid' mistake in s01
 $AX $P/skills/run/run_local.py migration --chain chained                     # → r…-fd4326d5 (code hash changes)

@@ -6,7 +6,7 @@
     python3 views.py url --run <run_dir> --dataset ds --cell worst|interior|edge [--port N]
     python3 views.py url --run <run_dir> --all [--port N] [--json]
 
-`run` (re-executes itself in the map env from mapenv.py, so plain python3 or bin/axpy both work) reads
+`run` (re-executes itself in the map env from mapenv.py, so plain python3 or scripts/axpy both work) reads
 verify/compare/<ds>.json and writes, per compared raster, under <run>/verify/views/<ds>/:
   legacy.tif, new.tif     cloud-optimised copies of the legacy reference (read-only; never written to) and the
                           new output, values and nodata untouched, overviews by nearest neighbour

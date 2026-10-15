@@ -1,4 +1,4 @@
-"""doctor.py (bin/axpy --doctor): preflight checks and their one-line messages."""
+"""doctor.py (scripts/axpy --doctor): preflight checks and their one-line messages."""
 from __future__ import annotations
 
 import json
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import doctor
 
-AXPY = Path(__file__).resolve().parents[3] / "bin" / "axpy"
+AXPY = Path(__file__).resolve().parents[3] / "scripts" / "axpy"
 
 
 def test_strace_missing_says_what_the_fallback_is(monkeypatch):

@@ -18,7 +18,7 @@ description: Codex entry point for axis-migrate (what /axis-migrate:migrate is u
 3. **Sandbox approvals** (Codex `workspace-write` has no network and cannot write outside the workspace). Run these
    with escalated permissions, each once, and say why when Codex asks the person (unverified in the default mode:
    if one fails, quote its FAIL line and ask for that one approval only; Claude's `allowLocalBinding` does not apply):
-   - `"<P>/bin/axpy" --doctor`: first use downloads the pinned environment (`uv sync --frozen`) into
+   - `"<P>/scripts/axpy" --doctor`: first use downloads the pinned environment (`uv sync --frozen`) into
      `~/.cache/axis-migrate/` (network + a write outside the workspace);
    - the map environment's first sync (`skills/map/`, GeoLibre 3.4.0 lock): same reasons;
    - `graph_server.py serve migration` and the map server (`skills/map/start.py migration`): they bind a port on
