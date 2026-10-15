@@ -462,11 +462,19 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False,
                                                        "answer)")
 
     reads = pipeline_param_reads(mdir / "pipeline")
+    # verify reads a parameter too: compare.measure_crs_param of a dataset (both BYU re-runs hit PARAM_UNWIRED on
+    # p.measure_crs and wired a dummy pipeline read to get past it)
+    verify_readers: dict[str, list[str]] = {}
+    for d in graph.get("datasets", []):
+        mp = (d.get("compare") or {}).get("measure_crs_param")
+        if mp:
+            verify_readers.setdefault(mp, []).append(f"verify:{d['id']}.compare.measure_crs_param")
     summary = {"params": len(by_id), "modules": sorted(reads), "stage": stage}
     if fill_used_by:
         for pid, p in by_id.items():
             users = sorted(m for m, r in reads.items() if pid in r["reads"])
-            extra = [u for u in (p.get("used_by") or []) if not str(u).startswith("pipeline/")]
+            extra = [u for u in (p.get("used_by") or []) if not str(u).startswith(("pipeline/", "verify:"))]
+            extra += verify_readers.get(pid, [])
             p["used_by"] = users + sorted(set(extra))
         text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=120)
         ac.atomic_write_text(mdir / "params.yaml", text)
@@ -497,7 +505,7 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False,
             step = steps.get(p.get("node"))
             if not step or step.get("scope") != "migrate" or p.get("kind") in NON_CODE_KINDS:
                 continue
-            users = [u for u in (p.get("used_by") or [])]
+            users = [u for u in (p.get("used_by") or [])] + verify_readers.get(pid, [])
             code_users = [u for u in users if str(u).startswith("pipeline/")]
             if not users:
                 f.block("PARAM_UNWIRED", pid, "no reader: an answer that reaches no code changes nothing (D3-5)")

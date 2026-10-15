@@ -78,6 +78,19 @@ def test_wired_requires_reader(tmp_path):
     assert "PARAM_UNWIRED" in codes(f)
 
 
+def test_measure_crs_param_is_read_by_verify(tmp_path):
+    """BYU re-runs: p.measure_crs is read by compare (compare.measure_crs_param), never by the step; no
+    PARAM_UNWIRED and no dummy ctx.param read in the pipeline."""
+    mig = make(tmp_path, [good_param()], pipeline="PARAMS=[]\ndef run(ctx):\n    pass\n")
+    g = json.loads((mig / "graph.json").read_text())
+    g["datasets"][0]["compare"] = {"measure_crs_param": "p.thresh_m"}
+    (mig / "graph.json").write_text(json.dumps(g))
+    f, _ = pc.check(mig, "wired", fill_used_by=True)
+    assert "PARAM_UNWIRED" not in codes(f)
+    used = yaml.safe_load((mig / "params.yaml").read_text())["params"][0]["used_by"]
+    assert used == ["verify:ds.out.compare.measure_crs_param"]
+
+
 def test_wired_ok_after_fill(tmp_path):
     code = 'PARAMS = ["p.thresh_m"]\ndef run(ctx):\n    d = ctx.param("p.thresh_m")\n'
     mig = make(tmp_path, [good_param()], pipeline=code)
