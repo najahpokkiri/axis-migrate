@@ -163,7 +163,9 @@ for this working directory and is younger than 24 hours, and 1 otherwise.
 
 The start skill should call it at the beginning of a session. On exit 1 the session must be treated as unguarded:
 the script halves still refuse, but late (CODEX.md). Run 4 found the Claude Code marker under
-`<config>/plugins/data/axis-migrate-inline/` with `harness: claude`, `migration_found: true`.
+`<config>/plugins/data/axis-migrate-inline/` with `harness: claude`, `migration_found: true`. The reader therefore
+also looks under `${CLAUDE_CONFIG_DIR:-~/.claude}/plugins/data/axis-migrate*/` (15 Oct), so the migrate skill's
+step 0 can run the same check under Claude Code: a disabled plugin or a `--plugin-dir` typo is otherwise silent.
 
 ### Codex probe on the founder's laptop (desktop app and CLI 0.162.0)
 
