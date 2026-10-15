@@ -331,10 +331,11 @@ def test_report_lists_the_views_and_receipts(shifted):
     sh([AXPY, PLUGIN / "skills" / "report" / "report.py", mig], ok=(0, 2))
     html = (mig / "report" / "index.html").read_text(encoding="utf-8")
     i = html.index('id="views-ds.02_res_mask"')
-    j = html.index('class="views-review"', i)
+    j = html.index('views-review"', i)
     b = html[i:html.index("</div>", html.index("</table>", j)) if "</table>" in html[j:j + 20000] else j + 2000]
     e = next(x for x in doc(shifted)["datasets"] if x["dataset"] == "ds.02_res_mask")
-    for v in ("overview", "worst", "edges", "nodata"):
+    assert "overview" in e["views"]
+    for v in e["views"]:                      # the skip rules decide which views exist (no worst when max|d| = 0)
         sha = e["views"][v]["project_sha256"]
         assert f'data-view="{v}" data-state="ok"' in b and f'title="{sha}">' in b, v
     c = e["validity_counts"]

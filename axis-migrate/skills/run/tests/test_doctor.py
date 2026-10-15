@@ -111,7 +111,7 @@ def test_e2b_ok_names_the_source_and_template_never_the_key(home):
     p.chmod(0o600)
     state, msg = doctor.check_e2b()
     assert state == "OK" and str(p) in msg and doctor.ac.e2b_template_name() in msg and "not checked offline" in msg
-    assert FAKE not in msg and str(len(FAKE)) not in msg
+    assert FAKE not in msg and str(len(FAKE)) not in msg.replace(str(p), "")   # a tmp path may hold "40"
     p.chmod(0o644)
     state, msg = doctor.check_e2b()
     assert state == "FAIL" and msg.startswith("SECRETS_FILE_MODE") and FAKE not in msg

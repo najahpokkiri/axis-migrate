@@ -11,6 +11,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
+import shutil
+import tempfile
 import re
 import sys
 from pathlib import Path
@@ -147,7 +150,32 @@ def truth_check_generic(run: Path | None, base: str) -> dict:
     return out
 
 
+def truth_check_byu(run: Path | None) -> dict:
+    """BYU truth: the chained run's four GeoPackages re-read by an independent stdlib reader (devtools/byu/
+    check_outputs.py) against the reference attribute values (geometry and the absolute `path` column not compared)."""
+    out = {"compared": {}, "ok": False, "missing": []}
+    if run is None:
+        out["reason"] = "no chained run"
+        return out
+    manifest = json.loads((run / "manifest.json").read_text())
+    expected = json.loads((ROOT / "devtools" / "byu" / "expected-outputs.json").read_text())
+    with tempfile.TemporaryDirectory() as td:
+        for name in (k for k in expected if not k.startswith("_")):
+            hit = [o["path"] for o in manifest.get("outputs", []) if Path(o["path"]).stem.lower() == name.lower()]
+            if not hit:
+                out["missing"].append(name)
+                continue
+            shutil.copy2(run / hit[0], Path(td) / f"{name}.gpkg")
+        r = subprocess.run([sys.executable, "-I", str(ROOT / "devtools" / "byu" / "check_outputs.py"), td,
+                            str(ROOT / "devtools" / "byu" / "expected-outputs.json")], capture_output=True, text=True)
+    out["compared"] = {"check_outputs": (r.stdout + r.stderr).strip()[-2000:]}
+    out["ok"] = r.returncode == 0 and not out["missing"]
+    return out
+
+
 def truth_check(mdir: Path, run: Path | None, base: str = "lux") -> dict:
+    if base == "byu":
+        return truth_check_byu(run)
     if base != "lux":
         return truth_check_generic(run, base)
     """Frozen re-check of every lux pair on the final chained run's outputs."""
