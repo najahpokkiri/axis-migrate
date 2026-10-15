@@ -91,11 +91,11 @@ def test_views_block_lists_views_with_sha_and_match_state(proj):
     v = block(html, "ds.a_outline")
     assert 'data-view="overview"' in v and 'data-view="worst"' in v and 'data-view="edges"' not in v
     assert "--cell" not in v
-    # the swipe map links each dataset to its views block; the swipe map itself is unchanged
-    m = html[html.index('<section id="map">'):html.index("</section>", html.index('<section id="map">'))]
+    # the swipe map (its own local page) links each dataset to its views block in index.html
+    sw = (proj["migration"] / "report" / "swipe.html").read_text(encoding="utf-8")
     for ds in tvr.FAMS:
-        assert f'href="#views-{ds}"' in m
-    assert 'id="swipe-wrap"' in m and 'id="layer-select"' in m
+        assert f'href="index.html#views-{ds}"' in sw
+    assert 'id="swipe-wrap"' in sw and 'id="layer-select"' in sw
 
 
 def test_view_receipt_flag_shows_observations(proj):
@@ -137,7 +137,8 @@ def test_absent_views_json_falls_back_to_the_plots(sealed):
         assert "No map views for this run (no views.json). The PNG plots above are the visual record." in b
         assert re.search(r'<tr class="receipt" data-kind="PNG" data-status="counts">', b), ds
         assert "No view receipt for this dataset in this run." in b and "PNG receipt(s) count (fallback" in b
-    assert 'src="assets/plots/ds.a_mask/worst_tiles.png"' in html
+    card = html[html.index('id="ds-ds.a_mask"'):html.index('id="ds-', html.index('id="ds-ds.a_mask"') + 10)]
+    assert 'src="data:image/png;base64,' in card and "worst_tiles.png" in card
     assert 'class="view-row"' not in html and "views.py" not in html
 
 

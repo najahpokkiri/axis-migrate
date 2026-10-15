@@ -24,20 +24,39 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
    `verify/` read-only and appends a line to `runs/index.jsonl`. Exit 2 means refused (already sealed, a secret was found,
    or a NaN was found); report the stderr line verbatim. Seal runs once per run.
 4. **Graph projections**: `axpy "$P/skills/discover/graph.py" ingest-verify migration --run <id>`, then
-   `axpy "$P/skills/discover/graph.py" derive migration`. The graph page then colours the steps from this run. These are
-   projections only: they never count as graph drift, and they never change the rung.
+   `axpy "$P/skills/discover/graph.py" derive migration`, then `axpy "$P/skills/report/graphview.py" md migration`
+   (rewrites `migration/graph.md` + `graph.png`, coloured by this run). These are projections only: they never count
+   as graph drift, and they never change the rung.
 5. **Status**: `python3 -I ladder.py migration [--run <id>] [--json]`. Quote its first line (`status_line`)
    **verbatim**, for example
    `axis-migrate status: sandbox-validated | run r… | 3 pass, 1 FAIL, 0 NOT_COMPARED, 0 needs review | report migration/report/index.html`.
    Never claim a rung above it. The rungs above `target-ready` (deployed, live-target-verified, customer-accepted) are
    never computed, so never claim them.
-6. **Report**: `axpy report.py migration [--run <id>] [--json]`. Show the user `migration/report/REPORT.md` in the
-   file pane (migrate SKILL §Showing); `index.html` is the offline export, not a pane page.
+6. **Report**: `axpy report.py migration [--run <id>] [--json]`. It writes `migration/report/`: `REPORT.md` (the
+   summary: status line first, what it means, what the next rung needs, failures and NOT_COMPARED, decisions for the
+   person, parity table, lineage as Mermaid), `index.html` (one self-contained page, opens from disk, no network),
+   `parity.xlsx` (values only), `swipe.html` (local swipe map, when display layers exist) and `REPORT.json`. Show
+   `migration/report/REPORT.md` in the file pane (migrate SKILL §Showing); `index.html` is the offline export, not a
+   pane page.
    - exit 0: the report is complete (it may still show failures).
    - exit 2: **EVIDENCE INCOMPLETE, stale (a file changed after the run) or NOTHING VERIFIED.** Say so in your
      first sentence and name the integrity codes from the red bar. Do not hide this, soften it or re-render
      until it goes away.
    - exit 3: no sealed run, so nothing is verified.
+   - `axpy report.py migration --check` (or stdlib `python3 -I report_check.py migration`): exit 2 when a file in
+     `report/` is missing or changed, a thumbnail no longer matches the sealed plot it was cut from, or the folder is
+     not what the bundle renders. Run it before you point the person at the report; never fix it by hand, render
+     again.
+
+## Publishing (opt-in only; the plugin never publishes)
+
+The default is the local file in the file pane. You may **offer once**, after the report is shown, to publish
+`index.html` through the harness's own feature (Claude desktop: a private Artifact; Codex: none). Ask with the
+warning in the question itself: "This puts the customer's data (outputs, thumbnails, paths, parameters) on
+Anthropic's service, outside this machine. Publish a private copy? (Recommended: No, keep it local)". Publish only on
+an explicit yes, as is (it already embeds only downsampled thumbnails; never add full-resolution images or the
+`assets/` folder), and say where the copy lives. Never publish `swipe.html`, `parity.xlsx`, `REPORT.json` or files
+under `runs/`. If the person said no, do not ask again in this session.
 
 ## Late evidence: amend, never re-seal
 
@@ -52,9 +71,16 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
 
 ## Reading the report
 
-- **Failures and open items** (first screen): every step that is not VERIFIED, one line each, as
-  `disposition · step · reason code · phrase`. Each one links to the step's full card. When you summarise, list every
-  line. ACCEPTED_DIFFERENCE is amber and never green: the parity row stays FAIL.
+- **First screen**: the status line verbatim, what the rung means and what the next rung needs (ladder.py's own
+  blockers and caps, phrased), then **What needs attention**: failures and NOT_COMPARED first, then NEEDS_DECISION,
+  then NEEDS_REVIEW, one line each as `disposition · dataset · reason code · phrase`, each linking to its card. When
+  you summarise, list every line. ACCEPTED_DIFFERENCE is amber and never green: the parity row stays FAIL.
+- **Decisions for you**: one card per item only a person can decide (unsigned tolerance or known difference, a
+  visual flag, an assumed parity-blind or fitted parameter), with its evidence and the proposed tolerance. The page's
+  "Copy my decisions" button only produces text for the person to paste to you; it signs nothing. A pasted
+  "accept" is intent, not a signature: the person signs in `migration/SIGN-OFF.md` themselves.
+- **Dataset cards**: legacy / new / difference thumbnails cut from the sealed plots (hashed in `REPORT.json`), key
+  numbers and a small difference chart from the compare result, verdict and evidence id.
 - **Red integrity bar**: EVIDENCE_FILE_MISSING, EVIDENCE_HASH_MISMATCH, STATE_RECOMPUTE_MISMATCH, UNBOUND_COMPARE and
   LEGACY_REF_CHANGED mean no rung is shown. `*_CHANGED_AFTER_RUN` means stale, and the steps are capped at
   sandbox-validated until a new run.
@@ -84,7 +110,7 @@ every evidence section, and it cannot change any status. Keep it factual and poi
   after a run. Drift is detected and caps the rung.
 - Writing a KD or tolerance record with a human owner or signer for the user. Only a person signs (see
   `migration/SIGN-OFF.md`).
-- Re-sealing, deleting `evidence.json` or hand-editing `report/`. The report is regenerated from the bundle, and
-  `REPORT.json` lists every file hash.
+- Re-sealing, deleting `evidence.json` or hand-editing `report/` (including `REPORT.md`). The report is regenerated
+  from the bundle, `REPORT.json` lists every file hash and `report.py --check` detects any edit.
 - Wording a verdict yourself. Use the status line and the report's phrases. Do not claim parity, "done" or "verified"
   above the computed rung (the Stop gate blocks it).

@@ -2,14 +2,20 @@
 """report.py — render migration/report/ from ONE sealed evidence bundle (07 §4, DESIGN §4.7, CONTRACTS §9).
 
     axpy report.py <migration> [--run <run_id>] [--json]
+    axpy report.py <migration> --check [--json]        the report still matches the sealed bundle (exit 2 if not)
 
 Every render re-verifies every hash and re-derives every compare state (through ladder.compute) and re-parses the
 sealed YAML records. Verdict wording comes only from phrases.v1.yaml. Deterministic: no clock, sorted iteration,
 one number formatter; the only times shown are the run's own started_at / ended_at.
 
-Writes report/index.html, report/assets/ (plots, display layers, compare JSON copies, layers.js, vendored MapLibre)
-and report/REPORT.json {status, rung, steps{id: disposition}, assumptions[], known_differences[], files{path: sha256},
-evidence_id}. Exit: 0 complete · 2 evidence incomplete, stale or nothing verified · 3 no sealed run.
+Writes migration/report/:
+  REPORT.md     the native summary for the file pane (status line first)
+  index.html    one self-contained page (inline CSS/JS/SVG, thumbnails as data URIs; no network request of any kind)
+  parity.xlsx   values only: Status, Parity, Decisions, Parameters, Sign-off, Runs
+  swipe.html    the swipe map, local only (vendored MapLibre in assets/), when display layers exist
+  assets/       hash-checked copies of the sealed plots and compare results (linked from REPORT.md)
+  REPORT.json   {status, rung, steps, …, thumbnails{key: source, source_sha256, sha256}, files{path: sha256}}
+Exit: 0 complete · 2 evidence incomplete, stale or nothing verified · 3 no sealed run.
 """
 from __future__ import annotations
 
@@ -29,7 +35,9 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "lib"))
 sys.path.insert(0, str(HERE))
 import axis_common as ac  # noqa: E402
+import graphview  # noqa: E402
 import ladder  # noqa: E402
+import reportparts as rp  # noqa: E402
 import seal as sealmod  # noqa: E402
 import visual_receipt as vrc  # noqa: E402
 
@@ -114,6 +122,10 @@ class Phrases:
     def __init__(self, path: Path):
         doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         self.table = {str(k): str(v) for k, v in (doc.get("phrases") or {}).items()}
+        self.rungs = {str(k): str(v) for k, v in (doc.get("rungs") or {}).items()}
+        self.headlines = {str(k): str(v) for k, v in (doc.get("headlines") or {}).items()}
+        self.next_rung = {str(k): str(v) for k, v in (doc.get("next_rung") or {}).items()}
+        self.glossary = [(str(k), str(v)) for k, v in (doc.get("glossary") or {}).items()]
         self.sha256 = ac.sha256_file(path)
         self.missing: set[str] = set()
 
@@ -135,71 +147,6 @@ class Phrases:
             return tpl.format_map(_Missing(_fmt_tree(ctx)))
         except (ValueError, IndexError, KeyError, AttributeError):
             return tpl
-
-
-# ------------------------------------------------------------------------------------------------------------------
-# Graph SVG (static, layered top-down by topological rank; 07 D7-13)
-# ------------------------------------------------------------------------------------------------------------------
-def graph_svg(graph: dict, lad: dict) -> str:
-    steps = {s["id"]: s for s in graph.get("steps") or []}
-    datasets = {d["id"]: d for d in graph.get("datasets") or []}
-    order = ladder.topo_order(steps, datasets)
-    rank = {}
-    for sid in order:
-        r = 0
-        for a in steps[sid].get("inputs") or []:
-            p = ladder.producer_of(datasets[a], steps) if a in datasets else None
-            if p in rank:
-                r = max(r, rank[p] + 1)
-        rank[sid] = r
-    rows: dict[int, list[str]] = {}
-    for sid in order:
-        rows.setdefault(rank[sid], []).append(sid)
-    nw, nh, gx, gy = 230, 54, 40, 70
-    width = max(len(v) for v in rows.values()) * (nw + gx) + gx if rows else 300
-    height = len(rows) * (nh + gy) + gy if rows else 100
-    pos = {}
-    for r, ids in rows.items():
-        total = len(ids) * (nw + gx) - gx
-        x0 = (width - total) / 2
-        for i, sid in enumerate(sorted(ids)):
-            pos[sid] = (x0 + i * (nw + gx), gy / 2 + r * (nh + gy))
-    out = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {int(width)} {int(height)}" '
-           f'width="{int(width)}" height="{int(height)}" role="img" aria-label="Workflow graph" class="wfgraph">',
-           '<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
-           'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="edge-head"/></marker></defs>']
-    edges = []
-    for sid in order:
-        for d in sorted(steps[sid].get("inputs") or []):
-            p = ladder.producer_of(datasets[d], steps) if d in datasets else None
-            if p in pos and sid in pos:
-                edges.append((p, sid, d))
-    grouped: dict[tuple, list[str]] = {}
-    for a, b, d in edges:
-        grouped.setdefault((a, b), []).append(d)
-    for (a, b), ds in sorted(grouped.items()):
-        x1, y1 = pos[a][0] + nw / 2, pos[a][1] + nh
-        x2, y2 = pos[b][0] + nw / 2, pos[b][1]
-        out.append(f'<path class="edge" d="M{x1:.1f},{y1:.1f} C{x1:.1f},{(y1 + y2) / 2:.1f} {x2:.1f},'
-                   f'{(y1 + y2) / 2:.1f} {x2:.1f},{y2 - 2:.1f}" marker-end="url(#arr)"/>')
-        label = ", ".join(x.replace("ds.", "") for x in sorted(ds))
-        out.append(f'<text class="edge-label" x="{(x1 + x2) / 2 + 6:.1f}" y="{(y1 + y2) / 2:.1f}">'
-                   f'{html.escape(label)}</text>')
-    for sid in order:
-        if sid not in pos:
-            continue
-        x, y = pos[sid]
-        e = lad["steps"].get(sid)
-        disp = e["disposition"] if e else ("OUT_OF_SCOPE" if (steps[sid].get("scope") == "drop") else "—")
-        cls, glyph, label = DISP_STYLE.get(disp, ("grey", "·", "out of scope" if disp == "OUT_OF_SCOPE" else disp))
-        rung = (e or {}).get("rung")
-        out.append(f'<a href="#step-{html.escape(sid)}"><g class="node {cls}">'
-                   f'<rect x="{x:.1f}" y="{y:.1f}" width="{nw}" height="{nh}" rx="8"/>'
-                   f'<text class="node-id" x="{x + 12:.1f}" y="{y + 22:.1f}">{glyph} {html.escape(sid)}</text>'
-                   f'<text class="node-sub" x="{x + 12:.1f}" y="{y + 41:.1f}">{html.escape(label)}'
-                   f'{" · " + html.escape(rung) if rung else ""}</text></g></a>')
-    out.append("</svg>")
-    return "\n".join(out)
 
 
 # ------------------------------------------------------------------------------------------------------------------
@@ -551,7 +498,7 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
         if b.get("step") or b.get("code") in step_codes or b.get("target"):
             continue  # steps are listed above; target reasons live in the target panel
         pipe_items.append({"code": b.get("code"), "phrase": phrases.say(b.get("code")),
-                           "detail": b.get("detail") or b.get("dataset") or ""})
+                           "detail": b.get("detail") or b.get("dataset") or "", "dataset": b.get("dataset")})
 
     # params / decisions / KDs
     params = records.get("params") or []
@@ -679,6 +626,89 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
     envrt = next((o.get("value") for o in by_kind.get("envrt", [])), {}) or {}
     narrative = (migration / "narrative.md").read_text(encoding="utf-8") if (migration / "narrative.md").is_file() \
         else None
+    # ---- redesign parts (reportparts.py): thumbnails, numbers, charts, decisions, next rung, timeline
+    aux = {(o.get("name") or Path(o.get("path") or "").name, o.get("path")): o for o in by_kind.get("aux", [])}
+    plot_meta: dict[str, dict] = {}
+    manifest_doc = None
+    for (name, pth), o in sorted(aux.items(), key=lambda kv: str(kv[0])):
+        if pth in bad_paths or not pth:
+            continue
+        if name == "plots.json":
+            doc = _load(project / pth)
+            ds_dir = Path(pth).parent.name
+            if isinstance(doc, dict) and ac.sha256_file(project / pth) == ladder.hex_of(o.get("sha256")):
+                for png in doc.get("png") or []:
+                    if isinstance(png, dict) and png.get("name"):
+                        plot_meta.setdefault(doc.get("dataset_id") or ds_dir, {})[png["name"]] = png
+        elif name == "manifest.json" and pth == f"migration/runs/{run_id}/manifest.json":
+            if (project / pth).is_file() and ac.sha256_file(project / pth) == ladder.hex_of(o.get("sha256")):
+                manifest_doc = _load(project / pth)
+
+    def _read(rel):
+        f = project / rel
+        return f.read_bytes() if f.is_file() else None
+
+    thumb_manifest: dict[str, dict] = {}
+    disp_objs = by_kind.get("disp", [])
+    for r in drows:
+        cmp, co = cmp_docs.get(r["id"], ({}, None))
+        objs = [{"path": o["path"], "sha256": o.get("sha256"), "id": o.get("id"), "name": Path(o["path"]).name}
+                for o in plots_by_ds.get(r["id"], []) if o.get("path") not in bad_paths]
+        if not objs:  # no verify plots: the display triptych (map.py display) is the picture
+            objs = [{"path": o["path"], "sha256": o.get("sha256"), "id": o.get("id"), "name": Path(o["path"]).name}
+                    for o in disp_objs if o.get("dataset") == r["id"] and o["path"].endswith(".triptych.png")
+                    and o.get("path") not in bad_paths]
+        th = rp.dataset_thumbs(r["id"], objs, plot_meta.get(r["id"], {}), _read, ac.sha256_bytes) if objs else \
+            {"main": [], "more": [], "manifest": {}}
+        thumb_manifest.update(th["manifest"])
+        r.update({"thumbs": th["main"], "more_plots": th["more"], "numbers": rp.key_numbers(cmp, fmt),
+                  "diff_svg": rp.diff_svg(cmp, fmt), "cmp_object": co.get("id") if co else None,
+                  "group": rp.group_of(r["disposition"]), "anchor": rp.anchor(r["id"]),
+                  "phrase": (r["fails"][0]["phrase"] if r["fails"] else
+                             (r["level_phrases"][0]["phrase"] if r["level_phrases"] else "")),
+                  "code": (r["fails"][0]["code"] if r["fails"] else
+                           (r["level_phrases"][0]["code"] if r["level_phrases"] else None))})
+    # what needs attention: dataset items first (failures and NOT_COMPARED, then decisions, then reviews), then
+    # steps that are not VERIFIED for a step-level reason, then pipeline items
+    att: dict[str, list] = {"broken": [], "decide": [], "review": [], "info": []}
+    covered_steps = set()
+    for r in parity:
+        if r["disposition"] in ("VERIFIED", "NO_REFERENCE", "BRIDGED", None):
+            continue
+        att[r["group"]].append({"subject": r["id"], "step": r["step"], "disposition": r["disposition"],
+                                "glyph": r["disp_style"][1], "cls": r["disp_style"][0], "code": r["code"],
+                                "phrase": r["phrase"], "href": f"#ds-{r['anchor']}"})
+        covered_steps.add(r["step"])
+    for f in failures:
+        if f["id"] in covered_steps and f["disposition"] not in ("NO_REFERENCE",):
+            continue
+        g = rp.group_of(f["disposition"])
+        att[g].append({"subject": f["id"], "step": f["id"], "disposition": f["disposition"], "glyph": f["style"][1],
+                       "cls": f["style"][0], "code": f["code"], "phrase": f["phrase"], "href": f"#{f['anchor']}"})
+    for b in pipe_items:
+        ds = b.get("dataset")
+        detail = b["detail"] if b["detail"] and b["detail"] != ds else ""
+        att["info"].append({"subject": ds or "pipeline", "step": None, "disposition": "pipeline", "glyph": "·",
+                            "cls": "grey", "code": b["code"], "phrase": b["phrase"] + (f" ({detail})" if detail
+                                                                                       else ""),
+                            "href": f"#ds-{rp.anchor(ds)}" if ds else "#steps"})
+    attention = [{"key": k, "title": rp.GROUP_TITLE[k], "items": v} for k, v in att.items() if v]
+    decision_cards = rp.decisions(parity, cmp_docs, lad, records, phrases, fmt)
+    param_rows = []
+    for pp in sorted(params, key=lambda x: (str(x.get("node")), str(x.get("id")))):
+        v = pp.get("value")
+        param_rows.append({"id": pp.get("id"), "node": pp.get("node"), "unit": pp.get("unit") or "",
+                           "value": fmt(v) if not isinstance(v, (dict, list)) else json.dumps(v, sort_keys=True),
+                           "source": pp.get("source") or "unknown", "status": pp.get("status") or "",
+                           "resolution": pp.get("resolution") or "", "reason": pp.get("reason") or "",
+                           "cites": rp.citations(pp)})
+    pl = lad["pipeline"]
+    meaning = phrases.headlines.get(pl["headline"]) if pl["headline"] in phrases.headlines else \
+        phrases.rungs.get(pl["rung"], "")
+    hero = {"meaning": meaning, "next": rp.next_rung(lad, phrases)}
+    lineage_model = graphview.model(graph, lad)
+    tl = rp.timeline(manifest_doc, lad, lambda d: DISP_STYLE.get(d, ("grey", "·", d or "—")))
+
     p = lad["pipeline"]
     current_idx = LADDER_DISPLAY.index(p["rung"]) if p["rung"] in LADDER_DISPLAY else -1
     ladder_graphic = [{"rung": r, "reached": (not p["incomplete"]) and i <= current_idx,
@@ -692,7 +722,11 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
         "integrity": integrity, "incomplete": p["incomplete"],
         "stale": [x for x in integrity if x.get("severity") == "stale"],
         "failures": failures, "pipe_items": pipe_items, "caveats": caveats,
-        "graph_svg": graph_svg(graph, lad), "layers": layers, "default_layer": default_layer,
+        "graph_svg": graphview.svg(lineage_model), "mermaid": graphview.mermaid(lineage_model),
+        "isolated": sorted(n for n, v in lineage_model["nodes"].items() if v.get("isolated")),
+        "hero": hero, "attention": attention, "decision_cards": decision_cards, "cards": parity,
+        "param_rows": param_rows, "timeline": tl, "thumb_manifest": thumb_manifest,
+        "glossary": phrases.glossary, "layers": layers, "default_layer": default_layer,
         "views_links": [(ds, v["anchor"]) for ds, v in sorted(views.items())
                         if (lad["datasets"].get(ds) or {}).get("state")],
         "run_rel": f"migration/runs/{run_id}",
@@ -754,20 +788,26 @@ def layers_js(ctx: dict, assets: Path) -> str:
     return "window.AXIS_LAYERS = " + json.dumps(out, sort_keys=True, separators=(",", ":"), allow_nan=False) + ";\n"
 
 
-def render(ctx: dict) -> str:
+def _env() -> jinja2.Environment:
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(HERE / "templates")),
                              autoescape=jinja2.select_autoescape(["html", "j2"], default=True),
                              trim_blocks=True, lstrip_blocks=True)
     env.filters["fmt"] = fmt
     env.filters["short"] = lambda s, n=12: (str(s).split(":", 1)[-1][:n] if s else "—")
     env.filters["anchor"] = lambda s: re.sub(r"[^A-Za-z0-9_.-]", "-", str(s))
+    env.filters["png_uri"] = lambda b: "data:image/png;base64," + base64.b64encode(b).decode("ascii")
+    env.tests["match"] = lambda v, pat: re.match(pat, str(v)) is not None
     env.globals["DISP_STYLE"] = DISP_STYLE
-    return env.get_template("report.html.j2").render(**ctx)
+    return env
 
 
-def no_run_page(migration: Path) -> str:
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(HERE / "templates")), autoescape=True)
-    return env.get_template("norun.html.j2").render(migration=str(migration.name))
+def render(ctx: dict, template: str = "report.html.j2") -> str:
+    return _env().get_template(template).render(**ctx)
+
+
+def no_run_page(migration: Path, status_line: str, meaning: str) -> str:
+    return _env().get_template("norun.html.j2").render(migration=str(migration.name), status_line=status_line,
+                                                      meaning=meaning)
 
 
 def _write_tree(migration: Path, files: dict[str, bytes]):
@@ -788,49 +828,61 @@ def _write_tree(migration: Path, files: dict[str, bytes]):
         shutil.rmtree(old, ignore_errors=True)
 
 
-def build(migration: Path, run_id: str | None = None) -> tuple[int, dict]:
+def render_files(migration: Path, run_id: str | None = None) -> tuple[int, dict, dict[str, bytes]]:
+    """Every file of migration/report/ as bytes (nothing written). Deterministic for one bundle."""
     phrases = Phrases(HERE / "phrases.v1.yaml")
     lad = ladder.compute(migration, run_id)
     if lad["run_id"] is None or (run_id is None and not ladder.newest_sealed_run(migration)):
         lad["pipeline"]["report"] = "migration/report/index.html"
         lad["status_line"] = ladder.status_line(lad)
-        page = no_run_page(migration)
+        meaning = phrases.headlines.get("NO SEALED RUN", "")
         rep = {"schema": "axis-migrate.report.v1", "status": "none", "rung": "none", "headline": "NO SEALED RUN",
                "steps": {}, "assumptions": [], "known_differences": [], "evidence_id": None,
-               "status_line": lad["status_line"]}
-        files = {"index.html": page.encode()}
+               "status_line": lad["status_line"], "thumbnails": {}}
+        files = {"index.html": no_run_page(migration, lad["status_line"], meaning).encode("utf-8"),
+                 "REPORT.md": rp.norun_md(lad["status_line"], meaning).encode("utf-8")}
         rep["files"] = {k: ac.sha256_bytes(v) for k, v in sorted(files.items())}
-        files["REPORT.json"] = (json.dumps(rep, sort_keys=True, indent=1) + "\n").encode()
-        _write_tree(migration, files)
-        return 3, rep
+        files["REPORT.json"] = (json.dumps(rep, sort_keys=True, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
+        return 3, rep, files
     # this render is the report the status line points at: render it with the path, not "no report"
     lad["pipeline"]["report"] = "migration/report/index.html"
     lad["status_line"] = ladder.status_line(lad)
     ctx = build_context(migration, lad, phrases)
     files: dict[str, bytes] = {}
-    # copy hash-checked assets (bad paths were excluded in build_context)
+    # hash-checked copies the Markdown summary links to (bad paths were excluded in build_context)
     for group in ("plots", "compare", "display"):
+        if group == "display" and not ctx["layers"]:
+            continue
         for src, rel in ctx["_copy"][group]:
             if src.is_file():
                 files[f"assets/{rel}"] = src.read_bytes()
-    stage = Path(tempfile.mkdtemp(prefix="axis-report-"))
-    try:
-        for rel, data in files.items():
-            if rel.startswith("assets/display/"):
-                (stage / "display").mkdir(parents=True, exist_ok=True)
-                (stage / "display" / Path(rel).name).write_bytes(data)
-        files["assets/layers.js"] = layers_js(ctx, stage).encode()
-    finally:
-        shutil.rmtree(stage, ignore_errors=True)
-    vendor = HERE / "assets" / "vendor"
-    for p in sorted(vendor.iterdir()):
-        files[f"assets/vendor/{p.name}"] = p.read_bytes()
-    files["assets/swipe.js"] = (HERE / "assets" / "swipe.js").read_bytes()
+    ctx["has_swipe"] = bool(ctx["layers"])
+    if ctx["layers"]:  # the swipe map is a separate local page (it needs the vendored MapLibre next to it)
+        stage = Path(tempfile.mkdtemp(prefix="axis-report-"))
+        try:
+            for rel, data in files.items():
+                if rel.startswith("assets/display/"):
+                    (stage / "display").mkdir(parents=True, exist_ok=True)
+                    (stage / "display" / Path(rel).name).write_bytes(data)
+            files["assets/layers.js"] = layers_js(ctx, stage).encode()
+        finally:
+            shutil.rmtree(stage, ignore_errors=True)
+        vendor = HERE / "assets" / "vendor"
+        for vp in sorted(vendor.iterdir()):
+            files[f"assets/vendor/{vp.name}"] = vp.read_bytes()
+        files["assets/swipe.js"] = (HERE / "assets" / "swipe.js").read_bytes()
     ctx["phrase_missing"] = sorted(phrases.missing)
     page = render(ctx)
     ctx["phrase_missing"] = sorted(phrases.missing)  # second pass catches codes first seen while rendering
     page = render(ctx)
     files["index.html"] = page.encode("utf-8")
+    if ctx["layers"]:
+        files["swipe.html"] = render(ctx, "swipe.html.j2").encode("utf-8")
+    files["REPORT.md"] = rp.report_md(ctx, ctx["mermaid"]).encode("utf-8")
+    try:
+        files["parity.xlsx"] = rp.parity_xlsx(ctx)
+    except ImportError:  # openpyxl is in the lock; a stripped env renders without the workbook
+        pass
     p = ctx["pipeline"]
     status = "EVIDENCE_INCOMPLETE" if p["incomplete"] else ("NOTHING_VERIFIED" if p["headline"] == "NOTHING VERIFIED"
                                                             else p["rung"])
@@ -851,11 +903,16 @@ def build(migration: Path, run_id: str | None = None) -> tuple[int, dict]:
            "integrity": [{k: v for k, v in x.items() if k in ("code", "severity", "path", "dataset", "detail")}
                          for x in ctx["integrity"]],
            "target": {"state": ctx["target"]["state"], "deployment_status": ctx["target"]["deployment_status"]},
+           "next_rung": {"next": ctx["hero"]["next"]["next"],
+                         "missing": [x["code"] for x in ctx["hero"]["next"]["items"]]},
+           "decisions_for_you": [d["subject"] for d in ctx["decision_cards"]],
+           "cards": [c["id"] for c in ctx["cards"]],
+           "thumbnails": ctx["thumb_manifest"],
            "phrase_missing": ctx["phrase_missing"], "versions": ctx["versions"]}
     # secret scan of what we are about to publish (data URIs and vendored files excluded)
     hits = []
     for rel, data in sorted(files.items()):
-        if rel.startswith("assets/vendor/") or not rel.endswith((".html", ".js", ".json", ".geojson")):
+        if rel.startswith("assets/vendor/") or not rel.endswith((".html", ".js", ".json", ".geojson", ".md")):
             continue
         names = ladder.secret_scan_text(data.decode("utf-8", errors="replace"))
         if names:
@@ -863,17 +920,54 @@ def build(migration: Path, run_id: str | None = None) -> tuple[int, dict]:
     if hits:
         page = ("<!doctype html><meta charset='utf-8'><title>Report withheld</title><h1>Report withheld</h1>"
                 "<p>The secret scan matched: " + html.escape(", ".join(h["path"] for h in hits)) + "</p>")
-        files = {"index.html": page.encode()}
+        files = {"index.html": page.encode(),
+                 "REPORT.md": (ctx["status_line"] + "\n\n# Report withheld\n\nThe secret scan matched: "
+                               + ", ".join(h["path"] for h in hits) + "\n").encode("utf-8")}
         rep = {"schema": "axis-migrate.report.v1", "status": "WITHHELD_SECRET", "rung": None, "secret_scan": hits,
                "run_id": ctx["run_id"], "evidence_id": ctx["evidence_id"], "steps": {}, "assumptions": [],
-               "known_differences": []}
+               "known_differences": [], "thumbnails": {}, "status_line": ctx["status_line"]}
     rep["files"] = {k: ac.sha256_bytes(v) for k, v in sorted(files.items())}
     files["REPORT.json"] = (json.dumps(rep, sort_keys=True, indent=1, ensure_ascii=False, allow_nan=False)
                             + "\n").encode("utf-8")
-    _write_tree(migration, files)
     stale = bool(ctx["stale"])
     code = 2 if (hits or p["incomplete"] or stale or p["headline"] == "NOTHING VERIFIED") else 0
+    return code, rep, files
+
+
+def build(migration: Path, run_id: str | None = None) -> tuple[int, dict]:
+    code, rep, files = render_files(migration, run_id)
+    _write_tree(migration, files)
     return code, rep
+
+
+def check(migration: Path, run_id: str | None = None) -> list[dict]:
+    """Deliverable check: every file REPORT.json lists exists with its sha256, every thumbnail's source still
+    hashes to its sealed evidence object, the report belongs to the computed evidence id, and a fresh render from
+    the bundle gives the same bytes (report.py is deterministic). [] = all good."""
+    import report_check
+    problems = report_check.check(migration)
+    rdir = migration / "report"
+    rj = rdir / "REPORT.json"
+    if rj.is_file():
+        try:
+            rid = (json.loads(rj.read_text(encoding="utf-8")) or {}).get("run_id")
+        except ValueError:
+            rid = None
+        _, _, fresh = render_files(migration, run_id or rid)
+        for rel, data in sorted(fresh.items()):
+            f = rdir / rel
+            if not f.is_file():
+                problems.append({"code": "REPORT_FILE_MISSING", "path": rel})
+            elif f.read_bytes() != data:
+                problems.append({"code": "REPORT_NOT_FROM_BUNDLE", "path": rel,
+                                 "detail": "differs from a fresh render of the sealed bundle"})
+    seen, out = set(), []
+    for x in problems:
+        k = (x["code"], x.get("path"))
+        if k not in seen:
+            seen.add(k)
+            out.append(x)
+    return out
 
 
 def main(argv=None) -> int:
@@ -881,16 +975,28 @@ def main(argv=None) -> int:
     ap.add_argument("migration")
     ap.add_argument("--run", default=None)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--check", action="store_true",
+                    help="check the rendered report against the sealed bundle (exit 2 on a missing or changed file)")
     a = ap.parse_args(argv)
     migration = Path(a.migration).resolve()
     if migration.name != "migration" and (migration / "migration").is_dir():
         migration = migration / "migration"
+    if a.check:
+        probs = check(migration, a.run)
+        if a.json:
+            print(json.dumps({"ok": not probs, "problems": probs}, sort_keys=True, indent=1))
+        else:
+            for x in probs:
+                print(f"{x['code']}: {x.get('path') or ''} {x.get('detail') or ''}".rstrip())
+            print("report check: " + ("ok" if not probs else f"{len(probs)} problem(s)"))
+        return 2 if probs else 0
     code, rep = build(migration, a.run)
     if a.json:
         print(json.dumps({k: v for k, v in rep.items() if k != "files"}, sort_keys=True, indent=1))
     else:
         print(rep.get("status_line") or rep.get("status"))
-        print(f"report: {migration / 'report' / 'index.html'} (exit {code})")
+        print(f"report: {migration / 'report' / 'REPORT.md'} (file pane) · {migration / 'report' / 'index.html'} "
+              f"(offline export) (exit {code})")
     return code
 
 

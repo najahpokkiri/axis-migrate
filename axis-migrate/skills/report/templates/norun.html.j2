@@ -1,14 +1,17 @@
 <!doctype html>
 <html lang="en-GB">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
 <title>axis-migrate report — no sealed run</title>
-<style>body{font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:#fff;color:#1f2328}
-main{max-width:860px;margin:48px auto;padding:0 16px}h1{font-size:28px;margin:0 0 8px}
-.bar{background:#b42318;color:#fff;padding:12px 16px;font-weight:600}</style></head>
+<style>body{font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:#fbfbfa;color:#1f2328}
+main{max-width:860px;margin:40px auto;padding:0 16px}h1{font-size:26px;margin:0 0 8px}
+.bar{background:#b42318;color:#fff;padding:12px 16px;font-weight:600}
+.status-line{padding:10px 12px;background:#fff;border:1px solid #d8dee4;border-left:5px solid #d03b3b;border-radius:8px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+@media (prefers-color-scheme: dark){body{background:#1a1a19;color:#e6e6e3}.status-line{background:#222321;border-color:#33373c}}</style></head>
 <body><div class="bar" id="integrity">No sealed run: nothing verified</div>
 <main id="headline"><h1>No sealed run: nothing verified</h1>
-<p>There is no sealed run in <code>{{ migration }}/runs/index.jsonl</code>. A rung is only ever computed from a sealed
-evidence bundle, so this page shows no status. Run the pipeline, verify it, then seal the run with
+<p class="status-line" id="status-line">{{ status_line }}</p>
+<p>{{ meaning }} There is no sealed run in <code>{{ migration }}/runs/index.jsonl</code>. A rung is only ever computed
+from a sealed evidence bundle, so this page shows no status. Run the pipeline, verify it, then seal the run with
 <code>seal.py</code> and render again.</p>
-<p><code>axis-migrate status: none | run none | 0 pass, 0 FAIL, 0 NOT_COMPARED, 0 needs review | report migration/report/index.html</code></p>
 </main></body></html>

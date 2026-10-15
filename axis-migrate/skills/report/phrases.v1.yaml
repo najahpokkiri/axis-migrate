@@ -167,3 +167,37 @@ phrases:
   TC_PRINT_NOT_LOGGED: "pipeline modules print instead of logging (warning)"
   TC_SEEK_ON_VOLUME: "a write seeks on the Volume"
   TC_SQLITE_ON_VOLUME: "SQLite is opened read-write on the Volume"
+
+# --- plain words for the report's hero (what the computed rung means; never a claim beyond it)
+rungs:
+  none: "Nothing is established yet. No rung was computed for this run."
+  generated: "The new step code exists and passed the code scanner. This run does not show that every step ran cleanly in one chained run, and nothing is confirmed against the legacy outputs."
+  sandbox-validated: "The new pipeline ran end to end in one chained run: every step succeeded, read only what it declared, passed its smoke tests, and its outputs are hashed. That says nothing yet about matching the legacy outputs; what stands between this run and reference-verified is listed below."
+  reference-verified: "In one full chained run, every in-scope output matches its legacy reference, exactly or within a tolerance a person signed, with a strong record of what each step read."
+  target-ready: "Reference-verified, and the job files for the target platform were generated and checked offline. Nothing was deployed and nothing ran on the target."
+headlines:
+  EVIDENCE INCOMPLETE: "The evidence for this run is incomplete or was changed after sealing, so no rung is shown. The red bar lists what is wrong."
+  NOTHING VERIFIED: "Nothing was compared with a legacy reference, so nothing is verified, whatever ran."
+  NO SEALED RUN: "No run has been sealed yet, so nothing is verified."
+next_rung:
+  none: "a sealed, complete evidence bundle"
+  generated: "every in-scope step succeeding in one chained run, with smoke tests passed and every output hashed"
+  sandbox-validated: "every in-scope output matching its legacy reference, a full chained run and a strong read record"
+  reference-verified: "the target job files generated, checked offline and sealed into the evidence"
+  target-ready: "nothing the plugin computes: deployed, live-target-verified and customer-accepted are never computed"
+
+# --- short glossary at the end of the report
+glossary:
+  rung: "a step of the status ladder: generated, sandbox-validated, reference-verified, target-ready. ladder.py computes it from the sealed evidence; nobody types it."
+  legacy reference: "the file the old workflow produced, which the new output is compared with."
+  chained run: "the new pipeline run end to end, each step reading the new outputs of the steps before it. Only a chained run can be verified."
+  PASS_EXACT: "the new output is identical to the legacy reference on every check."
+  PASS_WITHIN_TOLERANCE: "the new output differs from the legacy reference only within a tolerance a person signed."
+  NEEDS_DECISION: "the difference would be within a proposed tolerance or known difference that nobody has signed. Only a person can decide."
+  NEEDS_REVIEW: "a person must look at the pictures (a visual flag) or a visual review receipt is missing."
+  NOT_COMPARED: "a legacy reference exists but no comparison was made."
+  NO_REFERENCE: "the old workflow left no file to compare with, so the output is neither confirmed nor refuted."
+  ACCEPTED_DIFFERENCE: "a difference a person accepted as a known difference. Shown amber, never green: the comparison itself still fails."
+  tolerance: "the largest difference that still counts as the same result, measured from two numbers: how far correct implementations spread and how close the nearest wrong one comes."
+  evidence id: "the hash of the sealed evidence index of a run. Every number in this report comes from the bundle with this id."
+  sealed: "the run's evidence was hashed and made read-only. A later change to any file is detected."

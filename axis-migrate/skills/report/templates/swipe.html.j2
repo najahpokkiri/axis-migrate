@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ project }} · swipe map · axis-migrate</title>
+<link rel="stylesheet" href="assets/vendor/maplibre-gl.css">
+<link rel="stylesheet" href="assets/vendor/maplibre-gl-compare.css">
+<style>
+:root{--fg:#1f2328;--muted:#57606a;--line:#d0d7de;--bg:#fff;--soft:#f6f8fa;
+--ok:#1a7f37;--ok-bg:#e6f4ea;--bad:#b42318;--bad-bg:#fde8e7;--amber:#8a5a00;--amber-bg:#fff4d6;
+--purple:#6f42c1;--purple-bg:#f1e9fb;--grey:#57606a;--grey-bg:#eef0f2;--blue:#0b5cad;--blue-bg:#e5f0fb}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--fg);background:var(--bg)}
+main{max-width:1240px;margin:0 auto;padding:0 20px 40px}
+h1{font-size:20px;margin:0}
+h2{font-size:17px;margin:28px 0 8px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:15px;margin:0}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+a{color:var(--blue)}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.scroll{overflow-x:auto;max-width:100%}
+th{background:var(--soft);font-weight:600;font-size:12.5px}
+.ok{--c:var(--ok);--cb:var(--ok-bg)}.bad{--c:var(--bad);--cb:var(--bad-bg)}.amber{--c:var(--amber);--cb:var(--amber-bg)}
+.purple{--c:var(--purple);--cb:var(--purple-bg)}.grey{--c:var(--grey);--cb:var(--grey-bg)}.blue{--c:var(--blue);--cb:var(--blue-bg)}
+.badge{display:inline-block;border:1px solid var(--c);color:var(--c);background:var(--cb);border-radius:10px;padding:0 8px;font-size:12px;font-weight:600;white-space:nowrap}
+.integrity-bar{background:var(--bad);color:#fff;padding:8px 20px;font-weight:600}
+.integrity-bar.stale{background:#9a3412}
+.integrity-bar.info{background:#57606a}
+.integrity-bar a{color:#fff}
+.integrity-bar ul{margin:2px 0 0;padding-left:20px;font-weight:400;font-size:13px}
+#headline{padding:10px 0 0}
+.hl-meta{color:var(--muted);font-size:12.5px;margin-top:2px}
+.hl-row{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:8px 0 6px}
+.verdict{font-size:24px;font-weight:700;padding:4px 12px;border-radius:6px;border:2px solid var(--c);color:var(--c);background:var(--cb)}
+.verdict small{font-size:14px;font-weight:600}
+ol.ladder{display:flex;list-style:none;margin:0;padding:0;gap:4px;flex-wrap:wrap}
+ol.ladder li{padding:3px 9px;border:1px solid var(--line);border-radius:4px;font-size:12px;color:var(--muted);background:#fff}
+ol.ladder li.reached{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);font-weight:600}
+ol.ladder li.current{outline:2px solid var(--ok)}
+ol.ladder li.greyed{border-style:dashed;color:#8c959f;background:#fafbfc}
+ol.ladder li.greyed span{font-size:10.5px}
+.counts{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
+.counts .badge.zero{opacity:.55}
+#failures{margin:8px 0 4px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;background:#fff}
+#failures h2{border:0;margin:0 0 4px;padding:0;font-size:15px}
+#failures ul{margin:0;padding-left:0;list-style:none}
+#failures li{padding:1px 0;font-size:13.5px}
+#failures .none{color:var(--ok);font-weight:600}
+.caveats{font-size:12.5px;color:var(--muted);margin:4px 0}
+.statusline{font-size:12px;color:var(--muted);margin:2px 0 0}
+.wfgraph{max-width:100%;height:auto}
+.wfgraph .node rect{fill:var(--cb);stroke:var(--c);stroke-width:2}
+.wfgraph .node-id{font:600 13px system-ui,sans-serif;fill:var(--fg)}
+.wfgraph .node-sub{font:12px system-ui,sans-serif;fill:var(--c)}
+.wfgraph .edge{fill:none;stroke:#8c959f;stroke-width:1.5}.wfgraph .edge-head{fill:#8c959f}
+.wfgraph .edge-label{font:11px ui-monospace,monospace;fill:var(--muted)}
+.map-controls{display:flex;gap:16px;align-items:center;margin:4px 0 8px;flex-wrap:wrap}
+#swipe-wrap{position:relative;height:500px;border:1px solid var(--line);background:#f6f6f4;overflow:hidden}
+#swipe-wrap .map{position:absolute;top:0;bottom:0;width:100%}
+.side-label{position:absolute;top:6px;z-index:5;background:rgba(255,255,255,.85);padding:1px 6px;font-size:12px;font-weight:600;border-radius:3px}
+.legend{display:flex;gap:18px;align-items:center;font-size:12px;margin-top:6px;flex-wrap:wrap}
+.ramp{display:inline-block;width:160px;height:10px;border:1px solid var(--line);vertical-align:middle}
+.caption{font-size:12.5px;color:var(--muted);margin:4px 0}
+#map-fallback img{max-width:100%;image-rendering:pixelated;border:1px solid var(--line)}
+.card{border:1px solid var(--line);border-left:5px solid var(--c);border-radius:6px;padding:10px 12px;margin:10px 0;background:#fff}
+.card-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.card .meta{color:var(--muted);font-size:12.5px}
+.ds{border-top:1px dashed var(--line);margin-top:8px;padding-top:6px}
+.ds-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.phr{margin:4px 0;padding-left:18px}
+.phr li{margin:1px 0}
+.caps li{color:var(--bad)}
+.ann li{color:var(--muted)}
+.missing{color:var(--bad);font-weight:600}
+.plots{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.plots figure{margin:0;max-width:380px}
+.plots img{max-width:380px;max-height:260px;border:1px solid var(--line);image-rendering:pixelated}
+.plots figcaption{font-size:11.5px;color:var(--muted)}
+.small{font-size:12.5px}
+.views{border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin:8px 0;background:var(--soft)}
+.views h4{font-size:13.5px;margin:0 0 4px}
+.views .cmd{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0;padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:4px;font:12px/1.4 ui-monospace,monospace}
+.views table{background:#fff}
+.views code.sha{white-space:nowrap}
+.notes{background:#eef0f2;border:1px solid var(--line);border-radius:6px;padding:10px}
+.notes pre{white-space:pre-wrap;margin:0;font:13px/1.45 ui-monospace,monospace}
+.claim{border:2px solid var(--blue);background:var(--blue-bg);padding:10px 12px;border-radius:6px;white-space:pre-wrap}
+footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid var(--line);padding-top:8px}
+</style>
+</head>
+<body>
+<main>
+<header id="headline">
+<h1>{{ project }} · swipe map (local only)</h1>
+<p class="statusline"><code>{{ status_line }}</code></p>
+<p class="small"><a href="index.html">Back to the report</a>. Display only: verdicts come from the sealed compare results, never from this picture. This page needs the <code>assets/</code> folder next to it (vendored MapLibre, no network).</p>
+</header>
+<section id="map">
+<h2>Swipe map</h2>
+{% if layers %}
+<div class="map-controls">
+<label>Dataset <select id="layer-select">{% for l in layers %}<option value="{{ l.dataset }}"{{ ' selected' if l.dataset == default_layer }}>{{ l.dataset }} ({{ l.family }}{% if l.state %}, {{ l.state }}{% endif %})</option>{% endfor %}</select></label>
+<label><input type="checkbox" id="diff-toggle"> show difference on the right (new − legacy)</label>
+</div>
+<div id="swipe-wrap"><div id="map-legacy" class="map"></div><div id="map-new" class="map"></div><span class="side-label" style="left:6px">legacy</span><span class="side-label" style="right:6px" id="right-label">new</span></div>
+<div id="map-fallback" hidden><p class="small">WebGL is not available: static legacy | new | difference panels at full resolution.</p>{% for l in layers if l.family == 'raster' and l.files.triptych %}<img data-dataset="{{ l.dataset }}" src="assets/display/{{ l.files.triptych }}" alt="{{ l.dataset }} legacy | new | difference"{{ ' hidden' if l.dataset != default_layer }}>{% endfor %}</div>
+<div class="legend" id="legend"></div>
+<p class="caption" id="map-caption">{{ caption_default }}</p>
+{% else %}
+<p class="small">No display layers in this bundle (run <code>map.py display</code> before sealing).</p>
+{% endif %}
+{% if views_links %}<p class="small" id="map-views-links">GeoLibre map views per dataset are listed in the dataset cards of the report: {% for ds, a in views_links %}<a href="index.html#{{ a }}">{{ ds }}</a>{{ ' · ' if not loop.last }}{% endfor %}</p>{% endif %}
+</section>
+</main>
+<script src="assets/vendor/maplibre-gl.js"></script>
+<script src="assets/vendor/maplibre-gl-compare.js"></script>
+<script src="assets/layers.js"></script>
+<script src="assets/swipe.js"></script>
+</body>
+</html>

@@ -40,9 +40,9 @@ def test_failure_in_first_screen(proj, tmp_path):  # 07 test 1
     assert d["verdict"].strip() in ("sandbox-validated", "generated", "none")
 
 
-def test_offline_swipe(sealed):  # 07 test 14
+def test_offline_swipe(sealed):  # 07 test 14: the swipe map is its own local page next to index.html
     report.build(sealed["migration"])
-    d = check(sealed["migration"] / "report" / "index.html", "--swipe")
+    d = check(sealed["migration"] / "report" / "swipe.html", "--swipe")
     assert d["external"] == []
     assert d["errors"] == []
     assert d["mapReady"] and d["compare"] and d["fallbackShown"] is False
@@ -57,7 +57,6 @@ def test_map_views_block_renders(proj):  # GeoLibre step 5: the views block rend
     report.build(proj["migration"])
     d = check(proj["migration"] / "report" / "index.html")
     assert d["external"] == [] and d["errors"] == []
-    assert d["mapReady"]
     views = {v["id"]: v for v in d["views"]}
     assert set(views) == {"views-ds.a_mask", "views-ds.a_outline", "views-ds.b_exposure"}
     m = views["views-ds.a_mask"]
@@ -66,7 +65,9 @@ def test_map_views_block_renders(proj):  # GeoLibre step 5: the views block rend
     assert m["receipts"] == ["view:counts"] and m["shaTitles"] >= 7
     assert "views.py\" url --run migration/runs/" in m["text"] and "127.0.0.1" not in m["text"]
     assert views["views-ds.a_outline"]["rows"] == 2
-    assert sorted(d["mapViewLinks"]) == sorted("#" + k for k in views)
+    s = check(proj["migration"] / "report" / "swipe.html")
+    assert s["mapReady"] and s["external"] == [] and s["errors"] == []
+    assert sorted(s["mapViewLinks"]) == sorted("index.html#" + k for k in views)
 
 
 def test_absent_views_fallback_renders(sealed):
@@ -75,3 +76,27 @@ def test_absent_views_fallback_renders(sealed):
     assert d["external"] == [] and d["errors"] == []
     assert d["views"] and all(v["rows"] == 0 and "No map views for this run" in v["text"] and v["h"] > 0
                               for v in d["views"])
+
+
+def test_index_self_contained_desktop_and_phone(proj, tmp_path):
+    """index.html: one file, no request beyond itself, images decode, hero == the ladder line, the decisions export
+    works and says it is not a signature, nothing overflows at phone width."""
+    import ladder
+    checks = synth.default_checks({"kind": "raster"})
+    checks[-1].update(state="NEEDS_DECISION", reason_codes=["TOLERANCE_UNSIGNED"])
+    synth.make_run(proj, 1, compares={"ds.b_exposure": ("NEEDS_DECISION", checks, ["TOLERANCE_UNSIGNED"])},
+                   skip_compare=("ds.b_by_zone",))
+    report.build(proj["migration"])
+    html = proj["migration"] / "report" / "index.html"
+    line = ladder.compute(proj["migration"])["status_line"]
+    for extra in ((), ("--phone",)):
+        d = check(html, str(tmp_path / ("phone.png" if extra else "desk.png")), "--copy", *extra)
+        assert d["requests"] == ["file://" + str(html.resolve())], d["requests"]
+        assert d["errors"] == []
+        assert d["statusLine"] == line
+        assert d["images"] and all(i["ok"] and i["src"].startswith("data:image/png") for i in d["images"])
+        assert d["scrollWidth"] <= d["clientWidth"] and d["scrollWidthOpen"] <= d["clientWidth"], (extra, d)
+        assert "ds.b_exposure" in d["exportText"] and "This is not a signature" in d["exportText"]
+        assert "undecided" not in d["exportText"].splitlines()[1]
+        if not extra:
+            assert d["firstItemBottom"] is not None and d["firstItemBottom"] <= 720

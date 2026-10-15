@@ -3,91 +3,174 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ project }} — axis-migrate report</title>
-<link rel="stylesheet" href="assets/vendor/maplibre-gl.css">
-<link rel="stylesheet" href="assets/vendor/maplibre-gl-compare.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>{{ project }} · axis-migrate report</title>
 <style>
-:root{--fg:#1f2328;--muted:#57606a;--line:#d0d7de;--bg:#fff;--soft:#f6f8fa;
---ok:#1a7f37;--ok-bg:#e6f4ea;--bad:#b42318;--bad-bg:#fde8e7;--amber:#8a5a00;--amber-bg:#fff4d6;
---purple:#6f42c1;--purple-bg:#f1e9fb;--grey:#57606a;--grey-bg:#eef0f2;--blue:#0b5cad;--blue-bg:#e5f0fb}
+:root{--fg:#1f2328;--muted:#59636e;--faint:#8c959f;--line:#d8dee4;--bg:#fbfbfa;--card:#fff;--soft:#f3f4f6;
+--ok:#0b7d0b;--ok-bg:#e3f4e3;--ok-mark:#0ca30c;--bad:#b42323;--bad-bg:#fbe3e3;--bad-mark:#d03b3b;
+--amber:#8a5a00;--amber-bg:#fff3d6;--amber-mark:#fab219;--purple:#6a3fb5;--purple-bg:#efe7fb;--purple-mark:#8a5cd0;
+--grey:#59636e;--grey-bg:#eef0f2;--grey-mark:#9aa1a8;--blue:#0b5cad;--blue-bg:#e5f0fb;--blue-mark:#3b82d6;
+--plain:#59636e;--plain-bg:#fff;--plain-mark:#c4c9cf;--bar:#5b7fa6}
+@media (prefers-color-scheme: dark){:root{--fg:#e6e6e3;--muted:#a3a9b0;--faint:#7d848c;--line:#33373c;--bg:#1a1a19;--card:#222321;--soft:#2a2b29;
+--ok:#6fd36f;--ok-bg:#16301a;--bad:#ff8b85;--bad-bg:#3a1c1c;--amber:#ffcb5c;--amber-bg:#352a12;--purple:#c4a6ff;--purple-bg:#2b2240;
+--grey:#a3a9b0;--grey-bg:#2a2d31;--blue:#8cc2ff;--blue-bg:#16283d;--plain:#a3a9b0;--plain-bg:#222321;--bar:#8fb3dc}}
 *{box-sizing:border-box}
-body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--fg);background:var(--bg)}
-main{max-width:1240px;margin:0 auto;padding:0 20px 40px}
-h1{font-size:20px;margin:0}
-h2{font-size:17px;margin:28px 0 8px;padding-top:8px;border-top:1px solid var(--line)}
-h3{font-size:15px;margin:0}
-code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--fg);background:var(--bg)}
+main{max-width:1180px;margin:0 auto;padding:0 18px 48px}
+h1{font-size:22px;margin:2px 0 0;line-height:1.25}
+h2{font-size:18px;margin:36px 0 10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+h2 .count{font-size:13px;font-weight:500;color:var(--muted)}
+h3{font-size:15px;margin:0;overflow-wrap:anywhere}
+p{margin:6px 0}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;overflow-wrap:anywhere}
 a{color:var(--blue)}
-table{border-collapse:collapse;width:100%}
-th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
-.scroll{overflow-x:auto;max-width:100%}
-th{background:var(--soft);font-weight:600;font-size:12.5px}
-.ok{--c:var(--ok);--cb:var(--ok-bg)}.bad{--c:var(--bad);--cb:var(--bad-bg)}.amber{--c:var(--amber);--cb:var(--amber-bg)}
-.purple{--c:var(--purple);--cb:var(--purple-bg)}.grey{--c:var(--grey);--cb:var(--grey-bg)}.blue{--c:var(--blue);--cb:var(--blue-bg)}
-.badge{display:inline-block;border:1px solid var(--c);color:var(--c);background:var(--cb);border-radius:10px;padding:0 8px;font-size:12px;font-weight:600;white-space:nowrap}
-.integrity-bar{background:var(--bad);color:#fff;padding:8px 20px;font-weight:600}
-.integrity-bar.stale{background:#9a3412}
-.integrity-bar.info{background:#57606a}
-.integrity-bar a{color:#fff}
-.integrity-bar ul{margin:2px 0 0;padding-left:20px;font-weight:400;font-size:13px}
-#headline{padding:10px 0 0}
-.hl-meta{color:var(--muted);font-size:12.5px;margin-top:2px}
-.hl-row{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:8px 0 6px}
-.verdict{font-size:24px;font-weight:700;padding:4px 12px;border-radius:6px;border:2px solid var(--c);color:var(--c);background:var(--cb)}
-.verdict small{font-size:14px;font-weight:600}
-ol.ladder{display:flex;list-style:none;margin:0;padding:0;gap:4px;flex-wrap:wrap}
-ol.ladder li{padding:3px 9px;border:1px solid var(--line);border-radius:4px;font-size:12px;color:var(--muted);background:#fff}
+.small{font-size:13px}.muted{color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:600;white-space:nowrap}
+.scroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+.ok{--c:var(--ok);--cb:var(--ok-bg);--cm:var(--ok-mark)}.bad{--c:var(--bad);--cb:var(--bad-bg);--cm:var(--bad-mark)}
+.amber{--c:var(--amber);--cb:var(--amber-bg);--cm:var(--amber-mark)}.purple{--c:var(--purple);--cb:var(--purple-bg);--cm:var(--purple-mark)}
+.grey{--c:var(--grey);--cb:var(--grey-bg);--cm:var(--grey-mark)}.blue{--c:var(--blue);--cb:var(--blue-bg);--cm:var(--blue-mark)}
+.plain{--c:var(--plain);--cb:var(--plain-bg);--cm:var(--plain-mark)}
+.badge{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--c);color:var(--c);background:var(--cb);border-radius:999px;padding:0 9px;font-size:12px;font-weight:600;white-space:nowrap;line-height:20px}
+/* integrity bar */
+.integrity-bar{background:var(--bad-mark);color:#fff;padding:10px 18px;font-weight:600}
+.integrity-bar.stale{background:#9a3412}.integrity-bar.info{background:#59636e}
+.integrity-bar a{color:#fff}.integrity-bar ul{margin:4px 0 0;padding-left:20px;font-weight:400;font-size:13px}
+/* hero */
+.hero{padding:14px 0 0}
+.eyebrow{font-size:12.5px;color:var(--muted);letter-spacing:.01em}
+.status-line{margin:8px 0 0;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--cm,var(--grey-mark));border-radius:8px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.hero-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:10px 0 2px}
+.verdict{font-size:20px;font-weight:700;padding:2px 12px;border-radius:8px;border:2px solid var(--c);color:var(--c);background:var(--cb)}
+.verdict small{font-size:13px;font-weight:600}
+ol.ladder{display:flex;list-style:none;margin:0;padding:0;gap:0;flex-wrap:wrap;align-items:center}
+ol.ladder li{padding:2px 9px;font-size:12px;color:var(--faint);border:1px solid var(--line);background:var(--card);margin:2px 3px 2px 0;border-radius:4px}
 ol.ladder li.reached{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);font-weight:600}
-ol.ladder li.current{outline:2px solid var(--ok)}
-ol.ladder li.greyed{border-style:dashed;color:#8c959f;background:#fafbfc}
+ol.ladder li.current{outline:2px solid var(--ok);outline-offset:1px}
+ol.ladder li.greyed{border-style:dashed;background:transparent}
 ol.ladder li.greyed span{font-size:10.5px}
-.counts{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
-.counts .badge.zero{opacity:.55}
-#failures{margin:8px 0 4px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;background:#fff}
-#failures h2{border:0;margin:0 0 4px;padding:0;font-size:15px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:14px;align-items:start}
+.meaning{font-size:15px;margin:10px 0}
+.next{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:10px 0}
+.next h2{margin:0 0 4px;font-size:15px}
+.next ul{margin:4px 0 0;padding-left:0;list-style:none}
+.next li{padding:3px 0;border-top:1px dashed var(--line);font-size:13.5px}
+.next li:first-child{border-top:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:0 0 12px}
+.tile{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--cm);border-radius:8px;padding:6px 10px}
+.tile b{display:block;font-size:22px;line-height:1.2}
+.tile span{font-size:12px;color:var(--muted);overflow-wrap:anywhere;display:block}
+.tile.zero{opacity:.55}
+.caveats{font-size:12.5px;color:var(--muted);margin:6px 0}
+nav.toc{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13px;margin:10px 0 0;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+/* attention */
+#failures{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:14px 0}
+#failures h2{margin:0 0 6px;font-size:17px}
+#failures h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:10px 0 2px}
 #failures ul{margin:0;padding-left:0;list-style:none}
-#failures li{padding:1px 0;font-size:13.5px}
+#failures li{padding:4px 0;font-size:14px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+#failures ul li:first-child{border-top:0}
 #failures .none{color:var(--ok);font-weight:600}
-.caveats{font-size:12.5px;color:var(--muted);margin:4px 0}
-.statusline{font-size:12px;color:var(--muted);margin:2px 0 0}
-.wfgraph{max-width:100%;height:auto}
-.wfgraph .node rect{fill:var(--cb);stroke:var(--c);stroke-width:2}
-.wfgraph .node-id{font:600 13px system-ui,sans-serif;fill:var(--fg)}
-.wfgraph .node-sub{font:12px system-ui,sans-serif;fill:var(--c)}
-.wfgraph .edge{fill:none;stroke:#8c959f;stroke-width:1.5}.wfgraph .edge-head{fill:#8c959f}
-.wfgraph .edge-label{font:11px ui-monospace,monospace;fill:var(--muted)}
-.map-controls{display:flex;gap:16px;align-items:center;margin:4px 0 8px;flex-wrap:wrap}
-#swipe-wrap{position:relative;height:500px;border:1px solid var(--line);background:#f6f6f4;overflow:hidden}
-#swipe-wrap .map{position:absolute;top:0;bottom:0;width:100%}
-.side-label{position:absolute;top:6px;z-index:5;background:rgba(255,255,255,.85);padding:1px 6px;font-size:12px;font-weight:600;border-radius:3px}
-.legend{display:flex;gap:18px;align-items:center;font-size:12px;margin-top:6px;flex-wrap:wrap}
-.ramp{display:inline-block;width:160px;height:10px;border:1px solid var(--line);vertical-align:middle}
-.caption{font-size:12.5px;color:var(--muted);margin:4px 0}
-#map-fallback img{max-width:100%;image-rendering:pixelated;border:1px solid var(--line)}
-.card{border:1px solid var(--line);border-left:5px solid var(--c);border-radius:6px;padding:10px 12px;margin:10px 0;background:#fff}
-.card-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-.card .meta{color:var(--muted);font-size:12.5px}
-.ds{border-top:1px dashed var(--line);margin-top:8px;padding-top:6px}
-.ds-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.phr{margin:4px 0;padding-left:18px}
+#failures .what{flex:1 1 280px;min-width:0}
+/* decisions */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.dec{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--purple-mark);border-radius:10px;padding:10px 12px}
+.dec h3{font-size:14px}
+.dec dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;margin:6px 0;font-size:13px}
+.dec dt{color:var(--muted)}.dec dd{margin:0;overflow-wrap:anywhere}
+.dec fieldset{border:0;padding:0;margin:8px 0 0}
+.dec label{display:flex;gap:6px;align-items:flex-start;font-size:13.5px;padding:2px 0;cursor:pointer}
+.dec textarea{width:100%;min-height:36px;font:13px system-ui,sans-serif;margin-top:4px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--bg);color:var(--fg)}
+.exportbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 6px}
+button{font:600 14px system-ui,sans-serif;padding:7px 14px;border-radius:8px;border:1px solid var(--purple);background:var(--purple);color:#fff;cursor:pointer}
+button.secondary{background:transparent;color:var(--fg);border-color:var(--line)}
+#decision-export{width:100%;min-height:120px;font:12.5px/1.45 ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card);color:var(--fg)}
+.notice{font-size:13px;background:var(--purple-bg);border-radius:8px;padding:8px 10px;color:var(--fg)}
+/* dataset cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:14px}
+.dcard{background:var(--card);border:1px solid var(--line);border-top:5px solid var(--cm);border-radius:10px;padding:12px 14px;min-width:0}
+.dcard header{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.dcard .meta,.meta{color:var(--muted);font-size:12.5px}
+.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 6px}
+.thumbs.one{grid-template-columns:minmax(0,1fr)}
+.thumbs figure{margin:0;min-width:0}
+.thumbs.one img{max-height:340px;object-fit:contain}
+.thumbs img,.more img{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:4px;background:#fff}
+.thumbs figcaption,.more figcaption{font-size:11.5px;color:var(--muted);margin-top:2px}
+.nopic{font-size:12.5px;color:var(--muted);background:var(--soft);border-radius:6px;padding:10px;margin:10px 0}
+.numbers{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:start}
+.numbers dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:1px 10px;margin:0;font-size:13px}
+.numbers dt{color:var(--muted)}.numbers dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.phr{margin:6px 0 0;padding-left:18px;font-size:13.5px}
 .phr li{margin:1px 0}
-.caps li{color:var(--bad)}
-.ann li{color:var(--muted)}
 .missing{color:var(--bad);font-weight:600}
-.plots{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
-.plots figure{margin:0;max-width:380px}
-.plots img{max-width:380px;max-height:260px;border:1px solid var(--line);image-rendering:pixelated}
-.plots figcaption{font-size:11.5px;color:var(--muted)}
-.small{font-size:12.5px}
-.views{border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin:8px 0;background:var(--soft)}
+details{margin:8px 0 0}
+details>summary{cursor:pointer;font-size:13px;color:var(--blue);font-weight:600}
+details.sect>summary{font-size:15px;color:var(--fg)}
+.more{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:6px}
+.more figure{margin:0}
+/* charts */
+svg.dchart{width:100%;max-width:300px;height:auto;display:block}
+svg .axis{stroke:var(--line);stroke-width:1}
+svg .tick,svg .cap{font:10px system-ui,sans-serif;fill:var(--muted)}
+svg .val{font:600 10px system-ui,sans-serif;fill:var(--fg)}
+svg.dchart .bar rect{fill:var(--bar)}
+svg.dchart .limit line{stroke:var(--bad-mark);stroke-width:1.5;stroke-dasharray:4 3}
+svg.dchart .limit text{font:600 10px system-ui,sans-serif;fill:var(--bad)}
+svg.dchart .limit.proposed line{stroke:var(--purple-mark)}svg.dchart .limit.proposed text{fill:var(--purple)}
+svg.dchart .track{fill:var(--soft)}svg.dchart .fill{fill:var(--bar)}
+svg.tline{width:100%;max-width:640px;height:auto;display:block}
+svg.tline rect{fill:var(--cm)}
+/* lineage */
+.lineage-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:6px}
+svg.lineage{min-width:720px;width:100%;height:auto;display:block}
+.lin-node rect{fill:var(--cb);stroke:var(--cm);stroke-width:1.6}
+.lin-node.step rect{stroke-width:2.2}
+.lin-node rect.qopen{stroke:var(--purple-mark);stroke-dasharray:5 3}
+.lin-id{font:600 12px system-ui,sans-serif;fill:var(--fg)}
+.lin-sub{font:11px system-ui,sans-serif;fill:var(--c)}
+.lin-q{font:600 10px system-ui,sans-serif;fill:var(--purple)}
+.lin-edge{fill:none;stroke:var(--faint);stroke-width:1.2}.lin-head{fill:var(--faint)}
+a:hover .lin-node rect{stroke-width:3}
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+/* steps, misc */
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--cm);border-radius:8px;padding:8px 12px;margin:8px 0}
+.card>summary{list-style:none;cursor:pointer}
+.card>summary::-webkit-details-marker{display:none}
+.card-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.caps li{color:var(--bad)}.ann li{color:var(--muted)}
+.runs{list-style:none;padding:0;margin:6px 0;border-left:2px solid var(--line)}
+.runs li{position:relative;padding:3px 0 3px 16px;font-size:13px}
+.runs li::before{content:"";position:absolute;left:-6px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--cm);border:2px solid var(--bg)}
+.runs li.current{font-weight:600}
+.views{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:8px 0;background:var(--soft)}
 .views h4{font-size:13.5px;margin:0 0 4px}
-.views .cmd{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0;padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:4px;font:12px/1.4 ui-monospace,monospace}
-.views table{background:#fff}
+.views .cmd{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0;padding:6px 8px;background:var(--card);border:1px solid var(--line);border-radius:4px;font:12px/1.4 ui-monospace,monospace}
+.views table{background:var(--card)}
 .views code.sha{white-space:nowrap}
-.notes{background:#eef0f2;border:1px solid var(--line);border-radius:6px;padding:10px}
+.notes{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px}
 .notes pre{white-space:pre-wrap;margin:0;font:13px/1.45 ui-monospace,monospace}
-.claim{border:2px solid var(--blue);background:var(--blue-bg);padding:10px 12px;border-radius:6px;white-space:pre-wrap}
-footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid var(--line);padding-top:8px}
+.claim{border:2px solid var(--blue);background:var(--blue-bg);padding:10px 12px;border-radius:8px;white-space:pre-wrap}
+dl.gloss{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:13.5px}
+dl.gloss dt{font-weight:600}dl.gloss dd{margin:0}
+footer{color:var(--muted);font-size:12px;margin-top:28px;border-top:1px solid var(--line);padding-top:8px}
+@media (max-width:640px){
+ main{padding:0 12px 40px}
+ h1{font-size:19px}
+ .verdict{font-size:18px}
+ .meaning{font-size:14px}
+ ol.ladder li{font-size:11px;padding:1px 6px}
+ .cards,.dgrid{grid-template-columns:minmax(0,1fr)}
+ .numbers,.hero-grid{grid-template-columns:minmax(0,1fr)}
+ .tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .tile b{font-size:18px}
+ dl.gloss{grid-template-columns:minmax(0,1fr)}
+}
+@media print{details{display:block}details>*{display:block}.exportbar,nav.toc{display:none}}
 </style>
 </head>
 <body>
@@ -100,63 +183,77 @@ footer{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid va
 {% endfor %}
 </ul></div>
 {% endif %}
+{% if incomplete %}{% set vcls = 'bad' %}{% elif p.headline == 'NOTHING VERIFIED' %}{% set vcls = 'bad' %}{% else %}{% set vcls = 'ok' if p.rung in ('reference-verified','target-ready') else ('amber' if p.rung != 'none' else 'bad') %}{% endif %}
 <main>
-<header id="headline">
-<h1>{{ project }} · axis-migrate report</h1>
-<div class="hl-meta">run <code>{{ run_id }}</code> · {{ run.chain or 'chain unknown' }} · executor {{ run.executor or 'unknown' }} · isolation: {{ run.isolation or 'unknown' }} · read ledger {{ run.read_ledger or 'unknown' }} · {{ run.started_at or '' }} – {{ run.ended_at or '' }}</div>
-<div class="hl-row">
+<header id="headline" class="hero">
+<div class="eyebrow">axis-migrate migration report · run <code>{{ run_id }}</code> · {{ run.chain or 'chain unknown' }} · {{ run.started_at or '' }} – {{ run.ended_at or '' }}</div>
+<h1>{{ project }}</h1>
+<p class="status-line {{ vcls }}" id="status-line">{{ status_line }}</p>
+<div class="hero-row">
 {% if incomplete %}
 <div class="verdict bad" id="verdict">EVIDENCE INCOMPLETE <small>— no rung</small></div>
 {% elif p.headline == 'NOTHING VERIFIED' %}
 <div class="verdict bad" id="verdict">NOTHING VERIFIED <small>— zero comparisons</small></div>
 {% else %}
-<div class="verdict {{ 'ok' if p.rung in ('reference-verified','target-ready') else ('amber' if p.rung != 'none' else 'bad') }}" id="verdict">{{ p.rung }}{% if p.suffix %} <small>{{ p.suffix }}</small>{% endif %}{% if p.rung == 'target-ready' %} <small>(not deployed)</small>{% endif %}</div>
+<div class="verdict {{ vcls }}" id="verdict">{{ p.rung }}{% if p.suffix %} <small>{{ p.suffix }}</small>{% endif %}{% if p.rung == 'target-ready' %} <small>(not deployed)</small>{% endif %}</div>
 {% endif %}
 <ol class="ladder" aria-label="Status ladder">
 {% for r in ladder_graphic %}<li class="{{ 'reached' if r.reached }}{{ ' current' if r.current }}">{{ r.rung }}</li>{% endfor %}
-{% for g in greyed %}<li class="greyed" title="not attempted">{{ g }} <span>not attempted</span></li>{% endfor %}
+<li class="greyed" title="the plugin never computes these">{{ greyed|join(" · ") }} <span>not attempted</span></li>
 </ol>
 </div>
-<div class="counts" aria-label="Counts by state">
-{% for s, n, cls in histogram %}<span class="badge {{ cls }}{{ ' zero' if n == 0 }}">{{ s }} {{ n }}</span>{% endfor %}
+<div class="hero-grid">
+<p class="meaning" id="meaning">{{ hero.meaning }}</p>
+{% set nx = hero.next %}
+<div class="next" id="next-rung">
+{% if nx.next %}<h2>What {{ nx.next }} needs</h2><p class="small">{{ nx.needs|capitalize }}.{% if nx['items'] %} Missing now, from ladder.py:{% endif %}</p>
+{% if nx['items'] %}<ul>{% for it in nx['items'] %}<li><code>{{ it.code }}</code> {{ it.phrase }}{% if it.where %} <span class="meta">· {{ it.where }}</span>{% endif %}{% if it.detail %} <span class="meta">({{ it.detail }})</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
+{% else %}<h2>Above this rung</h2><p class="small">{{ nx.needs|capitalize }}.</p>{% endif %}
 </div>
-<section id="failures">
-<h2>Failures and open items ({{ failures|length + pipe_items|length }})</h2>
-{% if failures or pipe_items %}
-<ul>
-{% for f in failures %}<li><span class="badge {{ f.style[0] }}">{{ f.style[1] }} {{ f.disposition }}</span> <a href="#{{ f.anchor }}"><code>{{ f.id }}</code></a> — {% if f.code %}<code>{{ f.code }}</code> {{ f.phrase }}{% else %}see card{% endif %}</li>
-{% endfor %}
-{% for b in pipe_items %}<li><span class="badge grey">pipeline</span> <code>{{ b.code }}</code> {{ b.phrase }}{% if b.detail %} ({{ b.detail }}){% endif %}</li>
-{% endfor %}
-</ul>
-{% else %}<div class="none">✓ none: every in-scope step is verified</div>{% endif %}
-</section>
+</div>
 <p class="caveats" id="caveats">{{ caveats.assumptions }} assumption(s) · {{ caveats.inferred }} inferred or fitted param(s) · {{ caveats.bridged }} bridged step(s) · {{ caveats.accepted }} accepted difference(s) · not checked: {{ caveats.not_checked }} · <strong>not deployed</strong>{% if caveats.signoff %} · <a href="../SIGN-OFF.md">migration/SIGN-OFF.md</a> (sign-off view, not evidence){% endif %}</p>
-<p class="statusline"><code>{{ status_line }}</code></p>
 </header>
 
-<section id="graph">
-<h2>Workflow graph</h2>
-<p class="small">Nodes are coloured by step disposition and carry a text label; each links to its card. Edges name the datasets that connect the steps.</p>
-{{ graph_svg|safe }}
+<section id="failures">
+<h2>What needs attention <span class="count">{{ attention|map(attribute='items')|map('length')|sum }} item(s)</span></h2>
+{% if attention %}
+{% for g in attention %}
+<h3>{{ g.title }}</h3>
+<ul class="att-{{ g.key }}">
+{% for it in g['items'] %}<li data-disposition="{{ it.disposition }}"><span class="badge {{ it.cls }}">{{ it.glyph }} {{ it.disposition }}</span> <span class="what"><a href="{{ it.href }}"><code>{{ it.subject }}</code></a>{% if it.step and it.step != it.subject %} <span class="meta">in {{ it.step }}</span>{% endif %} — {% if it.code %}<code>{{ it.code }}</code> {{ it.phrase }}{% else %}see card{% endif %}</span></li>
+{% endfor %}
+</ul>
+{% endfor %}
+{% else %}<p class="none">✓ none: every in-scope step is verified</p>{% endif %}
 </section>
 
-<section id="map">
-<h2>Swipe map</h2>
-{% if layers %}
-<div class="map-controls">
-<label>Dataset <select id="layer-select">{% for l in layers %}<option value="{{ l.dataset }}"{{ ' selected' if l.dataset == default_layer }}>{{ l.dataset }} ({{ l.family }}{% if l.state %}, {{ l.state }}{% endif %})</option>{% endfor %}</select></label>
-<label><input type="checkbox" id="diff-toggle"> show difference on the right (new − legacy)</label>
+<nav class="toc" aria-label="Sections">{% if decision_cards %}<a href="#decisions">Decisions for you ({{ decision_cards|length }})</a>{% endif %}<a href="#datasets">Datasets ({{ cards|length }})</a><a href="#graph">Lineage</a><a href="#timeline">Timeline</a><a href="#steps">Steps</a><a href="#parity">Parity table</a><a href="#assumptions">Parameters</a><a href="#not-checked">Not checked</a><a href="#glossary">Glossary</a></nav>
+
+{% if decision_cards %}
+<section id="decisions">
+<h2>Decisions for you <span class="count">{{ decision_cards|length }}</span></h2>
+<p class="notice"><strong>This page never signs anything and never sends anything.</strong> Pick an answer per card, then press <em>Copy my decisions</em> and paste the text to the agent. Tolerances and known differences count only after <em>you</em> sign them yourself in <code>migration/SIGN-OFF.md</code>; a signature applies from the next run.</p>
+<div class="dgrid">
+{% for d in decision_cards %}
+<article class="dec" id="{{ d.id }}" data-subject="{{ d.subject }}">
+<h3>{{ loop.index }}. <code>{{ d.dataset or d.subject.split(' · ')[0] }}</code>{% if d.check %} · <code>{{ d.check }}</code>{% endif %}</h3>
+<p class="small"><span class="badge purple">! {{ d.code }}</span> {{ d.phrase }}{% if d.dataset %} · <a href="#ds-{{ d.dataset|anchor }}">see the dataset</a>{% endif %}</p>
+<dl>{% for k, v in d.evidence %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}
+{% if d.proposal %}<dt>proposed</dt><dd><code>{{ d.proposal.id }}</code>: {{ d.proposal.rule }}</dd><dt>correct spread</dt><dd>{{ d.proposal.correct_spread }} <span class="meta">(how far correct implementations differ)</span></dd><dt>nearest wrong</dt><dd>{{ d.proposal.nearest_wrong }} <span class="meta">(the closest known-wrong variant)</span></dd>{% endif %}
+{% if d.kds %}<dt>known difference</dt><dd>{{ d.kds|join(', ') }}</dd>{% endif %}
+</dl>
+{% if d.samples %}<div class="scroll"><table><thead><tr><th>sample</th><th>legacy</th><th>new</th><th>new − legacy</th></tr></thead><tbody>{% for s in d.samples %}<tr><td><code>{{ s.key }}</code></td><td>{{ s.legacy }}</td><td>{{ s.new }}</td><td>{{ s.delta }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+<fieldset><legend class="small muted">Your answer</legend>
+{% for o in d.options %}<label><input type="radio" name="{{ d.id }}" value="{{ o }}"> {{ o }}</label>{% endfor %}
+<textarea data-note="{{ d.id }}" placeholder="Note for the agent (optional)" aria-label="Note for {{ d.subject }}"></textarea>
+</fieldset>
+</article>
+{% endfor %}
 </div>
-<div id="swipe-wrap"><div id="map-legacy" class="map"></div><div id="map-new" class="map"></div><span class="side-label" style="left:6px">legacy</span><span class="side-label" style="right:6px" id="right-label">new</span></div>
-<div id="map-fallback" hidden><p class="small">WebGL is not available: static legacy | new | difference panels at full resolution.</p>{% for l in layers if l.family == 'raster' and l.files.triptych %}<img data-dataset="{{ l.dataset }}" src="assets/display/{{ l.files.triptych }}" alt="{{ l.dataset }} legacy | new | difference"{{ ' hidden' if l.dataset != default_layer }}>{% endfor %}</div>
-<div class="legend" id="legend"></div>
-<p class="caption" id="map-caption">{{ caption_default }}</p>
-{% else %}
-<p class="small">No display layers in this bundle (run <code>map.py display</code> before sealing).</p>
-{% endif %}
-{% if views_links %}<p class="small" id="map-views-links">GeoLibre map views per dataset (live map from the map server, not embedded in this page): {% for ds, a in views_links %}<a href="#{{ a }}">{{ ds }}</a>{{ ' · ' if not loop.last }}{% endfor %}</p>{% endif %}
+<div class="exportbar"><button type="button" id="copy-decisions">Copy my decisions</button><span id="copy-state" class="small muted" aria-live="polite"></span></div>
+<textarea id="decision-export" readonly aria-label="Your decisions as text to paste to the agent" data-run="{{ run_id }}" data-evidence="{{ evidence_id }}"></textarea>
 </section>
+{% endif %}
 
 {% macro sha(h) %}<code class="sha" title="{{ h or '' }}">{{ h|short }}</code>{% endmacro %}
 
@@ -190,84 +287,114 @@ each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not lo
 </div>
 {% endmacro %}
 
-{% macro step_card(s) %}
-<article class="card {{ s.style[0] }}" id="step-{{ s.id }}">
-<div class="card-head"><h3>{{ s.style[1] }} <code>{{ s.id }}</code> {{ s.title }}</h3>
-<span class="badge {{ s.style[0] }}">{{ s.disposition }}</span>
-<span class="meta">rung: <strong>{{ s.rung or 'n/a' }}</strong> · {{ s.kind }} · scope {{ s.scope }}{% if s.module %} · <code>{{ s.module }}</code>{% endif %}{% if s.legacy_source %} · legacy <code>{{ s.legacy_source }}</code>{% endif %}</span></div>
-{% if s.caps %}<ul class="phr caps">{% for c in s.caps %}<li><code>{{ c.code }}</code> {{ c.phrase }}{% if c.detail %} ({{ c.detail }}){% endif %} → at most {{ c.max }}</li>{% endfor %}</ul>{% endif %}
-{% if s.annotations %}<ul class="phr ann">{% for a in s.annotations %}<li>{{ a.text }}</li>{% endfor %}</ul>{% endif %}
-{% if s.params %}<div class="meta">params: {% for pp in s.params %}<code>{{ pp.id }}</code> <span class="badge {{ 'amber' if pp.source in ('assumption','fitted') else ('blue' if pp.source == 'answer' else 'grey') }}">{{ pp.source }}</span>{{ ' ' if not loop.last }}{% endfor %}</div>{% endif %}
-{% for d in s.datasets %}
-<div class="ds" id="ds-{{ d.id|anchor }}">
-<div class="ds-head"><strong><code>{{ d.id }}</code></strong> <span class="meta">{{ d.kind }} · {{ d.role }}</span>
-{% if d.state %}<span class="badge {{ d.state_style[0] }}">{{ d.state_style[1] }} {{ d.state }}</span>{% endif %}
-<span class="badge {{ d.disp_style[0] }}">{{ d.disposition }}</span>
-<span class="meta">legacy <code>{{ d.legacy_path or '—' }}</code> → new <code>{{ d.new_path or '—' }}</code></span></div>
+<section id="datasets">
+<h2>Datasets, one card each <span class="count">{{ cards|length }} · worst first</span></h2>
+{% set c = pipeline.counts %}
+<div class="tiles" aria-label="Datasets by state">
+{% for s, n, cls in histogram %}{% if s in ('FAIL','NOT_COMPARED','NEEDS_DECISION','NEEDS_REVIEW','PASS_WITHIN_TOLERANCE','PASS_EXACT') or n %}<div class="tile {{ cls }}{{ ' zero' if n == 0 }}"><b>{{ n }}</b><span>{{ s }}</span></div>{% endif %}{% endfor %}
+</div>
+<div class="cards">
+{% for d in cards %}
+<article class="dcard {{ d.disp_style[0] }}" id="ds-{{ d.id|anchor }}" data-disposition="{{ d.disposition }}">
+<header><span class="badge {{ d.disp_style[0] }}">{{ d.disp_style[1] }} {{ d.disposition }}</span><h3><code>{{ d.id }}</code></h3>
+<span class="meta">{{ d.kind }} · {{ d.role }}{% if d.step %} · step <a href="#step-{{ d.step }}">{{ d.step }}</a>{% endif %}</span></header>
 {% if d.fails or d.level_phrases %}<ul class="phr">{% for f in d.fails %}<li><code>{{ f.code }}</code> {{ f.phrase }} <span class="meta">({{ f.check }})</span></li>{% endfor %}{% for f in d.level_phrases %}<li><code>{{ f.code }}</code> {{ f.phrase }}</li>{% endfor %}</ul>{% endif %}
 {% for x in d.integrity %}<div class="missing"><code>{{ x.code }}</code> {{ x.detail }}{% if x.expected %} — expected <code>{{ x.expected }}</code>{% endif %}</div>{% endfor %}
-{% if d.checks %}
-<table class="small"><thead><tr><th>check</th><th>state</th><th>metric</th><th>value</th><th>limit</th><th>tolerance</th><th>codes / diagnostics</th></tr></thead><tbody>
+{% if d.thumbs %}<div class="thumbs{{ ' one' if d.thumbs|length == 1 }}">{% for t in d.thumbs %}<figure><img src="{{ t.png|png_uri }}" alt="{{ d.id }}: {{ t.label }}"><figcaption>{{ t.label }}</figcaption></figure>{% endfor %}</div>
+{% elif d.state %}<p class="nopic">No sealed plot for this dataset{% if d.plots %} (a plot is missing or changed: see below){% endif %}.</p>{% endif %}
+{% for pl in d.plots if not pl.ok %}<div class="missing small">plot missing or changed: <code>{{ pl.path }}</code> expected <code>{{ pl.sha256 }}</code></div>{% endfor %}
+{% if d.numbers or d.diff_svg %}<div class="numbers">{% if d.numbers %}<dl>{% for k, v in d.numbers %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}</dl>{% else %}<div></div>{% endif %}{{ d.diff_svg|safe }}</div>{% endif %}
+<p class="meta">{% if d.state %}compare state <span class="badge {{ d.state_style[0] }}">{{ d.state_style[1] }} {{ d.state }}</span> · {% endif %}{% set own = d.tolerances|reject('match', 'default\\.')|list %}tolerance {% for t in own %}<code>{{ t }}</code>{{ ', ' if not loop.last }}{% else %}{{ 'defaults' if d.tolerances else 'exact' }}{% endfor %}{% if d.cmp_object %} · evidence <code title="{{ d.cmp_object }}">{{ d.cmp_object|short }}</code>{% endif %}</p>
+{% if not d.state and d.disposition in ('NO_REFERENCE', 'BRIDGED') %}<p class="small muted">Nothing to compare with: {{ 'the legacy artefact is used as is' if d.disposition == 'BRIDGED' else 'the old workflow left no file for this output' }}.</p>{% endif %}
+{% if d.within_tolerance %}<p class="small">Within tolerance (all listed): {% for w in d.within_tolerance %}<code>{{ w if w is string else w|tojson }}</code>{{ '; ' if not loop.last }}{% endfor %}</p>{% endif %}
+{% for k in d.kd %}<p class="small">Known difference <code>{{ k.kd }}</code>: {{ 'accepted' if k.accepted else 'not accepted' }}{% if k.why_not %} — {{ k.why_not|join('; ') }}{% endif %} · owner {{ k.owner }} · bound held: {{ 'yes' if k.bound_held else 'no' }}</p>{% endfor %}
+{% if d.checks %}<details><summary>All checks ({{ d.checks|length }})</summary>
+<div class="scroll"><table><thead><tr><th>check</th><th>state</th><th>metric</th><th>value</th><th>limit</th><th>tolerance</th><th>codes / diagnostics</th></tr></thead><tbody>
 {% for c in d.checks %}<tr><td><code>{{ c.id }}</code></td><td><span class="badge {{ c.cls }}">{{ c.glyph }} {{ c.state }}</span></td><td>{{ c.metric or '' }}</td><td>{{ c.value }} {{ c.unit }}</td><td>{{ c.threshold }}</td><td>{{ c.tolerance }}</td><td>{{ c.codes|join(', ') }}{% if c.gated_by %} (gated by {{ c.gated_by }}){% endif %} {% if c.diagnostics %}<code>{{ c.diagnostics }}</code>{% endif %}{% if c.n_samples %} · {{ c.n_samples }} sample(s){% endif %}</td></tr>{% endfor %}
-</tbody></table>
-{% endif %}
-{% if d.within_tolerance %}<div class="small">Within tolerance (all listed): {% for w in d.within_tolerance %}<code>{{ w if w is string else w|tojson }}</code>{{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}
-{% for k in d.kd %}<div class="small">Known difference <code>{{ k.kd }}</code>: {{ 'accepted' if k.accepted else 'not accepted' }}{% if k.why_not %} — {{ k.why_not|join('; ') }}{% endif %} · owner {{ k.owner }} · bound held: {{ 'yes' if k.bound_held else 'no' }}</div>{% endfor %}
-{% if d.plots %}<div class="plots">{% for pl in d.plots %}<figure>{% if pl.ok %}<img src="{{ pl.asset }}" alt="{{ d.id }} {{ pl.name }}" loading="lazy">{% else %}<div class="missing">plot missing or changed: <code>{{ pl.path }}</code> expected <code>{{ pl.sha256 }}</code></div>{% endif %}<figcaption>{{ pl.name }} · <code>{{ pl.sha256|short }}</code></figcaption></figure>{% endfor %}</div>{% endif %}
+</tbody></table></div>
+<p class="small muted">legacy <code>{{ d.legacy_path or '—' }}</code> → new <code>{{ d.new_path or '—' }}</code>{% if d.compare_asset %} · <a href="{{ d.compare_asset }}">compare result (JSON, local)</a>{% endif %}</p>
+</details>{% endif %}
+{% if d.more_plots %}<details><summary>More plots ({{ d.more_plots|length }})</summary><div class="more">{% for t in d.more_plots %}<figure><img src="{{ t.png|png_uri }}" alt="{{ d.id }}: {{ t.label }}"><figcaption>{{ t.name }}</figcaption></figure>{% endfor %}</div></details>{% endif %}
 {% if d.kind in ('raster','vector') and d.state %}
-<div class="small">Visual review: {{ d.visual.receipts or 0 }} receipt(s){% if d.visual.invalid_receipts %}, {{ d.visual.invalid_receipts }} that do not count (a plot or view not in this run, or changed; ignored){% endif %}{% if d.visual.flags %}, <strong>flag(s): {{ d.visual.flags|join(', ') }}</strong>{% endif %}{% if d.visual.cleared %}, cleared by a person: {{ d.visual.cleared|join(', ') }}{% endif %}.</div>
+<details class="vis"><summary>Visual review and map views{% if d.visual.flags %} · flag(s){% endif %}</summary>
+<p class="small">Visual review: {{ d.visual.receipts or 0 }} receipt(s){% if d.visual.invalid_receipts %}, {{ d.visual.invalid_receipts }} that do not count (a plot or view not in this run, or changed; ignored){% endif %}{% if d.visual.flags %}, <strong>flag(s): {{ d.visual.flags|join(', ') }}</strong>{% endif %}{% if d.visual.cleared %}, cleared by a person: {{ d.visual.cleared|join(', ') }}{% endif %}.</p>
+{% for f in d.findings if f.answer == 'yes' and f.effect == 'flag' %}<p class="small">flag <code>{{ f.finding_id }}</code>: {{ f.question_id }} on <code>{{ f.plot or (f.view or {}).project }}</code></p>{% endfor %}
 {% if d.views %}{{ views_block(d) }}{% endif %}
+</details>
 {% endif %}
-{% if d.compare_asset %}<div class="small"><a href="{{ d.compare_asset }}">compare result (JSON)</a></div>{% endif %}
-</div>
-{% endfor %}
 </article>
-{% endmacro %}
+{% endfor %}
+</div>
+</section>
 
-<section id="failed-steps">
-<h2>Failed and open steps, in full ({{ failing_steps|length }})</h2>
-{% for s in failing_steps %}{{ step_card(s) }}{% else %}<p class="small">None.</p>{% endfor %}
+<section id="graph">
+<h2>Lineage <span class="count">steps and datasets, coloured by verdict; each box links to its card</span></h2>
+<div class="legend">{% for k in ['VERIFIED','NEEDS_DECISION','NEEDS_REVIEW','FAILED','NOT_COMPARED','NO_REFERENCE'] %}{% set st = DISP_STYLE[k] %}<span class="badge {{ st[0] }}">{{ st[1] }} {{ st[2] }}</span>{% endfor %}<span class="badge plain">▸ input · out of scope</span></div>
+<div class="lineage-wrap">{{ graph_svg|safe }}</div>
+{% if isolated %}<p class="small muted">Not drawn (no step reads or writes them): {% for x in isolated %}<code>{{ x }}</code>{{ ', ' if not loop.last }}{% endfor %}.</p>{% endif %}
+</section>
+
+<section id="timeline">
+<h2>Timeline</h2>
+{% if timeline.svg %}<p class="small muted">This run, one bar per step (from the sealed run manifest), coloured by the step's disposition.</p>{{ timeline.svg|safe }}{% else %}<p class="small muted">No step timings in the sealed manifest.</p>{% endif %}
+<div id="history">
+<h3 style="margin-top:14px">Run history ({{ history|length }})</h3>
+<p class="small muted">Every run, failing ones included, with the rung ladder.py computes for it. Cite numbers with their run id.</p>
+<ol class="runs">
+{% for h in history %}<li class="{{ 'current ' if h.current }}{{ 'ok' if h.rung in ('reference-verified','target-ready') else ('amber' if h.rung in ('sandbox-validated','generated') else ('grey' if h.rung == 'not sealed' else 'bad')) }}"><code>{{ h.run_id }}</code>{% if h.current %} (this report){% endif %} · {{ h.chain or '?' }} · {{ h.executor or '?' }} · {{ h.status or '' }}{% if h.exit_code is not none %} (exit {{ h.exit_code }}){% endif %} · <strong>{{ h.rung }}</strong>{% if h.stale %} (stale){% endif %} · FAIL <span class="fails">{{ h.fails if h.fails is not none else '—' }}</span>{% if h.sealed %} · <a href="{{ h.link }}"><code>{{ h.evidence_id|short }}</code></a>{% if h.amendments %} +{{ h.amendments }} amendment(s){% endif %}{% else %} · not sealed{% endif %}</li>
+{% endfor %}
+</ol>
+</div>
+</section>
+
+<section id="steps">
+<h2>Steps <span class="count">{{ failing_steps|length }} open, {{ passing_steps|length }} verified</span></h2>
+{% for s in failing_steps + passing_steps %}
+<details class="card {{ s.style[0] }}" id="step-{{ s.id }}"{% if s.disposition != 'VERIFIED' %} open{% endif %}>
+<summary class="card-head"><h3>{{ s.style[1] }} <code>{{ s.id }}</code> {{ s.title }}</h3>
+<span class="badge {{ s.style[0] }}">{{ s.disposition }}</span>
+<span class="meta">rung <strong>{{ s.rung or 'n/a' }}</strong> · {{ s.kind }} · scope {{ s.scope }}</span></summary>
+<p class="meta">{% if s.module %}<code>{{ s.module }}</code>{% endif %}{% if s.legacy_source %} · legacy <code>{{ s.legacy_source }}</code>{% endif %}</p>
+{% if s.caps %}<ul class="phr caps">{% for c in s.caps %}<li><code>{{ c.code }}</code> {{ c.phrase }}{% if c.detail %} ({{ c.detail }}){% endif %} → at most {{ c.max }}</li>{% endfor %}</ul>{% endif %}
+{% if s.annotations %}<ul class="phr ann">{% for a in s.annotations %}<li>{{ a.text }}</li>{% endfor %}</ul>{% endif %}
+{% if s.params %}<p class="meta">params: {% for pp in s.params %}<code>{{ pp.id }}</code> <span class="badge {{ 'amber' if pp.source in ('assumption','fitted') else ('blue' if pp.source == 'answer' else 'grey') }}">{{ pp.source }}</span>{{ ' ' if not loop.last }}{% endfor %}</p>{% endif %}
+{% if s.datasets %}<p class="small">outputs: {% for d in s.datasets %}<a href="#ds-{{ d.id|anchor }}"><code>{{ d.id }}</code></a> <span class="badge {{ d.disp_style[0] }}">{{ d.disp_style[1] }} {{ d.disposition }}</span>{{ ' ' if not loop.last }}{% endfor %}</p>{% endif %}
+</details>
+{% endfor %}
 </section>
 
 <section id="parity">
-<h2>Parity table</h2>
-<div class="scroll"><table class="small"><thead><tr><th>step</th><th>dataset</th><th>family</th><th>legacy path</th><th>new path</th><th>state</th><th>disposition</th><th>reason codes</th><th>key metric</th><th>tolerance</th><th>links</th></tr></thead><tbody>
-{% for r in parity %}<tr><td><a href="#step-{{ r.step }}"><code>{{ r.step }}</code></a></td><td><a href="#ds-{{ r.id|anchor }}"><code>{{ r.id }}</code></a></td><td>{{ r.kind }}</td><td><code>{{ r.legacy_path or '—' }}</code></td><td><code>{{ r.new_path or '—' }}</code></td><td>{% if r.state %}<span class="badge {{ r.state_style[0] }}">{{ r.state_style[1] }} {{ r.state }}</span>{% else %}—{% endif %}</td><td><span class="badge {{ r.disp_style[0] }}">{{ r.disposition }}</span></td><td>{{ r.reason_codes|join(', ') }}</td><td>{{ r.metric }}</td><td>{% for t in r.tolerances %}<code>{{ t }}</code>{% if not loop.last %}<br>{% endif %}{% else %}exact{% endfor %}</td><td>{% if r.compare_asset %}<a href="{{ r.compare_asset }}">JSON</a>{% endif %}{% for pl in r.plots if pl.ok %} <a href="{{ pl.asset }}">{{ pl.name }}</a>{% endfor %}</td></tr>
+<details class="sect"><summary>Parity table ({{ parity|length }} datasets, the cards above in one table)</summary>
+<div class="scroll"><table><thead><tr><th>step</th><th>dataset</th><th>family</th><th>state</th><th>disposition</th><th>reason codes</th><th>key metric</th><th>tolerance</th><th>legacy path</th><th>new path</th></tr></thead><tbody>
+{% for r in parity %}<tr><td>{% if r.step %}<a href="#step-{{ r.step }}"><code>{{ r.step }}</code></a>{% else %}—{% endif %}</td><td><a href="#ds-{{ r.id|anchor }}"><code>{{ r.id }}</code></a></td><td>{{ r.kind }}</td><td>{% if r.state %}<span class="badge {{ r.state_style[0] }}">{{ r.state_style[1] }} {{ r.state }}</span>{% else %}—{% endif %}</td><td><span class="badge {{ r.disp_style[0] }}">{{ r.disposition }}</span></td><td>{{ r.reason_codes|join(', ') }}</td><td>{{ r.metric }}</td><td>{% for t in r.tolerances|reject('match', 'default\\.') %}<code>{{ t }}</code>{% if not loop.last %}<br>{% endif %}{% else %}{{ 'defaults' if r.tolerances else 'exact' }}{% endfor %}</td><td><code>{{ r.legacy_path or '—' }}</code></td><td><code>{{ r.new_path or '—' }}</code></td></tr>
 {% endfor %}
 </tbody></table></div>
-</section>
-
-<section id="passing-steps">
-<h2>Verified steps ({{ passing_steps|length }})</h2>
-{% for s in passing_steps %}{{ step_card(s) }}{% else %}<p class="small">None.</p>{% endfor %}
+</details>
 </section>
 
 <section id="assumptions">
-<h2>Assumptions and decisions</h2>
-{% for g, items in param_groups %}
-<h3>{{ g }} ({{ items|length }})</h3>
-<table class="small"><thead><tr><th>param</th><th>step</th><th>value</th><th>source</th><th>status</th><th>reason</th><th>evidence</th></tr></thead><tbody>
-{% for x in items %}<tr><td><code>{{ x.id }}</code></td><td><code>{{ x.node }}</code></td><td>{{ x.value_fmt }} {{ x.unit or '' }}</td><td>{{ x.source }}{% if x.confidence %} ({{ x.confidence }}){% endif %}{% if g == 'fitted' %} · hold-out {{ 'pass' if x.holdout_pass else 'none/fail' }}{% if x.global %} · acts globally{% endif %}{% endif %}</td><td>{{ x.status }}</td><td>{{ x.reason or '' }}</td><td>{% for e in x.evidence %}<code>{{ e }}</code> {% endfor %}</td></tr>{% endfor %}
-</tbody></table>
-{% if g == 'fitted' %}<p class="small">Limits of a fit: the hold-out uses the same legacy run, so a shared upstream defect is not detected; spatial autocorrelation makes the halves dependent; a parameter that acts globally makes both halves agree trivially; a fit shows the value is consistent with the legacy, not that it was intended.</p>{% endif %}
-{% else %}<p class="small">No parameter records.</p>{% endfor %}
-<h3>Decisions ({{ decisions|length }})</h3>
-<table class="small"><thead><tr><th>id</th><th>title</th><th>kind</th><th>answer</th><th>by</th><th>params</th><th>when</th></tr></thead><tbody>
+<h2>Parameters <span class="count">{{ param_rows|length }} · with the lines they were read from</span></h2>
+{% if param_rows %}<div class="scroll"><table><thead><tr><th>parameter</th><th>step</th><th>value</th><th>source</th><th>status</th><th>cited at (file:line)</th><th>reason</th></tr></thead><tbody>
+{% for x in param_rows %}<tr><td><code>{{ x.id }}</code></td><td>{% if x.node %}<code>{{ x.node }}</code>{% else %}—{% endif %}</td><td>{{ x.value }} {{ x.unit }}</td><td><span class="badge {{ 'amber' if x.source in ('assumption','fitted') or x.status == 'assumed' else ('blue' if x.source == 'answer' else 'grey') }}">{{ x.source }}</span>{% if x.resolution == 'inferred' %} <span class="meta">inferred</span>{% endif %}</td><td>{{ x.status }}</td><td>{% for c in x.cites %}<code>{{ c }}</code>{{ '<br>'|safe if not loop.last }}{% else %}—{% endfor %}</td><td>{{ x.reason }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p class="small">No parameter records.</p>{% endif %}
+{% for g, items in param_groups if g == 'fitted' %}<p class="small">Limits of a fit: the hold-out uses the same legacy run, so a shared upstream defect is not detected; spatial autocorrelation makes the halves dependent; a parameter that acts globally makes both halves agree trivially; a fit shows the value is consistent with the legacy, not that it was intended.</p>{% endfor %}
+<details class="sect"><summary>Decisions recorded ({{ decisions|length }}) and tolerance records ({{ tolerances|length }})</summary>
+<div class="scroll"><table><thead><tr><th>id</th><th>title</th><th>kind</th><th>answer</th><th>by</th><th>params</th><th>when</th></tr></thead><tbody>
 {% for d in decisions %}<tr><td><code>{{ d.id }}</code>{% if d.amended %} (after the run){% endif %}</td><td>{{ d.title }}</td><td>{{ d.kind or '' }}</td><td>{{ d.answer if d.answer is string else (d.answer|tojson) }}</td><td>{{ d.by or '' }}</td><td>{{ d.params|join(', ') }}</td><td>{{ d.timestamp or '' }}</td></tr>{% endfor %}
-</tbody></table>
-{% if tolerances %}<h3>Tolerance records ({{ tolerances|length }})</h3>
-<table class="small"><thead><tr><th>id</th><th>dataset · check</th><th>rule</th><th>correct spread</th><th>nearest wrong</th><th>signed by</th></tr></thead><tbody>
+</tbody></table></div>
+{% if tolerances %}<div class="scroll"><table><thead><tr><th>id</th><th>dataset · check</th><th>rule</th><th>correct spread</th><th>nearest wrong</th><th>signed by</th></tr></thead><tbody>
 {% for t in tolerances %}<tr><td><code>{{ t.id }}</code></td><td><code>{{ t.dataset }}</code> · {{ t.check }}</td><td>atol {{ t.atol|fmt }} · rtol {{ t.rtol|fmt }}{% if t.value is not none %} · {{ t.value|fmt }}{% endif %}</td><td>{{ t.correct_spread|fmt }}</td><td>{{ t.nearest_wrong|fmt }}</td><td>{% if t.signed %}{{ t.agreed_by }} ({{ t.agreed_at }}){% else %}<span class="missing">unsigned — ignored, check ran exact</span>{% endif %}</td></tr>{% endfor %}
-</tbody></table>{% endif %}
+</tbody></table></div>{% endif %}
+</details>
 </section>
 
 <section id="known-differences">
-<h2>Known differences ({{ kds|length }})</h2>
+<h2>Known differences <span class="count">{{ kds|length }}</span></h2>
 {% for k in kds %}
 <div class="card {{ 'amber' if k.status == 'accepted' and k.human else 'grey' }}"><div class="card-head"><h3><code>{{ k.id }}</code> {{ k.title }}</h3><span class="badge {{ 'amber' if k.status == 'accepted' and k.human else 'grey' }}">{{ k.kind }} · {{ k.status }}</span></div>
-<div class="small">owner: {{ k.owner or 'none' }}{% if not k.human %} (<strong>not a named human: ignored</strong>){% endif %} · datasets {{ k.datasets|join(', ') }} · bound {{ k.bound|tojson if k.bound is not none else 'none' }} · decided {{ k.decided_at or '?' }}{% if k.after_run %} · <strong>decided after seeing the difference; applies from the next run</strong>{% endif %}{% if k.unsealed %} · not in this bundle{% endif %}</div>
-{% for e in k.evaluations %}<div class="small">{{ e.dataset }}: {{ 'accepted' if e.accepted else 'not accepted' }}{% if e.why_not %} — {{ e.why_not|join('; ') }}{% endif %} · bound held: {{ 'yes' if e.bound_held else 'no' }}</div>{% endfor %}
-{% if k.reason %}<div class="small">reason: {{ k.reason }}</div>{% endif %}
+<p class="small">owner: {{ k.owner or 'none' }}{% if not k.human %} (<strong>not a named human: ignored</strong>){% endif %} · datasets {{ k.datasets|join(', ') }} · bound {{ k.bound|tojson if k.bound is not none else 'none' }} · decided {{ k.decided_at or '?' }}{% if k.after_run %} · <strong>decided after seeing the difference; applies from the next run</strong>{% endif %}{% if k.unsealed %} · not in this bundle{% endif %}</p>
+{% for e in k.evaluations %}<p class="small">{{ e.dataset }}: {{ 'accepted' if e.accepted else 'not accepted' }}{% if e.why_not %} — {{ e.why_not|join('; ') }}{% endif %} · bound held: {{ 'yes' if e.bound_held else 'no' }}</p>{% endfor %}
+{% if k.reason %}<p class="small">reason: {{ k.reason }}</p>{% endif %}
 </div>
 {% else %}<p class="small">None recorded.</p>{% endfor %}
 </section>
@@ -279,10 +406,10 @@ each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not lo
 <p>Computed: <span class="badge {{ 'ok' if target.state == 'ready' else 'amber' }}">{{ 'target-ready' if target.state == 'ready' else 'not target-ready' }}</span> · deployment status <code>{{ target.deployment_status }}</code>{% if target.runtime %} · runtime <code>{{ target.runtime }}</code>{% endif %}</p>
 {% if target.claim %}<div class="claim" id="target-claim">{{ target.claim }}</div>{% else %}<p class="missing">target-manifest.json has no claim text.</p>{% endif %}
 {% if target.reasons %}<ul class="phr caps">{% for r in target.reasons %}<li><code>{{ r.code }}</code> {{ r.phrase }}{% if r.detail %} ({{ r.detail }}){% endif %}</li>{% endfor %}</ul>{% endif %}
-<table class="small"><thead><tr><th>check</th><th>state</th><th>reason codes</th></tr></thead><tbody>
+<div class="scroll"><table><thead><tr><th>check</th><th>state</th><th>reason codes</th></tr></thead><tbody>
 {% for c in target.checks %}<tr><td><code>{{ c.id }}</code></td><td>{{ c.state }}</td><td>{{ (c.reason_codes or [])|join(', ') }}</td></tr>{% endfor %}
-</tbody></table>
-{% if target.env_diff %}<div class="small">Environment difference: <code>{{ target.env_diff|tojson }}</code></div>{% endif %}
+</tbody></table></div>
+{% if target.env_diff %}<p class="small">Environment difference: <code>{{ target.env_diff|tojson }}</code></p>{% endif %}
 {% endif %}
 </section>
 
@@ -297,16 +424,7 @@ each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not lo
 {% for f in not_checked.sweep %}<li><code>{{ f }}</code>: legacy file under an output folder that lineage never mentions</li>{% endfor %}
 {% for s in not_checked.dropped %}<li><code>{{ s }}</code>: step out of scope (drop)</li>{% endfor %}
 </ul>
-<table class="small" style="width:auto"><thead><tr><th>state</th><th>datasets</th></tr></thead><tbody>
-{% for s, n, cls in histogram %}<tr><td>{{ s }}</td><td>{{ n }}</td></tr>{% endfor %}
-</tbody></table>
-</section>
-
-<section id="history">
-<h2>Run history ({{ history|length }})</h2>
-<table class="small"><thead><tr><th>run</th><th>chain</th><th>executor</th><th>status</th><th>exit</th><th>started</th><th>computed rung</th><th>FAIL</th><th>evidence</th></tr></thead><tbody>
-{% for h in history %}<tr{% if h.current %} style="font-weight:600"{% endif %}><td><code>{{ h.run_id }}</code>{% if h.current %} (this report){% endif %}</td><td>{{ h.chain or '' }}</td><td>{{ h.executor or '' }}</td><td>{{ h.status or '' }}</td><td>{{ h.exit_code if h.exit_code is not none else '' }}</td><td>{{ h.started_at or '' }}</td><td>{{ h.rung }}{% if h.stale %} (stale){% endif %}</td><td>{{ h.fails if h.fails is not none else '—' }}</td><td>{% if h.sealed %}<a href="{{ h.link }}"><code>{{ h.evidence_id|short }}</code></a>{% if h.amendments %} +{{ h.amendments }} amendment(s){% endif %}{% else %}not sealed{% endif %}</td></tr>{% endfor %}
-</tbody></table>
+{% if has_swipe %}<p class="small">Swipe map (legacy | new, local only; it needs the <code>assets/</code> folder next to it): <a href="swipe.html">swipe.html</a>{% if views_links %} · GeoLibre map views per dataset are listed in each card{% endif %}.</p>{% endif %}
 </section>
 
 <section id="agent-notes">
@@ -315,39 +433,77 @@ each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not lo
 </section>
 
 <section id="reproducibility">
-<h2>Reproducibility</h2>
-<table class="small"><tbody>
+<details class="sect"><summary>Reproducibility: hashes, environment, inputs, commands</summary>
+<div class="scroll"><table><tbody>
 <tr><th>run identity</th><td><code>{{ run.identity }}</code></td></tr>
 <tr><th>evidence id</th><td><code>{{ evidence_id }}</code></td></tr>
+<tr><th>executor · isolation · read ledger</th><td>{{ run.executor or 'unknown' }} · {{ run.isolation or 'unknown' }} · {{ run.read_ledger or 'unknown' }}</td></tr>
 {% for c in chain %}<tr><th>{{ c.file }}</th><td><code>{{ c.id }}</code>{% if c.parent %} · parent <code>{{ c.parent|short(16) }}</code> · added {{ c.added|join(', ') }}{% endif %}</td></tr>{% endfor %}
 {% for k, v in sealed|dictsort %}<tr><th>sealed {{ k }}</th><td><code>{{ v or '—' }}</code></td></tr>{% endfor %}
 <tr><th>environment</th><td><code>{{ envrt|tojson }}</code></td></tr>
 {% for c in comparators %}<tr><th>comparator</th><td><code>{{ c[0] }} {{ c[1] }} sha256 {{ c[2] }}</code></td></tr>{% endfor %}
 <tr><th>versions</th><td>report {{ versions.report }} · ladder {{ versions.ladder }} · phrases {{ versions.phrases }} · plugin {{ versions.plugin }}</td></tr>
-</tbody></table>
+</tbody></table></div>
 <h3>Inputs</h3>
-<table class="small"><thead><tr><th>path</th><th>size</th><th>sha256</th><th>matches inventory</th></tr></thead><tbody>
+<div class="scroll"><table><thead><tr><th>path</th><th>size</th><th>sha256</th><th>matches inventory</th></tr></thead><tbody>
 {% for o in inputs %}<tr><td><code>{{ o.path }}</code></td><td>{{ o.size|fmt }}</td><td><code>{{ o.sha256 }}</code></td><td>{{ (o.meta or {}).matches_inventory|fmt }}</td></tr>{% endfor %}
-</tbody></table>
+</tbody></table></div>
 <h3>References</h3>
-<table class="small"><thead><tr><th>path</th><th>dataset</th><th>sha256</th><th>kind</th><th>independence</th></tr></thead><tbody>
+<div class="scroll"><table><thead><tr><th>path</th><th>dataset</th><th>sha256</th><th>kind</th><th>independence</th></tr></thead><tbody>
 {% for o in refs %}<tr><td><code>{{ o.path }}</code></td><td><code>{{ o.dataset }}</code></td><td><code>{{ o.sha256 }}</code></td><td>{{ (o.meta or {}).reference_kind }}</td><td>{{ (o.meta or {}).independence }}</td></tr>{% endfor %}
-</tbody></table>
+</tbody></table></div>
 <h3>Commands</h3>
-<pre class="small"><code>$PLUGIN/scripts/axpy $PLUGIN/skills/run/run_local.py migration --chain chained
-python3 $PLUGIN/skills/report/ladder.py migration --run {{ run_id }} --json     # re-verify this bundle
-$PLUGIN/scripts/axpy $PLUGIN/skills/report/report.py migration --run {{ run_id }}</code></pre>
+<pre class="small"><code>python3 $PLUGIN/skills/report/ladder.py migration --run {{ run_id }} --json     # re-verify this bundle
+$PLUGIN/scripts/axpy $PLUGIN/skills/report/report.py migration --run {{ run_id }}
+$PLUGIN/scripts/axpy $PLUGIN/skills/report/report.py migration --check   # this folder still matches the bundle</code></pre>
+</details>
+</section>
+
+<section id="glossary">
+<h2>Glossary</h2>
+<dl class="gloss">{% for k, v in glossary %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}</dl>
 </section>
 <footer>
-<p>Evidence <code>{{ evidence_id }}</code> · {{ limit_note }}</p>
+<p>Rendered by report.py from evidence <code>{{ evidence_id }}</code>; every number and verdict on this page comes from that sealed bundle, and the wording from phrases.v1.yaml. Self-contained: this file loads nothing from the network. {{ limit_note }}</p>
 {% if phrase_missing %}<p><code>PHRASE_MISSING</code>: {{ phrase_missing|join(', ') }} (rendered literally)</p>{% endif %}
 </footer>
 </main>
-{% if layers %}
-<script src="assets/vendor/maplibre-gl.js"></script>
-<script src="assets/vendor/maplibre-gl-compare.js"></script>
-<script src="assets/layers.js"></script>
-<script src="assets/swipe.js"></script>
+{% if decision_cards %}
+<script>
+(function () {
+  "use strict";
+  var btn = document.getElementById("copy-decisions");
+  var out = document.getElementById("decision-export");
+  var state = document.getElementById("copy-state");
+  if (!btn || !out) { return; }
+  function compose() {
+    var lines = ["My decisions on the axis-migrate report for run " + out.dataset.run + " (evidence " + out.dataset.evidence + "):"];
+    var cards = document.querySelectorAll("article.dec");
+    for (var i = 0; i < cards.length; i++) {
+      var c = cards[i];
+      var picked = c.querySelector("input[type=radio]:checked");
+      var note = c.querySelector("textarea[data-note]");
+      var line = (i + 1) + ". " + c.dataset.subject + ": " + (picked ? picked.value : "undecided");
+      if (note && note.value.trim()) { line += "\n   note: " + note.value.trim().replace(/\s+/g, " "); }
+      lines.push(line);
+    }
+    lines.push("");
+    lines.push("This is not a signature. It records what I intend; I sign tolerances and known differences myself in migration/SIGN-OFF.md, and nothing here changes the computed status.");
+    return lines.join("\n");
+  }
+  function refresh() { out.value = compose(); }
+  document.addEventListener("change", function (e) { if (e.target.closest && e.target.closest("article.dec")) { refresh(); } });
+  document.addEventListener("input", function (e) { if (e.target.closest && e.target.closest("article.dec")) { refresh(); } });
+  btn.addEventListener("click", function () {
+    refresh();
+    var done = function (ok) { state.textContent = ok ? "Copied. Paste it to the agent." : "Select the text below and copy it."; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(out.value).then(function () { done(true); }, function () { out.select(); done(document.execCommand && document.execCommand("copy")); });
+    } else { out.select(); done(document.execCommand && document.execCommand("copy")); }
+  });
+  refresh();
+})();
+</script>
 {% endif %}
 </body>
 </html>

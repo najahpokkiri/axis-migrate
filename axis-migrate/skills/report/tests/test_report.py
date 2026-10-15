@@ -34,16 +34,22 @@ def test_clean_report(sealed):
     assert rep["steps"] == {"s01_mask": "VERIFIED", "s02_total": "VERIFIED"}
     assert 'id="integrity"' not in html
     assert "✓ none: every in-scope step is verified" in html
-    for g in ac.GREYED_RUNGS:
-        assert re.search(rf'class="greyed"[^>]*>{g} <span>not attempted</span>', html)
+    assert re.search(r'class="greyed"[^>]*>' + " · ".join(ac.GREYED_RUNGS) + " <span>not attempted</span>", html)
     files = rep["files"]
     assert "index.html" in files and "assets/layers.js" in files
     for rel, h in files.items():
         assert ac.sha256_file(sealed["migration"] / "report" / rel) == h
     # page order (07 §4.1)
     order = [m.group(1) for m in re.finditer(r'<(?:section|header) id="([a-z-]+)"', html)]
-    assert order == ["headline", "failures", "graph", "map", "failed-steps", "parity", "passing-steps", "assumptions",
-                     "known-differences", "target", "not-checked", "history", "agent-notes", "reproducibility"]
+    assert order == ["headline", "failures", "datasets", "graph", "timeline", "steps", "parity", "assumptions",
+                     "known-differences", "target", "not-checked", "agent-notes", "reproducibility", "glossary"]
+    # the hero is the ladder line verbatim; REPORT.md starts with it
+    lad = ladder.compute(sealed["migration"])
+    assert re.search(r'<p class="status-line[^"]*" id="status-line">([^<]*)</p>', html).group(1) == \
+        lad["status_line"].replace("&", "&amp;")
+    md = (sealed["migration"] / "report" / "REPORT.md").read_text(encoding="utf-8")
+    assert md.splitlines()[0] == lad["status_line"]
+    assert {"REPORT.md", "parity.xlsx", "swipe.html"} <= set(files)
 
 
 def test_failure_listed_first_unfoldable(proj):  # 07 test 1 (structural half; browser half in test_browser.py)
@@ -51,8 +57,8 @@ def test_failure_listed_first_unfoldable(proj):  # 07 test 1 (structural half; b
     code, rep, html = render(proj["migration"])
     fails = section(html, "failures")
     assert "s02_total" in fails and "shifted by 1 px" in fails
-    assert "<details" not in html and "hidden" not in fails
-    assert html.index('id="failures"') < html.index('id="graph"') < html.index('id="passing-steps"')
+    assert "<details" not in fails and "hidden" not in fails
+    assert html.index('id="failures"') < html.index('id="datasets"') < html.index('id="graph"')
     assert html.index('id="step-s02_total"') < html.index('id="step-s01_mask"')  # failing card before passing card
     assert rep["rung"] == "sandbox-validated"
 
@@ -132,10 +138,14 @@ def test_visual_flag_amber_with_picture(proj):  # 07 test 9
     synth.make_run(proj, 1, flag="ds.a_mask")
     _, rep, html = render(proj["migration"])
     assert rep["steps"]["s01_mask"] == "NEEDS_REVIEW"
-    card = html[html.index('id="step-s01_mask"'):html.index('id="parity"')]
     assert 'class="card amber"' in html[html.index('id="step-s01_mask"') - 30:html.index('id="step-s01_mask"')]
-    assert 'src="assets/plots/ds.a_mask/worst_tiles.png"' in card
+    i = html.index('id="ds-ds.a_mask"')
+    assert 'class="dcard amber"' in html[i - 40:i]
+    card = html[i:html.index("</article>", i)]
+    assert 'src="data:image/png;base64,' in card and "worst_tiles.png" in card
     assert "VISUAL_FLAG" in card and "vf-ds.a_mask-q1" in card
+    dec = section(html, "decisions")  # a visual flag is a person's call: it gets a decision card
+    assert "ds.a_mask · VISUAL_FLAG" in dec
     assert rep["rung"] == "sandbox-validated"
 
 
