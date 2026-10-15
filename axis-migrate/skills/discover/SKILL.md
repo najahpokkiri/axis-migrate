@@ -27,7 +27,10 @@ Read `migration/inventory.json`: `scan.read_only_verified` (must be true), `scan
 `code[]` (status live/superseded/twin/helper and `twin_of`), `ops[]` (one per legacy tool call, file:line),
 `settings[]` (grid-shaping parameters, incl. `default_unset`), `params[]` (literals with `used_at` and
 `doc_mentions`), `derived_copies[]` and `manual_step_candidates[]`, `grids[]` (families and pixel offsets),
-`extent_relations[]`, `join_coverage[]`, `unresolved[]` and above all `open_items[]`. Profiles are in
+`extent_relations[]`, `join_coverage[]`, `unresolved[]`, `implementations[]` (models, scripts and toolboxes that
+name the same output fields, with a guessed parity reference), `toolboxes[]` (.tbx strings, partial) and above all
+`open_items[]` (e.g. `model_input_binding` and `custom_expression_function` as agent guesses, `reversed_containment`,
+`nominal_vs_real_cell`, `absolute_path_column`; code flags `foreign_host_path` name directories of another machine). Profiles are in
 `migration/discover/profiles/<dataset>.json`; statistics there are computed, sidecar statistics are only recorded.
 
 ## 2 Look at the inputs
