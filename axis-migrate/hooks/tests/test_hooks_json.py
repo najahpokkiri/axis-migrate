@@ -34,6 +34,7 @@ def test_matchers_and_failure_modes():
     assert "onFailure" not in table[("SessionStart", "startup|resume|clear|compact|fork")]
     assert "onFailure" not in table[("UserPromptSubmit", None)]
     assert table[("Stop", None)]["timeout"] == 15
+    assert "onFailure" not in table[("PostToolUse", None)]      # progress_claims: informational, every tool
     for e, m, h in entries():
         assert m is None or re.fullmatch(r"[A-Za-z_|]+", m), m  # exact names (Claude) = plain alternation (Codex regex)
     assert set(HJ["hooks"]) == {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}

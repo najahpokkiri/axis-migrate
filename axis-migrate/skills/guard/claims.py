@@ -116,6 +116,13 @@ TRAILING_CONDITION_RE = re.compile(r"^[\s,]*(?:\w+\s+){0,2}?(?:only\s+after|unti
                                    r"after\s+(?:a|the)\s+(?:person|user|human))\b", re.I)
 CLAUSE_BREAK_RE = re.compile(r"[.;:!?\n,(]")
 QUOTE_RE = re.compile("\"[^\"\\n]{1,300}\"|\u201c[^\u201d\\n]{1,300}\u201d|`[^`\\n]{1,300}`|'[^'\\n]{4,300}'")
+# A quoted claim that the same sentence retracts is a correction, not a claim (H8 asks the agent to correct a progress
+# message, which means quoting it): 'my sentence "all datasets match the legacy outputs" was wrong', 'disregard "…"'.
+RETRACT_AFTER_RE = re.compile(r"[^.;!?\n]{0,80}?\b(?:was|is|were)\s+(?:wrong|incorrect|false|mistaken|premature|"
+                              r"not\s+(?:true|correct|supported|right)|unsupported|a\s+mistake)\b|"
+                              r"[^.;!?\n]{0,80}?\b(?:is|was)\s+not\s+supported\b", re.I)   # .match(): anchored at pos
+RETRACT_BEFORE_RE = re.compile(r"\b(?:disregard|retract|withdraw|ignore|correction:?|i\s+was\s+wrong\s+to\s+(?:say|"
+                               r"write)|wrongly\s+(?:said|wrote|claimed))\b[^.;!?\n]{0,80}$", re.I)
 TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z'’-]*")
 STATUS_LINE_RE = re.compile(r"axis-migrate status:[^\n]*", re.I)
 
@@ -238,8 +245,9 @@ def find_claims(text: str) -> list[Claim]:
             if m.group(0).lower() in GENERIC_WORDS and not _migration_subject(clean, m.start(), m.end()):
                 continue  # "the scan and the input maps are finished": progress on a named sub-task
             # a quoted claim is judged with the words before the quote too ('I did not write "all checks pass"')
-            q = next((a for a, b in quotes if a < m.start() < b), None)
-            if q is not None and _negated(clean, q):
+            q = next(((a, b) for a, b in quotes if a < m.start() < b), None)
+            if q is not None and (_negated(clean, q[0]) or RETRACT_AFTER_RE.match(clean, q[1])
+                                  or RETRACT_BEFORE_RE.search(clean[max(0, q[0] - 120):q[0]])):
                 continue
             out.append(Claim(phrase=text[m.start():m.end()], rung=phrase_rung(m.group(0)), start=m.start(),
                              end=m.end()))

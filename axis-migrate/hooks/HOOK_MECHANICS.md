@@ -67,6 +67,15 @@ stop_gate 90–118 ms (ladder plus drift checks).
 2. **Grep/Glob.** H5 cannot fire for tools that do not exist. The eval-hidden protection rests on `guard_bash` and on
    the harness's separate-user fence (DESIGN §7.4).
 
+## Mid-run claims (H8, `progress_claims.py`)
+
+No hook event carries an assistant message written between tool calls, and text already shown cannot be withdrawn.
+So H8 runs after every tool call (PostToolUse, no matcher, informational, no `onFailure`), reads only the assistant
+text appended to `transcript_path` since its last check (byte offset per session in `.axis/progress_claims.json`),
+and only when `claims.py` finds a claim computes the status. A claim above the computed rung returns
+`additionalContext` asking the agent to correct it in its next visible message with `ladder.py --brief`. The Stop
+gate remains the only block. Codex: silent when the payload has no `transcript_path`.
+
 ## Reproducing
 
 Do not re-run on every build; the eval budget is tight. To reproduce:

@@ -167,7 +167,7 @@ fi
 if [ -n "$PY" ]; then
   PYTHONIOENCODING=utf-8
   export PYTHONIOENCODING
-  printf '%s' "$PAYLOAD" | "$PY" -I "$SCRIPT"
+  printf '%s' "$PAYLOAD" | "$PY" -I -B "$SCRIPT"
   exit $?
 fi
 

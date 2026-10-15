@@ -80,6 +80,15 @@
             "onFailure": "block"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/hooks/run-hook.sh\" progress_claims",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [

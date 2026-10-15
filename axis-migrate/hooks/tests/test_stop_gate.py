@@ -459,3 +459,14 @@ def test_review_block_cap_and_claim_together(project):
     assert r3.out.get("decision") is None and r3.out["systemMessage"].isascii()
     assert "ds.01_mid" in r3.out["systemMessage"] and "not visually assessed" in r3.out["systemMessage"]
     assert stop(project, FINISH).decision == "block"              # a new turn counts again
+
+
+def test_quoted_claim_retracted_in_the_same_sentence_is_not_a_claim():
+    import claims as cl
+    for t in ('My earlier sentence "all datasets match the legacy outputs" was wrong.',
+              'Please disregard "all checks pass".',
+              'Correction: "every step is verified" is not supported by the computed status.'):
+        assert cl.find_claims(t) == [], t
+    for t in ('All datasets match the legacy outputs.', '"All checks pass", which was confirmed.',
+              'I said "all checks pass" and that is right.'):
+        assert cl.find_claims(t), t

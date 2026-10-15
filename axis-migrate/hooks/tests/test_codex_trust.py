@@ -17,7 +17,7 @@ def test_expected_hooks_match_hooks_json():
     hj = json.loads((PLUGIN / "hooks" / "hooks.json").read_text())
     want = sum(len(groups) for groups in hj["hooks"].values())
     got = codex_trust.expected_hooks()
-    assert len(got) == want == 8
+    assert len(got) == want == 9
     assert ("preToolUse", "Bash|PowerShell") in got and ("stop", None) in got
 
 
