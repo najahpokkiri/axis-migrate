@@ -144,3 +144,94 @@ def test_record_refuses_human_kd_owner_and_round_trips(tmp_path):
     assert nid == "KD-001"
     f, _ = pc.check(mig, "investigate")
     assert not f.blocking, f.items
+
+
+def warns(f):
+    return {i["code"] for i in f.items if i["severity"] == "warn"}
+
+
+def test_budget_is_a_soft_limit(tmp_path):
+    mig = make(tmp_path, [good_param()])
+    doc = yaml.safe_load((mig / "params.yaml").read_text())
+    doc["budget"] = {"max_questions": 2, "asked": 5}
+    (mig / "params.yaml").write_text(yaml.safe_dump(doc))
+    f, _ = pc.check(mig, "investigate")
+    assert not f.blocking and "BUDGET_EXCEEDED" in warns(f)
+
+
+def test_impact_level_enum(tmp_path):
+    f, _ = pc.check(make(tmp_path, [good_param(impact={"datasets": ["ds.out"], "level": "High"})]), "investigate")
+    assert "ENUM" in codes(f)
+
+
+def test_assumed_parity_blind_is_warned(tmp_path):
+    p = good_param(id="p.policy", kind="manual_step", resolution="inferred", confidence="low", method="assumption", source="assumption",
+                   status="assumed", evidence=[{"ref": "answer:q01"}], unit=None)
+    f, _ = pc.check(make(tmp_path, [p]), "investigate")
+    assert not f.blocking and "ASSUMED_PARITY_BLIND" in warns(f)
+    q = good_param(id="p.policy", kind="threshold", resolution="inferred", confidence="low", method="assumption", source="assumption",
+                   status="assumed", evidence=[{"ref": "answer:q01"}], unit=None)
+    f2, _ = pc.check(make(tmp_path / "b", [q]), "investigate")
+    assert "ASSUMED_PARITY_BLIND" not in warns(f2)
+
+
+def test_assumed_without_impact_level_is_warned(tmp_path):
+    p = good_param(kind="threshold", resolution="inferred", confidence="low", method="assumption",
+                   source="assumption", status="assumed", evidence=[{"ref": "answer:q01"}],
+                   impact={"datasets": ["ds.out"]})
+    assert "ASSUMED_NO_IMPACT_LEVEL" in warns(pc.check(make(tmp_path, [p]), "investigate")[0])
+
+
+# ---------------------------------------------------------------- params_check agrees with the runtime (Lux e2e, 15 Oct)
+RUNTIME = Path(__file__).resolve().parents[2] / "migrate" / "runtime"
+
+
+def runtime_refuses(mig, pid, declared) -> bool:
+    sys.path.insert(0, str(RUNTIME))
+    import _axis_runtime as rt
+    ctx = rt.Ctx(step_id="s01_a", inputs={}, outputs={}, params_file=str(mig / "params.yaml"),
+                 declared_params=declared, scratch_dir=str(mig / ".scratch"))
+    try:
+        ctx.param(pid)
+        return False
+    except rt.ParamMissing:
+        return True
+
+
+ANSWERED_UNRESOLVED = dict(resolution="unresolved", source="answer", status="confirmed", question="q01",
+                           evidence=[], value=40)
+Q_ANSWERED = [{"id": "q01", "status": "answered", "kind": "unresolved_value", "param_ids": ["p.thresh_m"]}]
+READER = 'PARAMS = ["p.thresh_m"]\ndef run(ctx):\n    ctx.param("p.thresh_m")\n'
+
+
+def test_answered_but_unresolved_blocks_like_the_runtime(tmp_path):
+    """The Lux run: params_check passed '0 blocking', then run_local refused with PARAM_MISSING (exit 12)."""
+    mig = make(tmp_path, [good_param(**ANSWERED_UNRESOLVED)], questions=Q_ANSWERED)
+    assert runtime_refuses(mig, "p.thresh_m", ["p.thresh_m"])
+    f, _ = pc.check(mig, "investigate")
+    assert "PARAM_UNRESOLVED_AFTER_ANSWER" in codes(f)
+    resolved = make(tmp_path / "ok", [good_param(**dict(ANSWERED_UNRESOLVED, resolution="resolved",
+                                                          evidence=[{"ref": "answer:q01"}]))], questions=Q_ANSWERED)
+    assert not runtime_refuses(resolved, "p.thresh_m", ["p.thresh_m"])
+    assert not pc.check(resolved, "investigate")[0].blocking
+
+
+def test_wired_mirrors_every_runtime_refusal(tmp_path):
+    def wired(sub, param, step_params=None):
+        mig = make(tmp_path / sub, [param], pipeline=READER)
+        g = json.loads((mig / "graph.json").read_text())
+        g["steps"][0]["new"] = {"module": "pipeline/s01_a.py"}
+        if step_params is not None:
+            g["steps"][0]["params"] = step_params
+        (mig / "graph.json").write_text(json.dumps(g))
+        pc.check(mig, "wired", fill_used_by=True)
+        f, _ = pc.check(mig, "wired")
+        return mig, f, g["steps"][0]["params"]
+
+    mig, f, decl = wired("open", good_param(resolution="unresolved", source="code", status="open", evidence=[],
+                                            question="q01"))
+    assert runtime_refuses(mig, "p.thresh_m", decl) and "PARAM_MISSING_AT_RUN" in codes(f)
+    mig, f, decl = wired("undeclared", good_param(), step_params=[])
+    assert runtime_refuses(mig, "p.thresh_m", decl) and "PARAM_MISSING_AT_RUN" in codes(f)
+    mig, f, decl = wired("fine", good_param())
+    assert not runtime_refuses(mig, "p.thresh_m", decl) and "PARAM_MISSING_AT_RUN" not in codes(f)

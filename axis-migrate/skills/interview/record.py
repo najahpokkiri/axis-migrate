@@ -2,6 +2,26 @@
 
     axpy record.py decision migration --json entry.json      # appends `## D-nnn · title · <UTC>` + yaml block
     axpy record.py kd       migration --json entry.json      # appends `## KD-nnn · title` + yaml block
+    axpy record.py answer   migration --param p.x [--param p.y …] --question qNN --json entry.json
+                            # the decision AND the params.yaml change of an answered question, together
+    axpy record.py param    migration --param p.x [--new] --json fields.json
+                            # create or update one params.yaml entry (investigation findings, fit blocks, …)
+
+params.yaml has only these two writers (plus params_check.py --fill-used-by for `used_by`): never rewrite it with ad
+hoc Python or an editor. Both re-validate with params_check.py before writing and replace the file atomically.
+
+`answer` records what one interview question settled: it appends the decision (as `decision` does; `question` and
+`params` come from the flags) and updates each named parameter in params.yaml — `question: qNN`, the decision id
+appended to `decisions`, `source: answer` + `status: confirmed` + `resolution: resolved` (or, for
+`kind: assumption` = "Don't know", `source: assumption` + `status: assumed`, and an unresolved parameter becomes
+`resolution: inferred`, `confidence: low`, `method: assumption`), evidence `answer:qNN`, `value` when entry.json
+carries `value` (one --param) or `values` ({p.x: v, …}) — so the runtime never refuses an answered parameter as
+PARAM_MISSING; and adds 1 to `budget.asked` (once per question: a second entry for the same question, e.g. a
+restated "Other", does not count again). A confirmed status needs `by: user (…)`: only a person confirms. The new
+params.yaml and decisions.md are checked together by params_check.py (stage investigate) before either is written;
+a change that adds a blocking finding is refused and nothing is written. Both files are then replaced atomically
+(params.yaml first, rolled back if decisions.md cannot be written). The graph's `answer_question` comes first
+(graph.py apply), so params_check finds the question answered.
 
 entry.json holds the fields of the block plus `title` (decision: id, question, kind, answer, by, params, nodes,
 changes, supersedes, evidence; KD: kind, datasets, checks, rule, bound, reason, evidence, owner, decided_at,
@@ -47,6 +67,13 @@ def _block(head: str, body: dict, keys: list) -> str:
 
 
 def append(mdir: Path, what: str, entry: dict) -> str:
+    path, new, nid = render(mdir, what, entry)
+    ac.atomic_write_text(path, new)
+    return nid
+
+
+def render(mdir: Path, what: str, entry: dict) -> tuple[Path, str, str]:
+    """(file, its new full text, new id) for an entry; nothing is written."""
     entry = dict(entry)
     title = str(entry.pop("title", "")).strip()
     if not title or "\n" in title or "·" in title:
@@ -80,20 +107,203 @@ def append(mdir: Path, what: str, entry: dict) -> str:
     entry["id"] = nid
     head = f"## {nid} · {title} · {ac.utc_now_iso()}" if what == "decision" else f"## {nid} · {title}"
     new = text.rstrip("\n") + "\n" + _block(head, entry, keys)
-    ac.atomic_write_text(path, new)
-    return nid
+    return path, new, nid
+
+
+ANSWER_KINDS = {"answer", "assumption", "legacy_keep", "legacy_fix", "manual_step", "fit_confirm", "scope",
+                "confirm_all"}
+
+
+def answer(mdir: Path, param_ids: list[str], question: str, entry: dict) -> dict:
+    """Record an answered (or "Don't know") question: decision + params.yaml change, validated, written together."""
+    entry = dict(entry)
+    pids = list(dict.fromkeys(param_ids))
+    if not pids:
+        raise ValueError("at least one --param")
+    kind = entry.setdefault("kind", "answer")
+    if kind not in ANSWER_KINDS:
+        raise ValueError(f"kind must be one of {sorted(ANSWER_KINDS)} for an answer")
+    assumed = kind == "assumption"
+    by = str(entry.get("by") or "")
+    if not assumed and not by.lower().startswith("user"):
+        raise ValueError("only a person confirms a parameter: by must be 'user (AskUserQuestion)', 'user (graph)' "
+                         "or 'user (chat)'; a \"Don't know\" is kind: assumption")
+    if entry.get("question") not in (None, question):
+        raise ValueError(f"entry question {entry.get('question')!r} differs from --question {question!r}")
+    if entry.get("params") not in (None, []) and sorted(entry["params"]) != sorted(pids):
+        raise ValueError(f"entry params {entry['params']} differ from --param {pids}")
+    values = entry.pop("values", None)
+    if "value" in entry:
+        if len(pids) != 1 or values is not None:
+            raise ValueError("`value` needs exactly one --param (use `values: {p.x: …}` for several)")
+        values = {pids[0]: entry.pop("value")}
+    values = dict(values or {})
+    if set(values) - set(pids):
+        raise ValueError(f"values for parameters not named by --param: {sorted(set(values) - set(pids))}")
+    entry["question"] = question
+    entry["params"] = pids
+
+    graph = ac.load_json(mdir / "graph.json")
+    q = next((x for x in graph.get("questions") or [] if x.get("id") == question), None)
+    if q is None:
+        raise ValueError(f"question {question} is not in graph.json (add_question, then answer_question first)")
+    asked_for = q.get("param_ids") or []
+    if asked_for and kind != "confirm_all" and set(pids) - set(asked_for):
+        raise ValueError(f"{sorted(set(pids) - set(asked_for))} not in {question}.param_ids {asked_for}")
+
+    ptext = (mdir / "params.yaml").read_text(encoding="utf-8")
+    data = yaml.safe_load(ptext) or {}
+    by_id = {p.get("id"): p for p in data.get("params") or [] if isinstance(p, dict)}
+    missing = [pid for pid in pids if pid not in by_id]
+    if missing:
+        raise ValueError(f"not in params.yaml: {missing}")
+    counted = any(p.get("question") == question and p.get("decisions") for p in by_id.values())
+    changes = {}
+    for pid in pids:
+        p = by_id[pid]
+        if pid in values:
+            changes[pid] = {"from": p.get("value"), "to": values[pid]}
+    if changes and entry.get("changes") is None:
+        entry["changes"] = changes
+    dpath, dtext, nid = render(mdir, "decision", entry)
+    for pid in pids:
+        p = by_id[pid]
+        if pid in values:
+            p["value"] = values[pid]
+        p["source"] = "assumption" if assumed else "answer"
+        p["status"] = "assumed" if assumed else "confirmed"
+        if not assumed:
+            p["resolution"] = "resolved"
+        elif p.get("resolution") in (None, "unresolved"):
+            p.update(resolution="inferred", confidence="low", method="assumption")
+        ev = list(p.get("evidence") or [])
+        if not any(isinstance(e, dict) and e.get("ref") == f"answer:{question}" for e in ev):
+            ev.append({"ref": f"answer:{question}"})
+        p["evidence"] = ev
+        p["question"] = question
+        p["decisions"] = list(p.get("decisions") or []) + [nid]
+    budget = data.setdefault("budget", {})
+    if not counted:
+        budget["asked"] = int(budget.get("asked") or 0) + 1
+    new_ptext = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=120)
+
+    after = _validated_write(mdir, new_ptext, {"decisions.md": dtext})
+    ppath = mdir / "params.yaml"
+    ac.atomic_write_text(ppath, new_ptext)
+    try:
+        ac.atomic_write_text(dpath, dtext)
+    except BaseException:
+        ac.atomic_write_text(ppath, ptext)
+        raise
+    warn = [f"{i['code']} {i['where']}" for i in after.items if i["severity"] == "warn"
+            and i["code"] in ("BUDGET_EXCEEDED", "ASSUMED_PARITY_BLIND")]
+    return {"id": nid, "params": pids, "status": "assumed" if assumed else "confirmed",
+            "asked": budget.get("asked"), "max_questions": budget.get("max_questions"), "warnings": warn}
+
+
+PARAM_FIELDS = ["id", "node", "kind", "value", "unit", "resolution", "source", "evidence", "reason", "confidence",
+                "method", "flags", "impact", "status", "question", "decisions", "used_by", "fit", "fitted_against"]
+SETTABLE = set(PARAM_FIELDS) - {"id", "question", "used_by", "decisions"}
+SETTLED_FIELDS = {"value", "source", "status", "resolution"}
+
+
+def _validated_write(mdir: Path, new_ptext: str, extra: dict | None = None):
+    """params_check (investigate) on the proposed text: refuse any blocking finding the current files do not have."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import params_check as pc
+    before, _ = pc.check(mdir, "investigate")
+    after, _ = pc.check(mdir, "investigate", overrides={"params.yaml": new_ptext, **(extra or {})})
+    old = {(i["code"], i["where"]) for i in before.blocking}
+    new_blocks = [i for i in after.blocking if (i["code"], i["where"]) not in old]
+    if new_blocks:
+        raise ValueError("params_check would block: " + "; ".join(f"{i['code']} {i['where']}: {i['message']}"
+                                                                   for i in new_blocks))
+    return after
+
+
+def set_param(mdir: Path, pid: str, fields: dict, *, new: bool = False) -> dict:
+    """Create (new=True) or update one params.yaml entry. `decisions` in fields is appended, never replaced. A value
+    settled by a question (source answer|assumption) changes only through a new `answer` (with supersedes)."""
+    fields = dict(fields)
+    unknown = set(fields) - SETTABLE - {"decisions"}
+    if unknown:
+        raise ValueError(f"cannot set {sorted(unknown)} here (allowed: {sorted(SETTABLE | {'decisions'})}; "
+                         "question/source answer come from record.py answer, used_by from params_check --fill-used-by)")
+    if fields.get("source") in ("answer", "assumption"):
+        raise ValueError("source answer|assumption is written by `record.py answer` together with its decision")
+    ptext = (mdir / "params.yaml").read_text(encoding="utf-8")
+    data = yaml.safe_load(ptext) or {}
+    params = data.setdefault("params", [])
+    cur = next((p for p in params if isinstance(p, dict) and p.get("id") == pid), None)
+    if new and cur is not None:
+        raise ValueError(f"{pid} already exists (drop --new to update it)")
+    if not new and cur is None:
+        raise ValueError(f"{pid} is not in params.yaml (use --new to create it)")
+    if cur is not None and cur.get("source") in ("answer", "assumption") and set(fields) & SETTLED_FIELDS:
+        raise ValueError(f"{pid} was settled by {cur.get('question')} ({cur.get('source')}): change it with a new "
+                         f"`record.py answer` (supersedes the earlier decision), not here")
+    adds = [str(d) for d in (fields.pop("decisions", None) or [])]
+    if adds:
+        dp = mdir / "decisions.md"
+        known = set(re.findall(r"(?m)^## (D-\d{3})\b", dp.read_text(encoding="utf-8"))) if dp.exists() else set()
+        if set(adds) - known:
+            raise ValueError(f"decisions {sorted(set(adds) - known)} are not in decisions.md")
+    if new:
+        cur = {"id": pid}
+        params.append(cur)
+    cur.update(fields)
+    if adds:
+        cur["decisions"] = list(dict.fromkeys(list(cur.get("decisions") or []) + adds))
+    ordered = {k: cur[k] for k in PARAM_FIELDS if k in cur}
+    ordered.update({k: v for k, v in cur.items() if k not in ordered})
+    params[params.index(cur)] = ordered
+    new_ptext = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=120)
+    after = _validated_write(mdir, new_ptext)
+    ac.atomic_write_text(mdir / "params.yaml", new_ptext)
+    return {"id": pid, "created": new, "fields": sorted(set(fields) | ({"decisions"} if adds else set())),
+            "warnings": [f"{i['code']} {i['where']}" for i in after.items if i["severity"] == "warn"
+                         and i["where"] == pid]}
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("what", choices=["decision", "kd"])
+    ap.add_argument("what", choices=["decision", "kd", "answer", "param"])
     ap.add_argument("migration")
     ap.add_argument("--json", required=True, help="path to entry.json, or - for stdin")
+    ap.add_argument("--param", action="append", default=[], help="answer: a parameter the question settles (repeat)")
+    ap.add_argument("--question", help="answer: the graph question id (qNN)")
+    ap.add_argument("--new", action="store_true", help="param: create the entry")
     a = ap.parse_args(argv)
+    if a.what == "answer" and not (a.param and a.question):
+        ap.error("answer needs --param and --question")
+    if a.what == "param" and (len(a.param) != 1 or a.question):
+        ap.error("param needs exactly one --param (and no --question: answers go through `answer`)")
+    if a.what in ("decision", "kd") and (a.param or a.question):
+        ap.error("--param/--question belong to answer and param")
+    if a.new and a.what != "param":
+        ap.error("--new belongs to param")
     raw = sys.stdin.read() if a.json == "-" else Path(a.json).read_text(encoding="utf-8")
     try:
-        nid = append(Path(a.migration).resolve(), a.what, json.loads(raw))
-    except (ValueError, json.JSONDecodeError) as e:
+        entry = json.loads(raw)
+        if not isinstance(entry, dict):
+            raise ValueError("entry.json must hold one JSON object")
+        if a.what == "param":
+            res = set_param(Path(a.migration).resolve(), a.param[0], entry, new=a.new)
+            print(f"params.yaml: {res['id']} {'created' if res['created'] else 'updated'} "
+                  f"({', '.join(res['fields']) or 'no fields'})")
+            for w in res["warnings"]:
+                print(f"WARN {w}")
+            return 0
+        if a.what == "answer":
+            res = answer(Path(a.migration).resolve(), a.param, a.question, entry)
+            print(res["id"])
+            print(f"params.yaml: {', '.join(res['params'])} {res['status']}; budget asked {res['asked']}"
+                  + (f" of {res['max_questions']}" if res.get("max_questions") is not None else ""))
+            for w in res["warnings"]:
+                print(f"WARN {w}")
+            return 0
+        nid = append(Path(a.migration).resolve(), a.what, entry)
+    except (ValueError, OSError, json.JSONDecodeError) as e:
         print(f"record.py: refused: {e}", file=sys.stderr)
         return 2
     print(nid)

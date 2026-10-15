@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -472,3 +473,187 @@ def test_unconfirmed_equivalent_is_not_compared_not_no_reference(proj):
     assert res["datasets"]["ds.c_alt"]["disposition"] == "NOT_COMPARED"
     assert res["steps"]["s03_alt_arcpy"]["disposition"] == "NOT_COMPARED"
     assert res["pipeline"]["rung"] == "sandbox-validated"
+
+
+# ---------------------------------------------------------------- assumptions parity cannot see (review §4.8)
+def test_assumed_parity_blind_caps_step_and_pipeline(proj):
+    _set_param(proj["migration"], "p.threshold", "    source: assumption\n    resolution: inferred\n    status: assumed\n"
+               "    flags: [policy]\n    impact: {datasets: [ds.a_mask], level: high}\n")
+    synth.make_run(proj, 1)
+    res = ladder.compute(proj["migration"])
+    s = res["steps"]["s01_mask"]
+    cap = [c for c in s["caps"] if c["code"] == "ASSUMED_PARITY_BLIND"]
+    assert cap and cap[0]["params"] == ["p.threshold"] and cap[0]["max"] == "sandbox-validated"
+    assert s["rung"] == "sandbox-validated" and s["disposition"] == "VERIFIED"
+    assert res["steps"]["s02_total"]["rung"] == "reference-verified"   # impact names only ds.a_mask
+    assert res["pipeline"]["rung"] == "sandbox-validated"
+    assert res["pipeline"]["confirm_params"] == ["p.threshold"]
+    assert any(b["code"] == "ASSUMED_PARITY_BLIND" and "p.threshold" in b["detail"]
+               for b in res["pipeline"]["blockers"])
+    assert "| confirm p.threshold (assumed, parity-blind) |" in res["status_line"]
+    assert any(a["code"] == "ASSUMPTION" and a["parity_blind"] for a in s["annotations"])
+    import report
+    report.build(proj["migration"])
+    html = (proj["migration"] / "report" / "index.html").read_text()
+    assert "ASSUMED_PARITY_BLIND" in html and "confirm p.threshold" in html
+
+
+def test_assumed_parity_blind_caps_steps_producing_impact_datasets(proj):
+    _set_param(proj["migration"], "p.threshold", "    source: assumption\n    resolution: unresolved\n    status: assumed\n"
+               "    kind: manual_step\n    impact: {datasets: [ds.a_mask, ds.b_exposure], level: high}\n")
+    synth.make_run(proj, 1)
+    res = ladder.compute(proj["migration"])
+    for sid in ("s01_mask", "s02_total"):
+        assert res["steps"][sid]["rung"] == "sandbox-validated"
+        assert "ASSUMED_PARITY_BLIND" in {c["code"] for c in res["steps"][sid]["caps"]}
+
+
+def test_confirmed_parity_blind_param_does_not_cap(proj):
+    _set_param(proj["migration"], "p.threshold", "    source: answer\n    resolution: unresolved\n    status: confirmed\n"
+               "    question: q01\n    flags: [parity_blind]\n    impact: {datasets: [ds.a_mask], level: high}\n")
+    synth.make_run(proj, 1)
+    res = ladder.compute(proj["migration"])
+    assert res["pipeline"]["rung"] == "reference-verified"
+    assert "ASSUMED_PARITY_BLIND" not in {c["code"] for c in res["steps"]["s01_mask"]["caps"]}
+    assert res["pipeline"]["confirm_params"] == []
+    assert "confirm" not in res["status_line"]
+
+
+def test_assumed_parity_visible_param_annotates_only(proj):
+    # high impact, but a threshold with a legacy reference downstream: compare catches a wrong value
+    _set_param(proj["migration"], "p.threshold", "    source: assumption\n    resolution: inferred\n    status: assumed\n"
+               "    impact: {datasets: [ds.a_mask], level: high}\n")
+    synth.make_run(proj, 1)
+    res = ladder.compute(proj["migration"])
+    s = res["steps"]["s01_mask"]
+    assert s["rung"] == "reference-verified" and res["pipeline"]["rung"] == "reference-verified"
+    assert any(a["code"] == "ASSUMPTION" and not a["parity_blind"] for a in s["annotations"])
+    assert "ASSUMED_PARITY_BLIND" not in {c["code"] for c in s["caps"]}
+
+
+def test_assumed_low_impact_policy_param_annotates_only(proj):
+    _set_param(proj["migration"], "p.threshold", "    source: assumption\n    resolution: inferred\n    status: assumed\n"
+               "    flags: [policy]\n    impact: {datasets: [ds.a_mask], level: medium}\n")
+    synth.make_run(proj, 1)
+    assert ladder.compute(proj["migration"])["pipeline"]["rung"] == "reference-verified"
+
+
+def test_question_cost_three_makes_an_assumption_parity_blind(proj):
+    _set_param(proj["migration"], "p.threshold", "    source: assumption\n    resolution: unresolved\n    status: assumed\n"
+               "    question: q01\n    impact: {datasets: [ds.a_mask], level: high}\n")
+    synth.update_graph(proj["migration"], lambda g: g["questions"].append(
+        {"id": "q01", "status": "assumed", "node": "s01_mask", "param_ids": ["p.threshold"],
+         "impact": {"datasets": ["ds.a_mask"], "level": "high"},
+         "priority": {"impact": 3, "uncertainty": 3, "cost": 3, "score": 27}}))
+    synth.make_run(proj, 1)
+    res = ladder.compute(proj["migration"])
+    assert res["steps"]["s01_mask"]["rung"] == "sandbox-validated"
+    assert res["pipeline"]["confirm_params"] == ["p.threshold"]
+
+
+def test_is_parity_blind_rule():
+    hi = {"impact": {"level": "high"}}
+    assert ladder.is_parity_blind({**hi, "kind": "manual_step"})
+    assert ladder.is_parity_blind({**hi, "kind": "branch"})
+    assert ladder.is_parity_blind({**hi, "kind": "threshold", "flags": ["latent_legacy_bug"]})
+    assert not ladder.is_parity_blind({**hi, "kind": "threshold"})
+    assert not ladder.is_parity_blind({**hi, "kind": "target", "flags": ["policy"]})
+    assert not ladder.is_parity_blind({"impact": {"level": "medium"}, "kind": "manual_step"})
+    assert ladder.is_parity_blind({"impact_level": "high", "kind": "other", "id": "p.x"},
+                                  [{"id": "q9", "param_ids": ["p.x"], "priority": {"cost": 3}}])
+    # a bundle sealed before impact_level was recorded: the question's impact level stands in
+    assert ladder.is_parity_blind({"kind": "manual_step", "id": "p.x", "question": "q9"},
+                                  [{"id": "q9", "impact": {"level": "high"}}])
+
+
+# ---------------------------------------------------------------- read ledger (review §1.5)
+def _seal_with_ledger(proj, kind):
+    r = synth.make_run(proj, 1, seal=False)
+    man = ac.load_json(r["run_dir"] / "manifest.json")
+    man["read_ledger"] = kind
+    ac.dump_json(r["run_dir"] / "manifest.json", man)
+    sealmod.seal(proj["migration"], r["run_id"])
+    return ladder.compute(proj["migration"])
+
+
+def test_e2b_without_strace_is_read_ledger_weak(proj):
+    res = _seal_with_ledger(proj, "e2b-physical+audit")
+    caps = [c for c in res["steps"]["s01_mask"]["caps"] if c["code"] == "READ_LEDGER_WEAK"]
+    assert caps and caps[0]["detail"] == "e2b-physical+audit"
+    assert res["pipeline"]["rung"] == "sandbox-validated"
+
+
+def test_e2b_with_strace_is_not_capped(proj):
+    res = _seal_with_ledger(proj, "e2b-physical+strace")
+    assert res["pipeline"]["rung"] == "reference-verified"
+
+
+def test_unknown_read_ledger_is_weak(proj):
+    res = _seal_with_ledger(proj, None)
+    assert "READ_LEDGER_WEAK" in {c["code"] for c in res["steps"]["s02_total"]["caps"]}
+
+
+# ---------------------------------------------------------------- hash cache (review §3 fix 3)
+def _age_legacy(legacy: Path, seconds: float = 600) -> None:
+    t = time.time() - seconds
+    for p in legacy.rglob("*"):
+        if p.is_file():
+            os.utime(p, (t, t))
+
+
+def _flip_digit(p: Path) -> None:
+    """Rewrite one digit in place: same size, new content."""
+    raw = bytearray(p.read_bytes())
+    i = max(j for j, c in enumerate(raw) if chr(c).isdigit())
+    raw[i] = ord("8") if raw[i] == ord("9") else ord("9")
+    p.write_bytes(bytes(raw))
+
+
+def test_hash_cache_serves_legacy_refs_and_catches_a_change(sealed):
+    import hashcache
+    _age_legacy(sealed["legacy"])
+    assert ladder.compute(sealed["migration"])["pipeline"]["rung"] == "reference-verified"
+    cache = hashcache.cache_path(sealed["migration"])
+    entries = ac.load_json(cache)["entries"]
+    ref = os.path.realpath(sealed["legacy"] / "final" / "b_by_zone.csv")
+    assert ref in entries                                   # warm: a second compute costs a stat per file
+    assert ladder.compute(sealed["migration"])["pipeline"]["rung"] == "reference-verified"
+    p = sealed["legacy"] / "final" / "b_by_zone.csv"
+    _flip_digit(p)   # same size, new mtime
+    res = ladder.compute(sealed["migration"])
+    assert any(x["code"] == "LEGACY_REF_CHANGED" and "b_by_zone" in str(x.get("path")) for x in res["integrity"])
+
+
+def test_hash_cache_known_limit_restored_mtime(sealed):
+    """Documented limit (ladder docstring): a same-size rewrite with its mtime_ns restored is a cache hit. The Bash
+    guard refuses `touch` in the legacy tree; deleting the cache restores full hashing."""
+    import hashcache
+    _age_legacy(sealed["legacy"])
+    ladder.compute(sealed["migration"])
+    p = sealed["legacy"] / "final" / "b_by_zone.csv"
+    st = p.stat()
+    _flip_digit(p)
+    os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
+    assert not any(x["code"] == "LEGACY_REF_CHANGED" for x in ladder.compute(sealed["migration"])["integrity"])
+    hashcache.cache_path(sealed["migration"]).unlink()
+    assert any(x["code"] == "LEGACY_REF_CHANGED" for x in ladder.compute(sealed["migration"])["integrity"])
+
+
+# ---------------------------------------------------------------- --brief (Lux e2e item 10)
+def test_brief_names_every_non_pass_dataset_of_an_unsealed_run(proj):
+    assert ladder.brief(proj["migration"]) == "axis-migrate brief: no run yet | computed status: none (no sealed run)"
+    r = synth.make_run(proj, 1, shift_new=True, seal=False)
+    line = ladder.brief(proj["migration"])
+    assert line.startswith(f"axis-migrate brief: run {r['run_id']} (chained, unsealed: no rung): ")
+    assert "s02_total: ds.b_exposure FAIL (RASTER_TRANSFORM_MISMATCH)" in line
+    assert "PASS_EXACT" in line and "computed status: none" in line and "(no sealed run)" in line
+    assert "axis-migrate status:" not in line          # quoting it mid-run is not a finishing message
+
+
+def test_brief_on_a_sealed_clean_run_and_cli(sealed):
+    line = ladder.brief(sealed["migration"])
+    assert "(chained, sealed): 4 PASS_EXACT | not PASS: none |" in line
+    assert line.endswith(f"computed status: reference-verified from sealed run {sealed['run_id']}")
+    out = subprocess.run(["/usr/bin/python3", "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"]),
+                          "--brief"], capture_output=True, text=True, check=True).stdout
+    assert out.strip() == line

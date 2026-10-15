@@ -3,7 +3,7 @@
 two measured numbers into a PROPOSED tolerance record (06 §3.2, DESIGN §4.6).
 
   mutate  --legacy L --kind raster|vector|table --out DIR [--spec spec.json] [--recipe rasterize.json]
-          [--only id,id] [--key col]… [--json]
+          [--key col]… [--json]
       Writes each mutant into DIR, compares it with compare.compare_pair (the comparator under calibration) and
       writes DIR/tolcal.json: per mutant the verdict, reason codes and the measured metric of every check, plus a
       per-check summary of the smallest failing value (the nearest wrong recipe among these mutants).
@@ -360,7 +360,6 @@ def main(argv=None) -> int:
     m.add_argument("--out", required=True)
     m.add_argument("--spec")
     m.add_argument("--recipe")
-    m.add_argument("--only")
     m.add_argument("--key", action="append", default=[])
     m.add_argument("--json", action="store_true")
     p = sub.add_parser("propose")
@@ -368,7 +367,8 @@ def main(argv=None) -> int:
     p.add_argument("--check", required=True)
     p.add_argument("--correct-spread", type=float, required=True)
     p.add_argument("--nearest-wrong", type=float, required=True)
-    p.add_argument("--metric", default="abs+rel")
+    p.add_argument("--metric", default="abs+rel",
+                   help="the check's metric as SIGN-OFF.md shows it (e.g. transform_dev_px for raster.grid.transform)")
     p.add_argument("--form", choices=["rtol", "atol", "value", "max_mismatch"])
     p.add_argument("--units", default="1")
     p.add_argument("--spread-how")
@@ -381,7 +381,7 @@ def main(argv=None) -> int:
         spec = json.loads(Path(a.spec).read_text()) if a.spec else None
         recipe = json.loads(Path(a.recipe).read_text()) if a.recipe else None
         res = mutate(a.legacy, a.kind, a.out, spec=spec, recipe=recipe,
-                     only=a.only.split(",") if a.only else None, key=a.key or None)
+                     key=a.key or None)
         if a.json:
             print(json.dumps(res, sort_keys=True, indent=1))
         else:

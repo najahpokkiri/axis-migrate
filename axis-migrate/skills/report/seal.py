@@ -115,7 +115,9 @@ def parse_params(text: str | None) -> list[dict]:
                "global": bool(p.get("kind") in ladder.GLOBAL_PARAM_KINDS or fit.get("global")
                               or "global" in flags),
                "evidence": [e.get("ref") if isinstance(e, dict) else str(e) for e in p.get("evidence") or []],
-               "impact": (p.get("impact") or {}).get("datasets") or []}
+               "impact": (p.get("impact") or {}).get("datasets") or [],
+               # ladder.is_parity_blind: an assumed, high-impact, parity-blind parameter caps its steps
+               "impact_level": (p.get("impact") or {}).get("level")}
         out.append(_jsonable(rec))
     return sorted(out, key=lambda r: str(r.get("id")))
 

@@ -31,8 +31,8 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
    `axis-migrate status: sandbox-validated | run r… | 3 pass, 1 FAIL, 0 NOT_COMPARED, 0 needs review | report migration/report/index.html`.
    Never claim a rung above it. The rungs above `target-ready` (deployed, live-target-verified, customer-accepted) are
    never computed, so never claim them.
-6. **Report**: `axpy report.py migration [--run <id>] [--json]`. Show the user `migration/report/index.html` in the
-   side pane (/migrate §Showing).
+6. **Report**: `axpy report.py migration [--run <id>] [--json]`. Show the user `migration/report/REPORT.md` in the
+   file pane (migrate SKILL §Showing); `index.html` is the offline export, not a pane page.
    - exit 0: the report is complete (it may still show failures).
    - exit 2: **EVIDENCE INCOMPLETE, stale (a file changed after the run) or NOTHING VERIFIED.** Say so in your
      first sentence and name the integrity codes from the red bar. Do not hide this, soften it or re-render

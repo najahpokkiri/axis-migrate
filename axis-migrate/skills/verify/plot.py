@@ -10,6 +10,15 @@ Subcommands (CONTRACTS §7):
                                                     map views (view, views_seen, engine, cells_read; checked against
                                                     views.json by lib/visual_receipt.py). Both count the same.
   review-status --run <run_dir> [--json]            which compared raster/vector datasets still lack a receipt
+  review-template --run <run_dir> [--dataset ds]… [--kind auto|view|png]
+                                                    print prefilled "looked, nothing found" Q-all receipts (a JSON
+                                                    list for review-add) for the datasets still lacking one (or the
+                                                    named ones): view (default when views.json has the dataset) cites
+                                                    the required views and every cell-<id> project with shas from
+                                                    views.json, the engine and the cells; png cites every PNG with its
+                                                    sha from plots.json. The reviewer fills answer, model, note (view:
+                                                    each cell's legacy/new as the popup shows them) — left empty,
+                                                    review-add refuses them. Allowed `layer` values go to stderr.
 
 Plots are evidence about verdicts, never inputs to them. Every PNG is rendered with matplotlib Agg at DPI 150 with a
 fixed font and no timestamp, so the same inputs give the same bytes. Nothing is reprojected or resampled onto the
@@ -2055,8 +2064,9 @@ def validate_view_finding(run: Run, f: dict, rubric: dict, existing_ids: set) ->
     if fid is not None and (not isinstance(fid, str) or not FID_RE.match(fid)):
         errs.append("finding_id must look like vf-<letters, digits, . _ ->")
     layer = f.get("layer")
-    if layer is not None and layer not in VIEW_LAYERS:
-        errs.append(f"layer must be one of {VIEW_LAYERS}")
+    parts = layer.split("+") if isinstance(layer, str) else None
+    if layer is not None and not (parts and all(x in VIEW_LAYERS for x in parts) and len(set(parts)) == len(parts)):
+        errs.append(f"layer must be one of {VIEW_LAYERS}, or several joined with '+' (e.g. legacy+new)")
     obs = f.get("observations")
     if obs is not None:
         if not isinstance(obs, list) or len(obs) > OBS_MAX or not all(
@@ -2266,6 +2276,115 @@ def review_status(run: Run) -> dict:
     return out
 
 
+def _first_plot(doc: dict) -> str | None:
+    names = [e.get("name") for e in doc.get("png") or [] if e.get("name")]
+    for pref in ("overview.png", "overlay.png"):
+        if pref in names:
+            return pref
+    return names[0] if names else None
+
+
+def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = None) -> tuple[list[dict], list[str]]:
+    """(prefilled Q-all receipts, skipped-dataset notes) for every compared raster/vector dataset that still lacks a
+    complete receipt (or the named ones). kind auto = view when views.json has views of the dataset, else png. Shas
+    are copied from plots.json / views.json (whose dataset key is `dataset`; the receipt's is `dataset_id`) and
+    re-checked against the bytes now, so a stale or changed file is skipped, never templated. answer, note and model
+    (and a view receipt's cell values) are left empty on purpose: review-add refuses them until filled."""
+    st = review_status(run)
+    want = list(datasets) if datasets else list(st["lacking"])
+    out, skipped = [], []
+    view_docs = {root: vrc.load_index(run.dir, root) for root in vrc.views_index_rel(run.dir)}
+
+    def views_of(ds):
+        found = None
+        for d in view_docs.values():
+            if d and d.get("run_id") == run.run_id and vrc.index_entry(d, ds):
+                found = vrc.index_entry(d, ds)       # amend/views (later root) wins over verify/views
+        return found
+    for ds in want:
+        e = st["datasets"].get(ds) or st["optional"].get(ds)
+        if e is None:
+            skipped.append(f"{ds}: not a compared raster/vector dataset of this run")
+            continue
+        base = {"dataset_id": ds, "question_id": Q_ALL, "answer": "", "effect": "none", "category": "none"}
+        entry = views_of(ds)
+        k = kind if kind != "auto" else ("view" if entry and vrc.entry_projects(entry)[0] else "png")
+        if k == "png":
+            doc = _plots_doc(run, ds)
+            if not doc:
+                skipped.append(f"{ds}: no plots (plot.py run --run <dir> --dataset {ds})")
+                continue
+            if doc.get("compare_result_id") != (run.results([ds]).get(ds) or {}).get("result_id"):
+                skipped.append(f"{ds}: plots are stale (rerun plot.py run)")
+                continue
+            seen = []
+            for pe in doc.get("png") or []:
+                rel = f"plots/{ds}/{pe.get('name')}"
+                fp = run.verify / rel
+                if not fp.is_file() or ac.sha256_file(fp) != pe.get("sha256"):
+                    seen = None
+                    break
+                seen.append({"plot": rel, "plot_sha256": pe["sha256"]})
+            if not seen:
+                skipped.append(f"{ds}: a plot is missing or differs from plots.json (rerun plot.py run)")
+                continue
+            out.append({**base, "panel": "all", "plot": f"plots/{ds}/{_first_plot(doc)}",
+                        "plot_sha256": next(s["plot_sha256"] for s in seen
+                                            if s["plot"] == f"plots/{ds}/{_first_plot(doc)}"),
+                        "plots_seen": sorted(seen, key=lambda s: s["plot"]), "note": "", "model": ""})
+            continue
+        # view
+        if entry is None:
+            skipped.append(f"{ds}: no map views (views.py run --run <dir> --dataset {ds})")
+            continue
+        if not vrc.entry_projects(entry)[0]:
+            why = entry.get("skipped") or entry.get("reason") or entry.get("note") or "no view projects"
+            skipped.append(f"{ds}: views.json lists no view projects ({why}); use --kind png")
+            continue
+        fam = entry.get("family")
+        vc = entry.get("validity_counts") or {}
+        if fam == "raster" and (int(vc.get("1") or 0) or int(vc.get("2") or 0)):
+            skipped.append(f"{ds}: views.json counts {vc.get('1') or 0} legacy-only and {vc.get('2') or 0} "
+                           "new-only valid cells: 'nothing found' is refused, flag them instead")
+            continue
+        projects, cells = vrc.entry_projects(entry)
+        by_name = {info["name"]: rel for rel, info in projects.items()}
+        names = list(vrc.REQUIRED_VIEWS.get(fam, ())) + ([f"cell-{c}" for c in sorted(cells)] if fam == "raster"
+                                                          else [])
+        refs, bad = [], []
+        for n in names:
+            rel = by_name.get(n)
+            fp = run.dir / rel if rel else None
+            if rel is None or not fp.is_file() or ac.sha256_file(fp) != projects[rel]["sha256"]:
+                bad.append(n)
+                continue
+            refs.append({"project": rel, "project_sha256": projects[rel]["sha256"]})
+        if bad:
+            skipped.append(f"{ds}: view project(s) {', '.join(bad)} missing or changed since views.json "
+                           "(rerun views.py run)")
+            continue
+        sk = {**base, "view": refs[0], "views_seen": sorted(refs, key=lambda r: r["project"]), "layer": None}
+        if fam == "raster":
+            sk["engine"] = vrc.ENGINE_GPU
+            sk["cells_read"] = [{"cell": c, "legacy": "", "new": ""} for c in sorted(cells)]
+        out.append({**sk, "note": "", "model": ""})
+    return out, skipped
+
+
+def cmd_review_template(args) -> int:
+    run = Run(args.run)
+    items, skipped = review_template(run, args.kind, args.dataset)
+    print(json.dumps(items, indent=1, ensure_ascii=False))
+    for s in skipped:
+        print(f"skipped {s}", file=sys.stderr)
+    print(f"{len(items)} prefilled Q-all receipt(s). Fill answer (\"no\" only after looking at every cited plot or "
+          "view), model, note (may stay empty for no); view receipts: each cells_read legacy/new as the popup shows "
+          f"them (null = nodata). layer: null or one of {', '.join(VIEW_LAYERS)} (several joined with '+', e.g. "
+          "legacy+new). A defect is a separate receipt with question_id Q1…Q7, answer yes, effect flag. Then "
+          "plot.py review-add --run <run> --json <file>.", file=sys.stderr)
+    return EXIT_OK if items or not skipped else EXIT_SOME
+
+
 def cmd_review_status(args) -> int:
     run = Run(args.run)
     st = review_status(run)
@@ -2300,9 +2419,14 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("review-status", help="which compared raster/vector datasets still lack a receipt")
     p.add_argument("--run", required=True)
     p.add_argument("--json", action="store_true")
+    p = sub.add_parser("review-template", help="prefilled Q-all receipts for review-add (views or plots)")
+    p.add_argument("--run", required=True)
+    p.add_argument("--dataset", action="append", default=[], help="only these datasets (default: every lacking one)")
+    p.add_argument("--kind", choices=["auto", "view", "png"], default="auto")
     a = ap.parse_args(argv)
     try:
-        return {"run": cmd_run, "review-add": cmd_review_add, "review-status": cmd_review_status}[a.cmd](a)
+        return {"run": cmd_run, "review-add": cmd_review_add, "review-status": cmd_review_status,
+                "review-template": cmd_review_template}[a.cmd](a)
     except SetupError as e:
         print(f"setup error: {e}", file=sys.stderr)
         return EXIT_SETUP

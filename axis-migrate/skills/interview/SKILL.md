@@ -36,7 +36,7 @@ For every step in topological order (`graph.py show migration`), read its legacy
    question, recommended **keep for parity**.
 7. Fill `impact.datasets` from the graph's downstream closure. Add `p.measure_crs` (a local metric CRS, never degrees
    or EPSG:3857) whenever a vector dataset will be compared.
-8. Run `params_check.py migration` until it exits 0.
+8. Write each entry with `record.py param` (above, §3); run `params_check.py migration` until it exits 0.
 
 Schema (`params.yaml`): `version, budget{max_questions: 8 (demo 5), asked}, params[]{id: p.<slug>, node, kind, value,
 unit, resolution, source, evidence[{ref, quote}], reason, confidence, method, flags, impact{datasets, level},
@@ -47,7 +47,8 @@ status, question, decisions, used_by, fit}` and a `target:` block (09 §3.2). Ne
 Ask an item only if it is `unresolved`, or `inferred` with `score = impact × uncertainty × cost ≥ 12` (each 1–3;
 cost is highest where parity cannot detect it: manual-step policy, keep-or-fix of legacy bugs, branches without a
 reference, non-unique fits, target platform). Never ask what the files answer (a question whose `param_ids` include
-a resolved parameter is blocked by `params_check.py`). Upstream first; budget 8 (demo 5).
+a resolved parameter is blocked by `params_check.py`). Upstream first; budget 8 (demo 5), a soft limit: past it
+params_check warns `BUDGET_EXCEEDED`, and each extra question must still meet the score rule.
 
 ## 3 Ask (one question per call)
 
@@ -58,35 +59,41 @@ what changes downstream"`; options: recommended first labelled "(Recommended)", 
 "Don't know" (→ the recommended option becomes a visible `assumed` value). Then:
 
 - `answer_question` via `graph.py apply … --channel interview --verbatim "<the user's exact words>"`;
-- update `params.yaml` (`source: answer`, `question: qNN`, `status: confirmed`; "Don't know" → `source: assumption`,
-  `status: assumed`), increment `budget.asked`;
-- record the decision with `"$P/scripts/axpy" "$P/skills/interview/record.py" decision migration --json entry.json`
-  (fields `title, question, kind, answer, by, params, nodes, changes, supersedes, evidence`; it assigns `D-nnn`, writes
-  the heading and a serialiser-made yaml block, so quoting cannot break). Never hand-write or edit an entry; correct
-  one, even a malformed one, by recording a new entry with `supersedes: D-nnn`.
+- record it with **one** command, which writes the decision and the params.yaml change together (validated by
+  `params_check.py`, atomic, `budget.asked` + 1):
+  `"$P/scripts/axpy" "$P/skills/interview/record.py" answer migration --param p.x [--param p.y] --question qNN --json
+  entry.json` (entry fields `title, kind, answer, by, value` or `values`, `nodes, changes, supersedes, evidence`;
+  "Don't know" → `kind: assumption`, the value becomes `assumed`). An `assumed` output-changing parameter that parity
+  cannot see caps the status at sandbox-validated (`ASSUMED_PARITY_BLIND`) until a person confirms it.
+- Every other params.yaml change goes through `record.py param migration --param p.x [--new] --json fields.json`
+  and decisions without a parameter through `record.py decision`. Never rewrite params.yaml or decisions.md with
+  Python or an editor (a hook refuses it); correct an entry by recording a new one with `supersedes: D-nnn`.
 
 A free-text "Other" answer is restated as a concrete params change and confirmed once ("Recorded as X = …, correct?").
 
-**`confirm_all`** (just before the target question): one question listing every assumption, inferred and fitted
-value, every proposed scope decision (dropped/alternative code, display-only inputs, unused classes or branches),
-the proposed **parity scope** (which legacy outputs and intermediates are contractual, plus conservation checks and
-invariants the notes state) and the proposed `datasets[].compare` settings (keys, measure, zones and zone rule,
-sheet/header/data/total rows). Options: "Accept all (Recommended)", "Review one by one", "Don't know". Accept → set
-the listed values `confirmed`, apply the scopes and compare settings via `graph.py apply` citing this question.
+**`confirm_all`** (last question): write `migration/confirm_all.md`, a Markdown table (one row per item: what, value,
+source `file:line`, why it matters) of every assumption, inferred and fitted value, every proposed scope decision
+(dropped/alternative code, display-only inputs, unused classes or branches), the proposed **parity scope** (which
+legacy outputs and intermediates are contractual, plus conservation checks and invariants the notes state) and the
+proposed `datasets[].compare` settings (keys, measure, zones and zone rule, sheet/header/data/total rows). Show it in
+the file pane (migrate SKILL §Showing), then ask a one-line question: "Accept the table in confirm_all.md
+(Recommended)" / "Review one by one" / "Don't know". Accept → set the listed values `confirmed`, apply the scopes and
+compare settings via `graph.py apply` citing this question.
 Tolerance records are **not** signed here: proposals go to `tolerances.yaml` with `agreed_by: null` and to
 `migration/SIGN-OFF.md` (`verify/signoff.py`); only a person signs them.
 
-**Target** (always last): "Databricks job files (Recommended) / local only / other". Record in `params.yaml`
-`target.platform` (Glue, GCP, Snowflake → `TARGET_NOT_SUPPORTED`, the ladder stops at reference-verified).
+**Target** (never a question of its own): Databricks is the default. Add one line to the first question ("Target:
+Databricks job files; say 'local only' or another platform to change it") or, with no question to ask, state it once
+in chat. Record in `params.yaml` `target.platform` (Glue, GCP, Snowflake → `TARGET_NOT_SUPPORTED`, the ladder stops
+at reference-verified).
 
 Codex: ask the same question with `request_user_input_async` (options) when it exists, else as plain text with
 numbered options, recommended first, plus "Don't know" (and "or type an answer"); then stop and wait, parse the next
 message (an elapsed wait is never an answer); record `by: user (chat)`.
-Answers may also arrive from the graph page (`graph_server.py wait`): record them the same way with `by: user (graph)`.
 
 ## 4 Fitted parameters (only when nothing states the value)
 
-Write the `fit` block in `params.yaml` first: `reference` (an intermediate produced by this step), ≤12
+Write the `fit` block (`record.py param`, field `fit`) first: `reference` (an intermediate produced by this step), ≤12
 `candidates` from evidence (other scripts, notes, tool defaults, round values in the stated unit; no optimisation),
 `metric`, a `split` frozen now. `fit.py declare` → append its `fit_spec` decision → `fit.py run`. A unique winner with
 a passing, sensitive hold-out may reach reference-verified labelled "fitted, held-out pass"; a global parameter

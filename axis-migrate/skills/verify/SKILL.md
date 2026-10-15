@@ -33,7 +33,9 @@ Always run it: the plots are the look's fallback and the report and evals use th
 ## 3 Look (mandatory for every compared raster and vector dataset)
 **Primary where a browser pane exists: the map views → view receipts. Fallback (terminal, headless, evals): the PNG
 plots → PNG receipts.** Both count the same, a flag has the same effect, the report lists both, and the Stop gate
-refuses to end the turn while a compared dataset of the latest run has neither.
+refuses to end the turn while a compared dataset of the latest run has neither. Viewport and screenshot rules:
+map SKILL §2. A view `views.json` marks as skipped (identical to legacy, or to bytes already reviewed) is cited in the
+receipt, never opened.
 - **Claude desktop** (primary): `map` skill (`views.py run`, `start.py migration`), then per dataset `views.py url
   --run <run> --dataset <ds> --view overview|worst|edges|nodata` → `mcp__Claude_Browser__preview_start {url}`; switch
   Add Data → Raster Layer → render engine to `maplibre-gl-raster`, nudge the map once; open a `cell-<id>` project
@@ -42,7 +44,9 @@ refuses to end the turn while a compared dataset of the latest run has neither.
 - **Codex desktop** (primary): the same in the in-app browser through browser use. Record a **view receipt**.
 - **Fallback — terminal, no pane, headless, evals**: **PNG receipts** (steps 1–5); you still Read the PNGs yourself.
 
-1. `plot.py review-status --run <run>` lists what still lacks a receipt and which questions are missing.
+1. `plot.py review-status --run <run>` lists what still lacks a receipt and which questions are missing;
+   `plot.py review-template --run <run> [--dataset <ds>] [--kind view|png]` prints the receipts prefilled (shas,
+   views or plots seen, engine, cells to read, allowed values): fill in only what you saw, never copy it unseen.
 2. (PNG fallback) **Read every PNG** of the dataset (Read tool on `migration/runs/<id>/verify/plots/<ds>/<name>.png`;
    Codex: `view_image`). Take `plot_sha256`, `panel_names`, `crs` and `extent` from `plots.json`.
 3. Answer every rubric question of `$P/skills/verify/rubric.v1.yaml` that applies to the family (raster Q1, Q2, Q4,

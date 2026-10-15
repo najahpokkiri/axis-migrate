@@ -15,6 +15,24 @@ Rules in one place:
   no new `.aux.xml` in the legacy tree (LEGACY_REF_CHANGED). Any of these → EVIDENCE INCOMPLETE: no rung.
 - Drift (live project files ≠ the run's snapshot): *_CHANGED_AFTER_RUN caps every step at sandbox-validated;
   CODE_CHANGED_AFTER_RUN withdraws target-ready.
+- Read ledger (D5-9): only a syscall ledger (`strace`, `e2b-physical+strace`) supports a rung above
+  sandbox-validated. Every other kind is READ_LEDGER_WEAK (cap sandbox-validated): `audit+cpl_debug` (local, no
+  strace, e.g. macOS), `e2b-physical+audit` (E2B sandbox whose template lacks strace), the bare `e2b-physical`, and a
+  missing or unknown value. The E2B upload set is a real physical guard (only declared inputs exist in the sandbox), but
+  it is the union of every step's inputs, so a step can still read another step's input — or a legacy intermediate that
+  is also a declared input — without the audit hook seeing it (C extensions, subprocesses). That is the same blind
+  spot as local audit, so it gets the same cap, consistent with the runner's own `read_ledger_rung_cap`.
+- Assumptions (DESIGN §4.3, 03 §4.4): an `assumed` parameter normally only annotates its step (ASSUMPTION). When it
+  is output-changing and parity-blind (`is_parity_blind`), a reference match proves nothing about it, so its step and
+  every step producing one of its `impact` datasets are capped at sandbox-validated (ASSUMED_PARITY_BLIND, naming the
+  parameters); the pipeline blocker and the status line say which parameters to confirm. Confirming it (an answer or
+  `confirm_all`, status `confirmed`) lifts the cap.
+- Hash cache: legacy references and inputs (`ref`, `in` file objects) are re-hashed through lib/hashcache.py, keyed
+  by realpath + (size, mtime_ns) in migration/.axis/hash-cache.json, so a second check costs one stat per file. Any
+  change of size or mtime_ns re-hashes. KNOWN LIMIT: a same-size rewrite whose mtime_ns is restored afterwards (e.g.
+  `touch -d`/os.utime with the old nanoseconds) is served from the cache and not detected. Restoring mtime is a
+  deliberate act the Bash guard refuses on the legacy tree (`touch` there is LEGACY_READ_ONLY), and seal.py always
+  hashes in full. Outputs, trees, plots and records are always hashed in full here. The `.aux.xml` check stays a walk.
 - The rungs above target-ready (deployed, live-target-verified, customer-accepted) have no code path here.
 """
 from __future__ import annotations
@@ -29,6 +47,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 import axis_common as ac  # noqa: E402
+import hashcache  # noqa: E402
 import visual_receipt as vrc  # noqa: E402
 
 LADDER_VERSION = "ladder.v1"
@@ -62,6 +81,11 @@ STATE_TO_DISPOSITION = {"FAIL": "FAILED", "EVALUATOR_ERROR": "EVALUATOR_ERROR", 
                         "NEEDS_DECISION": "NEEDS_DECISION", "NEEDS_REVIEW": "NEEDS_REVIEW",
                         "NOT_COMPARED": "NOT_COMPARED", "PASS_WITHIN_TOLERANCE": "VERIFIED", "PASS_EXACT": "VERIFIED"}
 GLOBAL_PARAM_KINDS = {"grid", "cell_size", "scale", "crs"}
+# Parity-blind parameters (03 §4.4 cost = 3: parity cannot detect a wrong value). See is_parity_blind().
+PARITY_BLIND_FLAGS = {"parity_blind", "policy", "latent_legacy_bug"}
+PARITY_BLIND_KINDS = {"manual_step", "branch"}
+STRONG_READ_LEDGERS = {"strace", "e2b-physical+strace"}
+CACHED_HASH_KINDS = {"ref", "in"}
 INCOMPLETE_CODES = {"EVIDENCE_FILE_MISSING", "EVIDENCE_HASH_MISMATCH", "EVIDENCE_SCHEMA_INVALID",
                     "EVIDENCE_ID_MISMATCH", "STATE_RECOMPUTE_MISMATCH", "UNBOUND_COMPARE", "LEGACY_REF_CHANGED",
                     "SECRET_IN_BUNDLE", "RECORDS_PARSE_MISMATCH", "EVIDENCE_CHAIN_BROKEN"}
@@ -194,6 +218,58 @@ def rung_index(r: str | None) -> int:
 
 def rung_cap(r: str, cap: str) -> str:
     return RUNGS[min(rung_index(r), rung_index(cap))]
+
+
+def _impact_level(p: dict, questions: list[dict]) -> str | None:
+    """The parameter's own impact.level (sealed record: `impact_level`; raw params.yaml: `impact.level`); when it has
+    none (or the bundle predates the field), the highest level of a graph question about it."""
+    imp = p.get("impact")
+    lvl = p.get("impact_level") or (imp.get("level") if isinstance(imp, dict) else None)
+    if lvl:
+        return lvl
+    levels = [(q.get("impact") or {}).get("level") for q in questions if isinstance(q.get("impact"), dict)]
+    return "high" if "high" in levels else None
+
+
+def param_questions(p: dict, questions) -> list[dict]:
+    """Graph questions about parameter p (its `question`, or any question listing it in `param_ids`)."""
+    pid = p.get("id")
+    return [q for q in questions or [] if isinstance(q, dict)
+            and (q.get("id") == p.get("question") or pid in (q.get("param_ids") or []))]
+
+
+def is_parity_blind(p: dict, questions=()) -> bool:
+    """True when p changes an output and parity (compare against the legacy reference) cannot detect a wrong value.
+
+    Output-changing: `impact.level: high` (a final output's values or structure, 03 §4.4 impact = 3). Parity-blind
+    (03 §4.4 cost = 3, interview SKILL §2), any of: `flags` contains `parity_blind` (set by the interview when it
+    scores cost 3), `policy` or `latent_legacy_bug` (keep-or-fix); `kind` is `manual_step` or `branch`; or a graph
+    question about p has `priority.cost >= 3`. `target` parameters never count (the target block decides those).
+    `questions` = the graph's question list (or only those about p)."""
+    if p.get("kind") == "target":
+        return False
+    qs = param_questions(p, questions)
+    if _impact_level(p, qs) != "high":
+        return False
+    if set(_norm_list(p.get("flags"))) & PARITY_BLIND_FLAGS or p.get("kind") in PARITY_BLIND_KINDS:
+        return True
+    for q in qs:
+        try:
+            if float((q.get("priority") or {}).get("cost") or 0) >= 3:
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False
+
+
+def is_assumed(p: dict) -> bool:
+    """`status: assumed`, or `source: assumption` not yet confirmed."""
+    return p.get("status") == "assumed" or (p.get("source") == "assumption" and p.get("status") != "confirmed")
+
+
+def is_fitted(p: dict) -> bool:
+    return (p.get("source") == "fitted" or "fitted_on_reference" in _norm_list(p.get("flags"))
+            or bool(p.get("fitted_against")))
 
 
 def worst_disposition(ds: list[str]) -> str | None:
@@ -412,8 +488,9 @@ def okey(o: dict) -> str:
                      o.get("dataset") or ""])
 
 
-def verify_objects(b: Bundle) -> dict[str, bool]:
-    """07 §4.3 check 2: every object exists, sha256 matches, id recomputes. Returns {id: ok}."""
+def verify_objects(b: Bundle, hc=None) -> dict[str, bool]:
+    """07 §4.3 check 2: every object exists, sha256 matches, id recomputes. Returns {id: ok}.
+    `hc` (a hashcache.HashCache) serves `ref`/`in` file hashes by (realpath, size, mtime_ns); see the module doc."""
     ok: dict[str, bool] = {}
     vis_files: dict[str, dict] = {}
     for o in b.objects:
@@ -485,7 +562,7 @@ def verify_objects(b: Bundle) -> dict[str, bool]:
                               expected=o.get("sha256"), dataset=o.get("dataset"), step=o.get("step"))
                     good = False
                 else:
-                    h = ac.sha256_file(p)
+                    h = hc.sha256(p) if hc is not None and kind in CACHED_HASH_KINDS else ac.sha256_file(p)
                     if hex_of(o.get("sha256")) != h:
                         b.problem("EVIDENCE_HASH_MISMATCH", f"{rel} bytes changed", object=oid, path=rel,
                                   expected=o.get("sha256"), actual="sha256:" + h, dataset=o.get("dataset"),
@@ -705,8 +782,13 @@ def status_line(res: dict) -> str:
     elif p.get("headline") == "NOTHING VERIFIED":
         rung = f"{rung} (NOTHING VERIFIED)"
     suffix = p.get("suffix") or ""
+    confirm = p.get("confirm_params") or []
+    ask = ""
+    if confirm and not p.get("incomplete"):
+        names = ", ".join(confirm[:3]) + (f" +{len(confirm) - 3} more" if len(confirm) > 3 else "")
+        ask = f"confirm {names} (assumed, parity-blind) | "
     return (f"axis-migrate status: {rung}{suffix} | run {res.get('run_id') or 'none'} | {c['pass']} pass, "
-            f"{c['fail']} FAIL, {c['not_compared']} NOT_COMPARED, {c['needs_review']} needs review | "
+            f"{c['fail']} FAIL, {c['not_compared']} NOT_COMPARED, {c['needs_review']} needs review | " + ask
             + (f"report {p['report']}" if p.get("report") else "no report"))
 
 
@@ -730,7 +812,8 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
                                                               "detail": "bundle unreadable"}], b.integrity,
                              migration=migration)
     ev = b.evidence
-    obj_ok = verify_objects(b)
+    with hashcache.HashCache(migration) as hc:
+        obj_ok = verify_objects(b, hc)
 
     # sealed project files
     snap = b.run_dir / "snapshot"
@@ -964,6 +1047,9 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
     scan_findings = _scan_blocks(b)
     tests_state = _tests_state(b)
     chained = run.get("chain") == "chained"
+    gquestions = graph.get("questions") or []
+    # assumed, output-changing, parity-blind parameters: each caps its step and the producers of its impact datasets
+    blind_assumed = [p for p in params if is_assumed(p) and not is_fitted(p) and is_parity_blind(p, gquestions)]
     sres: dict[str, dict] = {}
     for sid in order:
         s = steps[sid]
@@ -1042,7 +1128,7 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
             caps.append({"code": "EXECUTOR_NOT_RECORDED", "max": "generated"})
         if sv:
             rung = "sandbox-validated"
-        if run.get("read_ledger") in ("audit+cpl_debug", "audit"):
+        if run.get("read_ledger") not in STRONG_READ_LEDGERS:
             caps.append({"code": "READ_LEDGER_WEAK", "max": "sandbox-validated", "detail": run.get("read_ledger")})
         ann.append({"code": "ISOLATION", "text": f"isolation: {run.get('isolation') or 'unknown'}"})
 
@@ -1065,9 +1151,14 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
             rv = False
         # fitted parameters (DESIGN §4.3 reconciled rule)
         target_block = []
+        blind_here = sorted({str(p.get("id")) for p in blind_assumed
+                             if p.get("node") == sid or set(_norm_list(p.get("impact"))) & set(outs)})
+        if blind_here:
+            caps.append({"code": "ASSUMED_PARITY_BLIND", "max": "sandbox-validated", "params": blind_here,
+                         "detail": "confirm " + ", ".join(blind_here) + " (assumed; parity cannot detect a wrong "
+                                   "value)"})
         for p in sorted(params, key=lambda x: x.get("id", "")):
-            fitted = (p.get("source") == "fitted" or "fitted_on_reference" in _norm_list(p.get("flags"))
-                      or bool(p.get("fitted_against")))
+            fitted = is_fitted(p)
             if p.get("node") != sid:
                 if fitted and p.get("node") in ancestors(sid, steps, datasets):
                     ann.append({"code": "UPSTREAM_FITTED_PARAM", "param": p.get("id"),
@@ -1087,8 +1178,11 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
                     caps.append({"code": "PARAM_FITTED_TO_REFERENCE", "max": "sandbox-validated",
                                  "param": p.get("id"), "detail": why})
                     target_block.append(p.get("id"))
-            elif p.get("source") == "assumption" or p.get("status") == "assumed":
-                ann.append({"code": "ASSUMPTION", "param": p.get("id"), "text": f"rests on assumption {p.get('id')}"})
+            elif is_assumed(p):
+                blind = str(p.get("id")) in blind_here
+                ann.append({"code": "ASSUMPTION", "param": p.get("id"), "parity_blind": blind,
+                            "text": f"rests on assumption {p.get('id')}"
+                                    + (" (parity-blind: confirm it)" if blind else "")})
             elif p.get("resolution") == "inferred":
                 ann.append({"code": "INFERRED", "param": p.get("id"),
                             "text": f"{p.get('id')} inferred ({p.get('confidence') or 'confidence not stated'})"})
@@ -1152,6 +1246,11 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
         rung = rung_cap(rung, "sandbox-validated")
     for c in capping_drift:
         blockers.append({"code": c["code"]})
+    confirm = sorted({pid for e in in_scope for c in e["caps"] if c["code"] == "ASSUMED_PARITY_BLIND"
+                      for pid in c.get("params") or []})
+    if confirm:
+        blockers.append({"code": "ASSUMED_PARITY_BLIND", "params": confirm,
+                         "detail": "confirm " + ", ".join(confirm) + " (assumed; parity cannot detect a wrong value)"})
     incomplete = any(p["severity"] == "incomplete" for p in b.integrity)
     # target-ready
     target = _target_state(b, migration, ev, run, sres, in_scope, code_drift, rung)
@@ -1184,7 +1283,7 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
                         "greyed": list(GREYED), "drift": drift, "target": target,
                         "full": bool(run.get("full")), "chain": run.get("chain"), "executor": run.get("executor"),
                         "isolation": run.get("isolation"), "order": [s for s in order if s in sres],
-                        "report": report_path(migration)},
+                        "confirm_params": confirm, "report": report_path(migration)},
            "steps": sres, "datasets": dres, "integrity": b.integrity}
     assert rung in RUNGS  # never deployed / live-target-verified / customer-accepted
     res["status_line"] = status_line(res)
@@ -1366,12 +1465,73 @@ def _target_state(b, migration, ev, run, sres, in_scope, code_drift, rung) -> di
 # ------------------------------------------------------------------------------------------------------------------
 # CLI
 # ------------------------------------------------------------------------------------------------------------------
+def newest_run(migration: Path) -> str | None:
+    """Newest run directory (sealed or not) by run id (r<UTC stamp>-<hash> sorts by time)."""
+    runs = migration / "runs"
+    if not runs.is_dir():
+        return None
+    ids = sorted(d.name for d in runs.iterdir() if d.is_dir() and (d / "manifest.json").is_file())
+    return ids[-1] if ids else None
+
+
+def brief(migration_dir, run_id: str | None = None) -> str:
+    """One line for a stage end (`ladder.py <migration> --brief`): the compare states of a run, sealed or not, every
+    non-PASS dataset by step, failed steps, and the computed status of the newest sealed run. States are recomputed
+    from each compare file's checks (effective_state), never taken from prose. It never starts with the status mark,
+    so quoting it mid-run is not a finishing message."""
+    migration = Path(migration_dir).resolve()
+    if migration.name != "migration" and (migration / "migration").is_dir():
+        migration = migration / "migration"
+    run_id = run_id or newest_run(migration)
+    res = compute(migration)
+    p = res["pipeline"]
+    computed = f"computed status: {p['rung']}" + (f" ({p['headline']})" if p.get("headline") in
+                                                  ("NOTHING VERIFIED", "EVIDENCE INCOMPLETE") else "")
+    computed += f" from sealed run {res['run_id']}" if res.get("run_id") else " (no sealed run)"
+    if run_id is None:
+        return f"axis-migrate brief: no run yet | {computed}"
+    rd = migration / "runs" / run_id
+    man = _load_json_quiet(rd / "manifest.json") or {}
+    sealed = (rd / "verify" / "evidence.json").is_file()
+    hist: dict[str, int] = {}
+    nonpass = []
+    for f in sorted((rd / "verify" / "compare").glob("*.json")):
+        cmp = _load_json_quiet(f)
+        if not isinstance(cmp, dict):
+            state, code, ds, step = "EVALUATOR_ERROR", "UNREADABLE", f.stem, None
+        else:
+            state, ok, _ = effective_state(cmp)
+            code = first_reason(cmp)[0] if ok else "STATE_RECOMPUTE_MISMATCH"
+            ds, step = cmp.get("dataset_id") or f.stem, cmp.get("step_id")
+        hist[state] = hist.get(state, 0) + 1
+        if state not in ac.PASS_STATES:
+            nonpass.append(f"{step or '?'}: {ds} {state}" + (f" ({code})" if code else ""))
+    order = list(ac.VERDICTS) + sorted(set(hist) - set(ac.VERDICTS))
+    counts = ", ".join(f"{hist[s]} {s}" for s in order if hist.get(s)) or "nothing compared"
+    failed = [f"{s.get('step_id')} {s.get('status')}" + (f" ({','.join(_norm_list(s.get('reason_codes')))})"
+                                                         if s.get("reason_codes") else "")
+              for s in man.get("steps") or [] if s.get("status") not in ("succeeded", "reused")]
+    head = f"run {run_id} ({man.get('chain') or '?'}, {'sealed' if sealed else 'unsealed: no rung'})"
+    parts = [f"axis-migrate brief: {head}: {counts}",
+             "not PASS: " + ("; ".join(nonpass) if nonpass else "none")]
+    if failed:
+        parts.append("steps not succeeded: " + "; ".join(failed))
+    parts.append(computed)
+    return " | ".join(parts)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Compute axis-migrate status rungs from the sealed evidence bundle.")
     ap.add_argument("migration", help="path to <project>/migration (or the project folder)")
     ap.add_argument("--run", default=None, help="run id (default: newest sealed run in runs/index.jsonl)")
     ap.add_argument("--json", action="store_true", help="print the full result as JSON")
+    ap.add_argument("--brief", action="store_true",
+                    help="one line for a stage end: compare states of the newest (or --run) run, sealed or not, every "
+                         "non-PASS dataset by step, and the computed status")
     a = ap.parse_args(argv)
+    if a.brief:
+        print(brief(a.migration, a.run))
+        return 0
     res = compute(a.migration, a.run)
     if a.json:
         print(json.dumps(res, sort_keys=True, indent=1, ensure_ascii=False, default=str))

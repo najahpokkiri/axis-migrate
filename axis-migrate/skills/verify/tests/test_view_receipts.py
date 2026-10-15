@@ -338,3 +338,69 @@ def test_view_receipt_after_seal_goes_to_amend(same, tmp_path):
     finally:
         run.chmod(stat.S_IMODE(run.stat().st_mode) | 0o200)
         os.chmod(run / "verify", 0o755)
+
+
+# ------------------------------------------------------------------------------------------------ Q-all templates
+def test_png_template_is_a_ready_q_all_receipt(same, tmp_path):
+    run, _ = same
+    assert plot.review_template(plot.Run(run), "png")[1] == ["ds.r: no plots (plot.py run --run <dir> --dataset ds.r)"]
+    assert plot.main(["run", "--run", str(run)]) == 0
+    items, skipped = plot.review_template(plot.Run(run), "png")
+    assert skipped == [] and len(items) == 1
+    sk = items[0]
+    pj = ac.load_json(run / "verify" / "plots" / "ds.r" / "plots.json")
+    assert sk["plots_seen"] == sorted(({"plot": f"plots/ds.r/{e['name']}", "plot_sha256": e["sha256"]}
+                                       for e in pj["png"]), key=lambda s: s["plot"])
+    assert sk["plot"] == "plots/ds.r/overview.png" and sk["panel"] == "all" and sk["question_id"] == "Q-all"
+    refused(run, tmp_path, sk, "answer must be")                 # left unfilled: refused
+    code, err = add(run, tmp_path, dict(sk, answer="no", model="test-model"))
+    assert code == 0, err
+    assert plot.review_status(plot.Run(run))["lacking"] == []
+    assert plot.review_template(plot.Run(run), "png") == ([], [])  # nothing left to template
+
+
+def test_view_template_cites_required_views_and_cells(same, tmp_path):
+    run, doc = same
+    items, skipped = plot.review_template(plot.Run(run), "view")
+    assert skipped == [] and len(items) == 1
+    sk = items[0]
+    e = vb.entry(doc, "ds.r")
+    names = {s["project"].rsplit("/", 1)[1].split(".")[0] for s in sk["views_seen"]}
+    assert set(vrc.REQUIRED_VIEWS["raster"]) <= names and sk["engine"] == vrc.ENGINE_GPU
+    cells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
+    assert [c["cell"] for c in sk["cells_read"]] == sorted(cells)
+    refused(run, tmp_path, dict(sk, answer="no", model="m"), "views.json has")   # cell values not read yet
+    filled = dict(sk, answer="no", model="test-model",
+                  cells_read=[{"cell": c["cell"], "legacy": vb._popup(cells[c["cell"]]["legacy_value"]),
+                               "new": vb._popup(cells[c["cell"]]["new_value"])} for c in sk["cells_read"]])
+    code, err = add(run, tmp_path, filled)
+    assert code == 0, err
+    assert plot.review_status(plot.Run(run))["datasets"]["ds.r"]["via"] == "views"
+
+
+def test_view_template_refuses_nothing_found_with_one_sided_cells(shifted, capsys):
+    run, _ = shifted
+    items, skipped = plot.review_template(plot.Run(run), "view")
+    assert items == [] and "flag them instead" in skipped[0]
+    assert plot.main(["review-template", "--run", str(run), "--kind", "view"]) == plot.EXIT_SOME
+    assert json.loads(capsys.readouterr().out) == []
+    assert plot.main(["run", "--run", str(run)]) == 0
+    capsys.readouterr()
+    assert plot.main(["review-template", "--run", str(run), "--kind", "png"]) == plot.EXIT_OK
+    sk = json.loads(capsys.readouterr().out)
+    assert [s["dataset_id"] for s in sk] == ["ds.r"] and sk[0]["answer"] == "" and sk[0]["model"] == ""
+
+
+def test_template_auto_picks_views_and_layer_accepts_joined_values(same, tmp_path):
+    run, doc = same
+    sk = plot.review_template(plot.Run(run))[0][0]               # auto: views.json has ds.r → a view receipt
+    assert "views_seen" in sk and "plots_seen" not in sk and sk["layer"] is None
+    e = vb.entry(doc, "ds.r")
+    cells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
+    sk["cells_read"] = [{"cell": c["cell"], "legacy": vb._popup(cells[c["cell"]]["legacy_value"]),
+                         "new": vb._popup(cells[c["cell"]]["new_value"])} for c in sk["cells_read"]]
+    for bad in ("legacy+legacy", "both", "legacy+"):
+        refused(run, tmp_path, dict(sk, answer="no", model="m", layer=bad), "joined with '+'")
+    code, err = add(run, tmp_path, dict(sk, answer="no", model="test-model", layer="legacy+new"))
+    assert code == 0, err
+    assert stored(run)[0]["layer"] == "legacy+new"

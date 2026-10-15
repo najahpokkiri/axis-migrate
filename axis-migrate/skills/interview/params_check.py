@@ -3,10 +3,17 @@
     axpy params_check.py <migration> [--stage investigate|wired] [--fill-used-by] [--json]
 
 Stage `investigate` (before code exists): schema, resolution rules, evidence quotes checked verbatim against the cited
-legacy lines, graph references, no question about a resolved parameter, budget, decisions.md format.
+legacy lines, graph references, no question about a resolved parameter, decisions.md format. The question budget is a
+soft limit: `asked > max_questions` is the warning BUDGET_EXCEEDED (each extra question must still meet the score rule),
+never a block — past the budget an unasked parity-blind item would otherwise become an `assumed` guess that parity
+cannot see (the ladder caps those: ASSUMED_PARITY_BLIND, `ladder.is_parity_blind`; warned here too).
 Stage `wired` (after migrate): additionally every parameter of an in-scope step has a reader, every reader calls
 `ctx.param("<id>")` and lists the id in its PARAMS constant, and every `ctx.param` id in pipeline code exists here
 (D3-5: answers must reach the code; a default is not wiring).
+Both stages apply the runtime's refusal rule (skills/migrate/runtime/_axis_runtime.py `ctx.param` → PARAM_MISSING, run
+exit 12): an answered or assumed parameter may not stay `resolution: unresolved` (PARAM_UNRESOLVED_AFTER_ANSWER), and
+in `wired` every id the code reads must be in its graph step's `params`, have a `value` key and not be unresolved
+(PARAM_MISSING_AT_RUN). A check that passes here must not be refused by the run.
 
 `--fill-used-by` rewrites each parameter's `used_by` from the pipeline AST (deterministic; never by hand).
 Exit 0 = no blocking finding; 2 = blocking findings; 3 = checker error.
@@ -23,6 +30,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 import axis_common as ac  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "report"))
+import ladder  # noqa: E402  (stdlib; the one definition of parity-blind)
 
 import yaml  # pinned env
 
@@ -33,9 +42,11 @@ SOURCES = {"code", "notes", "project", "input_data", "reference_metadata", "fitt
            "agent_decision"}
 STATUSES = {"confirmed", "assumed", "open"}
 FLAGS = {"tuned_in_sample", "by_construction", "fitted_on_reference", "latent_legacy_bug", "contradiction", "policy",
-         "global"}
+         "global", "parity_blind"}
+IMPACT_LEVELS = {"high", "medium", "low"}
 CONFIDENCE = {"high", "medium", "low"}
-METHODS = {"tool-default", "cross-script", "unit-cell", "fit", "rule-from-inputs", "header", "semantics"}
+METHODS = {"tool-default", "cross-script", "unit-cell", "fit", "rule-from-inputs", "header", "semantics",
+           "assumption"}
 UNIT_REQUIRED = {"distance", "scale", "cell_size"}
 # Decision parameters choose a code variant or a target; they are read by people and decisions, not by ctx.param.
 NON_CODE_KINDS = {"manual_step", "branch", "target"}
@@ -96,11 +107,13 @@ def check_quote(legacy: Path, ref: str, quote: str | None, f: Findings, where: s
         f.block("EVIDENCE_QUOTE_MISMATCH", where, f"quote {quote!r} is not in {ref}")
 
 
-def load_params(mdir: Path) -> dict:
+def load_params(mdir: Path, text: str | None = None) -> dict:
     p = mdir / "params.yaml"
-    if not p.exists():
-        raise FileNotFoundError(f"{p} missing")
-    data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    if text is None:
+        if not p.exists():
+            raise FileNotFoundError(f"{p} missing")
+        text = p.read_text(encoding="utf-8")
+    data = yaml.safe_load(text) or {}
     if not isinstance(data, dict):
         raise ValueError("params.yaml must be a mapping")
     return data
@@ -136,11 +149,13 @@ def _as_list(x) -> list:
     return list(x) if isinstance(x, (list, tuple)) else [x]
 
 
-def check_records(mdir: Path, param_ids: set, f: Findings) -> dict:
+def check_records(mdir: Path, param_ids: set, f: Findings, decisions_text: str | None = None) -> dict:
     out = {"decisions": [], "kds": []}
     dp = mdir / "decisions.md"
-    if dp.exists():
-        blocks = parse_blocks(dp.read_text(encoding="utf-8"), DEC_HEAD_RE)
+    if decisions_text is None and dp.exists():
+        decisions_text = dp.read_text(encoding="utf-8")
+    if decisions_text is not None:
+        blocks = parse_blocks(decisions_text, DEC_HEAD_RE)
         superseded = {str(s) for b in blocks if not b["error"] for s in _as_list((b["yaml"] or {}).get("supersedes"))}
         seen = []
         for b in blocks:
@@ -216,14 +231,18 @@ def pipeline_param_reads(pdir: Path) -> dict[str, dict]:
     return out
 
 
-def check(mdir: Path, stage: str, fill_used_by: bool = False) -> tuple[Findings, dict]:
+def check(mdir: Path, stage: str, fill_used_by: bool = False,
+          overrides: dict[str, str] | None = None) -> tuple[Findings, dict]:
+    """`overrides` = {"params.yaml": text, "decisions.md": text}: check proposed contents without writing them
+    (record.py answer validates its change this way before it touches either file)."""
+    overrides = overrides or {}
     f = Findings()
     graph = ac.load_json(mdir / "graph.json")
     legacy = ac.legacy_root(mdir, graph)
     steps = {s["id"]: s for s in graph.get("steps", [])}
     dsets = {d["id"] for d in graph.get("datasets", [])}
     questions = {q["id"]: q for q in graph.get("questions", [])}
-    data = load_params(mdir)
+    data = load_params(mdir, overrides.get("params.yaml"))
     params = data.get("params") or []
     if data.get("version") is None:
         f.block("SCHEMA", "params.yaml", "missing version")
@@ -284,6 +303,11 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False) -> tuple[Findings,
         if res == "unresolved":
             if st != "open" and src not in ("answer", "assumption"):
                 f.block("UNRESOLVED_STATUS", pid, "unresolved and not answered must stay open")
+            elif st != "open" or src in ("answer", "assumption"):
+                # the runtime's rule (_axis_runtime.ctx.param): resolution unresolved → PARAM_MISSING, run exit 12
+                f.block("PARAM_UNRESOLVED_AFTER_ANSWER", pid,
+                        f"{src}/{st} but resolution is still unresolved: the run refuses it (PARAM_MISSING, exit 12). "
+                        "Record answers with record.py answer (it sets the resolution); fix with record.py param")
             if st == "open" and not p.get("question"):
                 f.warn("UNRESOLVED_NO_QUESTION", pid, "open unresolved parameter has no question yet")
         if src == "fitted":
@@ -300,9 +324,22 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False) -> tuple[Findings,
                 f.block("ANSWER_NOT_FOUND", pid, f"source answer but question {qid!r} is not answered in graph.json")
         if src == "assumption" and st != "assumed":
             f.block("ASSUMPTION_STATUS", pid, "an assumption has status assumed until confirm_all accepts it")
+        lvl = (p.get("impact") or {}).get("level")
+        if lvl is not None and lvl not in IMPACT_LEVELS:
+            f.block("ENUM", pid, f"impact.level {lvl!r} (high|medium|low)")
+        if st == "assumed" and lvl is None:
+            f.warn("ASSUMED_NO_IMPACT_LEVEL", pid, "assumed with no impact.level: the ladder cannot tell whether "
+                                                   "parity can catch a wrong guess (set impact.level)")
         for ds in (p.get("impact") or {}).get("datasets") or []:
             if ds not in dsets:
                 f.block("UNKNOWN_DATASET", pid, f"impact dataset {ds!r} not in graph")
+
+    for p in params:
+        if isinstance(p, dict) and ladder.is_assumed(p) and not ladder.is_fitted(p) \
+                and ladder.is_parity_blind(p, list(questions.values())):
+            f.warn("ASSUMED_PARITY_BLIND", p.get("id") or "?",
+                   "assumed, output-changing and parity-blind: caps its steps at sandbox-validated until a person "
+                   "confirms it (its own question, even past the budget, or confirm_all)")
 
     for s in steps.values():
         for pid in s.get("params") or []:
@@ -319,9 +356,11 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False) -> tuple[Findings,
 
     budget = data.get("budget") or {}
     if budget.get("max_questions") is not None and (budget.get("asked") or 0) > budget["max_questions"]:
-        f.block("BUDGET_EXCEEDED", "budget", f"asked {budget.get('asked')} > max {budget['max_questions']}")
+        f.warn("BUDGET_EXCEEDED", "budget", f"asked {budget.get('asked')} > max {budget['max_questions']}: a soft "
+                                            "limit; ask past it only items with score >= 12 (impact x uncertainty x "
+                                            "cost), parity-blind ones first")
 
-    records = check_records(mdir, set(by_id), f)
+    records = check_records(mdir, set(by_id), f, overrides.get("decisions.md"))
 
     reads = pipeline_param_reads(mdir / "pipeline")
     summary = {"params": len(by_id), "modules": sorted(reads), "stage": stage}
@@ -333,11 +372,22 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False) -> tuple[Findings,
         text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=120)
         ac.atomic_write_text(mdir / "params.yaml", text)
     if stage == "wired":
+        step_of_module = {Path(str((s.get("new") or {}).get("module") or "")).name: sid for sid, s in steps.items()
+                          if (s.get("new") or {}).get("module")}
         for rel, r in reads.items():
             if r.get("parse_error"):
                 f.block("MODULE_PARSE", rel, "module does not parse")
                 continue
+            sid = step_of_module.get(Path(rel).name)
             for pid in sorted(r["reads"]):
+                # the same three refusals as the runtime's ctx.param (PARAM_MISSING, run exit 12)
+                if sid is not None and pid not in (steps[sid].get("params") or []):
+                    f.block("PARAM_MISSING_AT_RUN", rel, f"ctx.param({pid!r}): {pid} is not in graph step {sid}'s "
+                                                         "params, so the runtime refuses it (PARAM_MISSING)")
+                if pid in by_id and ("value" not in by_id[pid]
+                                     or str(by_id[pid].get("resolution", "")).lower() == "unresolved"):
+                    f.block("PARAM_MISSING_AT_RUN", rel, f"ctx.param({pid!r}): {pid} is unresolved or has no value, "
+                                                         "so the runtime refuses it (PARAM_MISSING, exit 12)")
                 if pid not in by_id:
                     f.block("PARAM_UNKNOWN", rel, f"ctx.param({pid!r}) has no params.yaml entry")
                 elif r["declared"] is not None and pid not in r["declared"]:
