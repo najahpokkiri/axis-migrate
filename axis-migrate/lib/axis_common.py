@@ -16,7 +16,7 @@ import zipfile
 from pathlib import Path
 from typing import Any, Iterable
 
-PLUGIN_VERSION = "0.4.0"
+PLUGIN_VERSION = "0.4.1"
 
 # ---------------------------------------------------------------------------------------------------------------
 # Vocabularies (DESIGN.md §3). Order matters: precedence worst first.

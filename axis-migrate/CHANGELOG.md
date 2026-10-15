@@ -4,7 +4,7 @@ All notable changes to axis-migrate. Versions follow semantic versioning; both m
 (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`) and `lib/axis_common.py` `PLUGIN_VERSION` carry the same
 number (Codex caches installs by version, so every shipped change needs a bump).
 
-## Unreleased
+## 0.4.1 (2026-10-16)
 
 Report (from the BYU headless end-to-end run)
 - "What needs attention" lists every open graph question and a plan approved by standing instruction, and counts
