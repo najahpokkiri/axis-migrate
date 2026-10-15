@@ -8,7 +8,10 @@ Subcommands (CONTRACTS §7):
                                                     appended atomically to verify/visual-review.json. A PNG receipt
                                                     cites a plot (plot, plot_sha256); a view receipt cites GeoLibre
                                                     map views (view, views_seen, engine, cells_read; checked against
-                                                    views.json by lib/visual_receipt.py). Both count the same.
+                                                    views.json by lib/visual_receipt.py); a skipped receipt reads
+                                                    "skipped: identical (<sha256>)" for a dataset with nothing to
+                                                    show (accepted only if the new output's bytes, hashed again,
+                                                    are that sha). All count the same.
   review-status --run <run_dir> [--json]            which compared raster/vector datasets still lack a receipt
   review-template --run <run_dir> [--dataset ds]… [--kind auto|view|png]
                                                     print prefilled "looked, nothing found" Q-all receipts (a JSON
@@ -19,6 +22,7 @@ Subcommands (CONTRACTS §7):
                                                     sha from plots.json. The reviewer fills answer, model, note (view:
                                                     each cell's legacy/new as the popup shows them) — left empty,
                                                     review-add refuses them. Allowed `layer` values go to stderr.
+                                                    Datasets views.py skipped (identical) get a skipped receipt.
 
 Plots are evidence about verdicts, never inputs to them. Every PNG is rendered with matplotlib Agg at DPI 150 with a
 fixed font and no timestamp, so the same inputs give the same bytes. Nothing is reprojected or resampled onto the
@@ -1844,6 +1848,8 @@ def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple
         return ["a finding must be a JSON object"], None
     if vrc.is_view(f):
         return validate_view_finding(run, f, rubric, existing_ids)
+    if vrc.is_skip(f):
+        return validate_skip_finding(run, f, existing_ids)
     unknown = sorted(set(f) - set(FINDING_REQUIRED) - set(FINDING_OPTIONAL))
     added = sorted(set(f) & set(FINDING_ADDED))
     if added:
@@ -2114,6 +2120,51 @@ def validate_view_finding(run: Run, f: dict, rubric: dict, existing_ids: set) ->
     return [], out
 
 
+# ---- skipped receipts (nothing to show: identical to legacy, or reviewed before byte for byte)
+SKIP_REQUIRED = ("dataset_id", "skipped", "model")
+SKIP_OPTIONAL = ("finding_id", "run_id", "note")
+
+
+def validate_skip_finding(run: Run, f: dict, existing_ids: set) -> tuple[list[str], dict | None]:
+    """`{dataset_id, skipped: "skipped: identical (<sha256>)", model, note?}` (review-template prints it). Accepted only
+    while lib/visual_receipt.skip_problem holds: the compare result says there is nothing to show and the new
+    output's bytes, hashed again now, are that sha."""
+    errs: list[str] = []
+    unknown = sorted(set(f) - set(SKIP_REQUIRED) - set(SKIP_OPTIONAL))
+    if unknown:
+        errs.append(f"unknown fields for a skipped receipt: {unknown} (only {SKIP_REQUIRED + SKIP_OPTIONAL})")
+    for k in SKIP_REQUIRED:
+        if k not in f:
+            errs.append(f"missing field {k}")
+    if errs:
+        return errs, None
+    ds = f["dataset_id"]
+    if f.get("run_id") not in (None, run.run_id):
+        return [f"run_id {f.get('run_id')!r} is not this run ({run.run_id})"], None
+    if not isinstance(f["model"], str) or not f["model"].strip():
+        return ["model must name the reviewing model"], None
+    note = f.get("note") or ""
+    if not isinstance(note, str) or len(note) > NOTE_MAX:
+        return [f"note must be a string of at most {NOTE_MAX} characters"], None
+    res = run.results([ds]).get(ds) if isinstance(ds, str) else None
+    why = vrc.skip_problem(run.dir, res, f["skipped"])
+    if why:
+        return [why], None
+    now = vrc.nothing_to_show(run.dir, res)
+    out = {"receipt": "skipped", "dataset_id": ds, "skipped": vrc.skip_text(now["new_sha256"]),
+           "identical_to": now["identical_to"], "question_id": Q_ALL, "answer": "no", "effect": "none",
+           "category": "none", "note": note, "model": f["model"], "run_id": run.run_id}
+    if now.get("carried_from"):
+        out["carried_from"] = now["carried_from"]
+    core = {k: out[k] for k in ("run_id", "dataset_id", "skipped", "model")}
+    out["finding_id"] = f.get("finding_id") or ("vf-" + ac.sha256_bytes(ac.cjson(core))[:16])
+    if not FID_RE.match(out["finding_id"]):
+        return ["finding_id must look like vf-<letters, digits, . _ ->"], None
+    if out["finding_id"] in existing_ids:
+        return [f"finding_id {out['finding_id']} already recorded (identical finding or reused id)"], None
+    return [], out
+
+
 def _locked_update(lock_dir: Path, fn) -> Any:
     fd = os.open(lock_dir, os.O_RDONLY)
     try:
@@ -2204,7 +2255,7 @@ def cmd_review_add(args) -> int:
     where = "amend/visual-review.json (run sealed)" if sealed else "verify/visual-review.json"
     for f in new:
         on = f"view {f['view']['project']} ({len(f['views_seen'])} views, engine {f.get('engine')})" \
-            if f.get("receipt") == "view" else f["plot"]
+            if f.get("receipt") == "view" else (f["skipped"] if f.get("receipt") == "skipped" else f["plot"])
         print(f"recorded {f['finding_id']} in {where}: {f['dataset_id']} {f['question_id']} {f['answer']} "
               f"({f['effect']}) on {on}")
     if sealed:
@@ -2243,7 +2294,11 @@ def review_status(run: Run) -> dict:
                     shas.add(e.get("sha256"))
         mine = [f for f in findings if f.get("dataset_id") == ds and f.get("run_id") == run.run_id]
         views_ok = [f for f in mine if vrc.is_view(f) and receipts.problem(f) is None]
-        valid = [f for f in mine if not vrc.is_view(f) and f.get("plot_sha256") in shas] + views_ok
+        skips_ok = [f for f in mine if vrc.is_skip(f) and receipts.problem(f) is None]
+        valid = [f for f in mine if not vrc.is_view(f) and not vrc.is_skip(f) and f.get("plot_sha256") in shas] + \
+            views_ok + skips_ok
+        skipped = (skips_ok[0]["skipped"] if skips_ok else None) or (vrc.skip_counts(run.dir, ds, res) if compared
+                                                                     else None)
         required = sorted(q["id"] for q in rubric.get("questions", []) if fam in q.get("families", [])
                           and q.get("required", True))
         answered = sorted({f.get("question_id") for f in valid})
@@ -2251,7 +2306,10 @@ def review_status(run: Run) -> dict:
         missing = [] if qall else [q for q in required if q not in answered]
         receipted = any(f.get("answer") in ("yes", "no") for f in valid)
         by_views = any(f.get("answer") in ("yes", "no") for f in views_ok)   # views_seen covers every view
-        if by_views:
+        if skipped:
+            missing = []
+            status = "complete"
+        elif by_views:
             missing = []
             status = "complete"
         elif not doc:
@@ -2268,7 +2326,9 @@ def review_status(run: Run) -> dict:
             status = "complete"
         entry = {"family": fam, "compare_verdict": res.get("verdict"), "status": status, "missing_questions": missing,
                  "answered": answered, "q_all": qall, "invalid_receipts": len(mine) - len(valid),
-                 "view_receipts": len(views_ok), "via": "views" if by_views else ("plots" if valid else None),
+                 "view_receipts": len(views_ok),
+                 "via": "skipped" if skipped else ("views" if by_views else ("plots" if valid else None)),
+                 "skipped": skipped, "skip_receipt": bool(skips_ok),
                  "flags": sorted(f["finding_id"] for f in valid if f.get("effect") == "flag"),
                  "cannot_tell": sorted(f["finding_id"] for f in valid if f.get("answer") == "cannot_tell")}
         (out["datasets"] if compared else out["optional"])[ds] = entry
@@ -2291,7 +2351,8 @@ def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = N
     re-checked against the bytes now, so a stale or changed file is skipped, never templated. answer, note and model
     (and a view receipt's cell values) are left empty on purpose: review-add refuses them until filled."""
     st = review_status(run)
-    want = list(datasets) if datasets else list(st["lacking"])
+    want = list(datasets) if datasets else sorted(set(st["lacking"]) | {
+        ds for ds, e in st["datasets"].items() if e.get("skipped") and not e.get("skip_receipt")})
     out, skipped = [], []
     view_docs = {root: vrc.load_index(run.dir, root) for root in vrc.views_index_rel(run.dir)}
 
@@ -2305,6 +2366,9 @@ def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = N
         e = st["datasets"].get(ds) or st["optional"].get(ds)
         if e is None:
             skipped.append(f"{ds}: not a compared raster/vector dataset of this run")
+            continue
+        if e.get("skipped"):              # nothing to show: the bytes say why (review-add re-hashes them)
+            out.append({"dataset_id": ds, "skipped": e["skipped"], "note": "", "model": ""})
             continue
         base = {"dataset_id": ds, "question_id": Q_ALL, "answer": "", "effect": "none", "category": "none"}
         entry = views_of(ds)
@@ -2377,7 +2441,8 @@ def cmd_review_template(args) -> int:
     print(json.dumps(items, indent=1, ensure_ascii=False))
     for s in skipped:
         print(f"skipped {s}", file=sys.stderr)
-    print(f"{len(items)} prefilled Q-all receipt(s). Fill answer (\"no\" only after looking at every cited plot or "
+    print(f"{len(items)} prefilled receipt(s). A skipped receipt ('skipped: identical (<sha256>)': no views, "
+          "nothing to show) needs only model. Q-all receipts: fill answer (\"no\" only after looking at every cited plot or "
           "view), model, note (may stay empty for no); view receipts: each cells_read legacy/new as the popup shows "
           f"them (null = nodata). layer: null or one of {', '.join(VIEW_LAYERS)} (several joined with '+', e.g. "
           "legacy+new). A defect is a separate receipt with question_id Q1…Q7, answer yes, effect flag. Then "
@@ -2397,7 +2462,9 @@ def cmd_review_status(args) -> int:
         for ds, e in sorted(st["datasets"].items()):
             miss = f" missing {', '.join(e['missing_questions'])}" if e["missing_questions"] else ""
             fl = f" · {len(e['flags'])} flag(s)" if e["flags"] else ""
-            print(f"  {ds} [{e['family']}, {e['compare_verdict']}]: {e['status']}{miss}{fl}")
+            how = f" ({e['skipped']}{'' if e['skip_receipt'] else '; review-template prints its receipt'})" \
+                if e.get("skipped") else ""
+            print(f"  {ds} [{e['family']}, {e['compare_verdict']}]: {e['status']}{how}{miss}{fl}")
         for ds, e in sorted(st["optional"].items()):
             print(f"  (optional) {ds} [{e['family']}, {e['compare_verdict']}]: {e['status']}")
         print(f"lacking a complete receipt: {len(st['lacking'])}" + (f" ({', '.join(st['lacking'])})"

@@ -193,12 +193,16 @@ def check_page(ch: Chrome, url: str, shot: Path | None = None) -> dict:
     st = json.loads(st) if isinstance(st, str) else None
     res = {"url": url, "ready": state == "ready", "seconds": round(time.time() - t0, 1), "status": st,
            "status_line": ch.js("(document.getElementById('axis-map-status')||{}).textContent || null")}
-    if not st:
-        res["problem"] = "no readiness marker: the override geolibre-runtime-config.js is not served"
-        return res
     png = base64.b64decode(ch.cmd("Page.captureScreenshot", format="png")["data"])
     if shot:
         shot.write_bytes(png)
+    if not st:
+        res["problem"] = "no readiness marker: the override geolibre-runtime-config.js is not served"
+        rect = ch.js("(function(){var c=document.querySelector('.maplibregl-canvas');if(!c)return null;"
+                     "var r=c.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,"
+                     "width:r.width,height:r.height};})()")
+        res["crisp"] = crisp_ratio(png, rect) if rect else None      # what the stock engine draws (smoothed)
+        return res
     if st.get("rasterLayers"):
         res["crisp"] = crisp_ratio(png, st["centre"]) if st.get("centre") else None
         res["engine"] = st.get("engine")

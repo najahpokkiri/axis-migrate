@@ -3,23 +3,39 @@
 // 1. Keeps the stock content: no managed services, no AI proxy.
 // 2. Sets the raster engine to maplibre-gl-raster (crisp cells; the stock default cog-tiler-wasm smooths them) as
 //    soon as the raster control exists, so nobody opens Add Data -> Raster Layer to switch it.
-// 3. Readiness: counts the page's /data/ requests; when the project is loaded, the engine is set (projects with a
-//    raster layer) and no /data/ request has been in flight for QUIET_MS, it triggers one map resize (repaint) and
-//    marks the page ready: <html data-axis-map="ready">, window.__AXIS_MAP__ and a status line in the page text
-//    ("axis-map: ready · engine … · project sha256 … · click centre x,y" — the centre of the map canvas in CSS px).
+// 3. Camera: a project whose metadata["axis-migrate"].fit_bounds is [west, south, east, north] (overview, nodata,
+//    inputs-overview) is fitted to those bounds once, in whatever canvas size the pane has (1280x960 or an 800 px
+//    side pane alike). Cell and feature projects keep their camera (the cell sits at the canvas centre).
+// 4. Readiness: the page is "ready" when the project is loaded and hashed, the engine is set (projects with a raster
+//    layer), no /data/ request has been in flight for QUIET_MS, and the MapLibre map (found through GeoLibre 3.4.0's
+//    React tree) is loaded, has every tile, is not moving, and has gone idle after one forced resize + repaint (the
+//    layers that drew only after a pan: MapLibre watches its container, not window resize events, so the old
+//    window "resize" event never reached it). Marks: <html data-axis-map="ready">, window.__AXIS_MAP__ and a status
+//    line in the page text ("axis-map: ready · engine … · project sha256 … · click centre x,y" — the centre of the
+//    map canvas in CSS px). When the map is moved and tiles load again the line says "drawing" until idle again.
+// 5. Never arms GeoLibre's "unsaved changes" beforeunload prompt (it arms after an identify click and would block the
+//    next navigate in the agent's browser): view projects are display only and never saved from the page.
 // Display only: nothing here changes data, values or what the identify popup reports.
 window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
 (function () {
   "use strict";
   var AXIS_GEOLIBRE_VERSION = "3.4.0";
   var ENGINE = "maplibre-gl-raster";
-  var QUIET_MS = 800, MIN_MS = 1500, GIVE_UP_MS = 30000;
+  var QUIET_MS = 600, MIN_MS = 1200, GIVE_UP_MS = 30000, IDLE_WAIT_MS = 4000;
   var st = window.__AXIS_MAP__ = {
     version: AXIS_GEOLIBRE_VERSION, state: "loading", engine: null, engineWanted: null, project: null,
     projectSha256: null, inflight: 0, requests: 0, lastActivity: Date.now(), started: Date.now(), centre: null,
-    rasterLayers: null, problems: []
+    rasterLayers: null, fitBounds: null, fitted: false, map: false, idle: false, repaints: 0, problems: []
   };
   function touch() { st.lastActivity = Date.now(); }
+  // view projects are display only and never edited here: GeoLibre's "unsaved changes" prompt (it arms itself after
+  // an identify click) would block the next navigate, so the page never registers one
+  var addEv = window.addEventListener;
+  window.addEventListener = function (type) {
+    if (type === "beforeunload") return undefined;
+    return addEv.apply(this, arguments);
+  };
+  try { Object.defineProperty(window, "onbeforeunload", { configurable: true, get: function () { return null; }, set: function () {} }); } catch (e) { st.problems.push("beforeunload: " + e); }
   function isData(u) { try { return new URL(String(u), location.href).pathname.indexOf("/data/") === 0; } catch (e) { return false; } }
 
   var origFetch = window.fetch;
@@ -53,6 +69,8 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
         var txt = new TextDecoder().decode(buf), doc = JSON.parse(txt);
         st.rasterLayers = (doc.layers || []).filter(function (l) { return l && l.type === "cog"; }).length;
         st.engineWanted = st.rasterLayers ? ENGINE : null;
+        var fb = ((doc.metadata || {})["axis-migrate"] || {}).fit_bounds;
+        if (Array.isArray(fb) && fb.length === 4 && fb.every(function (v) { return typeof v === "number" && isFinite(v); })) st.fitBounds = fb;
         return crypto.subtle ? crypto.subtle.digest("SHA-256", buf) : null;
       }).then(function (d) { if (d) st.projectSha256 = hex(d); touch(); })
         .catch(function (e) { st.problems.push("project: " + e); st.rasterLayers = 0; });
@@ -79,6 +97,44 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
     st.engine = s.value;
     return s.value === ENGINE;
   }
+  // the MapLibre map instance: GeoLibre 3.4.0 passes it as a `map` prop / ref inside the React tree of the container
+  var map = null;
+  function isMap(o) { return !!o && typeof o === "object" && typeof o.areTilesLoaded === "function" && typeof o.triggerRepaint === "function"; }
+  function findMap() {
+    if (map) return map;
+    var el = document.querySelector(".maplibregl-map");
+    if (!el) return null;
+    var key = Object.keys(el).filter(function (k) { return k.indexOf("__reactFiber") === 0; })[0];
+    for (var f = key ? el[key] : null, n = 0; f && n < 40; f = f.return, n++) {
+      var cand = [f.memoizedProps, f.stateNode];
+      for (var h = f.memoizedState, m = 0; h && m < 60; h = h.next, m++) {
+        var ms = h.memoizedState;
+        cand.push(ms);
+        if (ms && typeof ms === "object" && "current" in ms) cand.push(ms.current);
+      }
+      for (var i = 0; i < cand.length; i++) {
+        var x = cand[i];
+        if (isMap(x)) { map = x; break; }
+        if (x && typeof x === "object" && !Array.isArray(x)) {
+          var y; try { y = x.map; } catch (e) { y = null; }
+          if (isMap(y)) { map = y; break; }
+        }
+      }
+      if (map) break;
+    }
+    if (map) {
+      st.map = true;
+      map.on("idle", function () { st.idle = true; });
+      ["movestart", "dataloading", "sourcedataloading"].forEach(function (ev) { map.on(ev, function () { st.idle = false; }); });
+    }
+    return map;
+  }
+  function mapSettled(m) {
+    try {
+      st.mapState = { loaded: m.loaded(), tiles: m.areTilesLoaded(), moving: m.isMoving() };
+      return st.mapState.loaded && st.mapState.tiles && !st.mapState.moving;
+    } catch (e) { return false; }
+  }
   function centre() {
     var c = document.querySelector(".maplibregl-canvas") || document.querySelector("canvas");
     if (!c) return null;
@@ -95,7 +151,8 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
       bar.setAttribute("role", "status");
       bar.style.cssText = "position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:2147483647;" +
         "font:11px/1.3 ui-monospace,monospace;background:rgba(255,255,255,.92);color:#111;padding:1px 6px;" +
-        "border:1px solid #999;border-radius:3px;pointer-events:none;white-space:nowrap";
+        "border:1px solid #999;border-radius:3px;pointer-events:none;max-width:calc(100% - 24px);" +
+        "overflow-wrap:anywhere;text-align:center";
       document.body.appendChild(bar);
     }
     if (bar.textContent !== text) bar.textContent = text;
@@ -105,28 +162,50 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
     return "axis-map: " + st.state + " · engine " + (st.engineWanted ? (st.engine || "pending") : "n/a (no raster layer)") +
       " · project sha256 " + (st.projectSha256 || "pending") + (c ? " · click centre " + c.x + "," + c.y : "");
   }
-  var repainted = false;
+  var repaintAt = 0;
+  function repaint(m) {
+    st.idle = false;
+    st.repaints++;
+    repaintAt = Date.now();
+    try { m.resize(); m.triggerRepaint(); } catch (e) { st.problems.push("repaint: " + e); }
+    touch();
+  }
   function tick() {
     var now = Date.now();
     var engineOk = st.rasterLayers === 0 || (st.rasterLayers > 0 && setEngine());
     st.centre = centre();
     var quiet = st.inflight <= 0 && now - st.lastActivity >= QUIET_MS && now - st.started >= MIN_MS;
     var known = st.rasterLayers !== null && st.projectSha256 !== null;
-    if (known && engineOk && quiet && st.centre) {
-      if (!repainted) {           // layers that only drew after a pan: one resize makes MapLibre repaint
-        repainted = true;
-        window.dispatchEvent(new Event("resize"));
-        touch();
-      } else {
-        st.state = "ready";
+    var m = findMap();
+    var settled = m ? mapSettled(m) : true;
+    var pre = known && engineOk && quiet && st.centre && settled;
+    if (pre && m && st.fitBounds && !st.fitted) {           // once: the whole data extent in this canvas, any size
+      st.fitted = true;
+      var b = st.fitBounds, pad = Math.max(8, Math.min(40, Math.round(Math.min(st.centre.width, st.centre.height) / 20)));
+      try { m.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: { top: pad, left: pad, right: pad, bottom: pad + 24 }, animate: false, maxZoom: 22 }); }
+      catch (e) { st.problems.push("fitBounds: " + e); }
+      touch();
+      pre = false;
+    }
+    if (pre) {
+      if (!st.repaints) {
+        if (m) repaint(m); else { st.repaints = 1; repaintAt = now; window.dispatchEvent(new Event("resize")); touch(); }
+        pre = false;
+      } else if (m && !st.idle && now - repaintAt < IDLE_WAIT_MS) {
+        pre = false;                                          // drawn frame not confirmed yet (MapLibre 'idle')
       }
-    } else if (st.state === "ready" && st.inflight > 0) {
+    }
+    if (pre) {
+      st.state = "ready";
+    } else if (st.state === "ready" || st.state === "drawing") {
       st.state = "drawing";
-    } else if (st.state !== "ready") {
-      st.state = now - st.started > GIVE_UP_MS && !engineOk ? "engine-not-set (switch it by hand: Add Data -> Raster Layer)" : "loading";
+    } else if (document.visibilityState === "hidden") {
+      st.state = "loading (tab hidden: the browser does not draw it until it is shown)";
+    } else {
+      st.state = now - st.started > GIVE_UP_MS && !engineOk ? "engine-not-set (this GeoLibre build has no maplibre-gl-raster engine select)" : "loading";
     }
     document.documentElement.setAttribute("data-axis-map", st.state === "ready" ? "ready" : "loading");
     show(line());
   }
-  setInterval(tick, 200);
+  setInterval(tick, 150);
 })();

@@ -11,6 +11,7 @@ import urllib.parse
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 import synth_map
 from conftest import entry, map_py, run_cli, views_doc
@@ -77,6 +78,30 @@ def test_project_shape(synth_run):
     assert pr["mapView"]["center"] == ve["camera"]["center"] and pr["mapView"]["zoom"] == ve["camera"]["zoom"]
     for lay in pr["layers"]:
         assert lay["source"]["url"].startswith("/data/") and "127.0.0.1" not in json.dumps(lay)
+    # no animated starry sky behind the data; the layer control and the deck.gl overlay stay active
+    act = pr["plugins"]["activePluginIds"]
+    assert "maplibre-atmosphere-effects" not in act and {"maplibre-layer-control", "maplibre-deckgl-viz"} <= set(act)
+    assert "fit_bounds" not in pr["metadata"]["axis-migrate"]               # worst opens on its place
+
+
+def test_extent_views_fit_their_data(synth_run):
+    """overview and nodata carry the data bounds (the page fits them into whatever canvas it has: 1280×960 or an
+    800 px side pane); their stored camera already shows the whole extent in GeoLibre's 1192×749 canvas."""
+    for ds in ("ds.b", "ds.e", "ds.v"):
+        e = entry(synth_run, ds)
+        for v in ("overview", "nodata"):
+            if v not in e["views"]:
+                continue
+            ve = e["views"][v]
+            pr = json.loads((synth_run / ve["project"]).read_text())
+            w, s_, ea, n = pr["metadata"]["axis-migrate"]["fit_bounds"]
+            assert [w, s_, ea, n] == pytest.approx(e["bounds_4326"], abs=1e-6)
+            merc = lambda lat: math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) / (2 * math.pi)  # noqa: E731
+            scale = 512 * 2 ** ve["camera"]["zoom"]
+            assert (ea - w) / 360 * scale <= 1192 and (merc(n) - merc(s_)) * scale <= 749, (ds, v)
+    for c in entry(synth_run, "ds.b")["views"]["worst"]["cells_to_identify"]:
+        pr = json.loads((synth_run / c["project"]).read_text())
+        assert "fit_bounds" not in pr["metadata"]["axis-migrate"]             # a cell stays at the canvas centre
 
 
 def test_shared_scale_is_p2_p98_of_both_sides(synth_run):

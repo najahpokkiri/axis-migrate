@@ -116,11 +116,23 @@ def test_every_compared_dataset_has_views(clean):
         compared[r["dataset_id"]] = r["family"]
     want = {k for k, f in compared.items() if f in ("raster", "vector")}
     got = {e["dataset"]: e for e in d["datasets"]}
-    assert set(got) == want and set(RASTERS) <= want
+    sk = {s["dataset"]: s for s in d["skipped"]}
+    identical = {k for k, s in sk.items() if s.get("kind") in ("identical", "reviewed_before")}
+    assert set(got) | identical == want and not set(got) & identical
+    for ds in identical:          # nothing to show: no views, `skipped: identical (<sha of the new output>)`
+        r = json.loads((clean / "verify" / "compare" / f"{ds}.json").read_text())
+        assert sk[ds]["skipped"] == f"skipped: identical ({r['new']['sha256']})"
+        assert "CANDIDATE_IDENTICAL_TO_REFERENCE" in r["diagnostic_codes"] and r["verdict"] == "PASS_EXACT"
+        assert not (clean / "verify" / "views" / ds).exists()
     for ds, e in got.items():
         names = {"raster": {"overview", "worst", "edges", "nodata"}, "vector": {"overview", "worst"}}[e["family"]]
-        assert set(e["views"]) == names, ds
-    assert {s["dataset"] for s in d["skipped"]} == {k for k, f in compared.items() if f == "table"}
+        assert set(e["views"]) == names - set(e["omitted_views"]), ds
+        if e["verdict"] == "PASS_EXACT":                       # an exact pass: one overview and one cell at most
+            assert set(e["views"]) == {"overview"}, ds
+            assert len({c["id"] for ve in e["views"].values() for c in ve["cells_to_identify"]}) <= 1, ds
+        if e["family"] == "raster" and e["diff_scale"]["max_abs_diff"] == 0:
+            assert "worst" not in e["views"], ds
+    assert {k for k, s in sk.items() if k not in identical} == {k for k, f in compared.items() if f == "table"}
 
 
 def test_projects_validate_and_cells_match_sources(clean):
@@ -154,7 +166,22 @@ def test_projects_validate_and_cells_match_sources(clean):
 def test_check_script_headless(clean):
     cp = sh([PY3, MAP / "check.py", "--run", clean, "--json"])
     res = json.loads(cp.stdout)
-    assert res["ok"] and res["problems"] == [] and res["projects"] >= 4 * len(RASTERS)
+    n = sum(len(e["views"]) for e in doc(clean)["datasets"])
+    assert res["ok"] and res["problems"] == [] and res["projects"] >= n > 0
+
+
+@pytest.mark.skipif(not any(shutil.which(c) for c in ("google-chrome", "chromium", "chromium-browser")),
+                    reason="no Chrome for the headless render check")
+def test_render_headless(clean):
+    """Every dataset's overview and first cell open in headless Chrome: ready line (map idle after a repaint), the GPU
+    raster engine set by the page itself, cells drawn as squares."""
+    cp = sh([PY3, MAP / "check.py", "--run", clean, "--render", "--json"], ok=(0, 2))
+    res = json.loads(cp.stdout)
+    assert res["ok"], res["problems"]
+    rr = res["render"]["results"]
+    assert rr and all(x["ready"] for x in rr)
+    assert all(x["engine"] == "maplibre-gl-raster" and x["crisp"] <= 0.06 for x in rr if x["engine"] is not None
+               or x["crisp"] is not None)
 
 
 def test_identical_rasters_show_no_stripes(clean):
@@ -191,13 +218,14 @@ def test_seal_then_views_go_to_amend(clean):
     before = doc(clean)
     sh([AXPY, PLUGIN / "skills" / "report" / "seal.py", mig, "--run", clean.name])
     assert not os.access(clean / "verify", os.W_OK)
-    sh([PY3, MAP / "views.py", "run", "--run", clean, "--dataset", "ds.lux_res_exposure_2020"])
+    old = next(e for e in before["datasets"] if e["family"] == "raster")       # a raster that has views
+    ds = old["dataset"]
+    sh([PY3, MAP / "views.py", "run", "--run", clean, "--dataset", ds])
     a = json.loads((clean / "amend" / "views" / "views.json").read_text())
-    assert a["sealed_run"] is True and [e["dataset"] for e in a["datasets"]] == ["ds.lux_res_exposure_2020"]
-    old = next(e for e in before["datasets"] if e["dataset"] == "ds.lux_res_exposure_2020")
+    assert a["sealed_run"] is True and [e["dataset"] for e in a["datasets"]] == [ds]
     new = a["datasets"][0]
     assert new["files"]["diff"]["sha256"] == old["files"]["diff"]["sha256"]     # same layers, other folder
-    assert new["views"]["worst"]["url_path"].startswith(f"/data/runs/{clean.name}/amend/views/")
+    assert new["views"]["overview"]["url_path"].startswith(f"/data/runs/{clean.name}/amend/views/")
     cp = sh([PY3, MAP / "check.py", "--run", clean, "--json"])                   # amend index is preferred
     assert json.loads(cp.stdout)["ok"]
 
@@ -248,6 +276,11 @@ def review_every_dataset(run: Path, tmp: Path) -> dict:
         cp = review_add(run, tmp, f)
         assert cp.returncode == 0, (ds, cp.stdout, cp.stderr)
         out[ds] = bool(one_side)
+    for s_ in d["skipped"]:                  # nothing to show: the skipped receipt, checked against the bytes
+        if s_.get("skipped"):
+            cp = review_add(run, tmp, {"dataset_id": s_["dataset"], "skipped": s_["skipped"], "model": "devtest"})
+            assert cp.returncode == 0, (s_["dataset"], cp.stdout, cp.stderr)
+            out[s_["dataset"]] = False
     return out
 
 

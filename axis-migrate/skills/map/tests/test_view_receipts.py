@@ -88,19 +88,66 @@ def test_review_loop_on_real_views(run, tmp_path):
     assert d["ds.e"]["visual"]["flags"]
     st = subprocess.run([str(AXPY), str(PLOT), "review-status", "--run", str(run), "--json"], capture_output=True,
                         text=True, timeout=300)
-    assert set(json.loads(st.stdout)["lacking"]) <= {"ds.a"}
+    assert json.loads(st.stdout)["lacking"] == []                           # ds.a: skipped: identical (sha)
 
 
-@pytest.mark.xfail(strict=False, reason="compare.py aggregate, ladder.py and plot.py review-status must count "
-                                        "visual_receipt.skip_counts (identical / reviewed before) like a receipt")
-def test_identical_skip_counts_in_aggregate(run):
+def test_identical_skip_receipt(run, tmp_path):
+    """ds.a (identical to legacy): views.json says `skipped: identical (<sha>)`; review-status counts it complete
+    without opening anything; review-template prints the skipped receipt; review-add accepts it only with the real
+    sha (a made-up sha is refused), and compare.py aggregate then counts it as the dataset's receipt."""
+    sha = json.loads((run / "verify" / "compare" / "ds.a.json").read_text())["new"]["sha256"]
+    rec = {s["dataset"]: s for s in views_doc(run)["skipped"]}["ds.a"]
+    assert rec["skipped"] == f"skipped: identical ({sha})" and rec["reason"].startswith(f"identical ({sha})")
+    st = json.loads(subprocess.run([str(AXPY), str(PLOT), "review-status", "--run", str(run), "--json"],
+                                   capture_output=True, text=True, timeout=300).stdout)
+    assert "ds.a" not in st["lacking"] and st["datasets"]["ds.a"]["via"] == "skipped"
+    tp = subprocess.run([str(AXPY), str(PLOT), "review-template", "--run", str(run), "--dataset", "ds.a"],
+                        capture_output=True, text=True, timeout=300)
+    tmpl = json.loads(tp.stdout)
+    assert tmpl == [{"dataset_id": "ds.a", "skipped": f"skipped: identical ({sha})", "note": "", "model": ""}]
+    cp = review_add(run, tmp_path, {**tmpl[0], "model": ""})
+    assert cp.returncode == 2 and "model" in cp.stderr
+    cp = review_add(run, tmp_path, {**tmpl[0], "skipped": f"skipped: identical ({'0' * 64})", "model": "m"})
+    assert cp.returncode == 2 and "not the new output's sha256" in cp.stderr
+    cp = review_add(run, tmp_path, {"dataset_id": "ds.b", "skipped": f"skipped: identical ({sha})", "model": "m"})
+    assert cp.returncode == 2 and "is not identical" in cp.stderr          # a dataset with differences
+    cp = review_add(run, tmp_path, {**tmpl[0], "model": "m"})
+    assert cp.returncode == 0, cp.stderr
     subprocess.run([str(AXPY), str(COMPARE), "aggregate", "--run", str(run)], capture_output=True, text=True,
                    timeout=300)
     d = json.loads((run / "verify" / "verdict.json").read_text())["datasets"]
     assert d["ds.a"]["verdict"] == "PASS_EXACT" and "VISUAL_REVIEW_MISSING" not in d["ds.a"]["reason_codes"]
-    st = subprocess.run([str(AXPY), str(PLOT), "review-status", "--run", str(run), "--json"], capture_output=True,
-                        text=True, timeout=300)
-    assert json.loads(st.stdout)["lacking"] == []
+    st = json.loads(subprocess.run([str(AXPY), str(PLOT), "review-status", "--run", str(run), "--json"],
+                                   capture_output=True, text=True, timeout=300).stdout)
+    assert st["datasets"]["ds.a"]["skip_receipt"] is True
+
+
+def test_skip_stops_counting_when_the_bytes_change(tmp_path):
+    """Anti-fabrication: the skip and the skipped receipt are re-checked against the new output's bytes now; once
+    they change (without a new compare) neither counts and the Stop gate's rule wants a look."""
+    r = synth_map.build(tmp_path / "proj")
+    assert run_cli("views.py", "run", "--run", r).returncode == 0
+    sha = json.loads((r / "verify" / "compare" / "ds.a.json").read_text())["new"]["sha256"]
+    cp = review_add(r, tmp_path, {"dataset_id": "ds.a", "skipped": f"identical ({sha})", "model": "m"})
+    assert cp.returncode == 0, cp.stderr
+    rr = vrc.RunReceipts(r)
+    skip = next(f for f in rr.findings() if f.get("receipt") == "skipped")
+    assert rr.problem(skip) is None and vrc.skip_counts(r, "ds.a") == f"skipped: identical ({sha})"
+    assert "ds.a" not in rr.missing_reviews()
+    out = vrc.new_output_path(r, json.loads((r / "verify" / "compare" / "ds.a.json").read_text()))
+    out.chmod(0o644)
+    out.write_bytes(out.read_bytes() + b"\0")
+    rr = vrc.RunReceipts(r)
+    assert "bytes now hash" in rr.problem(skip)
+    assert not vrc.skip_counts(r, "ds.a") and "ds.a" in rr.missing_reviews()
+    # a hand-edited views.json skip for a dataset with differences never counts either
+    idx = r / "verify" / "views" / "views.json"
+    doc = json.loads(idx.read_text())
+    bsha = json.loads((r / "verify" / "compare" / "ds.b.json").read_text())["new"]["sha256"]
+    doc["skipped"].append({"dataset": "ds.b", "kind": "identical", "skipped": f"skipped: identical ({bsha})",
+                           "counts_as_review": True, "legacy_sha256": None, "new_sha256": bsha})
+    idx.write_text(json.dumps(doc))
+    assert not vrc.skip_counts(r, "ds.b")
 
 
 def test_reviewed_before_carries_by_sha(tmp_path):

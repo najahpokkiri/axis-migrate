@@ -3,7 +3,7 @@
 One acceptance rule for every reader of verify/visual-review.json (and runs/<id>/amend/visual-review.json after seal):
 plot.py review-add / review-status, compare.py aggregate, report/seal.py, report/ladder.py and hooks/bin/stop_gate.py.
 
-Two receipt kinds, both written only by `plot.py review-add`:
+Three receipt kinds, all written only by `plot.py review-add`:
   png   cites a plot of this run: plot, plot_sha256 (verify/plots/<ds>/plots.json). The path for terminal harnesses,
         headless runs and evals.
   view  cites GeoLibre map views of this run (skills/map/views.py): view{project, project_sha256} (the view the
@@ -11,7 +11,12 @@ Two receipt kinds, both written only by `plot.py review-add`:
         edges, nodata and the cell-<id> project of every cell read; for a vector overview and worst), engine (rasters:
         maplibre-gl-raster), cells_read[{cell, legacy, new}] (rasters: at least one, values as the identify popup
         shows them, checked against views.json to the popup's ~3 significant figures).
-Both count the same way: a receipt says the dataset was looked at; a flag moves only a PASS_* dataset to NEEDS_REVIEW;
+  skipped  `skipped: identical (<sha256 of the new output>)` for a dataset views.py built no views for because there
+        is nothing to show (identical to the legacy reference, or byte-equal to an earlier run that was reviewed
+        with nothing found). Counts only while the compare result still says so and the new output's bytes on disk
+        still hash to that sha (recomputed each time: skip_problem). The views.json `skipped` record counts the same
+        way for review-status and the Stop gate without a stored receipt (skip_counts).
+All count the same way: a receipt says the dataset was looked at; a flag moves only a PASS_* dataset to NEEDS_REVIEW;
 nothing a reviewer records moves a verdict or a rung up. A view receipt whose project bytes changed after the review
 (sha256 ≠ the receipt's) does not count.
 
@@ -26,6 +31,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -38,13 +44,19 @@ REQUIRED_VIEWS = {"raster": ("overview", "worst", "edges", "nodata"), "vector": 
 VIEW_ROOTS = ("verify/views", "amend/views")
 VIEWS_SCHEMA = "axis-migrate.map-views.v1"
 NOT_COMPARED_STATES = ("NOT_COMPARED", "EVALUATOR_ERROR", "BLOCKED")
-ENGINE_HINT = ("switch it in the page: Add Data → Raster Layer → render engine maplibre-gl-raster (the default "
-               "cog-tiler-wasm smooths cells and draws a false orange fringe on the validity layer)")
+ENGINE_HINT = ("the map page sets it itself (its ready line says 'engine maplibre-gl-raster'); only when start.py "
+               "printed engine_preset false switch it by hand: Add Data → Raster Layer → render engine "
+               "maplibre-gl-raster (the default cog-tiler-wasm smooths cells)")
 
 
 def is_view(f) -> bool:
     """A view receipt (as submitted: has `view`; as stored: receipt == "view")."""
     return isinstance(f, dict) and ("view" in f or f.get("receipt") == "view")
+
+
+def is_skip(f) -> bool:
+    """A skipped receipt ('skipped: identical (<sha256>)': nothing to show, the bytes say why)."""
+    return isinstance(f, dict) and not is_view(f) and ("skipped" in f or f.get("receipt") == "skipped")
 
 
 def compared(res: dict) -> bool:
@@ -296,20 +308,47 @@ def check_view_on_disk(run_dir: Path, run_id: str, f: dict, family: str | None) 
 # datasets with nothing to look at: identical to legacy, or byte-equal to an earlier run that was reviewed
 # ---------------------------------------------------------------------------------------------------------------
 IDENTICAL_CODE = "CANDIDATE_IDENTICAL_TO_REFERENCE"
+SKIP_RE = re.compile(r"^(?:skipped: )?identical \(([0-9a-f]{64})\)$")
+
+
+def skip_text(sha: str) -> str:
+    """The one wording of a skipped review: views.json `skipped`, review-template, review-add, review-status."""
+    return f"skipped: identical ({sha})"
 
 
 def _shas(res: dict) -> tuple:
     return ((res.get("legacy") or {}).get("sha256"), (res.get("new") or {}).get("sha256"))
 
 
+def new_output_path(run_dir: Path, res: dict) -> Path | None:
+    """The new output a compare result cites (report/map.py locate's order: project-, run-, outputs-relative)."""
+    run_dir = Path(run_dir)
+    npath = (res.get("new") or {}).get("path")
+    if not npath or not isinstance(npath, str) or Path(npath).is_absolute() or ".." in Path(npath).parts:
+        return None
+    for c in (run_dir.parents[2] / npath, run_dir / npath, run_dir / "outputs" / npath):
+        if c.exists():
+            return c
+    return None
+
+
+def new_output_sha(run_dir: Path, res: dict) -> str | None:
+    """sha256 of the new output's bytes now (recomputed, never copied from a record)."""
+    p = new_output_path(run_dir, res)
+    if p is None:
+        return None
+    return ac.sha256_file(p) if p.is_file() else ac.tree_hash(p)
+
+
 def earlier_review(run_dir: Path, ds: str, shas: tuple) -> str | None:
-    """run_id of an earlier run of this migration whose compare result for `ds` has the same legacy and new bytes and
-    whose counting receipts for `ds` all found nothing (answer no). A flag is never carried over: look again."""
+    """run_id of an earlier run of this migration (run ids sort by time) whose compare result for `ds` has the same
+    legacy and new bytes and whose counting receipts for `ds` all found nothing (answer no). A flag is never carried
+    over: look again."""
     run_dir = Path(run_dir)
     if not all(shas) or not run_dir.parent.is_dir():
         return None
     for other in sorted(run_dir.parent.iterdir(), reverse=True):
-        if other == run_dir or not (other / "verify" / "compare").is_dir():
+        if other.name >= run_dir.name or not (other / "verify" / "compare").is_dir():
             continue
         rr = RunReceipts(other)
         res = rr.results().get(ds)
@@ -326,26 +365,68 @@ def nothing_to_show(run_dir: Path, res: dict) -> dict | None:
     """A views.json `skipped` record when the dataset needs no map look (views.py builds nothing for it):
     identical — PASS_EXACT and the new output has the legacy reference's bytes or content (compare.py
     CANDIDATE_IDENTICAL_TO_REFERENCE); reviewed_before — byte-equal (legacy and new sha256) to an earlier run of
-    this migration whose receipts for it found nothing. Both count as reviewed (skip_counts); None otherwise."""
+    this migration whose receipts for it found nothing. Both read `skipped: identical (<new output sha256>)` and count
+    as reviewed (skip_counts, or a stored skipped receipt); None otherwise."""
     if not compared(res):
         return None
     ls, ns = _shas(res)
+    if not ns:
+        return None
     if res.get("verdict") == "PASS_EXACT" and IDENTICAL_CODE in (res.get("diagnostic_codes") or []):
-        return {"kind": "identical", "reason": "identical: the new output has the legacy reference's bytes or "
-                "content (compare CANDIDATE_IDENTICAL_TO_REFERENCE); nothing to show", "legacy_sha256": ls,
-                "new_sha256": ns, "counts_as_review": True}
+        return {"kind": "identical", "skipped": skip_text(ns),
+                "reason": f"identical ({ns}): the new output has the legacy reference's bytes or content (compare "
+                          f"{IDENTICAL_CODE}); nothing to show", "identical_to": "legacy reference",
+                "legacy_sha256": ls, "new_sha256": ns, "counts_as_review": True}
     rid = earlier_review(run_dir, res.get("dataset_id"), (ls, ns))
     if rid:
-        return {"kind": "reviewed_before", "reason": f"same legacy and new bytes as run {rid}, looked at there and "
-                "nothing found; the review carries over by sha256", "carried_from": rid, "legacy_sha256": ls,
-                "new_sha256": ns, "counts_as_review": True}
+        return {"kind": "reviewed_before", "skipped": skip_text(ns),
+                "reason": f"identical ({ns}): same legacy and new bytes as run {rid}, looked at there and nothing "
+                          "found; the review carries over by sha256", "identical_to": f"run {rid}",
+                "carried_from": rid, "legacy_sha256": ls, "new_sha256": ns, "counts_as_review": True}
     return None
 
 
+def skip_problem(run_dir: Path, res: dict | None, text) -> str | None:
+    """None when `text` ('skipped: identical (<sha256>)') holds for this dataset now: the compare result says there
+    is nothing to show (identical to legacy, or reviewed before byte for byte), the sha is the new output's sha256 in
+    the compare result, and the new output's bytes on disk still hash to it (recomputed: a copied or invented sha does
+    not count). Else why not."""
+    if not isinstance(text, str) or not SKIP_RE.match(text.strip()):
+        return "skipped must read 'skipped: identical (<sha256 of the new output>)' (review-template prints it)"
+    sha = SKIP_RE.match(text.strip()).group(1)
+    if not res:
+        return "no compare result for this dataset in this run"
+    now = nothing_to_show(run_dir, res)
+    if now is None:
+        return (f"{res.get('dataset_id')} is not identical: compare has no {IDENTICAL_CODE} on a PASS_EXACT and no "
+                "earlier run reviewed these bytes; look at its views")
+    if sha != now["new_sha256"]:
+        return f"sha {sha[:12]}… is not the new output's sha256 in the compare result ({now['new_sha256'][:12]}…)"
+    disk = new_output_sha(run_dir, res)
+    if disk != sha:
+        return (f"the new output's bytes now hash to {disk[:12] + '…' if disk else 'nothing (file missing)'}, not "
+                f"{sha[:12]}…: rerun compare.py and look again")
+    return None
+
+
+def skip_receipt_matches(f: dict, res: dict | None) -> bool:
+    """Sealed-evidence form of skip_problem (ladder.py, no disk access): a stored skipped receipt whose sha is the
+    compare result's new sha256, on a result that is PASS_EXACT with CANDIDATE_IDENTICAL_TO_REFERENCE or whose
+    receipt records the run it carried over from."""
+    if not isinstance(f, dict) or f.get("receipt") != "skipped" or not res:
+        return False
+    m = SKIP_RE.match(str(f.get("skipped") or "").strip())
+    if not m or m.group(1) != (res.get("new") or {}).get("sha256"):
+        return False
+    return (res.get("verdict") == "PASS_EXACT" and IDENTICAL_CODE in (res.get("diagnostic_codes") or [])) or \
+        bool(f.get("carried_from"))
+
+
 def skip_counts(run_dir: Path, ds: str, res: dict | None = None) -> str | None:
-    """Why `ds` needs no receipt in this run (a views.json skipped record that still holds against the compare result
-    and, for a carried review, the earlier run's receipts), else None. compare.py aggregate, ladder.py, plot.py
-    review-status and the Stop gate count it like a receipt."""
+    """Why `ds` needs no receipt in this run (a views.json skipped record that still holds against the compare result,
+    the new output's bytes now and, for a carried review, the earlier run's receipts), else None. review-status and
+    the Stop gate (missing_reviews) count it like a receipt; compare.py aggregate counts the stored skipped receipt
+    review-template prints for it."""
     run_dir = Path(run_dir)
     if res is None:
         res = RunReceipts(run_dir).results().get(ds)
@@ -356,10 +437,8 @@ def skip_counts(run_dir: Path, ds: str, res: dict | None = None) -> str | None:
         rec = next((x for x in doc.get("skipped") or [] if isinstance(x, dict) and x.get("dataset") == ds), None)
         if not rec or not rec.get("counts_as_review"):
             continue
-        now = nothing_to_show(run_dir, res)
-        if now and now["kind"] == rec.get("kind") and (now["legacy_sha256"], now["new_sha256"]) == (
-                rec.get("legacy_sha256"), rec.get("new_sha256")):
-            return now["reason"]
+        if skip_problem(run_dir, res, rec.get("skipped")) is None:
+            return skip_text(res["new"]["sha256"])
     return None
 
 
@@ -419,6 +498,10 @@ class RunReceipts:
             return "effect must be flag|none"
         if f.get("effect") == "flag" and f.get("answer") != "yes":
             return "effect flag requires answer yes"
+        if is_skip(f):
+            if f.get("answer") != "no" or f.get("effect") != "none":
+                return "a skipped receipt records answer no, effect none"
+            return skip_problem(self.run, results.get(ds), f.get("skipped"))
         if is_view(f):
             probs = check_view_on_disk(self.run, self.run_id, f, (results.get(ds) or {}).get("family"))
             return probs[0] if probs else None

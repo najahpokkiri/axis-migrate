@@ -271,9 +271,53 @@ def test_overview_fits_its_data_at_the_viewport(proj):
     merc = lambda lat: math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) / (2 * math.pi)  # noqa: E731
     scale = 512 * 2 ** cam["zoom"]
     width_px, height_px = (e - w) / 360 * scale, (merc(n) - merc(s)) * scale
-    assert width_px <= 1192 and height_px <= 860                            # whole extent in the map canvas
-    assert max(width_px / 1192, height_px / 860) > 0.5                      # and not a tiny speck in it
+    assert width_px <= 1192 and height_px <= 749                            # whole extent in the map canvas
+    assert max(width_px / 1192, height_px / 749) > 0.5                      # and not a tiny speck in it
     assert cam["center"][0] == pytest.approx((w + e) / 2, abs=1e-6)
+    # the page refits the overview to the canvas it really has (an 800 px side pane too): bounds in the project
+    pr = json.loads((proj["mig"] / d["projects"]["inputs-overview"]["project"]).read_text())
+    assert pr["metadata"]["axis-migrate"]["fit_bounds"] == pytest.approx([w, s, e, n], abs=1e-6)
+
+
+def test_no_input_role_falls_back_to_unknown_and_unused(proj):
+    """B4: an inventory where nothing has role input (the scan could not tell what the code reads) still gets views:
+    every on-disk raster/vector with role unknown/unused, said so in views.json and the overview title; with no AOI
+    named, the single polygon layer is the AOI; a VRT alias (alias_of) is never shown twice."""
+    import shutil as sh
+    fb = proj["mig"].parent / "migration_fb"
+    if fb.exists():
+        sh.rmtree(fb)
+    fb.mkdir()
+    inv = json.loads((proj["mig"] / "inventory.json").read_text())
+    inv["aoi"] = None
+    by = {d["id"]: d for d in inv["datasets"]}
+    for d in inv["datasets"]:
+        if d.get("role") == "input":
+            d["role"] = "unknown"
+    by["ds.zones_src"]["role"] = "unused"
+    by["ds.zones_src"]["kind"] = "table"                  # leaves ds.zones as the only polygon layer shown
+    by["ds.extra_display"]["role"] = "intermediate"
+    inv["datasets"].append({**by["ds.raw"], "id": "ds.raw_alias", "role": "unknown", "alias_of": "ds.raw"})
+    (fb / "inventory.json").write_text(json.dumps(inv))
+    cp = run_cli("views.py", "inputs", fb)
+    assert cp.returncode == 0, cp.stdout + cp.stderr
+    assert "no dataset has role input" in cp.stdout and "AOI: ds.zones (the only polygon layer" in cp.stdout
+    d = doc(fb)
+    assert d["shown"].startswith("no dataset has role input: showing every on-disk raster/vector")
+    assert d["aoi"] == "ds.zones" and d["aoi_note"].startswith("AOI: ds.zones (the only polygon layer")
+    roles = {e["dataset"]: e["role"] for e in d["datasets"]}
+    assert roles == {"ds.raw": "unknown", "ds.zones": "unknown", "ds.01_clip": "intermediate",
+                     "ds.02_mask": "final"}
+    assert "ds.raw_alias" not in roles
+    ov = d["projects"]["inputs-overview"]
+    vis = {lay["dataset"]: lay["visible"] for lay in ov["layers"]}
+    assert vis["ds.raw"] is True and vis["ds.zones"] is True and vis["ds.01_clip"] is False
+    pr = json.loads((fb / ov["project"]).read_text())
+    assert "no dataset has role input" in pr["name"]
+    assert [c["id"] for c in next(e for e in d["datasets"] if e["dataset"] == "ds.raw")["cells_to_identify"]][1] \
+        == "aoi-edge"                                     # the derived AOI is used for the edge cell
+    # with an input present nothing falls back
+    assert doc(proj["mig"])["shown"] == "inputs (role input) and legacy rasters"
 
 
 def test_no_writes_to_tmpdir(proj, tmp_path):
@@ -326,8 +370,11 @@ def test_engine_preset_and_readiness_headless(proj):
         assert out["status"]["projectSha256"] == cell["project_sha256"]           # the page hashed what it shows
         assert "click centre" in out["status_line"] and out["status"]["centre"]["x"] > 0
         (proj["mig"] / ".axis" / "map" / "override" / "geolibre-runtime-config.js").unlink()
+        ov = d["projects"]["inputs-overview"]["url_path"]
         out = map_py("import render_check as R, json, views\n"
-                     f"print(json.dumps(R.check_pages([views.page_url({st['port']}, {cell['url_path']!r})])[0]))")
+                     f"print(json.dumps(R.check_pages([views.page_url({st['port']}, {ov!r})])[0]))")
         assert "no readiness marker" in out["problem"]
+        # and without the preset the stock engine smooths the cells: the crisp check is what fails then
+        assert out["crisp"] is not None and out["crisp"] > 0.06, out
     finally:
         run_cli("stop.py", proj["mig"])

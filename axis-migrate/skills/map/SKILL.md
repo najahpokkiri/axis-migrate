@@ -18,50 +18,70 @@ Not for general web maps or GIS visualisation outside a migration: answer those 
 `cell-<id>` projects (`max`, `aoi-edge` or `edge`, `interior`); per input vector a GeoJSON (EPSG:4326, attributes
 kept) and `feature-<id>` projects (`first`, `largest`, `central`); `inputs-overview` (every input; legacy rasters in
 the Layers panel, hidden) and one `grid-<family>` per grid family (members toggleable, each member's cell edges,
-the AOI outline; bookmarks = `grid_corners.png`'s five windows). Index: `discover/views.json` (values of every cell
-and attributes of every feature to identify). `views.py inputs-url migration --view inputs-overview|grid-<family>`
-or `--dataset <ds> --cell <id> | --feature <id>` prints the URL; `check.py --inputs migration` is the headless
-check. §2–3 apply unchanged (open, engine, nudge, toggle, identify: for a feature the popup lists its attributes).
-Findings go through `scan.py annotate migration map-finding` (discover SKILL §2), never `plot.py`.
+the AOI outline; bookmarks = `grid_corners.png`'s five windows). When no dataset has role input, every on-disk
+raster/vector with role unknown/unused is shown instead and views.json `shown` says so (say it too); with no AOI in
+the inventory the single polygon layer is used (`aoi_note`). Index: `discover/views.json`. `views.py list --inputs
+migration --json` prints every URL, cell and feature to identify in one call; `check.py --inputs migration` is the
+headless check. §2–3 apply unchanged (for a feature the popup lists its attributes). Findings go through `scan.py
+annotate migration map-finding` (discover SKILL §2), never `plot.py`.
 
 ## 1 Build and serve
 - `views.py run --run <run>` after `compare.py run`: per compared raster `verify/views/<ds>/` gets `legacy.tif`,
   `new.tif` (COG copies; the legacy folder is only read), `diff.tif` (new − legacy) and `validity.tif`
   (1 legacy only, 2 new only, 3 both), and the projects `overview`, `worst`, `edges`, `nodata` plus `cell-<id>`
-  projects centred on each cell to identify; vectors get GeoJSON (EPSG:4326) and `overview`, `worst`. Index:
-  `verify/views/views.json` (after seal it writes `amend/views/` instead).
+  projects centred on each cell to identify; vectors get GeoJSON (EPSG:4326) and `overview`, `worst`. Views that
+  cannot show anything are not built: a dataset identical to legacy (or byte-equal to one reviewed before with
+  nothing found) gets none (`skipped: identical (<sha256>)` in views.json; verify SKILL §3), a PASS_EXACT dataset
+  only `overview` and one cell, max |d| = 0 no `worst` (`omitted_views` says why). Index: `verify/views/views.json`
+  (after seal it writes `amend/views/` instead).
 - `start.py migration` prints one JSON line `{url_base, port, data_root, pid}`. Exit 13 with "map server could not
   bind 127.0.0.1 — …": rerun that one command outside the sandbox (Codex: with escalated permissions).
   `stop.py migration` when you are done.
-- `views.py url --run <run> --dataset <ds> --view overview|worst|edges|nodata` (or `--cell worst|interior|edge`)
-  prints the page URL. `check.py --run <run>` is the headless check (every project and COG served, Range 206,
-  sha256 equal, projects valid; exit 0/2). It says nothing about what a browser shows. It stops a server it
+- `views.py list --run <run> --json`: every view URL, every cell (URL, legacy/new value, row/col) and every skipped
+  dataset in one call; use it instead of one `url` call per view. `views.py url --run <run> --dataset <ds> --view
+  overview|worst|edges|nodata` (or `--cell worst|interior|edge`) prints one page URL. `check.py --run <run>` is the headless check (every project and COG served, Range 206,
+  sha256 equal, projects valid; exit 0/2); `--render` also opens overviews and cells in headless Chrome (ready line,
+  GPU engine, cells drawn as squares). It stops a server it
   started, unless `--keep-server` (then open the views right away; `stop.py` ends it).
 - `mapenv.py --where` prints where the map env lives (no download): for a disk-space question or to remove it.
 
 ## 2 Open it where the person is
-- **Claude desktop app** (`mcp__Claude_Browser__*`): `mcp__Claude_Browser__preview_start {url}` for the first view;
-  every further view in a second tab (`tabs_create`, then `navigate` with its `tabId`) so the graph tab stays open.
-- **Codex desktop**: open the view URL in the in-app browser with browser use (one clickable link in chat). The
-  first `start.py` needs sandbox approval (map environment sync + 127.0.0.1 bind).
+- **Claude desktop app** (`mcp__Claude_Browser__*`): `preview_start {url}` for the first view, then at once
+  `mcp__Claude_Browser__resize_window {width: 1280, height: 960}` on that tab, so the frame stays fixed whatever
+  happens to the app's layout; every further view in that tab with `navigate` (a second tab via `tabs_create` only
+  when the graph tab must stay open). When you are done with the map: `resize_window {preset: "desktop"}`.
+- **Codex desktop**: open the view URL in the in-app browser with browser use (one clickable link in chat); set a
+  1280×960 viewport if the browser tool offers it (the page fits its overview to whatever size it gets). The first
+  `start.py` needs sandbox approval (map environment sync + 127.0.0.1 bind).
 - **Terminal harness**: print the URL once and name `views.json`; do not ask the person to copy anything else.
+- Screenshots at scale 1 (never below 0.75: a shrunken map cannot be judged). For detail use `computer {action:
+  "zoom", region: [x0, y0, x1, y1]}` (Codex: the browser's region/zoom screenshot) on the map area, not a smaller
+  page. Values are read as text (popup and page text via `get_page_text`), never from pixels.
 
 ## 3 In the page (every time a project opens)
-1. **Switch the raster engine to the GPU one**: Add Data → Raster Layer → render engine `maplibre-gl-raster` (a
-   `<select>` whose options are `maplibre-gl-raster`, `cog-tiler-wasm`, `titiler`). The default `cog-tiler-wasm`
-   smooths cells: blurred edges, and on the validity layer a false orange fringe between blue and green.
-2. **Nudge**: if the map stays blank, drag it a few pixels and back.
+1. **Wait for the ready line**, never a fixed wait and never a nudge: after `navigate`, read the page text
+   (`get_page_text`, or `javascript_tool` `document.documentElement.dataset.axisMap`) until it holds
+   `axis-map: ready · engine maplibre-gl-raster · project sha256 <sha> · click centre x,y` (a few seconds; poll at
+   most every 2 s, give up after 60 s and say so). Ready means: project loaded and hashed, GPU raster engine set by
+   the page itself (no Add Raster Layer dialog), no data request in flight, every tile drawn and the map idle after
+   a forced repaint. The sha must be the view's `project_sha256` from `views.json`; otherwise you are on the wrong
+   view. Then take **one** screenshot. "loading (tab hidden …)" means the tab is not visible: show it. `start.py`
+   printing `engine_preset: false` (another GeoLibre version) is the only case for switching the engine by hand.
+2. Overviews (and `nodata`, `inputs-overview`) fit the whole data extent into whatever canvas the pane has; `worst`,
+   `edges` and cell/feature projects open on their place. If you pan or zoom, the line says `drawing` until ready.
 3. **Compare by toggling layers** in the Layers panel (eye icon). Do not use swipe: its two sides use different
    engines.
-4. **Identify a cell**: open its `cell-<id>` project (`views.py url … --cell <id>`), switch the engine, click the
-   exact centre of the map. The popup "Identified results" lists each visible layer with Band 1, lon/lat, row and
-   column. Check it against `cells_to_identify` in `views.json`: `legacy_value`/`new_value` (the popup rounds to about
-   3 significant figures), `row`/`col` on legacy.tif, `new_row`/`new_col` on new.tif, `grid_row`/`grid_col` on
-   diff.tif and validity.tif, `validity`. A mismatch means you are on the wrong cell or the wrong layer: say so.
+4. **Identify a cell**: open its `cell-<id>` project (URL from `views.py list`), wait for ready, click the `click
+   centre x,y` the ready line gives (CSS px = screenshot px at scale 1), then `get_page_text`. The popup "Identified
+   results" lists each visible layer with Band 1, lon/lat, row and column. Check it against the cell in `views.py
+   list` / `views.json`: `legacy_value`/`new_value` (the popup rounds to about 3 significant figures), `row`/`col`
+   on legacy.tif, `new_row`/`new_col` on new.tif, `grid_row`/`grid_col` on diff.tif and validity.tif, `validity`. A
+   mismatch means you are on the wrong cell or the wrong layer: say so.
 5. **Colours**: legacy and new share one viridis scale (p2/p98 of both sides); diff is PuOr reversed on ±max|d|
    (orange = new larger, purple = legacy larger, transparent = equal or nodata); validity is blue = legacy only,
-   orange = new only, green = both, transparent = neither. Basemap is off.
-6. Read the popup and page as text where the pane allows; a screenshot is for you, not evidence.
+   orange = new only, green = both, transparent = neither. Basemap is off. A "Diagnostics: 1" badge with the luma.gl
+   warning "Binding sampler not set" comes from the GPU engine and is harmless.
+6. A screenshot is for you, not evidence; the receipt cites projects, shas and popup values.
 
 ## 4 What each view is for
 - `overview`: legacy and new over the whole extent (toggle new off to see legacy).

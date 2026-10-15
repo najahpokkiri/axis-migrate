@@ -57,6 +57,9 @@ def test_start_stop_roundtrip(tmp_path):
         with OPENER.open(f"{info['url_base']}/geolibre-runtime-config.js", timeout=10) as r:
             js = r.read().decode()
             assert "maplibre-gl-raster" in js and "data-axis-map" in js and "__GEOLIBRE_DEPLOYMENT_ENV__" in js
+            # readiness on the map itself (tiles, idle after a forced repaint), the camera fit, no unload prompt
+            assert all(k in js for k in ("areTilesLoaded", "triggerRepaint", '"idle"', "fit_bounds", "fitBounds",
+                                         "beforeunload"))
         with OPENER.open(f"{info['url_base']}/blocklist.json", timeout=10) as r:
             assert json.loads(r.read()) == {"blocked": []}
         with OPENER.open(f"{info['url_base']}/data/runs/hello.txt", timeout=10) as r:

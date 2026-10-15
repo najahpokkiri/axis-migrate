@@ -30,6 +30,13 @@ Project URLs are origin-relative (`/data/<path under the migration>`): the bytes
 server port, so `project_sha256` in views.json is the sha of exactly what the server sends. Only the page URL
 (`url`) carries the port: http://127.0.0.1:<port>/?url=<encoded absolute project URL>&panels=collapsed.
 
+Views that cannot show anything are not built: a dataset identical to legacy (compare CANDIDATE_IDENTICAL_TO_REFERENCE
+on a PASS_EXACT) or byte-equal to one reviewed with nothing found in an earlier run is listed under `skipped` as
+`skipped: identical (<sha256 of the new output>)` (lib/visual_receipt.py re-hashes the bytes before it counts); a
+PASS_EXACT dataset gets only overview and one cell; max |new − legacy| = 0 gets no worst (`omitted_views`).
+Cameras: overview/nodata (and inputs-overview) carry metadata["axis-migrate"].fit_bounds; the page's override fits
+them into the canvas it really has. Projects switch off the app's animated atmosphere (starry sky) plugin.
+
 After seal (verify/ read-only), views go to <run>/amend/views/ instead (display only; never part of the evidence).
 
 `inputs` (discover, no run yet) reads inventory.json (+ graph.json roles) and writes, always as a full deterministic
@@ -39,6 +46,9 @@ vector <ds>/data.geojson (EPSG:4326, attributes kept) and one feature-<id>.geoli
 (first, largest, central); the project inputs-overview (every input; legacy rasters present, hidden) and one
 grid-<family> project per grid family at discover/map.py grid_corners' five windows (bookmarks) with every member's
 cell edges. Index: <migration>/discover/views.json (same schema, `mode: inputs`). The legacy folder is only read.
+When no on-disk dataset has role input, every on-disk raster/vector with role unknown/unused is shown (views.json
+`shown` says so); with no AOI in the inventory the single polygon layer shown is the AOI (`aoi_note`). VRT aliases
+(`alias_of`) are never shown twice.
 Exit: run 0 every requested compared raster/vector has views · 1 some could not be built · 2 setup error.
       url 0 printed · 2 no such view / server not running.
       inputs 0 every input has views · 1 some could not be built (listed under skipped) · 2 setup error;
@@ -315,10 +325,12 @@ def zoom_for(tr4326, grid_tr, row: int, col: int, px: int) -> float:
 
 
 VIEWPORT = (1280, 960)          # the pane size map SKILL §2 sets (resize_window) before the first view
-MAP_CANVAS = (1192, 860)        # GeoLibre's map canvas inside it (side rails, menu bar, status bar), with margin
+MAP_CANVAS = (1192, 749)        # GeoLibre 3.4.0's map canvas inside it (side rails, menu bar, status bar), measured
 
 
 def fit_zoom(bbox: list[float], width=MAP_CANVAS[0], height=MAP_CANVAS[1], pad=40) -> tuple[list[float], float]:
+    """Centre and zoom that put bbox (lon/lat) inside the canvas at the pane size the SKILL sets. Projects that carry
+    fit_bounds are refitted by the page to the canvas it really has; this is the camera without the override."""
     w, s, e, n = bbox
     merc = lambda lat: math.log(math.tan(math.pi / 4 + math.radians(max(-85.0, min(85.0, lat))) / 2)) / (2 * math.pi)  # noqa: E731
     fx = max((e - w) / 360.0, 1e-12)
@@ -405,8 +417,10 @@ def _stable_layer(layer: dict, key: str) -> dict:
     return json.loads(json.dumps(layer).replace(old, new))
 
 
-def build_project(name: str, camera: dict, layers: list[dict], bookmarks: list[dict], key: str) -> dict:
-    """layers: [{name, kind: cog|vector, url, visible, colormap?, rescale?, reversed?, style?}] bottom → top."""
+def build_project(name: str, camera: dict, layers: list[dict], bookmarks: list[dict], key: str,
+                  fit_bounds: list[float] | None = None) -> dict:
+    """layers: [{name, kind: cog|vector, url, visible, colormap?, rescale?, reversed?, style?}] bottom → top.
+    fit_bounds [w, s, e, n] (lon/lat): the page's override fits the camera to them in whatever canvas it has."""
     from geolibre import authoring as A, project as P
     pr = P.build_empty_project(name, center=camera["center"], zoom=camera["zoom"], basemap_url="")
     for spec in layers:
@@ -426,7 +440,13 @@ def build_project(name: str, camera: dict, layers: list[dict], bookmarks: list[d
     pr["basemapStyleUrl"] = ""
     pr["basemapVisible"] = False
     pr["interaction"] = {"identify": "all", "controls": {}}
+    # the app's default plugins minus the atmosphere effects (a starry night sky behind the data, animated: it hides
+    # dark vector outlines and changes between two screenshots); the layer control and the deck.gl overlay stay
+    plugins = P.ensure_plugins_block(pr)
+    plugins["activePluginIds"] = [x for x in plugins["activePluginIds"] if x != "maplibre-atmosphere-effects"]
     pr["metadata"] = {"axis-migrate": {"display_only": True, "caption": CAPTION}}
+    if fit_bounds:
+        pr["metadata"]["axis-migrate"]["fit_bounds"] = [round(float(x), 9) for x in fit_bounds]
     return pr
 
 
@@ -722,7 +742,8 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
         if v == "worst":
             bms += [{"name": p["name"], "center": p["center"], "zoom": cam["worst"]["zoom"]} for p in places]
         ppath = out / f"{v}.geolibre.json"
-        pr = build_project(f"{dsid} · {v}", cam[v], specs, bms, key=f"{ctx.run_id}/{dsid}/{v}")
+        pr = build_project(f"{dsid} · {v}", cam[v], specs, bms, key=f"{ctx.run_id}/{dsid}/{v}",
+                           fit_bounds=bbox if cam[v].get("source") == "data extent" else None)
         sha = save_project(ppath, pr)
         views[v] = {"project": ctx.rel(ppath), "project_sha256": sha, "url_path": ctx.up(ppath),
                     "camera": cam[v], "cells_to_identify": cl, "bookmarks": [b["name"] for b in bms],
@@ -822,7 +843,8 @@ def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
         bms = [{"name": f"feature: {f['side']}", "center": f["camera"]["center"], "zoom": f["camera"]["zoom"]}
                for f in features] if v == "worst" else []
         ppath = out / f"{v}.geolibre.json"
-        pr = build_project(f"{dsid} · {v}", cam[v], ls, bms, key=f"{ctx.run_id}/{dsid}/{v}")
+        pr = build_project(f"{dsid} · {v}", cam[v], ls, bms, key=f"{ctx.run_id}/{dsid}/{v}",
+                           fit_bounds=bbox if cam[v].get("source") == "data extent" else None)
         sha = save_project(ppath, pr)
         views[v] = {"project": ctx.rel(ppath), "project_sha256": sha, "url_path": ctx.up(ppath), "camera": cam[v],
                     "cells_to_identify": [], "features_to_identify": features if v == "worst" else [],
@@ -920,10 +942,16 @@ def _pyval(v):
     return v
 
 
+FALLBACK_CAPTION = ("no dataset has role input: showing every on-disk raster/vector no code writes (roles "
+                    "unknown/unused)")
+
+
 def inputs_datasets(migration: Path) -> tuple[dict, list[dict], list[dict], Path]:
     """(inventory, [dataset to show], [skipped], legacy root). Shown: every input raster and vector and every legacy
     intermediate/final raster that exists; roles from graph.json when it exists (the graph may correct a role),
-    else from inventory.json."""
+    else from inventory.json. When no on-disk dataset has role input (the scan could not tell what the code reads), every
+    on-disk raster/vector with role unknown or unused is shown instead (inventory["_fallback"] = FALLBACK_CAPTION).
+    A VRT alias (`alias_of`: its only source is a sibling file) is never shown twice."""
     migration = Path(migration)
     inv = _load(migration / "inventory.json")
     if not isinstance(inv, dict) or not inv.get("legacy_root"):
@@ -932,17 +960,32 @@ def inputs_datasets(migration: Path) -> tuple[dict, list[dict], list[dict], Path
     graph = _load(migration / "graph.json") or {}
     groles = {d["id"]: d.get("role") for d in graph.get("datasets") or [] if isinstance(d, dict) and "id" in d}
     keep, skipped = [], []
-    for d in sorted(inv.get("datasets") or [], key=lambda x: x.get("id", "")):
+    dsets = sorted((d for d in inv.get("datasets") or [] if isinstance(d, dict) and d.get("id")),
+                   key=lambda x: x.get("id", ""))
+    for d in dsets:
         role = groles.get(d.get("id"), d.get("role"))
         legacy_raster = d.get("kind") == "raster" and role in ("intermediate", "final")
         if role != "input" and not legacy_raster:
             continue
-        if d.get("kind") not in ("raster", "vector"):
+        if d.get("alias_of"):
+            skipped.append({"dataset": d["id"], "reason": f"alias of {d['alias_of']} (shown once, as that dataset)"})
+        elif d.get("kind") not in ("raster", "vector"):
             skipped.append({"dataset": d["id"], "reason": f"{d.get('kind')}: no map view"})
         elif not d.get("exists") or not d.get("legacy_path"):
             skipped.append({"dataset": d["id"], "reason": "file not found in the legacy folder"})
         else:
             keep.append({**d, "role": role})
+    inv = dict(inv)
+    inv["_fallback"] = None
+    if not any(k["role"] == "input" for k in keep):        # nothing the code reads is on disk (or nothing is known)
+        for d in dsets:
+            role = groles.get(d.get("id"), d.get("role"))
+            if role not in ("unknown", "unused") or d.get("kind") not in ("raster", "vector") or d.get("alias_of"):
+                continue
+            if d.get("exists") and d.get("legacy_path") and all(k["id"] != d["id"] for k in keep):
+                keep.append({**d, "role": role})
+        keep.sort(key=lambda x: x["id"])
+        inv["_fallback"] = FALLBACK_CAPTION
     return inv, keep, skipped, legacy
 
 
@@ -965,11 +1008,12 @@ class ICtx:
     def file_entry(self, p: Path) -> dict:
         return {"file": self.rel(p), "url_path": self.up(p), "sha256": ac.sha256_file(p), "bytes": p.stat().st_size}
 
-    def save(self, path: Path, name: str, camera: dict, specs: list[dict], bookmarks: list[dict]) -> dict:
+    def save(self, path: Path, name: str, camera: dict, specs: list[dict], bookmarks: list[dict],
+             fit_bounds: list[float] | None = None) -> dict:
         """specs: [{name, role, kind, path, visible, colormap?, rescale?, style?}] bottom → top."""
         layers = [{**{k: s[k] for k in ("name", "kind", "colormap", "rescale", "style") if k in s},
                    "url": self.up(s["path"]), "visible": s["visible"]} for s in specs]
-        pr = build_project(name, camera, layers, bookmarks, key=f"inputs/{self.rel(path)}")
+        pr = build_project(name, camera, layers, bookmarks, key=f"inputs/{self.rel(path)}", fit_bounds=fit_bounds)
         pr["metadata"]["axis-migrate"]["caption"] = INPUTS_CAPTION
         path.parent.mkdir(parents=True, exist_ok=True)
         sha = save_project(path, pr)
@@ -1011,6 +1055,10 @@ def inputs_raster(ctx: ICtx, d: dict, src: Path, out: Path, aoi) -> dict:
     """COG copy, display scale and the cells to identify (largest value, an AOI-edge cell, one interior cell), each
     with a one-layer cell project centred on it."""
     import numpy as np
+    import rasterio
+    with rasterio.open(src) as r0:                    # refuse before reading a national raster into memory
+        if r0.width * r0.height > MAX_CELLS:
+            raise SetupError(f"raster ({r0.height}, {r0.width}) exceeds {MAX_CELLS} cells")
     plot = verify_plot()
     S = plot.RSide(src, "input")
     if not S.ok:
@@ -1219,7 +1267,7 @@ def build_inputs_views(migration: Path) -> tuple[dict, int]:
     ctx.root.mkdir(parents=True)
     rc = 0
     aoi_id = inv.get("aoi")
-    aoi = None
+    aoi, aoi_note = None, None
     if aoi_id:
         ad = next((d for d in inv.get("datasets") or [] if d.get("id") == aoi_id), None)
         try:
@@ -1227,6 +1275,20 @@ def build_inputs_views(migration: Path) -> tuple[dict, int]:
             aoi = aoi if aoi is not None and aoi.crs is not None and len(aoi) else None
         except Exception:
             aoi = None
+        aoi_note = f"AOI: {aoi_id} (inventory)" if aoi is not None else None
+    else:                                  # no AOI named: the single polygon layer among the shown vectors, if any
+        polys = []
+        for d in (x for x in shown if x["kind"] == "vector"):
+            try:
+                g = _read_vector((legacy / d["legacy_path"]).resolve(), d.get("layer"))
+            except Exception:
+                continue
+            types = {t for t in g.geometry.geom_type.dropna().unique()} if len(g) else set()
+            if types and all(t.endswith("Polygon") for t in types) and g.crs is not None:
+                polys.append((d["id"], g))
+        if len(polys) == 1:
+            aoi_id, aoi = polys[0]
+            aoi_note = f"AOI: {aoi_id} (the only polygon layer; the inventory names no AOI)"
     entries, built = {}, {}
     vi = 0
     for d in shown:
@@ -1255,7 +1317,8 @@ def build_inputs_views(migration: Path) -> tuple[dict, int]:
     # ---- inputs-overview: every input (vectors on top), legacy rasters present but hidden
     rasters = [k for k in sorted(built) if built[k]["spec"]["kind"] == "cog"]
     vectors = [k for k in sorted(built) if built[k]["spec"]["kind"] == "vector"]
-    specs = [{**built[k]["spec"], "visible": entries[k]["role"] == "input"} for k in rasters]
+    shown_roles = ("input", "unknown", "unused") if inv.get("_fallback") else ("input",)
+    specs = [{**built[k]["spec"], "visible": entries[k]["role"] in shown_roles} for k in rasters]
     specs += [{**built[k]["spec"], "visible": True} for k in vectors]
     bbs = [entries[k]["bounds_4326"] for k in built if entries[k]["bounds_4326"] and entries[k]["role"] == "input"] \
         or [entries[k]["bounds_4326"] for k in built if entries[k]["bounds_4326"]]
@@ -1267,7 +1330,9 @@ def build_inputs_views(migration: Path) -> tuple[dict, int]:
                for k in rasters for c in entries[k]["cells_to_identify"]]
         bms += [{"name": f"{k} feature {f['id']}", "center": f["camera"]["center"], "zoom": f["camera"]["zoom"]}
                 for k in vectors for f in entries[k]["features_to_identify"]]
-        projects[OVERVIEW] = ctx.save(ctx.root / f"{OVERVIEW}.geolibre.json", "inputs overview", cam, specs, bms)
+        title = "inputs overview" + (f" ({inv['_fallback']})" if inv.get("_fallback") else "")
+        projects[OVERVIEW] = ctx.save(ctx.root / f"{OVERVIEW}.geolibre.json", title, cam, specs, bms,
+                                      fit_bounds=bbox)
     # ---- grid-<family>: the family's rasters at the five grid_corners windows, with every member's cell edges
     for fam in inv.get("grids") or []:
         fid = str(fam.get("id"))
@@ -1312,10 +1377,11 @@ def build_inputs_views(migration: Path) -> tuple[dict, int]:
             entries[m]["views"].append(name)
     doc = {"schema": SCHEMA, "mode": "inputs", "generator": GENERATOR, "caption": INPUTS_CAPTION, "run_id": None,
            "root": INPUTS_ROOT, "legacy_root": os.path.relpath(legacy, migration), "aoi": aoi_id,
+           "aoi_note": aoi_note, "shown": inv.get("_fallback") or "inputs (role input) and legacy rasters",
            "served_as": "/data/ = the migration folder (start.py); project and layer URLs are origin-relative",
            "page_url": "http://127.0.0.1:<port>/?url=<urlencoded http://127.0.0.1:<port><url_path>>&panels=collapsed",
-           "identify": {"raster": "cell-<id> project: switch the engine to maplibre-gl-raster, click the map centre, "
-                                  "read Band 1 (the popup rounds to ~3 significant figures)",
+           "identify": {"raster": "cell-<id> project: wait for 'axis-map: ready' (the page sets the GPU engine), "
+                                  "click the map centre, read Band 1 (the popup rounds to ~3 significant figures)",
                         "vector": "feature-<id> project: click the map centre, read the feature's attributes"},
            "projects": projects,
            "datasets": [entries[k] for k in sorted(entries)],
@@ -1444,6 +1510,10 @@ def cmd_inputs(a) -> int:
     if a.json:
         print(json.dumps(doc, sort_keys=True, indent=1))
     else:
+        if doc.get("shown", "").startswith("no dataset has role input"):
+            print(f"note: {doc['shown']}")
+        if doc.get("aoi_note"):
+            print(doc["aoi_note"])
         for name, pe in sorted(doc["projects"].items()):
             print(f"{name}: {pe['project']} ({len(pe['layers'])} layers, bookmarks: {len(pe['bookmarks'])})")
         for e in doc["datasets"]:
@@ -1525,6 +1595,8 @@ def cmd_list(a) -> int:
     out = {"index": Path(idx).resolve().relative_to(mig).as_posix(), "mode": doc.get("mode") or "run",
            "run_id": doc.get("run_id"), "click": CLICK_NOTE, "viewport": {"width": VIEWPORT[0], "height": VIEWPORT[1]},
            "views": [], "cells": [], "features": [], "skipped": doc.get("skipped") or []}
+    if doc.get("mode") == "inputs":
+        out.update(shown=doc.get("shown"), aoi=doc.get("aoi"), aoi_note=doc.get("aoi_note"))
     ref = lambda x: {"project": x["project"], "project_sha256": x["project_sha256"]}  # noqa: E731
     for name, pe in sorted((doc.get("projects") or {}).items()):
         out["views"].append({"view": name, "url": page_url(port, pe["url_path"]), **ref(pe)})

@@ -33,14 +33,18 @@ Always run it: the plots are the look's fallback and the report and evals use th
 ## 3 Look (mandatory for every compared raster and vector dataset)
 **Primary where a browser pane exists: the map views → view receipts. Fallback (terminal, headless, evals): the PNG
 plots → PNG receipts.** Both count the same, a flag has the same effect, the report lists both, and the Stop gate
-refuses to end the turn while a compared dataset of the latest run has neither. Viewport and screenshot rules:
-map SKILL §2. A view `views.json` marks as skipped (identical to legacy, or to bytes already reviewed) is cited in the
-receipt, never opened.
-- **Claude desktop** (primary): `map` skill (`views.py run`, `start.py migration`), then per dataset `views.py url
-  --run <run> --dataset <ds> --view overview|worst|edges|nodata` → `mcp__Claude_Browser__preview_start {url}`; switch
-  Add Data → Raster Layer → render engine to `maplibre-gl-raster`, nudge the map once; open a `cell-<id>` project
-  (`views.py url … --cell edge|interior|worst`), click the map centre, read legacy/new from the popup. Record a
-  **view receipt**.
+refuses to end the turn while a compared dataset of the latest run has neither. Viewport, screenshot and readiness
+rules: map SKILL §2–3.
+**Nothing to show**: `views.py run` builds no views for a dataset whose new output is identical to legacy (compare
+`CANDIDATE_IDENTICAL_TO_REFERENCE`) or byte-equal to one already reviewed with nothing found in an earlier run;
+views.json lists it under `skipped` as `skipped: identical (<sha256 of the new output>)`. Do not open anything for
+it: review-template prints `{"dataset_id", "skipped": "skipped: identical (<sha256>)", "model"}`; fill `model` and
+review-add it (accepted only while the new output's bytes, hashed again, are that sha). A PASS_EXACT dataset that is
+not identical gets one overview and one cell; a dataset with max |new − legacy| = 0 gets no `worst` view.
+- **Claude desktop** (primary): `map` skill (`views.py run`, `start.py migration`), `views.py list --run <run>
+  --json` once (every URL, cell and value), `resize_window` 1280×960, then per view: navigate, wait for "axis-map:
+  ready", one screenshot at scale 1; for a `cell-<id>` project click the "click centre" the ready line gives and read
+  legacy/new from the popup with `get_page_text`. The GPU engine is already set; no dialog. Record a **view receipt**.
 - **Codex desktop** (primary): the same in the in-app browser through browser use. Record a **view receipt**.
 - **Fallback — terminal, no pane, headless, evals**: **PNG receipts** (steps 1–5); you still Read the PNGs yourself.
 
@@ -81,8 +85,8 @@ receipt, never opened.
     "observations": [{"what": "cells valid on legacy only, west edge", "value": 812, "unit": "cells"}],
     "note": "one-cell blue stripe west, orange stripe east", "model": "<your model id>"}
    ```
-   Enforced: `views_seen` holds overview, worst, edges, nodata (vector: overview, worst) and the `cell-<id>` project of
-   every cell read, each sha equal to views.json and to the file; rasters need `engine: maplibre-gl-raster` and at
+   Enforced: `views_seen` holds every view views.json built of overview, worst, edges, nodata (vector: overview,
+   worst; `omitted_views` are not required) and the `cell-<id>` project of every cell read, each sha equal to views.json and to the file; rasters need `engine: maplibre-gl-raster` and at
    least one cell, values as the popup shows them (checked to ~3 significant figures; null = nodata); a yes needs
    `location` (lon/lat), a note and `observations` with numbers. Nothing found = one `Q-all` view receipt with answer
    no, refused while views.json counts cells valid on one side only (validity 1/2): flag those instead. A view
