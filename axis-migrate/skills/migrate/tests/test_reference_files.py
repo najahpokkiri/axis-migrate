@@ -260,3 +260,13 @@ def test_template_runs_on_the_runtime(tmp_path):
     assert got.mask[:, 3:].all()               # outside the zone: NoData
     assert not got.mask[1:5, 0:3].any()        # inside the zone and valid: kept
     assert got[1, 1] == vals[1, 1]
+
+
+def test_build_md_plan_approval_rules():
+    """BUILD §1 (BYU e2e B2/B3): approve with the plan_sha256 render-plan printed for the plan.md the user saw; a
+    standing instruction omits it and is said; approve_plan refuses while an in-scope question is open."""
+    text = BUILD_MD.read_text(encoding="utf-8").replace("\n", " ")
+    assert "`plan.md sha256 <hex>`" in text
+    assert '{"type": "approve_plan", "steps": "*", "plan_sha256": "<hex>"}' in text
+    assert "`agent (standing instruction)`" in text and "say it in your final message" in text
+    assert "approve_plan refuses (open_questions)" in text

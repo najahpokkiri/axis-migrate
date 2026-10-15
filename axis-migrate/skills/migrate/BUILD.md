@@ -18,10 +18,17 @@ the legacy semantics it reproduces, `skill_refs`) · `params` (every `p.*` it re
 family, measure, checks, `tolerance_ids`, empty = exact) · `risks[]` (`skill_ref` + risk + evidence, or `"risk": "none"`)
 · `isolation` (`possible`, `legacy_inputs`, `missing` = inputs with no legacy file). Then `graph.py render-plan migration`,
 show `migration/plan.md` in the file pane (SKILL.md §Showing), summarise it in a few lines, and ask ONE AskUserQuestion: "Approve the plan (Recommended)" /
-"Change something". Approve → `{"type": "approve_plan", "steps": "*"}` via `graph.py apply … --channel interview
---verbatim "<the user's words>"`. Change → revise with `set_plan`, re-render, ask again. Never approve without the user.
+"Change something". `graph.py render-plan migration` prints `plan.md sha256 <hex>`. After the user approves the
+plan.md they were shown: `{"type": "approve_plan", "steps": "*", "plan_sha256": "<hex>"}` via `graph.py apply …
+--channel interview --verbatim "<the user's words>"`. With only a standing instruction (nobody saw plan.md, e.g.
+headless 'carry on without me') omit plan_sha256: it is recorded as `agent (standing instruction)`, the status line
+says so; say it in your final message. approve_plan refuses (open_questions) while a question on an in-scope
+step/dataset is open: answer it, assume it visibly, or stop and ask. Change → revise with `set_plan`, re-render, ask
+again. Never approve without the user.
 Codex: the same question with `request_user_input_async` when it exists, else as plain text, numbered, "Approve the
-plan (Recommended)" first; stop and wait (an elapsed wait is never an answer); record the user's words as `--verbatim`.
+plan (Recommended)" first; stop and wait (an elapsed wait is never an answer); record the user's words as `--verbatim`
+and pass the `plan_sha256` that `render-plan` printed for the plan.md you showed; the standing-instruction rule above
+applies unchanged.
 After approval, once: `run_local.py migration --vendor-runtime` (copies the runtime into `pipeline/`; never edit it).
 
 ## 2 Per-step loop (topological order; a failure stops the walk at that step)
