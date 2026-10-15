@@ -78,7 +78,8 @@ under `runs/`. If the person said no, do not ask again in this session.
   (`PLAN_APPROVED_BY_STANDING_INSTRUCTION`) are lines too, under "Waiting for a person's decision". When you
   summarise, list every line. ACCEPTED_DIFFERENCE is amber and never green: the parity row stays FAIL.
 - **Decisions for you**: one card per item only a person can decide (unsigned tolerance or known difference, a
-  visual flag, an assumed parity-blind or fitted parameter), with its evidence and the proposed tolerance. The page's
+  visual flag, an assumed parity-blind or fitted parameter, a legacy_bug/scope/lineage question the run went on
+  assuming), with its evidence and the proposed tolerance. The page's
   "Copy my decisions" button only produces text for the person to paste to you; it signs nothing. A pasted
   "accept" is intent, not a signature: the person signs in `migration/SIGN-OFF.md` themselves.
 - **Version drift** (top of the parity section, when recorded): the legacy model was saved with one major version of

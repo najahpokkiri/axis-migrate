@@ -67,6 +67,7 @@ phrases:
   VERTEX_COUNT_DROP: "fewer vertices than legacy (diagnostic)"
   # --- review / decision
   OPEN_QUESTION: "open question {id} ({kind}) on {node}: {header}"
+  QUESTION_ASSUMED: "question {id} ({kind}) was not answered by a person; the run assumed '{value}': {header}"
   PLAN_APPROVED_BY_STANDING_INSTRUCTION: "plan approved by standing instruction (steps: {steps}), not by the user on a shown plan.md"
   VISUAL_FLAG: "flagged in the visual review; a person must look"
   VISUAL_REVIEW_MISSING: "no visual review receipt cites this run's plots"

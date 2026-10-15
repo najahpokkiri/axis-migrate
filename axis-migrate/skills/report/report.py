@@ -359,6 +359,11 @@ def map_views(project: Path, rd: Path, run_id: str, by_kind: dict, findings_by_d
 STANDING_INSTRUCTION = "agent (standing instruction)"
 
 
+def live_graph(migration: Path, snapshot_graph: dict) -> dict:
+    """graph.json as it is now (an answer given after the run counts), else the run snapshot."""
+    return _load(migration / "graph.json") or snapshot_graph or {}
+
+
 def owner_items(migration: Path, lad: dict, snapshot_graph: dict) -> tuple[list, dict]:
     """Open graph questions and a plan approved by standing instruction (B2, B3): they cap no rung, but the report
     must never say "none" while either holds. Taken from ladder.compute's pipeline.open_questions/plan_approval;
@@ -366,7 +371,7 @@ def owner_items(migration: Path, lad: dict, snapshot_graph: dict) -> tuple[list,
     pl = lad.get("pipeline") or {}
     oq, pa = pl.get("open_questions"), pl.get("plan_approval")
     if oq is None or pa is None:
-        g = _load(migration / "graph.json") or snapshot_graph or {}
+        g = live_graph(migration, snapshot_graph)
         if oq is None:
             oq = [{"id": q.get("id"), "kind": q.get("kind"), "header": q.get("header"), "node": q.get("node")}
                   for q in g.get("questions") or [] if isinstance(q, dict) and q.get("status") == "open"]
@@ -773,7 +778,8 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
                               "phrase": phrases.say("PLAN_APPROVED_BY_STANDING_INSTRUCTION",
                                                     {"steps": ", ".join(st) or "?"}), "href": "#steps"})
     attention = [{"key": k, "title": rp.GROUP_TITLE[k], "items": v} for k, v in att.items() if v]
-    decision_cards = rp.decisions(parity, cmp_docs, lad, records, phrases, fmt)
+    decision_cards = rp.decisions(parity, cmp_docs, lad, records, phrases, fmt) + \
+        rp.question_cards(live_graph(migration, graph), phrases)
     param_rows = []
     for pp in sorted(params, key=lambda x: (str(x.get("node")), str(x.get("id")))):
         v = pp.get("value")

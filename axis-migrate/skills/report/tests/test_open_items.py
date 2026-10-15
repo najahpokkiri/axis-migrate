@@ -191,3 +191,48 @@ def test_no_drift_note_same_major_or_unrecorded(proj, tmp_path):
 def test_no_drift_note_without_records(sealed):
     rep, html, _ = render(sealed["migration"])
     assert rep["version_drift"] == [] and "version-drift" not in html
+
+
+# ---- assumed questions in "Decisions for you" (BYU r2: q07 empty amenity -> food kept as a visible assumption)
+def _assumed(g, qid="q07", kind="legacy_bug", by="user (interview)"):
+    g["questions"].append({"id": qid, "kind": kind, "status": "assumed", "node": "s02_total",
+                           "header": "Empty amenity", "text": "Is 'food' for an empty amenity intended?",
+                           "answered_by": by, "agent_guess": {"option": "keep", "why": "keep for parity"},
+                           "answer": {"value": "dont_know", "assumed_value": "keep",
+                                      "verbatim": "a visible keep assumption is acceptable"},
+                           "evidence": [{"fact": "reversed containment", "ref": "python/fldimpact_def.py:68-70"}]})
+
+
+def test_assumed_question_is_a_decision_card(proj):
+    synth.update_graph(proj["migration"], _assumed)
+    synth.make_run(proj, 1)
+    rep, html, md = render(proj["migration"])
+    assert "q07 · Empty amenity" in rep["decisions_for_you"] and rep["phrase_missing"] == []
+    i = html.index('<section id="decisions">')
+    dec = html[i:html.index("</section>", i)]
+    card = dec[dec.index('id="dec-q07"'):]
+    assert "question q07 (legacy_bug) was not answered by a person; the run assumed &#39;keep&#39;" in card
+    assert "python/fldimpact_def.py:68-70" in card and "Keep the legacy behaviour (match it)" in card
+    assert "a visible keep assumption is acceptable" in md.split("## Decisions for you", 1)[1]
+
+
+def test_assumed_scope_question_options_and_skipped_kinds(proj):
+    def add(g):
+        _assumed(g, "q08", "scope", "agent (assumption)")
+        _assumed(g, "q09", "confirm_all", "agent (assumption)")   # not an owner decision kind: not a card
+    synth.update_graph(proj["migration"], add)
+    synth.make_run(proj, 1)
+    rep, html, _ = render(proj["migration"])
+    subj = rep["decisions_for_you"]
+    assert "q08 · Empty amenity" in subj and not any(s.startswith("q09") for s in subj)
+    assert "Confirm the assumption" in html
+
+
+def test_answered_question_is_not_a_decision_card(proj):
+    def add(g):
+        _assumed(g)
+        g["questions"][-1]["status"] = "answered"
+    synth.update_graph(proj["migration"], add)
+    synth.make_run(proj, 1)
+    rep, _, _ = render(proj["migration"])
+    assert not any(s.startswith("q07") for s in rep["decisions_for_you"])

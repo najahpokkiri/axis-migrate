@@ -314,6 +314,8 @@ OPTIONS = {
            "Do not accept: the new code must be fixed", "Show me more evidence first"],
     "legacy_defect": ["Keep the legacy behaviour (match it)", "Fix it in the new code (record a known difference)",
                       "Show me more evidence first"],
+    "question": ["Confirm the assumption", "Change it: I will tell the agent what instead",
+                 "Show me more evidence first"],
     "visual": ["I looked: the difference is acceptable", "I looked: this is wrong, fix it",
                "Show me more evidence first"],
     "param": ["Confirm the value as it is", "The value is wrong (I will write the right one in the note)",
@@ -389,6 +391,40 @@ def decisions(drows: list[dict], cmp_docs: dict, lad: dict, records: dict, phras
         cards.append({"id": f"dec-{anchor(pid)}", "kind": "param", "code": code, "phrase": phrases.say(code),
                       "dataset": None, "step": p.get("node"), "check": None, "evidence": ev, "samples": [],
                       "proposal": None, "kds": [], "options": OPTIONS["param"], "subject": f"{pid} · {code}"})
+    return cards
+
+
+ASSUMED_QUESTION_KINDS = ("legacy_bug", "scope", "lineage")
+
+
+def question_cards(graph: dict, phrases) -> list[dict]:
+    """One card per graph question of kind legacy_bug/scope/lineage whose status is assumed: the run went on with
+    an assumption nobody confirmed (e.g. BYU r2's q07, empty amenity -> food, kept for the owner)."""
+    cards = []
+    for q in sorted((q for q in graph.get("questions") or [] if isinstance(q, dict)
+                     and q.get("status") == "assumed" and q.get("kind") in ASSUMED_QUESTION_KINDS),
+                    key=lambda q: str(q.get("id"))):
+        a = q.get("answer") or {}
+        val = a.get("assumed_value") if a.get("assumed_value") is not None else a.get("value")
+        ev = [("question", str(q.get("text") or q.get("header") or "—")), ("assumed", str(val if val is not None
+                                                                                          else "—")),
+              ("assumed by", str(q.get("answered_by") or a.get("by") or "—"))]
+        if a.get("verbatim") or a.get("text"):
+            ev.append(("recorded words", str(a.get("verbatim") or a.get("text"))))
+        if (q.get("agent_guess") or {}).get("why"):
+            ev.append(("why", str(q["agent_guess"]["why"])))
+        for e in (q.get("evidence") or [])[:3]:
+            if isinstance(e, dict) and (e.get("fact") or e.get("ref")):
+                ev.append(("evidence", f"{e.get('fact') or ''} ({e.get('ref') or '—'})".strip()))
+        qid = str(q.get("id"))
+        cards.append({"id": f"dec-{anchor(qid)}", "kind": "question", "code": "QUESTION_ASSUMED",
+                      "phrase": phrases.say("QUESTION_ASSUMED", {"id": qid, "kind": q.get("kind") or "?",
+                                                                 "header": q.get("header") or "?",
+                                                                 "value": val if val is not None else "?"}),
+                      "dataset": None, "step": q.get("node"), "check": None, "evidence": ev, "samples": [],
+                      "proposal": None, "kds": [],
+                      "options": OPTIONS["legacy_defect" if q.get("kind") == "legacy_bug" else "question"],
+                      "subject": f"{qid} · {q.get('header') or q.get('kind')}"})
     return cards
 
 

@@ -9,6 +9,8 @@ number (Codex caches installs by version, so every shipped change needs a bump).
 Report (from the BYU headless end-to-end run)
 - "What needs attention" lists every open graph question and a plan approved by standing instruction, and counts
   them, so it can no longer say "none" while an owner question is open.
+- "Decisions for you" has a card for every legacy-bug, scope or lineage question the run went on assuming (for
+  example "keep the reference's behaviour for an empty amenity" until the owner decides).
 - No more `PHRASE_MISSING: unused`: a dataset with no legacy reference says why in plain words.
 - No link to GeoLibre map views when the run has none.
 - A version-drift note under Parity when the legacy model's application version and the references' differ (once
