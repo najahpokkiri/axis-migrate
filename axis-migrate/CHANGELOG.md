@@ -6,6 +6,10 @@ number (Codex caches installs by version, so every shipped change needs a bump).
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.4.0 — 15 Oct 2026 (demo build)
+
 Map (from the live Lux run in the Claude desktop app)
 - Raster views open in the GPU engine (`maplibre-gl-raster`, square cells) by themselves: no Add Raster Layer dialog.
   A pinned override for GeoLibre 3.4.0 also prints "axis-map: ready" only when the map is loaded, drawn and idle, so
