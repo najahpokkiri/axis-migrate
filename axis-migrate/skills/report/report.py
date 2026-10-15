@@ -42,6 +42,7 @@ import seal as sealmod  # noqa: E402
 import visual_receipt as vrc  # noqa: E402
 
 import jinja2  # noqa: E402
+import markupsafe  # noqa: E402
 import yaml  # noqa: E402
 
 REPORT_VERSION = "report.v1"
@@ -375,6 +376,39 @@ def owner_items(migration: Path, lad: dict, snapshot_graph: dict) -> tuple[list,
                               and (((s.get("plan") or {}).get("approved") or {}).get("by") or "") not in ("", "user"))
             pa = {"by": STANDING_INSTRUCTION if standing else None, "standing_steps": standing}
     return [q for q in oq or [] if isinstance(q, dict)], pa or {}
+
+
+def _major(v) -> int | None:
+    m = re.match(r"\s*(\d+)", str(v or ""))
+    return int(m.group(1)) if m else None
+
+
+def version_drift(inv: dict, graph: dict) -> list[dict]:
+    """A migrate step's legacy model saved by one major version of its application (inventory projects[].saved_with
+    or the step's legacy.saved_with: {app, version, evidence}) while the legacy reference outputs were produced on
+    another (inventory or graph project reference_env: {app, version, source}). Read only; nothing is guessed: no
+    note unless both versions are recorded."""
+    ref = inv.get("reference_env") or (graph.get("project") or {}).get("reference_env") or {}
+    if not isinstance(ref, dict) or _major(ref.get("version")) is None:
+        return []
+    saved_by_path = {p.get("path"): p.get("saved_with") for p in inv.get("projects") or []
+                     if isinstance(p, dict) and isinstance(p.get("saved_with"), dict)}
+    out = []
+    for st in graph.get("steps") or []:
+        if not isinstance(st, dict) or st.get("scope") != "migrate":
+            continue
+        leg = st.get("legacy") or {}
+        sw = leg.get("saved_with") if isinstance(leg.get("saved_with"), dict) else saved_by_path.get(leg.get("source"))
+        if not sw or _major(sw.get("version")) is None:
+            continue
+        app = str(sw.get("app") or ref.get("app") or "")
+        if ref.get("app") and app.lower() != str(ref["app"]).lower():
+            continue
+        if _major(sw["version"]) != _major(ref["version"]):
+            out.append({"step": st.get("id"), "model": leg.get("source"), "app": app,
+                        "saved": str(sw["version"]), "saved_evidence": sw.get("evidence"),
+                        "reference": str(ref["version"]), "reference_source": ref.get("source")})
+    return sorted(out, key=lambda d: str(d["step"]))
 
 
 def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
@@ -768,7 +802,7 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
         "integrity": integrity, "incomplete": p["incomplete"],
         "stale": [x for x in integrity if x.get("severity") == "stale"],
         "failures": failures, "pipe_items": pipe_items, "caveats": caveats,
-        "open_questions": open_questions, "plan_approval": plan_approval,
+        "open_questions": open_questions, "plan_approval": plan_approval, "version_drift": version_drift(inv, graph),
         "graph_svg": graphview.svg(lineage_model), "mermaid": graphview.mermaid(lineage_model),
         "isolated": sorted(n for n, v in lineage_model["nodes"].items() if v.get("isolated")),
         "hero": hero, "attention": attention, "decision_cards": decision_cards, "cards": parity,
@@ -843,6 +877,9 @@ def _env() -> jinja2.Environment:
     env.filters["short"] = lambda s, n=12: (str(s).split(":", 1)[-1][:n] if s else "—")
     env.filters["anchor"] = lambda s: re.sub(r"[^A-Za-z0-9_.-]", "-", str(s))
     env.filters["png_uri"] = lambda b: "data:image/png;base64," + base64.b64encode(b).decode("ascii")
+    env.filters["drift_text"] = rp.version_drift_text
+    env.filters["md_code"] = lambda t: markupsafe.Markup(re.sub(r"`([^`]+)`", r"<code>\1</code>",
+                                                                str(markupsafe.escape(t))))
     env.tests["match"] = lambda v, pat: re.match(pat, str(v)) is not None
     env.globals["DISP_STYLE"] = DISP_STYLE
     return env
@@ -955,6 +992,7 @@ def render_files(migration: Path, run_id: str | None = None) -> tuple[int, dict,
            "decisions_for_you": [d["subject"] for d in ctx["decision_cards"]],
            "open_questions": [q.get("id") for q in ctx["open_questions"]],
            "plan_approval": ctx["plan_approval"].get("by"),
+           "version_drift": ctx["version_drift"],
            "cards": [c["id"] for c in ctx["cards"]],
            "thumbnails": ctx["thumb_manifest"],
            "phrase_missing": ctx["phrase_missing"], "versions": ctx["versions"]}

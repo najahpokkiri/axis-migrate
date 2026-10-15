@@ -81,6 +81,9 @@ under `runs/`. If the person said no, do not ask again in this session.
   visual flag, an assumed parity-blind or fitted parameter), with its evidence and the proposed tolerance. The page's
   "Copy my decisions" button only produces text for the person to paste to you; it signs nothing. A pasted
   "accept" is intent, not a signature: the person signs in `migration/SIGN-OFF.md` themselves.
+- **Version drift** (top of the parity section, when recorded): the legacy model was saved with one major version of
+  its application and the references were produced on another; parity then holds against the reference version
+  only. Say it when you summarise; never infer versions the inventory does not record.
 - **Dataset cards**: legacy / new / difference thumbnails cut from the sealed plots (hashed in `REPORT.json`), key
   numbers and a small difference chart from the compare result, verdict and evidence id.
 - **Red integrity bar**: EVIDENCE_FILE_MISSING, EVIDENCE_HASH_MISMATCH, STATE_RECOMPUTE_MISMATCH, UNBOUND_COMPARE and

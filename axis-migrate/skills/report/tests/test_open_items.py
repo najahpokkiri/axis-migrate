@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import axis_common as ac
 import ladder
 import report
 import synth
@@ -144,3 +145,49 @@ def test_phrases_for_known_no_reference_reasons():
         assert r in ph.no_ref, r
     assert ph.no_reference(None) == ph.no_reference("NO_REFERENCE") == ph.say("NO_REFERENCE")
     assert not ph.missing
+
+
+# ---- version drift (BYU: a QGIS 3.x model, references produced on QGIS 4.2.3)
+def _drift(mig, saved="3.x", ref="4.2.3", where="inventory"):
+    inv = ac.load_json(mig / "inventory.json")
+    inv["projects"] = [{"path": "scripts/02_total.py", "kind": "qgis_model",
+                        "saved_with": {"app": "QGIS", "version": saved, "evidence": "scripts/02_total.py:1"}}]
+    env = {"app": "QGIS", "version": ref, "source": "answer:q07"}
+    if where == "inventory":
+        inv["reference_env"] = env
+    else:
+        synth.update_graph(mig, lambda g: g["project"].__setitem__("reference_env", env))
+    ac.dump_json(mig / "inventory.json", inv)
+
+
+def test_version_drift_note_under_parity(proj):
+    _drift(proj["migration"])
+    synth.make_run(proj, 1)
+    rep, html, md = render(proj["migration"])
+    i = html.index('<section id="parity">')
+    par = html[i:html.index("</section>", i)]
+    note = re.search(r'<p class="notice version-drift" data-step="s02_total">(.*?)</p>', par, re.S).group(1)
+    assert ("Version drift: <code>scripts/02_total.py</code> (step <code>s02_total</code>) was saved with QGIS 3.x "
+            "(scripts/02_total.py:1), but the legacy reference outputs were produced with QGIS 4.2.3 (answer:q07)") \
+        in note
+    assert "Version drift: `scripts/02_total.py`" in md.split("## Parity", 1)[1]
+    assert rep["version_drift"][0]["saved"] == "3.x" and rep["version_drift"][0]["reference"] == "4.2.3"
+
+
+def test_version_drift_reference_env_from_graph(proj):
+    _drift(proj["migration"], where="graph")
+    synth.make_run(proj, 1)
+    rep, _, _ = render(proj["migration"])
+    assert [d["step"] for d in rep["version_drift"]] == ["s02_total"]
+
+
+def test_no_drift_note_same_major_or_unrecorded(proj, tmp_path):
+    _drift(proj["migration"], saved="4.0", ref="4.2.3")
+    synth.make_run(proj, 1)
+    rep, html, md = render(proj["migration"])
+    assert rep["version_drift"] == [] and "version-drift" not in html and "Version drift" not in md
+
+
+def test_no_drift_note_without_records(sealed):
+    rep, html, _ = render(sealed["migration"])
+    assert rep["version_drift"] == [] and "version-drift" not in html

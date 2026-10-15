@@ -462,6 +462,18 @@ def _md(s) -> str:
     return str(s if s is not None else "—").replace("|", "\\|").replace("\n", " ")
 
 
+def version_drift_text(d: dict) -> str:
+    """Plain words for one report.version_drift entry (same text in index.html and REPORT.md)."""
+    app = d.get("app") or "the application"
+    saved = f" ({d['saved_evidence']})" if d.get("saved_evidence") else ""
+    ref = f" ({d['reference_source']})" if d.get("reference_source") else ""
+    return (f"Version drift: `{d.get('model')}` (step `{d.get('step')}`) was saved with {app} {d.get('saved')}{saved}, "
+            f"but the legacy reference outputs were produced with {app} {d.get('reference')}{ref}. Parity here means "
+            f"the new code matches what {app} {d.get('reference')} makes of this model, not necessarily what "
+            f"{app} {d.get('saved')} made when the model was written; behaviour that changed between the two "
+            "versions is not checked.")
+
+
 def report_md(ctx: dict, mermaid: str) -> str:
     p = ctx["pipeline"]
     hero = ctx["hero"]
@@ -510,8 +522,10 @@ def report_md(ctx: dict, mermaid: str) -> str:
                          f"{pr['correct_spread']}, nearest wrong {pr['nearest_wrong']}")
             L.append("   - options: " + " / ".join(d["options"]))
         L.append("")
-    L += ["## Parity", "", "| dataset | step | family | state | disposition | key number | plots |",
-          "|---|---|---|---|---|---|---|"]
+    L += ["## Parity", ""]
+    for d in ctx.get("version_drift") or []:
+        L += [version_drift_text(d), ""]
+    L += ["| dataset | step | family | state | disposition | key number | plots |", "|---|---|---|---|---|---|---|"]
     for c in ctx["cards"]:
         plots = " ".join(f"[{_md(pl['name'])}](assets/plots/{c['id']}/{pl['name']})" for pl in c["plots"] if pl["ok"])
         L.append(f"| `{c['id']}` | `{c['step']}` | {c['kind']} | {_md(c['state'])} | {c['disp_style'][1]} "
