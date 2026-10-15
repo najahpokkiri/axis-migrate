@@ -181,6 +181,15 @@ class Lineage:
                        "rename": {}, "sheet": hints.get("sheet"), "header_row": hints.get("header_row"),
                        "data_rows": hints.get("data_rows"), "total_row": None, "measure_crs_param": None,
                        "may_be_empty": False}
+            nrows = prof.get("count") if d["kind"] == "vector" else prof.get("rows") if d["kind"] == "table" else None
+            if nrows == 1 and role not in ("unused",) and not orphan and d.get("exists"):
+                # one feature, so every column is trivially "unique": no column is a key (B9, BYU Agriculture_Flood
+                # 1 MultiPoint + Hectares). Compare matches the single row as a whole (geometry still checked).
+                compare["match"] = "full_row"
+                hints = dict(hints, key_candidates=[], match_proposed={
+                    "match": "full_row", "why": "one feature and no key column: the single row is matched as a "
+                                               "whole (compare.match full_row); geometry and attributes are still "
+                                               "compared"})
             leg = {"path": d["legacy_path"], "layer": d.get("layer"), "sheet": hints.get("sheet"),
                    "exists": d["exists"], "sha256": d.get("sha256"), "content_sha256": d.get("content_sha256"),
                    "profile": d.get("profile_ref"), "sidecars": d.get("sidecars", []),

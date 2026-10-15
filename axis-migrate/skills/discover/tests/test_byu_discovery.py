@@ -113,3 +113,14 @@ def test_legacy_copy_and_fixture_untouched_and_scan_fast(byu):
     assert tree_state(FIXTURE) == byu["before_fixture"]
     assert byu["inv"]["scan"]["read_only_verified"]
     assert byu["times"]["scan"] < 60, byu["times"]
+
+
+def test_single_feature_finals_match_full_row(byu):
+    """B9 (BYU e2e): Agriculture_Flood / Population_Flood hold one MultiPoint each and no key; lineage proposes
+    compare.match full_row (the first compare no longer stops at KEY_UNDECLARED) and drops the trivial key."""
+    ds = {d["id"]: d for d in byu["graph"]["datasets"]}
+    for did in ("ds.agriculture_flood", "ds.population_flood"):
+        assert ds[did]["compare"]["match"] == "full_row" and not ds[did]["compare"]["key"]
+        assert ds[did]["compare_hints"]["key_candidates"] == []
+        assert ds[did]["compare_hints"]["match_proposed"]["match"] == "full_row"
+    assert ds["ds.osm_flood_gpkg"]["compare"]["match"] is None      # three rows: a real key question
