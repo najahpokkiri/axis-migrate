@@ -995,13 +995,15 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
             vcounts = next((x["meta"].get("validity_counts") for x in vmap.values()
                             if isinstance(x["meta"].get("validity_counts"), dict)), None)
 
-            def counts(f, kind=r["kind"], shas=shas, vmap=vmap, vcounts=vcounts) -> bool:
+            def counts(f, kind=r["kind"], shas=shas, vmap=vmap, vcounts=vcounts, cmp=cmp) -> bool:
                 # same acceptance rule as compare.py aggregate: this run, closed answer/effect vocabulary, then the
                 # cited plot or views; `cannot_tell` is listed as "not visually assessed" and is not a receipt
                 if not (f.get("run_id") == b.run_id and f.get("answer") in ("yes", "no", "cannot_tell")
                         and f.get("effect") in ("flag", "none") and not (f.get("effect") == "flag"
                                                                          and f.get("answer") != "yes")):
                     return False
+                if f.get("receipt") == "skipped":   # identical output, no view to look at (map skill)
+                    return vrc.skip_receipt_matches(f, cmp)
                 if vrc.is_view(f):
                     return not vrc.check_view_receipt(f, family=kind, lookup=vmap.get,
                                                       validity_counts=vcounts if kind == "raster" else None)

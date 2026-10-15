@@ -1,6 +1,7 @@
 """ladder.py: rungs, dispositions, caps, integrity (07 §3.4, §4.3; DESIGN §4.3, §4.6)."""
 from __future__ import annotations
 
+import pytest
 import json
 import os
 import subprocess
@@ -657,3 +658,36 @@ def test_brief_on_a_sealed_clean_run_and_cli(sealed):
     out = subprocess.run(["/usr/bin/python3", "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"]),
                           "--brief"], capture_output=True, text=True, check=True).stdout
     assert out.strip() == line
+
+
+@pytest.mark.parametrize("good", [True, False])
+def test_skipped_identical_receipt_counts_only_with_the_right_sha(proj, good):
+    """map skill: an output identical to legacy needs no view; its skipped receipt counts only when the sha it cites
+    is the sealed compare result's new sha256 (same rule as compare.py aggregate)."""
+    import visual_receipt as vrc
+    if True:
+        r = synth.make_run(proj, 1, seal=False)
+        cp = r["run_dir"] / "verify" / "compare" / "ds.a_mask.json"
+        cmp = ac.load_json(cp)
+        cmp["verdict"] = "PASS_EXACT"
+        cmp.setdefault("diagnostic_codes", []).append(vrc.IDENTICAL_CODE)
+        old_id, cmp["result_id"] = cmp["result_id"], None
+        cmp.pop("result_id")
+        cmp["result_id"] = ladder.cmp_content_id(cmp)
+        ac.dump_json(cp, cmp)
+        pj = r["run_dir"] / "verify" / "plots.json"
+        if pj.is_file():
+            pj.write_text(pj.read_text().replace(old_id, cmp["result_id"]))
+        sha = (cmp.get("new") or {}).get("sha256") if good else "0" * 64
+        p = r["run_dir"] / "verify" / "visual-review.json"
+        doc = ac.load_json(p)
+        doc["findings"] = [f for f in doc["findings"] if f.get("dataset_id") != "ds.a_mask"] + [
+            {"receipt": "skipped", "dataset_id": "ds.a_mask", "skipped": vrc.skip_text(sha), "question_id": "Q-all",
+             "answer": "no", "effect": "none", "category": "none", "note": "", "model": "m", "run_id": r["run_id"],
+             "finding_id": "vf-skip" + ("ok" if good else "bad")}]
+        ac.dump_json(p, doc)
+        sealmod.seal(proj["migration"], r["run_id"])
+        res = ladder.compute(proj["migration"], r["run_id"])
+        codes = res["datasets"]["ds.a_mask"]["reason_codes"]
+        assert "UNBOUND_COMPARE" not in codes and res["datasets"]["ds.a_mask"]["state"] != "EVALUATOR_ERROR", codes
+        assert ("VISUAL_REVIEW_MISSING" in codes) is (not good), (good, codes)

@@ -15,8 +15,7 @@ finals. You write code, read files, propose parameters, ask and look at plots. *
 (the one pinned environment). Work from the project directory (the parent of the legacy folder); everything you
 create goes under `./migration/`. The legacy folder is read-only: never write, move, `touch` or `gdalinfo -stats`
 anything in it. Codex: `$P` is the folder holding `.codex-plugin/plugin.json`; start with `$axis-migrate:start`.
-**Not for** general GIS coding, a one-off geopandas/GDAL/QGIS question or Databricks setup: answer those directly and
-start no migration (no `migration/` folder, no scan) unless the person asks to migrate a legacy project folder.
+**Not for** general GIS coding, a one-off geopandas/GDAL/QGIS question or Databricks setup: answer directly, no scan.
 
 ## Hard rules (the hooks and scripts enforce them; do not try to work around a refusal)
 
@@ -39,9 +38,10 @@ start no migration (no `migration/` folder, no scan) unless the person asks to m
 
 - Files the person reads (`migration/graph.md`, input map PNGs, `plan.md`, `confirm_all.md`, `report/REPORT.md`) go
   in the file pane (Claude desktop `mcp__ccd_view__show_pane`; Codex, terminal: link the path), before any question.
-- Only the map uses the browser (skill `map`; Claude desktop: load `built-in-browser` first if listed). The graph
-  editor (`graph_server.py serve migration`) starts only on request; never write a server token in chat. Never
-  publish a hosted Artifact (customer data) unless the person opts in after report SKILL §Publishing's warning.
+- Only the map uses the browser (skill `map` §2–3: `resize_window` 1280×960 once, wait for "axis-map: ready", one
+  scale-1 screenshot per view, values from page text; no fixed waits, nudges or engine dialog; a `skipped: identical`
+  dataset needs only the receipt `review-template` prints). Graph editor only on request; never write a server
+  token in chat. No hosted Artifact (customer data) unless the person opts in after report SKILL §Publishing.
 
 ## Flow (follow the skills in this order; each SKILL.md has the exact commands)
 
