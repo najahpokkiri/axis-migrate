@@ -125,3 +125,28 @@ def test_numeric_operands_dtype_casts_and_nominal_cell(fam):
     assert model["nominal_m"] == 30 and model["rasters_from"] == "same_code"
     r = next(e for e in model["evidence"] if e["kind"] == "raster_profile")
     assert r["dataset"] == "ds.elevation_dem" and r["res_m"][0] > 600  # 0.01 degree cells, far from 30 m
+
+
+def test_constant_group_by_has_a_semantics_note(fam):
+    p = next(p for p in fam["inv"]["params"] if p["name"] == "GROUP_BY" and p["kind"] == "tool_literal")
+    assert p["value"] == "Null" and "one group" in p["semantics"]
+
+
+def test_epoch_mtimes_and_absolute_path_columns(tmp_path):
+    import os
+
+    import pyogrio
+    from scan_synth import zones_gdf
+    leg = tmp_path / "legacy_epoch"
+    (leg / "out").mkdir(parents=True)
+    g = zones_gdf()
+    g["path"] = ["/srv/producer/run1/out/a.gpkg", "/srv/producer/run1/out/b.gpkg", "C:\\\\work\\\\c.gpkg"]
+    pyogrio.write_dataframe(g, leg / "out" / "merged.gpkg", layer="merged", driver="GPKG")
+    pyogrio.write_dataframe(zones_gdf(), leg / "out" / "other.gpkg", layer="other", driver="GPKG")
+    for f in (leg / "out").iterdir():
+        os.utime(f, (315532800, 315532800))
+    inv = scan(leg, tmp_path / "migration")
+    assert inv["scan"]["mtime_reliable"] is False and "epoch" in inv["scan"]["mtime_reason"]
+    d = next(x for x in inv["datasets"] if x["id"] == "ds.merged")
+    assert d["compare_hints"]["ignore_proposed"] == [{"column": "path", "why": "absolute paths of the producing machine"}]
+    assert [i["column"] for i in inv["open_items"] if i["kind"] == "absolute_path_column"] == ["path"]

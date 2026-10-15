@@ -58,6 +58,8 @@ PROJECT_EXT = {".qgs", ".qgz", ".model3", ".aprx", ".atbx"}
 LISTED_ONLY_EXT = {".mxd", ".tbx", ".lyr", ".lyrx", ".fmw", ".pdf", ".qlr", ".mxt", ".sde"}
 SHP_PARTS = {".dbf", ".shx", ".prj", ".cpg", ".sbn", ".sbx", ".qix", ".fix", ".shp.xml"}
 SIDECAR_TAILS = (".aux.xml", ".ovr", ".tfw", ".tifw", ".wld", ".msk", ".qmd", "-wal", "-shm", "-journal", ".lock")
+ABS_PATH_RE = re.compile(r"^(/[^/\s][^/]*/[^/]+|[A-Za-z]:[\\/]|\\\\[^\\]+\\)")
+DOS_EPOCH, UNIX_EPOCH = 315532800, 0  # 1980-01-01 (ZIP/FAT), 1970-01-01
 STATS_MAX_CELLS = 2 ** 26  # rasters above this many cells get sampled statistics (every k-th block)
 SECRET_RE = re.compile(r"(^|[._-])(env|secret|secrets|credential|credentials|token|password|passwd|private[-_]?key|"
                        r"id_rsa)([._-]|$)|\.(pem|key|p12|pfx)$", re.I)
@@ -2831,6 +2833,13 @@ def expression_functions(expr: str) -> list[str]:
     return list(dict.fromkeys(m.group(1) for m in re.finditer(r"(?<![\w.])([A-Za-z_]\w*)\s*\(", bare)))
 
 
+def constant_expression(expr: str) -> bool:
+    """A QGIS expression with no field reference and no function call (`Null`, `'x'`, `1`)."""
+    bare = re.sub(r"'(?:[^']|'')*'", " ", expr or "")
+    return '"' not in bare and not re.search(r"[A-Za-z_]\w*\s*\(", bare) and not [
+        w for w in re.findall(r"[A-Za-z_]\w*", bare) if w.lower() not in ("null", "true", "false")]
+
+
 AREA_DIVISORS = {10000: "ha", 1000000: "km2"}
 
 
@@ -3326,6 +3335,12 @@ def profile_vector(full: Path, keep_values: dict, key: str) -> dict:
                 entry["unique_after_strip_casefold"] = len(sc) == len(df)
                 if uniq <= 50:
                     domains[c] = sorted(str(v) for v in set(vals) if v is not None)
+                strs = [str(v) for v in vals if v is not None and str(v).strip()]
+                absn = sum(1 for v in strs if ABS_PATH_RE.match(v.strip()))
+                if strs and absn >= 0.8 * len(strs):  # paths of the producing machine (m3)
+                    rec.setdefault("absolute_path_columns", []).append(
+                        {"column": c, "values_absolute": absn, "values": len(strs),
+                         "example_prefix": strs[0].strip().replace("\\", "/").rsplit("/", 1)[0][:120]})
                 if (key, lname) in keep_values and len(df) <= 20000:
                     keep_values[(key, lname)]["cols"][c] = [None if v is None else str(v) for v in vals]
             if entry["unique"] and entry["nonnull"]:
@@ -4773,6 +4788,8 @@ class Scan:
                                                                                     "line": pv.get("arg_line")}],
                                 "doc_mentions": [], "shadowed_by": None, "flags": [], "comment": None,
                                 "code": o["code"], "from_superseded": status.get(o["code"]) in ("superseded", "twin")})
+                    if pname == "GROUP_BY" and isinstance(val, str) and constant_expression(val):
+                        out[-1]["semantics"] = "constant group key: every feature falls into one group"
                     opts = ospec.get(pname, {}).get("options") or {}
                     if opts and str(val) in opts:  # decoded enum label next to the raw value (M7)
                         out[-1]["label"] = opts[str(val)]
@@ -5347,6 +5364,13 @@ class Scan:
                                 unused=unused)
         for oc in self.order_conflicts:
             add("order_conflict", "medium", [], [oc])
+        for did, d in sorted(self.datasets.items()):
+            prof = self.profiles.get(d["legacy_path"], {})
+            lay = next((l for l in prof.get("layers", []) if l["name"] == d["layer"]), {})
+            for x in lay.get("absolute_path_columns", []):
+                add("absolute_path_column", "low", [did], [{"kind": "profile", "dataset": did, **x}],
+                    column=x["column"], detail=f"column {x['column']} holds absolute paths ({x['example_prefix']}/...); "
+                                               f"a compare on it fails on any other machine: propose to ignore it")
         for c in sorted(self.codes.values(), key=lambda c: c["path"]):
             for f in c.get("flags", []):
                 if f["kind"] == "reversed_containment" and f.get("empty_matches") is not None:
@@ -5544,6 +5568,11 @@ class Scan:
         spread = (max(mt) - min(mt)) if mt else 0
         n_files = len([f for f in files if f["kind"] not in ("excluded", "symlink")])
         mtime_reliable = not (mt and spread <= 3600)  # one copy/checkout session, not a work history
+        # files at the DOS (1980-01-01, archives/bags) or Unix epoch carry no history (m2)
+        at_epoch = sorted(p for p, h in self.hashes.items() if "mtime_epoch" in h and any(
+            -50400 <= h["mtime_epoch"] - e <= 2 * 86400 for e in (DOS_EPOCH, UNIX_EPOCH)))
+        if at_epoch and len(at_epoch) >= max(2, 0.2 * len(mt)):
+            mtime_reliable = False
         manifest = "sha256:" + ac.sha256_bytes(ac.cjson([{"path": f["path"], "sha256": f.get("sha256"),
                                                            "size": f.get("size")} for f in files]))
         # legacy roots (absolute prefixes the code used; commented alternatives included)
@@ -5621,6 +5650,9 @@ class Scan:
             if rel in self.vrt_alias:
                 d["alias_of"] = next((x for x, y in self.datasets.items() if y["legacy_path"] == self.vrt_alias[rel]),
                                      None)
+            if d["kind"] == "vector" and did in profiles_out and profiles_out[did].get("absolute_path_columns"):
+                hints["ignore_proposed"] = [{"column": x["column"], "why": "absolute paths of the producing machine"}
+                                            for x in profiles_out[did]["absolute_path_columns"]]
             d["compare_hints"] = hints
             d["reference_candidate"] = bool(d["exists"] and d["role"] in ("intermediate", "final"))
         step_candidates = []
@@ -5645,9 +5677,13 @@ class Scan:
             "scan": {"version": SCAN_VERSION, "started_at": started, "libs": self.libs(),
                      "manifest_sha256": manifest, "read_only_verified": ro_ok, "changed_during_scan": changed,
                      "mtime_reliable": mtime_reliable,
-                     "mtime_reason": (f"{n_files}/{n_files} files within {int(math.ceil(spread))} s (copy or checkout "
+                     "mtime_reason": (f"{len(at_epoch)}/{len(mt)} files carry the DOS (1980-01-01) or Unix "
+                                      "(1970-01-01) epoch as mtime (archive or bag artefact; corroboration only)"
+                                      if at_epoch and len(at_epoch) >= max(2, 0.2 * len(mt)) else
+                                      f"{n_files}/{n_files} files within {int(math.ceil(spread))} s (copy or checkout "
                                       "artefact; corroboration only)" if not mtime_reliable
                                       else f"mtimes spread over {int(spread)} s"),
+                     "mtime_epoch_files": at_epoch[:50],
                      "legacy_roots": legacy_roots, "gdal_pam_enabled": os.environ.get("GDAL_PAM_ENABLED"),
                      "tables": {"qgis_algs": self.ctx.qgis.get("source", {}).get("qgis_version"),
                                 "qgis_algs_count": self.ctx.qgis.get("count"),
