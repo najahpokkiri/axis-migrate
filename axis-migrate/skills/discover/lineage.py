@@ -353,6 +353,8 @@ class Lineage:
                     if l.get("subset_parsed"):
                         e["subset"] = l["subset_parsed"]
         self.edges = edges
+        self.apply_implementation_groups()
+        self.apply_not_run_here()
         self.split_multi_writers()
         for e in edges.values():
             e["lines"] = sorted(e["lines"])
@@ -399,6 +401,60 @@ class Lineage:
                                                     f"{f.get('unused')} are present but unused", "for": "confirm_all"})
         g["scope_facts"] = sorted(self.scope_facts, key=lambda f: (f["node"], f["fact"]))
         return g
+
+    def step_io(self, sid: str) -> tuple[set, set]:
+        ins = {e["from"] for e in self.edges.values() if e["to"] == sid and e["kind"] in ("reads", "reads_grid")}
+        outs = {e["to"] for e in self.edges.values() if e["from"] == sid and e["kind"] in ("writes", "reads_write")}
+        return ins, outs
+
+    def apply_implementation_groups(self) -> None:
+        """Alternative implementations across tools (scan `implementations`, M3): the guessed parity reference stays
+        in scope; every other member step is dropped as `alternative_impl` (twin_of the reference) until the user
+        answers the one "Which implementation is the parity reference?" question. Their missing inputs, outputs and
+        unresolved paths are not asked separately."""
+        self.impl_questions = []
+        by_id = {s["id"]: s for s in self.steps}
+        for g in self.inv.get("implementations", []):
+            ref_step = self.step_of_code(g.get("reference_guess"))
+            members = [m for m in g["members"] if m.get("step") in by_id or m["kind"] == "arcgis_toolbox"]
+            if not ref_step or ref_step not in by_id or len(members) < 2:
+                continue
+            dropped = []
+            for m in members:
+                st = by_id.get(m.get("step"))
+                if st is None or st["id"] == ref_step:
+                    continue
+                if st["scope"] == "migrate":
+                    st["scope"], st["scope_reason"] = "drop", "alternative_impl"
+                    st["twin_of"] = st.get("twin_of") or ref_step
+                    st["evidence"].append(ev("structurally_inferred", f"inventory:{m['source']}",
+                                             f"alternative implementation of {ref_step} ({g['id']}): same output "
+                                             f"field names"))
+                dropped.append(st["id"])
+            self.impl_questions.append({"group": g, "reference": ref_step, "members": members, "dropped": dropped})
+
+    def apply_not_run_here(self) -> None:
+        """In-scope scripts none of whose inputs or outputs exist in the legacy folder (files of another machine or
+        study area, snippets): dropped as `not_run_here` behind one grouped question, as long as some other in-scope
+        step does touch files that exist (otherwise nothing is dropped)."""
+        self.not_run_here = []
+        live = [s for s in self.steps if s["scope"] == "migrate" and s["kind"] not in ("manual", "qgis_model")]
+        touching, idle = [], []
+        for s in [s for s in self.steps if s["scope"] in ("migrate", "keep_legacy")]:
+            ins, outs = self.step_io(s["id"])
+            (touching if any(self.ds[d]["exists"] for d in ins | outs if d in self.ds) else idle).append(s)
+        if not touching:
+            return
+        foreign = {c.get("step_id"): sorted({f["value"] for f in c.get("flags", []) if f["kind"] == "foreign_host_path"})
+                   for c in self.inv["code"]}
+        for s in idle:
+            if s not in live:
+                continue
+            ins, outs = self.step_io(s["id"])
+            s["scope"], s["scope_reason"] = "drop", "not_run_here"
+            self.not_run_here.append({"step": s["id"], "source": s["legacy"]["source"],
+                                      "missing": sorted(self.ds[d]["legacy_path"] for d in ins | outs if d in self.ds),
+                                      "foreign": foreign.get(s["id"], [])})
 
     def split_multi_writers(self) -> None:
         """A dataset written by several in-scope steps (B1/B2): the file on disk is the last writer's output; the
@@ -623,6 +679,53 @@ class Lineage:
                {"value": "read_edited", "label": "Read the edited file",
                 "description": "Keep the hand-made file as a hash-pinned input (bridge)"}, dont_know],
               guess={"option": "derive", "why": "the rule explains all but the listed exceptions"})
+        # alternative implementations across tools: one question per group (M3)
+        kind_label = {"qgis_model": "QGIS model", "python": "Python", "arcgis_toolbox": "ArcGIS toolbox"}
+        for iq in self.impl_questions:
+            g, refsid = iq["group"], iq["reference"]
+            fields = sorted({f for e in g["evidence"] for f in e["fields"]})
+            ref_m = next(m for m in iq["members"] if m.get("step") == refsid)
+            outs = ref_m["existing_outputs"]
+            lines = []
+            opts = []
+            for m in sorted(iq["members"], key=lambda m: (m.get("step") != refsid, m["kind"], m["source"])):
+                desc = (f"{len(m['existing_outputs'])} output(s) exist in the legacy folder" if m["existing_outputs"]
+                        else "none of its outputs exist in the legacy folder")
+                if m["foreign_host_paths"]:
+                    desc += f"; reads and writes files on another machine ({m['foreign_host_paths'][0]})"
+                if m["kind"] == "arcgis_toolbox":
+                    desc = "listed only (no ArcGIS); its strings name the same fields"
+                lines.append(f"{kind_label[m['kind']]} {m['source']}: {desc}")
+                opts.append({"value": m.get("step") or "arcgis:" + m["source"],
+                             "label": f"{kind_label[m['kind']]} {m['source'].rsplit('/', 1)[-1]}"
+                                      + (" (Recommended)" if m.get("step") == refsid else ""),
+                             "recommended": m.get("step") == refsid, "description": desc})
+            q("scope", refsid, [refsid] + iq["dropped"] + outs, "Parity reference",
+              f"{len(iq['members'])} implementations of the same workflow name the same output fields "
+              f"({', '.join(fields)}): " + "; ".join(lines) + f". Which implementation is the parity reference? The "
+              f"others stay in the graph as knowledge (scope drop) and their missing files are not asked about.",
+              "Parity is measured against one implementation's outputs; only the reference is ported.",
+              {"ref": f"inventory:{ref_m['source']}", "quote": None},
+              [{"ref": f"inventory:{e['b']}", "fact": f"{e['a']} and {e['b']} share {', '.join(e['fields'])}"}
+               for e in g["evidence"][:6]], "high", opts + [dont_know],
+              guess={"option": refsid, "why": g.get("reference_why")})
+        if self.not_run_here:
+            nr = self.not_run_here
+            q("scope", nr[0]["step"], [x["step"] for x in nr], "Not run with this folder",
+              f"{len(nr)} script(s) touch no file that exists in the legacy folder: "
+              + "; ".join(f"{x['source']} (" + ", ".join(
+                  ([f"{len(x['missing'])} missing file(s)"] if x["missing"] else [])
+                  + ([f"paths on another machine: {x['foreign'][0]}"] if x["foreign"] else [])
+                  or ["no file named"]) + ")" for x in nr) + ". Are they part of the workflow to migrate?",
+              "A script whose files are all elsewhere cannot be compared; porting it blind adds unverified code.",
+              {"ref": f"inventory:{nr[0]['source']}", "quote": None},
+              [{"ref": f"inventory:{x['source']}", "fact": f"missing: {', '.join(x['missing'][:4]) or 'none named'}"}
+               for x in nr], "medium",
+              [{"value": "out_of_scope", "label": "Not part of it (Recommended)", "recommended": True,
+                "description": "Keep them as knowledge (scope drop)"},
+               {"value": "in_scope", "label": "Part of it: I will provide the files",
+                "description": "Put the scripts back in scope and add their inputs"}, dont_know],
+              guess={"option": "out_of_scope", "why": "none of their files exist here"})
         # model input parameters bound to files by guess: one confirmation per in-scope model
         for it in self.inv.get("open_items", []):
             if it["kind"] != "model_input_binding":
@@ -757,6 +860,7 @@ class Lineage:
                 "description": "Keep them out of parity"},
                {"value": "manual", "label": "Made by hand", "description": "Model a manual step"}, dont_know])
         # inputs read by code but missing on disk (blocking) and unreferenced data files in input folders
+        unused = []
         for did, d in sorted(self.ds.items()):
             if d["role"] == "input" and not d["exists"] and any(
                     self.ops[o]["code"] in {self.code_id_of(s) for s in live.values()} for o in d["consumed_by"]):
@@ -768,11 +872,16 @@ class Lineage:
                   [{"value": "provide", "label": "I will provide it (Recommended)", "recommended": True,
                     "description": "Add the file to the legacy folder"}, dont_know])
             if d["role"] == "unknown" and d["exists"] and not d.get("unused_kind") == "orphan_output":
-                q("lineage", did, [did], "Unused file",
-                  f"{d['legacy_path']} is not read by any script, project or note. Is it needed?",
-                  "Unused inputs may hide a missing branch.", {"ref": f"inventory:{d['legacy_path']}", "quote": None},
-                  [], "low", [{"value": "unused", "label": "Not needed (Recommended)", "recommended": True,
-                               "description": ""}, dont_know])
+                unused.append(did)
+        if unused:  # one grouped scope fact for the interview's confirm_all, not a question per file (M3)
+            alias = {d: self.ds[d].get("alias_of") for d in unused if self.ds[d].get("alias_of")}
+            self.scope_facts.append({
+                "node": unused[0], "nodes": unused, "fact": "unused_files", "scope": "unused",
+                "evidence": [f"inventory:{self.ds[d]['legacy_path']}" for d in unused],
+                "aliases": alias,
+                "summary": f"{len(unused)} file(s) are read by no script, project or note: "
+                           + ", ".join(self.ds[d]["legacy_path"] + (f" (alias of {alias[d]})" if d in alias else "")
+                                       for d in unused), "for": "confirm_all"})
         # unresolved path expressions in live code
         live_codes = {self.code_id_of(s) for s in live.values()}
         by_step = defaultdict(list)

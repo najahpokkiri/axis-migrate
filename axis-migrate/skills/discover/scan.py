@@ -574,6 +574,8 @@ class PyAnalyzer:
         self.branches: dict[tuple, dict] = {}
         self.loop_stack: list[tuple] = []
         self.last_arms = ([], [])
+        self.cwd: str | None = None  # os.chdir(<const>) base for later relative paths (M4)
+        self.callsite: list[tuple] = []  # (call node, helper ref) while inlining a helper from another module (M5)
         self.env["__file__"] = V("const", rel)  # paths built from __file__ stay legacy-root relative
         if star_env:
             self.env.update(star_env)
@@ -692,7 +694,10 @@ class PyAnalyzer:
                     for k, v in self.ctx.code.get(local, {}).get("_exports", {}).items():
                         self.env.setdefault(k, v)
                 continue
-            self.env[a.asname or a.name] = V("mod", f"{st.module}.{a.name}" if st.module else a.name)
+            local = self.ctx.local_modules.get((st.module or "").split(".")[-1])
+            fn = self.ctx.code.get(local, {}).get("_exports", {}).get(a.name) if local and local != self.rel else None
+            self.env[a.asname or a.name] = fn if fn is not None and fn.k == "func" else \
+                V("mod", f"{st.module}.{a.name}" if st.module else a.name)
             self.imports.append({"module": mod, "names": a.name, "line": st.lineno, "cell": self.cell,
                                  "as": a.asname})
 
@@ -1197,6 +1202,8 @@ class PyAnalyzer:
     ev_DictComp = ev_ListComp
 
     def unresolved(self, node, reason, op=None, expr=None):
+        if self.callsite:
+            node, expr = self.callsite[0][0], expr or f"{self.seg(self.callsite[0][0])} ({self.callsite[0][1][11:]})"
         self.ctx.unresolved.append({"file": self.rel, "line": node.lineno, "cell": self.cell,
                                     "expr": expr or self.seg(node), "reason": reason, "op": op, "code": self.code_id})
 
@@ -1209,7 +1216,7 @@ class PyAnalyzer:
             if v is not None and v.k == "mod":
                 dotted = v.v
             elif v is not None and v.k == "func":
-                return self.inline(v.v, node)
+                return self.inline(v.v, node, src=v.x.get("src"))
             elif v is not None:
                 base = v
             else:
@@ -1222,6 +1229,12 @@ class PyAnalyzer:
                 base, method = b, func.attr
         else:
             base = self.ev(func)
+        if dotted and "." in dotted:
+            local = self.ctx.local_modules.get(dotted.rsplit(".", 1)[0].split(".")[-1])
+            fn = self.ctx.code.get(local, {}).get("_exports", {}).get(dotted.rsplit(".", 1)[1]) \
+                if local and local != self.rel else None
+            if fn is not None and fn.k == "func":
+                return self.inline(fn.v, node, src=fn.x.get("src"))
         h = self.handler_for(dotted, base, method)
         if h is not None:
             return h(node, dotted, base, method)
@@ -1245,22 +1258,39 @@ class PyAnalyzer:
                 except (IndexError, KeyError, ValueError):
                     pass
             return V("unknown", "fstring_unknown", template=base.v, reason="fstring_unknown")
+        if method in ("partition", "rpartition") and is_str(base) and len(args) == 1 and is_str(args[0]):
+            return V("list", [V("const", x, base.chain) for x in getattr(base.v, method)(args[0].v)], base.chain)
         if method in ("strip", "lower", "upper", "rstrip", "lstrip") and is_str(base):
             return V("const", getattr(base.v, method)(*[a.v for a in args if a.k == "const"]), base.chain)
         if method in ("join",) and is_str(base) and args and args[0].k == "list" and all(is_str(x) for x in args[0].v):
             return V("const", base.v.join(x.v for x in args[0].v), base.chain)
         return self.heuristic(node, dotted or (method and f"?.{method}") or "?", args, kws)
 
-    def inline(self, fn: ast.FunctionDef, node) -> V:
-        rec = self.funcs.get(fn.name)
+    def inline(self, fn: ast.FunctionDef, node, src: str | None = None) -> V:
+        """Run a function body with the call-site arguments bound (one level for helpers of another module, M5).
+        I/O inside a helper from another file becomes an op of THIS file at the call site, flagged
+        `via_helper:<file>:<def line>:<name>`; its own module stays a helper."""
+        foreign = bool(src) and src != self.rel
+        rec = self.funcs.get(fn.name) if not foreign else None
         if rec is not None:
             rec["called"] = True
         args = [self.ev(a) for a in node.args]
         kws = {k.arg: self.ev(k.value) for k in node.keywords if k.arg}
-        if self.depth >= 2:
+        if self.depth >= 2 or (foreign and self.callsite):
             return V("unknown", "call_depth")
+        if foreign:
+            self.callsite.append((node, f"via_helper:{src}:{fn.lineno}:{fn.name}"))
+            try:
+                return self._inline_body(fn, args, kws, src)
+            finally:
+                self.callsite.pop()
+        return self._inline_body(fn, args, kws)
+
+    def _inline_body(self, fn: ast.FunctionDef, args: list, kws: dict, src: str | None = None) -> V:
         saved, saved_ret = self.env, self.ret
         self.env = dict(saved)
+        if src:  # the helper's own module imports (rio, gpd, ...) as its body sees them
+            self.env.update(self.ctx.code.get(src, {}).get("_globals", {}))
         params = [a.arg for a in fn.args.args]
         defaults = fn.args.defaults
         for i, p in enumerate(params):
@@ -1324,6 +1354,10 @@ class PyAnalyzer:
                 return self.h_pathfn
             if d in ("os.path.exists", "os.path.isfile", "os.path.isdir", "os.access"):
                 return self.h_exists
+            if d == "os.chdir":
+                return self.h_chdir
+            if d == "os.getcwd":
+                return self.h_getcwd
             if d in ("os.environ.get", "os.getenv"):
                 return self.h_getenv
             if d in ("builtins.input",):
@@ -1388,6 +1422,15 @@ class PyAnalyzer:
     # ---------------------------------------------------------------- op emission
     def emit(self, node, api, tool, family, io_source, reads=(), writes=(), reads_grid=(), params=None,
              state="directly_observed", flags=(), mem_out=None, end_line=None) -> tuple:
+        if self.callsite:  # inside a helper of another module: the op belongs to the call site (M5)
+            cs, via = self.callsite[0]
+            reads = [dict(r, line=cs.lineno) for r in reads]
+            writes = [dict(w, line=cs.lineno) for w in writes]
+            reads_grid = [dict(g, line=cs.lineno) for g in reads_grid]
+            params = {k: (dict(v, arg_line=cs.lineno) if isinstance(v, dict) and "arg_line" in v else v)
+                      for k, v in (params or {}).items()}
+            flags = list(flags) + [via]
+            node, end_line = cs, None
         if self.fold:
             fr = self.fold[-1]
             fr.reads.extend(reads)
@@ -1440,10 +1483,14 @@ class PyAnalyzer:
             if workspace is not None and is_str(workspace) and not re.search(r"[\\/]", s) and not MEM_RE.match(s) \
                     and not split_parts(s)[0]:
                 s = workspace.v.rstrip("\\/") + ("\\" if "\\" in workspace.v else "/") + s
+            if self.cwd and not split_parts(s)[0] and not MEM_RE.match(s.strip()) and "://" not in s:
+                s = self.cwd.rstrip("\\/") + ("\\" if "\\" in self.cwd and "/" not in self.cwd else "/") + s
             uri = parse_uri(s)
             res = self.ctx.res.resolve(uri["path"], self.base_dir)
             if res is None:
                 out.append({"unresolved": s, "param": param, "line": line, "reason": "outside_root"})
+                if split_parts(uri["path"])[0]:
+                    self.flag_foreign(uri["path"].replace("\\", "/").rsplit("/", 1)[0], line, "path")
             elif res.get("memory"):
                 out.append({"memory": f"mem:{s.strip()}:{self.code_id}:{line}", "param": param, "line": line,
                             "literal_memory": s.strip()})
@@ -1487,6 +1534,14 @@ class PyAnalyzer:
                 out.extend(self.path_refs(o, line, param, force_path=force_path))
         elif v.k == "unknown" and force_path:
             reason = v.x.get("reason") or v.v
+            tmpl = v.x.get("template") or ""
+            head = tmpl.split("{?}")[0].replace("\\", "/")
+            if self.cwd and tmpl and not split_parts(tmpl)[0]:
+                head = self.cwd.rstrip("/\\") + "/" + head
+            if head and split_parts(head)[0] and "/" in head.rstrip("/") and \
+                    self.ctx.res.resolve(head.rsplit("/", 1)[0] + "/__probe__") is None:
+                reason = "outside_root"  # a partly unknown path under a directory of another machine (M4)
+                self.flag_foreign(head.rsplit("/", 1)[0], line, "path")
             out.append({"unresolved": v.x.get("template") or v.v, "param": param, "line": line, "reason": reason})
             self.ctx.unresolved.append({"file": self.rel, "line": line, "cell": self.cell,
                                         "expr": v.x.get("template") or str(v.v), "reason": reason, "op": None,
@@ -1598,6 +1653,31 @@ class PyAnalyzer:
             self.exists_checks.append({"ref": refs[0].get("ref") if refs else None, "line": node.lineno})
         return V("unknown", "exists")
 
+    def h_chdir(self, node, dotted, base, method):
+        """os.chdir(<const>) is the base of every later relative path (M4); a directory outside the legacy root is a
+        `foreign_host_path` (another machine or study area): paths under it are never looked for in the legacy folder."""
+        args = [self.ev(a) for a in node.args]
+        if not args or not is_str(args[0]):
+            self.unresolved(node, "chdir_unknown")
+            self.cwd = None
+            return V("const", None)
+        p = args[0].v
+        if not split_parts(p)[0]:
+            p = (self.cwd or self.base_dir or "").rstrip("/\\") + ("/" if (self.cwd or self.base_dir) else "") + p
+        self.cwd = p
+        if split_parts(p)[0] and self.ctx.res.resolve(p.rstrip("/\\") + "/__probe__") is None:
+            self.flag_foreign(p, node.lineno, "os.chdir")
+        return V("const", None)
+
+    def h_getcwd(self, node, dotted, base, method):
+        return V("const", self.cwd) if self.cwd else V("unknown", "cwd", reason="cwd")
+
+    def flag_foreign(self, path: str, line: int, via: str) -> None:
+        d = path.rstrip("/\\")
+        if not any(f["kind"] == "foreign_host_path" and f["value"] == d for f in self.flags):
+            self.flags.append({"kind": "foreign_host_path", "line": self.callsite[0][0].lineno if self.callsite else line,
+                               "cell": self.cell, "value": d, "via": via})
+
     def h_getenv(self, node, dotted, base, method):
         args = [self.ev(a) for a in node.args]
         kws = {k.arg: self.ev(k.value) for k in node.keywords if k.arg}
@@ -1620,12 +1700,18 @@ class PyAnalyzer:
             self.unresolved(node, "glob")
             return V("unknown", "glob", reason="glob")
         pat = args[0].v
+        if self.cwd and not split_parts(pat)[0]:
+            pat = self.cwd.rstrip("/\\") + "/" + pat
         last = dotted.split(".")[-1]
         if last in ("listdir", "scandir"):
             pat = pat.rstrip("/\\") + "/*"
         uri_dir, _, tail = pat.replace("\\", "/").rpartition("/")
         res = self.ctx.res.resolve(uri_dir + "/x", self.base_dir) if uri_dir else None
         if not res or "rel" not in res:
+            if uri_dir and split_parts(uri_dir)[0]:
+                self.flag_foreign(uri_dir, node.lineno, dotted)
+                self.unresolved(node, "outside_root")
+                return V("unknown", "outside_root", reason="outside_root", template=pat)
             self.unresolved(node, "glob")
             return V("unknown", "glob", reason="glob", template=pat)
         rel_dir = res["rel"].rsplit("/", 1)[0] if "/" in res["rel"] else ""
@@ -2644,6 +2730,27 @@ def token_near(a: str, b: str) -> bool:
     return a.startswith(b) or b.startswith(a) or a[:3] in b or b[:3] in a
 
 
+def parse_tbx_strings(full: Path, rel: str, tools: dict) -> dict:
+    """ArcGIS .tbx (OLE compound file, no reader in the env): a partial parse of its UTF-16 strings (M6). Keeps the
+    tool display names that match arcpy_tools.json (`management.CalculateField` -> "Calculate Field"), path-like
+    strings and every distinct short identifier-like string (field names), as evidence only."""
+    try:
+        data = full.read_bytes()
+    except OSError as exc:
+        return {"path": rel, "kind": "arcgis_toolbox", "parse": "failed", "error": str(exc)[:200]}
+    strs = [m.group(0).decode("utf-16-le") for m in re.finditer(rb"(?:[\x20-\x7e]\x00){4,}", data)]
+    display = {}
+    for k in tools:
+        name = k.split(".")[-1]
+        display[" ".join(re.findall(r"[A-Z]+(?![a-z])|[A-Z][a-z0-9]*|[a-z0-9]+", name))] = k
+    found = Counter(x for x in strs if x in display)
+    paths = sorted({x for x in strs if ("\\" in x or x.lower().endswith((".gdb", ".shp", ".tif"))) and len(x) < 200})
+    idents = Counter(x for x in strs if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{2,40}", x))
+    return {"path": rel, "kind": "arcgis_toolbox", "parse": "partial", "method": "utf16_strings",
+            "strings": len(strs), "tools": [{"display": d, "tool": display[d], "count": n} for d, n in sorted(found.items())],
+            "paths": paths[:60], "paths_total": len(paths), "identifiers": sorted(idents)}
+
+
 def containment_flags(tree: ast.Module, cell) -> list[dict]:
     """`reversed_containment` (M8): inside a loop over a constant list of strings, `item.__contains__(arg)` or
     `arg in item` tests whether the ARGUMENT is a substring of each list item. An empty argument matches the first
@@ -3338,6 +3445,7 @@ class Scan:
             if e["path"].endswith(".py"):
                 self.ctx.local_modules[stem_of(e["path"])] = e["path"]
         exports: dict[str, dict] = {}
+        globals_: dict[str, dict] = {}
         self.nb_facts: dict[str, dict] = {}
         self.analysers: dict[str, PyAnalyzer] = {}
         for pass_no in (1, 2):
@@ -3346,11 +3454,15 @@ class Scan:
                 if e["path"].endswith(".py"):
                     self.ctx.local_modules[stem_of(e["path"])] = e["path"]
             for rel, ex in exports.items():
-                self.ctx.code[rel] = {"_exports": ex}
+                self.ctx.code[rel] = {"_exports": ex, "_globals": globals_.get(rel, {})}
             for e in code_entries:
                 self.analyse_code(e)
             for rel, an in self.analysers.items():
                 exports[rel] = {k: v for k, v in an.env.items() if v.k == "const" and k.isupper()}
+                # module-level functions of a local module: inlined at the importer's call sites (M5)
+                exports[rel].update({k: V("func", v.v, src=v.x.get("src") or rel) for k, v in an.env.items()
+                                     if v.k == "func" and (v.x.get("src") or rel) == rel})
+                globals_[rel] = {k: v for k, v in an.env.items() if v.k == "mod"}
         self.docs = [mine_doc(e["path"], doc_text(root / e["path"]), [x["path"] for x in entries])
                      for e in entries if e["kind"] == "doc"]
         self.projects = self.parse_projects(entries)
@@ -3369,6 +3481,9 @@ class Scan:
         self.excel_corroboration()
         self.join_coverage()
         self.extent_relations()
+        self.toolboxes = [parse_tbx_strings(self.root / e["path"], e["path"], self.ctx.tools) for e in self.entries
+                          if file_ext(e["path"]) == ".tbx"]
+        self.implementation_groups()
         self.open_items()
         after_entries = walk(root)
         classify_entries(after_entries)
@@ -3952,10 +4067,11 @@ class Scan:
                 status = "superseded"
             elif status_ev:
                 status = "superseded"
-            elif ops:
+            elif ops and not (rel in imported_by and all(
+                    "in_uncalled_function" in self.op_by_id[o]["flags"] for o in ops)):
                 status = "live"
             elif rel in imported_by:
-                status = "helper"
+                status = "helper"  # its I/O sits in functions the importers call (inlined there, M5)
             self.codes[rel] = {"id": "code." + sid, "step_id": sid, "path": rel,
                                "language": "notebook" if rel.endswith(".ipynb") else (
                                    "qgis_model" if rel.endswith(".model3") else "python"),
@@ -4016,6 +4132,95 @@ class Scan:
                 c["twin_of"] = live[target]["id"]
                 c["twin_evidence"] = why
                 self.twins.append(self.twin_record(rel, c))
+
+    def implementation_groups(self) -> None:
+        """Alternative implementations of one workflow across tools (M3/M6): QGIS models, Python scripts and ArcGIS
+        toolboxes that name the same output fields. Field names are the models' FIELD_NAME/NEW_NAME values; a
+        script or toolbox joins when at least two of them occur in it as exact string constants (case-insensitive);
+        two models join on two shared field names; superseded twins follow their canonical. The member whose
+        outputs exist in the legacy folder is the guessed parity reference; the choice is one question (lineage)."""
+        fields: dict[str, set] = {}
+        for rel, c in self.codes.items():
+            if not rel.endswith(".model3") or not c.get("ops"):
+                continue
+            f = set()
+            for oid in c["ops"]:
+                for pname, pv in self.op_by_id[oid]["params"].items():
+                    v = pv.get("value") if isinstance(pv, dict) else None
+                    if pname in ("FIELD_NAME", "NEW_NAME", "OUTPUT_FIELD", "FIELD") and isinstance(v, str) and \
+                            re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{2,40}", v) and v.lower() not in ("value", "id", "fid"):
+                        f.add(v)
+            if f:
+                fields[rel] = f
+        consts: dict[str, set] = {}
+        for rel, an in self.analysers.items():
+            if rel.endswith(".model3"):
+                continue
+            try:
+                src = "\n".join("\n".join(v) for v in an.src_lines.values())
+                consts[rel] = {n.value.lower() for n in ast.walk(ast.parse(src)) if isinstance(n, ast.Constant)
+                               and isinstance(n.value, str) and len(n.value) <= 40}
+            except SyntaxError:
+                consts[rel] = set()
+        for tb in self.toolboxes:
+            consts[tb["path"]] = {x.lower() for x in tb.get("identifiers", [])}
+        nodes = sorted(set(fields) | {r for r in consts if r in self.codes and self.codes[r].get("ops")
+                                      and self.codes[r]["status"] in ("live", "superseded")}
+                       | {tb["path"] for tb in self.toolboxes})
+        parent = {n: n for n in nodes}
+
+        def find(n):
+            while parent[n] != n:
+                n = parent[n]
+            return n
+        evidence = defaultdict(list)
+        for m in sorted(fields):
+            low = {f.lower(): f for f in fields[m]}
+            for o in nodes:
+                if o == m:
+                    continue
+                shared = sorted(low[k] for k in low if k in (consts.get(o) or {f.lower() for f in fields.get(o, ())}))
+                if len(shared) >= 2:
+                    parent[find(o)] = find(m)
+                    evidence[(m, o)] = shared
+        for rel, c in self.codes.items():
+            if c.get("twin_of") and rel in parent:
+                canon = next((r for r, x in self.codes.items() if x["id"] == c["twin_of"]), None)
+                if canon in parent:
+                    parent[find(rel)] = find(canon)
+        groups = defaultdict(list)
+        for n in nodes:
+            groups[find(n)].append(n)
+        out = []
+        for members in groups.values():
+            if len(members) < 2 or not any(m in fields for m in members):
+                continue
+            recs = []
+            for m in sorted(members):
+                c = self.codes.get(m)
+                kind = "qgis_model" if m.endswith(".model3") else "arcgis_toolbox" if m.endswith(".tbx") else "python"
+                outs = sorted({w["dataset"] for o in (c or {}).get("ops", []) for w in self.op_by_id[o]["writes"]
+                               if w["mode"] in ("create", "append") and self.datasets.get(w["dataset"], {}).get("exists")})
+                foreign = sorted({f["value"] for f in (c or {}).get("flags", []) if f["kind"] == "foreign_host_path"})
+                recs.append({"source": m, "code": c["id"] if c else None, "step": c["step_id"] if c else None,
+                             "kind": kind, "status": c["status"] if c else "listed_only",
+                             "twin_of": c.get("twin_of") if c else None, "existing_outputs": outs,
+                             "foreign_host_paths": foreign[:6]})
+            ref = sorted([r for r in recs if r["existing_outputs"]], key=lambda r: (-len(r["existing_outputs"]),
+                                                                                    r["source"]))
+            ev = [{"kind": "shared_field_names", "a": a, "b": b, "fields": f} for (a, b), f in sorted(evidence.items())
+                  if a in members and b in members]
+            gid = "impl." + ac.slug(os.path.commonprefix([stem_of(m).lower() for m in members]).strip("_-") or
+                                    stem_of(sorted(members)[0]))
+            out.append({"id": gid, "members": recs, "evidence": ev,
+                        "reference_guess": ref[0]["code"] if len(ref) == 1 or (ref and len(ref[0]["existing_outputs"])
+                                                                              > len(ref[1]["existing_outputs"]))
+                        else None,
+                        "reference_why": (f"{ref[0]['source']} is the only implementation whose outputs exist in the "
+                                          f"legacy folder ({len(ref[0]['existing_outputs'])})" if len(ref) == 1 else
+                                          "no member's outputs exist" if not ref else
+                                          f"{ref[0]['source']} has the most existing outputs")})
+        self.impl_groups = sorted(out, key=lambda g: g["id"])
 
     def alternative_implementations(self) -> None:
         """Live scripts whose write sets overlap are alternative implementations of one workflow (B1): one stays
@@ -5344,6 +5549,8 @@ class Scan:
             "manual_step_candidates": self.manual,
             "derived_copies": self.dcopies,
             "twins": sorted(self.twins, key=lambda t: (t["a"], t["b"])),
+            "implementations": self.impl_groups,
+            "toolboxes": self.toolboxes,
             "projects": sorted(self.projects, key=lambda p: p["path"]),
             "docs": self.docs,
             "grids": self.grid_list,
