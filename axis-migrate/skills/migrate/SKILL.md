@@ -38,12 +38,10 @@ start no migration (no `migration/` folder, no scan) unless the person asks to m
 ## Showing things to the person: local files first; only the map uses the browser
 
 - Files the person reads (`migration/graph.md`, input map PNGs, `plan.md`, `confirm_all.md`, `report/REPORT.md`) go
-  in the file pane: Claude desktop app `mcp__ccd_view__show_pane` on the file; Codex and terminal: link the path.
-  Show the file a question is about before you ask it.
-- Only the map uses the browser (skill `map`; Claude desktop: load the `built-in-browser` skill first if listed).
-  `report/index.html` is an offline export; the graph editor (`graph_server.py serve migration`) starts only when the
-  person asks for it. Never write a server token in chat.
-- Never publish anything as a hosted Artifact (customer data) unless the person explicitly opts in.
+  in the file pane (Claude desktop `mcp__ccd_view__show_pane`; Codex, terminal: link the path), before any question.
+- Only the map uses the browser (skill `map`; Claude desktop: load `built-in-browser` first if listed). The graph
+  editor (`graph_server.py serve migration`) starts only on request; never write a server token in chat. Never
+  publish a hosted Artifact (customer data) unless the person opts in after report SKILL §Publishing's warning.
 
 ## Flow (follow the skills in this order; each SKILL.md has the exact commands)
 
@@ -57,7 +55,8 @@ start no migration (no `migration/` folder, no scan) unless the person asks to m
    bring your own key: Linux with strace, uploads only the declared inputs after you see the list"; store it with
    `--doctor --record-sandbox local|e2b`. Never ask for a key in chat (skill `run`, §E2B). Codex: start skill first.
 1. **Discover** — skill `discover`: scan, input map (look at every PNG and record findings with numbers), lineage →
-   `graph.json`; show `migration/graph.md` in the file pane (§Showing).
+   `graph.json`; `"$P/scripts/axpy" "$P/skills/report/graphview.py" md migration` (again after every `graph.py
+   apply`) and show `migration/graph.md` in the file pane (§Showing).
 2. **Investigate and interview** — skill `interview`: fill `params.yaml` for every output-changing parameter with
    citations; run `params_check.py`; ask the few remaining questions one at a time (AskUserQuestion, recommended
    option first, explicit "Don't know"; the target goes with the first question, Databricks by default); then
@@ -70,7 +69,8 @@ start no migration (no `migration/` folder, no scan) unless the person asks to m
 5. **Chained run and verify** — `params_check.py migration --fill-used-by`, then `params_check.py migration --stage
    wired` must exit 0 (params.yaml must not change after the run). Then skill `run` (chained, from raw inputs) and
    skill `verify` (compare every pair, plots, visual review of every compared raster/vector, aggregate).
-6. **Evidence and report** — skill `report`: seal, ladder, report; show `migration/report/REPORT.md` in the file pane.
+6. **Evidence and report** — skill `report`: seal, ladder, report, `report.py migration --check`; show
+   `migration/report/REPORT.md` in the file pane (`index.html` is the offline export; publishing: report SKILL).
 7. **Target** — skill `target` if the user chose Databricks: generate the bundle, run the offline checks and dry run,
    seal the target evidence, re-render the report. Never deploy, authenticate or contact a workspace.
 8. **Finish** — your last message starts with the exact status line from `ladder.py`, lists every failing, unsigned
