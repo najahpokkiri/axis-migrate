@@ -41,8 +41,9 @@ $AXPY ${CLAUDE_PLUGIN_ROOT}/skills/map/views.py inputs migration   # with a map 
 **Primary where a browser pane exists: the map views → view findings. Everywhere (also terminal, headless, evals):
 Read the PNGs → PNG findings.** Both count the same; neither resolves anything.
 - **Claude desktop**: `map` skill §0 and §2–3 (`start.py migration`, then `views.py inputs-url migration --view
-  inputs-overview` → `mcp__Claude_Browser__preview_start {url}`); switch Add Data → Raster Layer → render engine to
-  `maplibre-gl-raster`; open each `grid-<family>` view (bookmarks = the five `grid_corners` windows) and identify at
+  inputs-overview` → `mcp__Claude_Browser__preview_start {url}`, then `resize_window {width: 1280, height: 960}`);
+  wait for the page text "axis-map: ready" (the page sets the GPU engine itself); `views.py list --inputs migration
+  --json` gives every URL, cell and feature; open each `grid-<family>` view (bookmarks = the five `grid_corners` windows) and identify at
   least the listed cells (`--dataset <ds> --cell max|aoi-edge|interior`) and features (`--feature
   first|largest|central`). Record a **view finding**.
 - **Codex desktop**: the same in the in-app browser through browser use. Record a **view finding**.
@@ -95,14 +96,18 @@ Live scripts that write the same files are paired as alternative implementations
 `scope: drop`, `alternative_impl`); a file still written by several in-scope steps becomes a "Written by several
 steps" question with a version `ds.x@<step>` per other writer.
 
-## 4 The editor and the "Send to agent" channel
+## 4 The graph for the person, and the editor (only on request)
+After lineage and after every `graph.py apply`: `$AXPY ${CLAUDE_PLUGIN_ROOT}/skills/report/graphview.py md migration` writes
+`migration/graph.md` (Mermaid + `graph.png` fallback); show it in the file pane (migrate SKILL §Showing). The
+interactive editor starts **only when the person asks for it**:
 ```
-$AXPY $D/graph_server.py serve migration          # in the background; show the URL in the side pane (§Showing)
+$AXPY $D/graph_server.py serve migration          # in the background; open the URL in the side pane
 $AXPY $D/graph_server.py wait migration           # run_in_background; you are re-invoked when it exits
 ```
-`wait` exits 0 with the user's edits and your obligation per edit (exit 2 on timeout: start it again). Act on every
-obligation (`GRAPH_OPS.md` §4), then `$AXPY $D/graph.py ack migration <ack_seq>`. Deleting a step with legacy
-outputs never removes it: ask the user with the listed datasets, then `resolve_confirmation`.
+`wait` exits 0 with the user's edits and your obligation per edit, or with `"timeout": true, "edits": 0` (start it
+again only while the person is still editing). Act on every obligation (`GRAPH_OPS.md` §4), then `$AXPY
+$D/graph.py ack migration <ack_seq>`. Deleting a step with legacy outputs never removes it: ask the user with the
+listed datasets, then `resolve_confirmation`. Stop the server when the person is done.
 
 ## Hand-off
 Investigation and interview read `inventory.json` (`open_items`, `params`, `settings`, `derived_copies`,

@@ -6,7 +6,37 @@ number (Codex caches installs by version, so every shipped change needs a bump).
 
 ## Unreleased
 
-Nothing yet.
+Map (from the live Lux run in the Claude desktop app)
+- Raster views open in the GPU engine (`maplibre-gl-raster`, square cells) by themselves: no Add Raster Layer dialog.
+  A pinned override for GeoLibre 3.4.0 also prints "axis-map: ready" only when the map is loaded, drawn and idle, so
+  there are no fixed waits or nudges; `render_check.py` / `check.py --render` prove both in headless Chrome.
+- Every view fits its data bounds; the skill sets the browser to 1280×960, takes scale-1 screenshots, reads values as
+  page text and restores the desktop preset at the end.
+- Views that cannot show anything (output identical to legacy, or already reviewed with the same bytes) are skipped
+  as `skipped: identical (<sha256>)`; their receipt counts only while the output still hashes to that sha.
+- `views.py inputs` falls back to every on-disk raster/vector when no input is bound, takes the AOI from the only
+  polygon layer, and skips VRT aliases; `views.py list` prints every URL and cell in one call.
+- The graph editor starts only on request; `migration/graph.md` (Mermaid + PNG, `report/graphview.py`) is shown in
+  the file pane instead; `graph_server.py wait` exits 0 on timeout.
+- Mid-run claims: a progress message claiming more than the computed status gets a correction request (hook H8);
+  answers to mid-run user messages are visible (migrate rule 7).
+
+Report
+- `report/index.html` redesigned: one self-contained file (no network, readable on a phone) with the ladder line
+  verbatim as the hero, what it means and what the next rung needs, failures and decisions first, "Decisions for you"
+  cards with a copy-my-decisions export (never a signature), a card per dataset with thumbnails and a difference
+  chart, lineage coloured by verdict, run timeline, parameters with citations.
+- `report/REPORT.md` for the file pane, `parity.xlsx` (values only), `report.py --check` (deliverables hashed;
+  a missing or changed file fails). Publishing stays opt-in with a customer-data warning.
+
+Interview
+- `PARAM_COVERAGE`: every tool setting and literal in in-scope legacy code is cited by a parameter or waived with a
+  reason (`record.py waive`); `NO_GRAPH` instead of a traceback; XML quotes accepted decoded or raw.
+
+Discover (BYU dry run)
+- Alternative implementations are paired; QGIS models bind their inputs and reference outputs; formula constants are
+  parameters; custom expression functions, reversed containment, nominal-vs-real cell size, foreign host paths and
+  absolute-path columns are flagged; questions grouped by cause.
 
 ## 0.3.0 — 15 Oct 2026
 

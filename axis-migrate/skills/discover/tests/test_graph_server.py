@@ -152,7 +152,8 @@ def test_rt1_round_trip_with_wait(srv: Server):
                                  "ops": [{"type": "add_note", "id": "s02_mask", "text": "later"}]})
     r = subprocess.run([str(gs.AXPY), str(gs.SERVER_PY), "wait", str(srv.mdir), "--timeout", "0.5"],
                        capture_output=True, text=True, timeout=30)
-    assert r.returncode == 2 and json.loads(r.stdout)["unsent_edits"] == 1
+    out = json.loads(r.stdout)
+    assert r.returncode == 0 and out["timeout"] is True and out["edits"] == 0 and out["unsent_edits"] == 1
 
 
 def test_wait_survives_without_server(tmp_path: Path):

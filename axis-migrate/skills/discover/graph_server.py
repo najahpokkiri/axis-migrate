@@ -7,7 +7,7 @@
   wait <migration> [--timeout 540]
                                  file-based (survives server restarts): poll graph-edits.jsonl for a user `submit` with
                                  seq > acks.agent_seq; print the JSON diff {from_rev, to_rev, ops, obligations,
-                                 requires_confirmation, ack_seq} and exit 0; exit 2 on timeout (count of unsent edits).
+                                 requires_confirmation, ack_seq} and exit 0; on timeout {"timeout": true, "edits": 0, …} and exit 0.
 Stdlib only (PyYAML optional, for showing parameter values next to ids).
 """
 from __future__ import annotations
@@ -375,10 +375,11 @@ def wait(mdir: Path, timeout: float = 540.0, poll: float = 0.2) -> int:
             sys.stdout.write(json.dumps(d, sort_keys=True, indent=1, ensure_ascii=False) + "\n")
             return 0
         if time.monotonic() >= deadline:
-            sys.stdout.write(json.dumps({"timeout": True, "unsent_edits": len(recs),
+            # exit 0 (Lux e2e: a timed-out listener showed up as a "failed" background task); "edits": 0 says why
+            sys.stdout.write(json.dumps({"timeout": True, "edits": 0, "unsent_edits": len(recs),
                                          "message": f"no 'Send to agent' within {int(timeout)} s; "
                                                     f"{len(recs)} user edit(s) not yet sent"}, sort_keys=True) + "\n")
-            return 2
+            return 0
         time.sleep(poll)
 
 
@@ -388,7 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("serve", help="start the editor on 127.0.0.1")
     p.add_argument("migration")
     p.add_argument("--port", type=int, default=0)
-    p = sub.add_parser("wait", help="block until the user presses 'Send to agent' (exit 0) or timeout (exit 2)")
+    p = sub.add_parser("wait", help="block until the user presses 'Send to agent' or the timeout (both exit 0)")
     p.add_argument("migration", nargs="?")
     p.add_argument("--timeout", type=float, default=540.0)
     a = ap.parse_args(argv)
