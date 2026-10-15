@@ -653,14 +653,38 @@ class PyAnalyzer:
                     visit(st.body, None)
                     visit(st.orelse, None)
         visit(tree.body, None)
+        ctx_of = {ast.Mult: "mult", ast.Div: "div", ast.FloorDiv: "div", ast.Pow: "pow", ast.Add: "add",
+                  ast.Sub: "sub", ast.Mod: "mod"}
         for node in ast.walk(tree):
-            if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Mult, ast.Div)):
+            # every numeric operand of an arithmetic expression (M7): `(30 ** 2)/10000` gives 30 and 10000
+            if isinstance(node, ast.BinOp) and type(node.op) in ctx_of:
                 for side in (node.left, node.right):
                     if isinstance(side, ast.Constant) and isinstance(side.value, (int, float)) \
                             and not isinstance(side.value, bool) and side.value not in (0, 1, 2, -1):
-                        self.ctx.literals.append({"value": side.value, "line": side.lineno, "cell": self.cell,
-                                                  "context": "mult" if isinstance(node.op, ast.Mult) else "div",
+                        rec = {"value": side.value, "line": side.lineno, "cell": self.cell,
+                               "context": ctx_of[type(node.op)], "file": self.rel, "code": self.code_id}
+                        cs = cell_area_literal(node)
+                        if cs:
+                            rec["cell_size_area"] = cs
+                        self.ctx.literals.append(rec)
+            # dtype casts (M7): .astype(int), .astype({'col': int}), int(<expr>), float(<expr>)
+            if isinstance(node, ast.Call):
+                f = node.func
+                if isinstance(f, ast.Attribute) and f.attr == "astype" and node.args:
+                    a = node.args[0]
+                    pairs = [(k.value if isinstance(k, ast.Constant) else None, v) for k, v in zip(a.keys, a.values)] \
+                        if isinstance(a, ast.Dict) else [(None, a)]
+                    for col, v in pairs:
+                        t = v.id if isinstance(v, ast.Name) else (v.value if isinstance(v, ast.Constant) else
+                                                                  ast.unparse(v))
+                        self.ctx.literals.append({"value": str(t), "line": node.lineno, "cell": self.cell,
+                                                  "context": "dtype", "column": col, "via": "astype",
                                                   "file": self.rel, "code": self.code_id})
+                elif isinstance(f, ast.Name) and f.id in ("int", "float") and len(node.args) == 1 and \
+                        not isinstance(node.args[0], ast.Constant) and self.env.get(f.id) is None:
+                    self.ctx.literals.append({"value": f.id, "line": node.lineno, "cell": self.cell,
+                                              "context": "dtype", "column": None, "via": f"{f.id}()",
+                                              "file": self.rel, "code": self.code_id})
 
     # ---------------------------------------------------------------- statements
     def exec_body(self, body, module_level=False):
@@ -2807,6 +2831,35 @@ def expression_functions(expr: str) -> list[str]:
     return list(dict.fromkeys(m.group(1) for m in re.finditer(r"(?<![\w.])([A-Za-z_]\w*)\s*\(", bare)))
 
 
+AREA_DIVISORS = {10000: "ha", 1000000: "km2"}
+
+
+def cell_area_literal(node) -> dict | None:
+    """`(c ** 2) / 10000`, `c * c / 10000` (also / 1e6): the area of a nominal c-metre cell in ha (km2)."""
+    if not (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div) and isinstance(node.right, ast.Constant)
+            and node.right.value in AREA_DIVISORS):
+        return None
+    sq = node.left
+    if isinstance(sq, ast.BinOp) and isinstance(sq.left, ast.Constant) and isinstance(sq.left.value, (int, float)):
+        c = sq.left.value
+        if (isinstance(sq.op, ast.Pow) and isinstance(sq.right, ast.Constant) and sq.right.value == 2) or \
+                (isinstance(sq.op, ast.Mult) and isinstance(sq.right, ast.Constant) and sq.right.value == c):
+            return {"cell_m": c, "unit": AREA_DIVISORS[node.right.value], "area": c * c / node.right.value}
+    return None
+
+
+def cell_area_expression(expr: str) -> dict | None:
+    """The same pattern in a QGIS expression string (`(30*30)/10000`, `30^2/10000`)."""
+    m = re.search(r"\(?\s*(\d+(?:\.\d+)?)\s*(?:\*\s*(\d+(?:\.\d+)?)|(?:\^|\*\*)\s*2)\s*\)?\s*/\s*(10000|1000000)\b",
+                  expr or "")
+    if not m or (m.group(2) and float(m.group(2)) != float(m.group(1))):
+        return None
+    c = float(m.group(1))
+    c = int(c) if c.is_integer() else c
+    d = int(m.group(3))
+    return {"cell_m": c, "unit": AREA_DIVISORS[d], "area": c * c / d}
+
+
 def expression_numbers(expr: str) -> list[int | float]:
     """Numeric literals of a QGIS expression, in order, outside quoted strings and field names."""
     bare = re.sub(r"'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"", " ", expr or "")
@@ -4648,9 +4701,13 @@ class Scan:
 
     def qsetting(self, o, name, set_by, line, value, via):
         status = {c["id"]: c["status"] for c in self.codes.values()}
-        return {"name": name, "family": "qgis_param", "set_by": set_by, "file": o["file"], "line": line,
-                "code": o["code"], "op_id": o["id"], "value": value, "via": via, "scope": {"op": o["id"]},
-                "applies_to": [o["id"]], "from_superseded": status.get(o["code"]) in ("superseded", "twin")}
+        rec = {"name": name, "family": "qgis_param", "set_by": set_by, "file": o["file"], "line": line,
+               "code": o["code"], "op_id": o["id"], "value": value, "via": via, "scope": {"op": o["id"]},
+               "applies_to": [o["id"]], "from_superseded": status.get(o["code"]) in ("superseded", "twin")}
+        opts = alg_spec(self.ctx.algs, o["tool"]).get("params", {}).get(via, {}).get("options") or {}
+        if opts and str(value) in opts:  # decoded enum label (DATA_TYPE 5 -> Int32), M7
+            rec["label"] = opts[str(value)]
+        return rec
 
     def finish_params(self) -> None:
         status = {c["id"]: c["status"] for c in self.codes.values()}
@@ -4716,6 +4773,12 @@ class Scan:
                                                                                     "line": pv.get("arg_line")}],
                                 "doc_mentions": [], "shadowed_by": None, "flags": [], "comment": None,
                                 "code": o["code"], "from_superseded": status.get(o["code"]) in ("superseded", "twin")})
+                    opts = ospec.get(pname, {}).get("options") or {}
+                    if opts and str(val) in opts:  # decoded enum label next to the raw value (M7)
+                        out[-1]["label"] = opts[str(val)]
+                    cs = cell_area_expression(val) if expr and isinstance(val, str) else None
+                    if cs:
+                        out[-1]["cell_size_area"] = cs
         # numeric literals inside expression parameters (FORMULA `(30*30)/10000`): each number is a parameter (B5)
         for o in self.ops:
             if o["family"] not in ("pyqgis", "qgis_model"):
@@ -4737,11 +4800,16 @@ class Scan:
                                 "code": o["code"], "from_superseded": status.get(o["code"]) in ("superseded", "twin")})
         for l in self.ctx.literals:
             sid = self.step_of.get(l["file"], "x")
-            out.append({"id": f"p.{short_step(sid)}.L{l['line']}.{l['context']}", "name": None, "value": l["value"],
-                        "file": l["file"], "line": l["line"], "kind": "inline_literal", "context": l["context"],
-                        "used_at": [], "doc_mentions": [], "shadowed_by": None, "flags": [],
-                        "comment": comments_at.get((l["file"], l["cell"], l["line"])), "code": l["code"],
-                        "from_superseded": status.get(l["code"]) in ("superseded", "twin")})
+            rec = {"id": f"p.{short_step(sid)}.L{l['line']}.{l['context']}", "name": l.get("column"),
+                   "value": l["value"], "file": l["file"], "line": l["line"],
+                   "kind": "dtype" if l["context"] == "dtype" else "inline_literal", "context": l["context"],
+                   "used_at": [], "doc_mentions": [], "shadowed_by": None, "flags": [],
+                   "comment": comments_at.get((l["file"], l["cell"], l["line"])), "code": l["code"],
+                   "from_superseded": status.get(l["code"]) in ("superseded", "twin")}
+            for k in ("via", "cell_size_area"):
+                if l.get(k):
+                    rec[k] = l[k]
+            out.append(rec)
         # documented constants vs code
         for d in self.docs:
             for c in d["constants"]:
@@ -5287,6 +5355,53 @@ class Scan:
                         function=f.get("function"), arg=f["arg"], empty_matches=f["empty_matches"],
                         detail=f"{f.get('function') or 'module'}(): {f['note']}; an empty or missing value is "
                                f"classified as {f['empty_matches']!r}")
+        # a nominal cell size used for areas next to a geographic grid (M7): `(30*30)/10000` ha per cell vs the real
+        # cell of the rasters the same code reads (else the input rasters), at the AOI's latitude when there is one
+        nominal = defaultdict(list)
+        for p in self.params:
+            if p.get("cell_size_area") and not p.get("from_superseded"):
+                nominal[p["code"]].append(p)
+        aoi_lat = None
+        if self.aoi:
+            try:
+                b = self.profiles[self.datasets[self.aoi]["legacy_path"]]
+                lay = next((l for l in b.get("layers", []) if l["name"] == self.datasets[self.aoi]["layer"]), {})
+                if lay.get("bounds") and (lay.get("crs") or {}).get("is_geographic"):
+                    aoi_lat = (lay["bounds"][1] + lay["bounds"][3]) / 2
+            except (KeyError, TypeError):
+                aoi_lat = None
+        for cid, ps in sorted(nominal.items()):
+            own = sorted({r["dataset"] for o in self.ops if o["code"] == cid for r in o["reads"]
+                          if self.datasets.get(r["dataset"], {}).get("kind") == "raster"
+                          and self.datasets[r["dataset"]]["exists"]})
+            pool = own or sorted(d for d, x in self.datasets.items() if x["kind"] == "raster" and x["exists"]
+                                 and x["role"] == "input" and not x.get("alias_of"))
+            rasters = []
+            for did in pool:
+                pr = self.profiles.get(self.datasets[did]["legacy_path"], {})
+                if not (pr.get("crs") or {}).get("is_geographic") or not pr.get("res"):
+                    continue
+                from pyproj import Geod
+                lat = aoi_lat if aoi_lat is not None else (pr["bounds"][1] + pr["bounds"][3]) / 2
+                g = Geod(ellps="WGS84")
+                _, _, dx = g.inv(0, lat, abs(pr["res"][0]), lat)
+                _, _, dy = g.inv(0, lat, 0, lat + abs(pr["res"][1]))
+                rasters.append({"dataset": did, "res_deg": [abs(pr["res"][0]), abs(pr["res"][1])],
+                                "res_m": [round(dx, 3), round(dy, 3)], "at_lat": round(lat, 4),
+                                "lat_from": "aoi" if aoi_lat is not None else "raster_centre",
+                                "cell_area_m2": round(dx * dy, 2)})
+            if not rasters:
+                continue
+            p0 = ps[0]
+            cs = p0["cell_size_area"]
+            add("nominal_vs_real_cell", "medium", [cid] + [r["dataset"] for r in rasters],
+                [{"kind": "code", "file": p["file"], "line": p["line"], "param": p["id"]} for p in ps]
+                + [{"kind": "raster_profile", **r} for r in rasters], nominal_m=cs["cell_m"], unit=cs["unit"],
+                area_per_cell=cs["area"], rasters_from="same_code" if own else "inventory_inputs",
+                detail=f"nominal {cs['cell_m']:g} m cell = {cs['area']:g} {cs['unit']} per cell; real cells "
+                       + "; ".join(f"{r['dataset']} {r['res_deg'][0]:.6g}° = {r['res_m'][0]:.2f} x "
+                                   f"{r['res_m'][1]:.2f} m at {r['at_lat']:.2f}° ({r['cell_area_m2'] / (1e4 if cs['unit'] == 'ha' else 1e6):.5g} {cs['unit']})"
+                                   for r in rasters))
         # custom expression functions (M1): a function the expression calls that is not a QGIS built-in and is not
         # shipped with the model; a Python def of the same name is cross-referenced as a guess
         builtin = {n.lower() for n in (self.ctx.qgis.get("expression_functions") or {}).get("names", [])}

@@ -104,3 +104,24 @@ def test_scripts_touching_no_existing_file_are_one_grouped_question(fam):
 def test_unused_files_are_one_scope_fact(fam):
     facts = [f for f in fam["graph"]["scope_facts"] if f["fact"] == "unused_files"]
     assert len(facts) == 1 and "ds.spare" in facts[0]["nodes"]
+
+
+def test_numeric_operands_dtype_casts_and_nominal_cell(fam):
+    inv = fam["inv"]
+    ps = {(p["file"], p["line"], p["context"]): p for p in inv["params"] if p["kind"] in ("inline_literal", "dtype")}
+    f = "scripts/impact_script.py"
+    assert ps[(f, 6, "pow")]["value"] == 30 and ps[(f, 6, "div")]["value"] == 10000
+    assert ps[(f, 6, "div")]["cell_size_area"] == {"cell_m": 30, "unit": "ha", "area": 0.09}
+    d = ps[(f, 8, "dtype")]
+    assert d["kind"] == "dtype" and d["value"] == "int" and d["via"] == "astype"
+    lit = next(p for p in inv["params"] if p["kind"] == "tool_literal" and p["name"] == "DATA_TYPE")
+    assert lit["value"] == "5" and lit["label"] == "Int32"
+    st = next(s for s in inv["settings"] if s.get("via") == "DATA_TYPE")
+    assert st["label"] == "Int32"
+    model_formula = next(p for p in inv["params"] if p["kind"] == "tool_literal" and p["value"] == "(30*30)/10000")
+    assert model_formula["cell_size_area"]["cell_m"] == 30
+    oi = [i for i in inv["open_items"] if i["kind"] == "nominal_vs_real_cell"]
+    model = next(i for i in oi if i["about"][0] == code(inv, "models/impact_model.model3")["id"])
+    assert model["nominal_m"] == 30 and model["rasters_from"] == "same_code"
+    r = next(e for e in model["evidence"] if e["kind"] == "raster_profile")
+    assert r["dataset"] == "ds.elevation_dem" and r["res_m"][0] > 600  # 0.01 degree cells, far from 30 m
