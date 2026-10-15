@@ -1,0 +1,36 @@
+You are the skill router of a coding agent. The skills available are listed below (name: description).
+For each user message, independently, answer the ONE skill you would invoke before replying, or "none" if
+you would just answer or do the work directly. Judge each message on its own, as the first message of a new
+conversation in a project folder. Reply with JSON only: {"Q01": "<skill name or none>", ...}.
+
+Skills:
+- pdf: Use whenever the user wants to read, create, merge or fill PDF files.
+- databricks: Use for Databricks work: workspaces, clusters, jobs, Asset Bundles, notebooks and Unity Catalog.
+- axis-migrate:start: Use first under Codex when the user asks to migrate, port or resume a whole legacy desktop GIS project (QGIS, ArcPy/PyQGIS, notebooks, Excel) with axis-migrate. Checks the hooks, names the sandbox approvals, then hands over to the migrate skill. Not for general GIS coding, a one-off geopandas question or Databricks setup.
+- code-review: Review the current diff or a pull request for correctness bugs.
+- python-refactor: Use when restructuring or modernising an existing Python codebase (packaging, typing, tests).
+- axis-migrate:migrate: Use when the user asks to migrate, port or rebuild a whole legacy desktop GIS project (QGIS projects or models, ArcPy/PyQGIS scripts, notebooks, Excel) as a verified Python codebase and cloud job, or to resume a folder that already has migration/. Not for general GIS coding, a one-off geopandas, GDAL or QGIS question, or Databricks setup; answer those directly.
+- dataviz: Use before creating any chart, plot, map visualisation or dashboard, in any library.
+- xlsx: Use when a spreadsheet file (.xlsx, .csv) is the primary input or output: open, edit, clean or create one.
+
+Messages:
+Q01: Convert our ArcPy and PyQGIS scripts in ./gis_scripts_legacy into a reproducible codebase for Databricks.
+Q02: Migrate this repository from setup.py to pyproject.toml.
+Q03: Set up a Databricks Asset Bundle for my existing Python package.
+Q04: Write a geopandas buffer of 100 m around these points and save it as GeoJSON.
+Q05: Start the axis-migrate flow on ./legacy_project.
+Q06: Port the QGIS models in ./models_2019 to a Python pipeline and verify it against the old outputs.
+Q07: Replace our desktop GIS process in ./legacy_noise with a Python codebase, step by step, checked against its intermediate files.
+Q08: The folder ./soil_erosion has a QGIS project, a notebook and an Excel workbook that together make our erosion map. Move it all to Python and prove the map is the same.
+Q09: Rewrite the legacy GIS project in ./transit_access in Python, keeping every output identical to what QGIS produced.
+Q10: Install QGIS 3.40 on Ubuntu.
+Q11: ./heat_risk is a pile of PyQGIS scripts and hand-edited shapefiles. Turn it into a verified Python pipeline.
+Q12: Explain what a QGIS graphical model (.model3) file contains.
+Q13: Plot these two shapefiles on top of each other so I can see the difference.
+Q14: Translate this ArcPy clip call to shapely for me.
+Q15: Migrate the legacy GIS folder ./legacy to Python with axis-migrate.
+Q16: Schedule a Databricks notebook to run hourly and email me on failure.
+Q17: Pick up where we left off on the GIS migration: ./migration already exists.
+Q18: We need the QGIS workflow in ./wetlands running as a cloud job. Migrate it and tell me honestly how far it got.
+Q19: Why does gdalwarp produce a one-pixel shift when I resample to 30 m?
+Q20: Write unit tests for my rasterio zonal statistics function.

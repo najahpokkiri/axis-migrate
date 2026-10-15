@@ -1,8 +1,7 @@
 # axis-migrate under Codex
 
-Codex is a first-class harness with the same hooks, guards and end-to-end gate as the Claude desktop app.
-**14 Oct 2026, premise changed** (Najah): the earlier "no hooks" misread the retired `plugin_hooks` flag; Codex loads
-plugin hooks from `hooks/hooks.json` once trusted, so it gets the same hooks as Claude.
+Codex is a first-class harness with the same hooks, guards and end-to-end gate as the Claude desktop app: it loads
+plugin hooks from `hooks/hooks.json` once trusted (14 Oct 2026; the retired `plugin_hooks` flag was a misread).
 
 ## Install (from GitHub or a fresh clone, never a working tree: Codex copies git-ignored files too; `--doctor` warns)
 
@@ -20,7 +19,8 @@ Manifest: `.codex-plugin/plugin.json` (canonical; no root `plugin.json`, no `hoo
 `hooks/hooks.json`). Marketplace: repo-root `.agents/plugins/marketplace.json`, `source.path` `./axis-migrate`.
 `skills` stays the array `["./skills/", "./codex/skills/"]`: measured on 0.144.4 and 0.162.1, the string
 `"./codex/skills/"` replaces default discovery (only `start` loads, the seven method skills vanish); the list loads
-all 9 (confirmed on the laptop, 0.162.0).
+all 9 (confirmed on the laptop, 0.162.0). Each skill's `agents/openai.yaml` sets `policy.allow_implicit_invocation:
+false` on the sub-steps, so only `start` and `migrate` are offered; the flow reads the others by path.
 
 ## Hooks under Codex
 
@@ -28,9 +28,10 @@ One `hooks/hooks.json` serves both harnesses (commands use `${CLAUDE_PLUGIN_ROOT
 Same event names; the write matcher includes `apply_patch`, whose patch (`tool_input.command`) the guards parse.
 Hooks get `PLUGIN_ROOT` = `CLAUDE_PLUGIN_ROOT` = the cache copy (`~/.codex/plugins/cache/<marketplace>/<plugin>/<version>`)
 and `PLUGIN_DATA` = `CLAUDE_PLUGIN_DATA` = `~/.codex/plugins/data/<plugin>-<marketplace>/`, which does not exist until a
-writer creates it (every writer runs `mkdir -p`); the agent's shell gets neither. In the desktop app the hook
-process cwd is the session root while the shell may run in a subfolder: the guards resolve relative paths against
-the payload's `cwd` and deny when either base could reach a protected path; a missing or unparseable payload denies.
+writer creates it (every writer runs `mkdir -p`). The agent's shell gets neither (nor does Claude Code's Bash tool get
+`CLAUDE_PLUGIN_DATA`), so the pinned environment lives in `~/.cache/axis-migrate/` (`--doctor` prints the path).
+Desktop app: the hook cwd is the session root while the shell may run in a subfolder; the guards resolve relative
+paths against the payload's `cwd`, deny when either base could reach a protected path, and deny a bad payload.
 
 - `permissionDecision: "ask"` is not supported by Codex (the call goes ahead), so under Codex the guards turn it into
   a `deny` saying a person must make or approve the change.
@@ -55,8 +56,7 @@ Approve, once each, with escalated permissions: `scripts/axpy --doctor` (first `
 environment into `~/.cache/axis-migrate/`: network + an outside write); the map environment's first sync
 (`skills/map/`, GeoLibre 3.4.0: same); `graph_server.py serve migration` and `skills/map/start.py migration` (bind
 127.0.0.1); `run_local.py` if `--doctor` says strace cannot trace inside the sandbox. Refused: the script prints one
-FAIL line and the flow stops there; ask for that one narrowest approval. Claude's `allowLocalBinding` does not
-apply to Codex.
+FAIL line and the flow stops there; ask for that one narrowest approval (Claude's `allowLocalBinding` does not apply).
 
 ## Showing pages
 

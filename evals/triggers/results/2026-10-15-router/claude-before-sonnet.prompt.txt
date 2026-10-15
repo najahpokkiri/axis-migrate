@@ -1,0 +1,42 @@
+You are the skill router of a coding agent. The skills available are listed below (name: description).
+For each user message, independently, answer the ONE skill you would invoke before replying, or "none" if
+you would just answer or do the work directly. Judge each message on its own, as the first message of a new
+conversation in a project folder. Reply with JSON only: {"Q01": "<skill name or none>", ...}.
+
+Skills:
+- python-refactor: Use when restructuring or modernising an existing Python codebase (packaging, typing, tests).
+- dataviz: Use before creating any chart, plot, map visualisation or dashboard, in any library.
+- axis-migrate:discover: First step of /migrate. Scan a read-only legacy GIS folder into migration/inventory.json, draw and inspect the input maps, record map findings with numbers, build the legacy workflow graph (graph.json) and open the graph editor. Use before any question, plan or pipeline code exists, and again (scan only) whenever the legacy folder changes.
+- databricks: Use for Databricks work: workspaces, clusters, jobs, Asset Bundles, notebooks and Unity Catalog.
+- axis-migrate:target: Generate the Databricks job files (Asset Bundle + committed wheel) for a reference-verified pipeline and run the offline target checks T1–T13, including a traced dry run of the packaged wheel, to earn or refuse "target-ready (Databricks), not deployed". Never deploys, authenticates or contacts a workspace.
+- axis-migrate:run: Execute the migrated pipeline (migration/pipeline/) step by step in the one locked environment and write a sealed, immutable run directory with a read/write ledger. Use for every execution of pipeline code — isolated per-step runs while migrating, the chained run that verify grades, and the reference-env control run. Never run pipeline modules any other way.
+- axis-migrate:migrate: Entry point. Migrate a legacy desktop GIS project (QGIS projects and models, ArcPy/PyQGIS scripts, notebooks, Excel, hand edits) into a reproducible Python codebase and a cloud job, verified step by step against the legacy outputs, with a status computed by ladder.py (discover → interview → plan → build step by step → verify → report → Databricks bundle, never deployed). Use when the user runs /axis-migrate:migrate <folder> or asks to migrate, port or verify a legacy GIS folder, or to resume one that has a migration/ folder.
+- xlsx: Use when a spreadsheet file (.xlsx, .csv) is the primary input or output: open, edit, clean or create one.
+- axis-migrate:verify: Prove per-step parity of a pipeline run against the legacy run's own intermediates and finals. Compare every lineage pair (compare.py), render legacy | new | difference plots (plot.py), LOOK at every compared dataset — on the GeoLibre map views (map skill) where the harness has a browser pane, else at the PNG plots — and answer the calibrated rubric (review-add; you may only flag), aggregate verdicts and blame, run the repair loop within its limits, and propose (never sign) tolerance records. Use after every isolated step run while migrating and after the chained run.
+- code-review: Review the current diff or a pull request for correctness bugs.
+- axis-migrate:report: Seal a verified run into a hash-checked evidence bundle, compute the status rung with ladder.py and render migration/report/index.html (failures first, swipe map, per-dataset map views and receipts, parity table, run history). Use after compare, plot, visual review and aggregate have finished on a CHAINED run, after target_check.py (to seal target evidence), and whenever you need the current status line.
+- axis-migrate:interview: Investigate every output-changing parameter of a legacy GIS workflow from its files (params.yaml with file:line citations), then ask the analyst only what the files cannot answer and parity cannot catch, one question at a time, and record answers in decisions.md. Use after discover has written graph.json and before planning code.
+- pdf: Use whenever the user wants to read, create, merge or fill PDF files.
+- axis-migrate:map: Look at legacy vs new results on a live map (GeoLibre, local only) and show them to the person in the harness's own browser pane. Build the views of a compared run (legacy, new, diff and validity COGs, GeoJSON, one GeoLibre project per view), start the local map server, open the views, switch the raster engine, toggle layers and identify cells. Display only; use after compare.py (and plot.py) on a run.
+
+Messages:
+Q01: Can you migrate the GIS project in ./old_project? It's a QGIS project, a couple of PyQGIS scripts and an Excel lookup table.
+Q02: Write a PyQGIS script that exports every layer in the open project to a GeoPackage.
+Q03: Write a geopandas function that buffers all roads by 50 m and dissolves the result.
+Q04: Our analysts built a land-cover workflow in QGIS over years, with hand edits along the way. Get ./landcover_legacy into a codebase we can rerun.
+Q05: Compare these two GeoTIFFs, a.tif and b.tif, and tell me how many cells differ.
+Q06: We want to drop the QGIS desktop dependency. ./hazard_maps has the project, the models and the intermediate rasters. Move it to Python and check every step matches.
+Q07: Port the legacy folder ./catchments (notebooks, Excel formulas and a QGIS graphical model) to Python and package it as a Databricks job.
+Q08: Make an interactive web map of parcels.gpkg with folium.
+Q09: Resume the GIS migration in this folder, there's a migration/ directory from yesterday.
+Q10: We have a legacy ArcPy workflow in ./legacy_landuse. Migrate it to a reproducible Python codebase.
+Q11: I inherited ./zonal_stats_legacy: ArcPy scripts plus a spreadsheet someone ran by hand every quarter. Can you convert the whole thing to Python and show it reproduces last quarter's results?
+Q12: Turn the desktop GIS workflow in ./legacy (qgz, model3 and two notebooks) into a pipeline we can run in the cloud, and prove it gives the same outputs.
+Q13: Migrate our Postgres database from version 13 to 16.
+Q14: Set up a Databricks job that runs a Python wheel every night.
+Q15: Rebuild our old PyQGIS processing chain in ./chain as a proper Python codebase, checked against the outputs it produced.
+Q16: My QGIS project shows broken layer paths after I moved the folder. How do I fix them?
+Q17: How do I configure a Databricks cluster with GDAL installed?
+Q18: Convert this one line to geopandas: arcpy.Buffer_analysis('roads', 'roads_buf', '50 Meters')
+Q19: How do I reproject a GeoTIFF to EPSG:3857 with rasterio?
+Q20: Port my QGIS model in ./flood_model to Python so it can run on Databricks.

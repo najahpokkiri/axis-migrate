@@ -1,0 +1,7 @@
+# Codex only (Claude Code ignores this file). Codex users start with $axis-migrate:start, which hands over here.
+interface:
+  display_name: "Migrate legacy GIS"
+  short_description: "Legacy GIS project to verified Python"
+  default_prompt: "Use $axis-migrate:migrate to migrate the legacy GIS folder ./legacy"
+policy:
+  allow_implicit_invocation: true

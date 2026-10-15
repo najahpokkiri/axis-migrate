@@ -1,6 +1,7 @@
 ---
 name: run
-description: Execute the migrated pipeline (migration/pipeline/) step by step in the one locked environment and write a sealed, immutable run directory with a read/write ledger. Use for every execution of pipeline code — isolated per-step runs while migrating, the chained run that verify grades, and the reference-env control run. Never run pipeline modules any other way.
+description: Sub-step of the axis-migrate migrate flow. Use for every execution of migration/pipeline/ code (isolated steps, the chained run, the control run) as sealed, ledgered runs in the pinned environment. Never run pipeline modules another way.
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
 # Run

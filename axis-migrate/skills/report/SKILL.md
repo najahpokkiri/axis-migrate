@@ -1,6 +1,7 @@
 ---
 name: report
-description: Seal a verified run into a hash-checked evidence bundle, compute the status rung with ladder.py and render migration/report/index.html (failures first, swipe map, per-dataset map views and receipts, parity table, run history). Use after compare, plot, visual review and aggregate have finished on a CHAINED run, after target_check.py (to seal target evidence), and whenever you need the current status line.
+description: Sub-step of the axis-migrate migrate flow. Use after verify on a chained run, after the target checks, or whenever the current status line is needed. Seals the evidence, computes the rung with ladder.py and renders the report.
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
 # Seal, compute the status, render the report

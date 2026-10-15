@@ -1,6 +1,7 @@
 ---
 name: discover
-description: First step of /migrate. Scan a read-only legacy GIS folder into migration/inventory.json, draw and inspect the input maps, record map findings with numbers, build the legacy workflow graph (graph.json) and open the graph editor. Use before any question, plan or pipeline code exists, and again (scan only) whenever the legacy folder changes.
+description: Sub-step of the axis-migrate migrate flow. Use inside a migration to scan the read-only legacy folder, map its inputs and build the workflow graph, before any question or plan, and again (scan only) when the legacy folder changes.
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
 # Discover

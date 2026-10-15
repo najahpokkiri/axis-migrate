@@ -1,6 +1,7 @@
 ---
 name: target
-description: Generate the Databricks job files (Asset Bundle + committed wheel) for a reference-verified pipeline and run the offline target checks T1–T13, including a traced dry run of the packaged wheel, to earn or refuse "target-ready (Databricks), not deployed". Never deploys, authenticates or contacts a workspace.
+description: Sub-step of the axis-migrate migrate flow. Use when a reference-verified pipeline needs its Databricks Asset Bundle and the offline target checks and dry run. Never deploys. Not for general Databricks setup or job questions.
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
 # Target: Databricks job files and the honest `target-ready`

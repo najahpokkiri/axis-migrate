@@ -1,0 +1,7 @@
+# Codex only (Claude Code ignores this file). A sub-step of the migration flow: hidden from implicit
+# invocation so only $axis-migrate:start and migrate are offered; the flow still reads this SKILL.md by path.
+interface:
+  display_name: "Databricks target"
+  short_description: "Sub-step of migrate: bundle, offline checks"
+policy:
+  allow_implicit_invocation: false

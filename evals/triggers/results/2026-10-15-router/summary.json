@@ -1,0 +1,83 @@
+[
+ {
+  "arm": "claude-before-sonnet",
+  "descriptions": "HEAD 82356cc",
+  "harness_named_in_prompt": "no",
+  "model": "sonnet",
+  "should_trigger": "10/10",
+  "near_miss_quiet": "10/10",
+  "misses": []
+ },
+ {
+  "arm": "claude-v1-sonnet",
+  "descriptions": "first rewrite",
+  "harness_named_in_prompt": "no",
+  "model": "sonnet",
+  "should_trigger": "10/10",
+  "near_miss_quiet": "10/10",
+  "misses": []
+ },
+ {
+  "arm": "claude-final-sonnet",
+  "descriptions": "final",
+  "harness_named_in_prompt": "yes",
+  "model": "sonnet",
+  "should_trigger": "10/10",
+  "near_miss_quiet": "10/10",
+  "misses": []
+ },
+ {
+  "arm": "claude-final-haiku",
+  "descriptions": "final",
+  "harness_named_in_prompt": "yes",
+  "model": "haiku",
+  "should_trigger": "10/10",
+  "near_miss_quiet": "10/10",
+  "misses": []
+ },
+ {
+  "arm": "codex-before-sonnet",
+  "descriptions": "HEAD 82356cc (no openai.yaml: 9 skills listed)",
+  "harness_named_in_prompt": "no",
+  "model": "sonnet",
+  "should_trigger": "10/10",
+  "near_miss_quiet": "10/10",
+  "misses": []
+ },
+ {
+  "arm": "codex-v1-sonnet",
+  "descriptions": "first rewrite (2 skills listed)",
+  "harness_named_in_prompt": "no",
+  "model": "sonnet",
+  "should_trigger": "2/10",
+  "near_miss_quiet": "10/10",
+  "misses": [
+   "s-t03\u2192axis-migrate:migrate",
+   "s-t02\u2192axis-migrate:migrate",
+   "s-t06\u2192axis-migrate:migrate",
+   "s-t05\u2192axis-migrate:migrate",
+   "s-t08\u2192axis-migrate:migrate",
+   "s-t10\u2192axis-migrate:migrate",
+   "s-t04\u2192axis-migrate:migrate",
+   "s-t07\u2192axis-migrate:migrate"
+  ]
+ },
+ {
+  "arm": "codex-final-sonnet",
+  "descriptions": "final (2 skills listed)",
+  "harness_named_in_prompt": "yes",
+  "model": "sonnet",
+  "should_trigger": "10/10",
+  "near_miss_quiet": "10/10",
+  "misses": []
+ },
+ {
+  "arm": "codex-final-haiku",
+  "descriptions": "final (2 skills listed)",
+  "harness_named_in_prompt": "yes",
+  "model": "haiku",
+  "should_trigger": "10/10",
+  "near_miss_quiet": "10/10",
+  "misses": []
+ }
+]

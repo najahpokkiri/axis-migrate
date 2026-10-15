@@ -1,6 +1,7 @@
 ---
 name: verify
-description: Prove per-step parity of a pipeline run against the legacy run's own intermediates and finals. Compare every lineage pair (compare.py), render legacy | new | difference plots (plot.py), LOOK at every compared dataset — on the GeoLibre map views (map skill) where the harness has a browser pane, else at the PNG plots — and answer the calibrated rubric (review-add; you may only flag), aggregate verdicts and blame, run the repair loop within its limits, and propose (never sign) tolerance records. Use after every isolated step run while migrating and after the chained run.
+description: Sub-step of the axis-migrate migrate flow. Use after each step run and the chained run to compare against the legacy outputs, look at every dataset and propose (never sign) tolerances. Not for comparing rasters or vectors outside a migration.
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
 # Verify: numbers decide, map views and plots show, you look and may only flag
@@ -8,6 +9,8 @@ description: Prove per-step parity of a pipeline run against the legacy run's ow
 `$P` = plugin root. Run every script as `"$P/scripts/axpy" "$P/skills/verify/<script>.py" …` from the project directory.
 `<run>` = `migration/runs/<run_id>` (printed by `run_local.py`). One verify per run: a changed tolerance, known
 difference or pairing needs a **new run**; never re-verify an old run after editing those files.
+Not for comparing rasters, vectors or tables outside a migration (no `migration/runs/`): answer such a request
+directly and start no migration.
 
 ## 1 Compare (the only producer of verdicts)
 `compare.py run --run <run> [--dataset ds.x]… [--json]` pairs datasets from graph lineage only, freezes the contract

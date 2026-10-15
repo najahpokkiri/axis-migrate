@@ -1,0 +1,7 @@
+# Codex entry point for axis-migrate (what /axis-migrate:migrate is under Claude Code).
+interface:
+  display_name: "axis-migrate: start"
+  short_description: "Start or resume a legacy GIS migration"
+  default_prompt: "Use $axis-migrate:start to migrate the legacy GIS folder ./legacy"
+policy:
+  allow_implicit_invocation: true

@@ -3,6 +3,17 @@
 `graph.json` (schema `axis-migrate.graph.v1`) is written only by `skills/discover/graph.py`. Write/Edit on
 `graph.json` or `graph-edits.jsonl` is denied by hook. This file is the exact contract for every op.
 
+Contents (read only the section you need):
+1. How to write: derived fields (never set them), edges and evidence
+2. ACL: who may apply which op
+3. Ops (exact JSON): structure, scope, questions, plan, migration and pairing, review (editor only), channel and
+   bookkeeping
+4. The agent's obligations per user edit
+5. Other commands
+6. Projections written by verify and derive
+7. graph_server.py
+8. Integrity (script half of the graph.json write guard)
+
 ## 1 How to write
 
 ```

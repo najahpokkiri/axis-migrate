@@ -7,7 +7,8 @@
     {
       "name": "axis-migrate",
       "source": "./axis-migrate",
-      "description": "Turn legacy desktop GIS projects into a reproducible Python codebase on your cloud, verified step by step against the legacy outputs, with a computed, honest status."
+      "description": "Turn a legacy desktop GIS project into a reproducible Python codebase on your cloud, verified step by step against the legacy outputs, with a computed status."
     }
-  ]
+  ],
+  "description": "Axis Spatial's axis-migrate plugin: legacy desktop GIS projects to a verified Python codebase on your cloud."
 }

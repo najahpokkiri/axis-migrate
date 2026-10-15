@@ -1,6 +1,7 @@
 ---
 name: interview
-description: Investigate every output-changing parameter of a legacy GIS workflow from its files (params.yaml with file:line citations), then ask the analyst only what the files cannot answer and parity cannot catch, one question at a time, and record answers in decisions.md. Use after discover has written graph.json and before planning code.
+description: Sub-step of the axis-migrate migrate flow. Use after discover to resolve every output-changing parameter from the legacy files with citations, then ask the analyst only what the files cannot answer, one question at a time.
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
 # Investigate, then interview

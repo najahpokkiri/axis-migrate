@@ -1,6 +1,7 @@
 ---
 name: map
-description: Look at legacy vs new results on a live map (GeoLibre, local only) and show them to the person in the harness's own browser pane. Build the views of a compared run (legacy, new, diff and validity COGs, GeoJSON, one GeoLibre project per view), start the local map server, open the views, switch the raster engine, toggle layers and identify cells. Display only; use after compare.py (and plot.py) on a run.
+description: Sub-step of the axis-migrate migrate flow. Use to show legacy and new results of a migration on a local GeoLibre map in the harness pane (display only; numbers still decide). Not for general web maps or GIS visualisation.
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
 # Map: you look, the person watches; numbers still decide
@@ -9,6 +10,7 @@ description: Look at legacy vs new results on a live map (GeoLibre, local only) 
 from the project folder (they switch to the map env themselves; first use installs GeoLibre 3.4.0, ~60 MB download,
 outside the plugin folder). Nothing here feeds a verdict: findings go through `plot.py review-add` as a view
 receipt (verify SKILL §3.6: view projects + sha256, engine, cells read) or, without a pane, as PNG receipts.
+Not for general web maps or GIS visualisation outside a migration: answer those directly and start no migration.
 
 ## 0 Before compare (discover)
 `views.py inputs migration` (no run needed; reads `inventory.json`, roles from `graph.json` when it exists) writes

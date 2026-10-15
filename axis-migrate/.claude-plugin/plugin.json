@@ -1,6 +1,6 @@
 {
   "name": "axis-migrate",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Moves a legacy, GUI-based desktop GIS project (QGIS projects and models, ArcPy/PyQGIS scripts, notebooks, Excel, hand edits) into a reproducible Python codebase and onto your cloud platform (Databricks today), verifying every step against the legacy run's own intermediates and final outputs and reporting one status computed from evidence, never claimed by the agent.",
   "author": {
     "name": "Axis Spatial"
@@ -16,5 +16,24 @@
     "cloud",
     "databricks",
     "parity"
-  ]
+  ],
+  "userConfig": {
+    "sandbox": {
+      "type": "string",
+      "title": "Where pipeline runs execute",
+      "description": "local: on this machine (default). e2b: in an E2B Linux sandbox with the strace read ledger; needs the E2B key below and asks before every upload.",
+      "options": [
+        "local",
+        "e2b"
+      ],
+      "default": "local"
+    },
+    "e2b_api_key": {
+      "type": "string",
+      "title": "E2B API key (optional)",
+      "description": "E2B API key — only for the optional E2B sandbox; stored in your credential store, used by the plugin's scripts, never shown to the agent",
+      "sensitive": true,
+      "required": false
+    }
+  }
 }

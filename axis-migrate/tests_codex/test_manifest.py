@@ -79,14 +79,17 @@ def test_interface_and_default_prompts():
     iface = _load(CODEX)["interface"]
     for k in ("displayName", "shortDescription", "longDescription", "developerName", "category"):
         assert isinstance(iface.get(k), str) and iface[k].strip(), f"interface.{k}"
-    assert iface["shortDescription"] == "Legacy desktop GIS to a verified Python codebase on your cloud"
+    assert len(iface["shortDescription"]) <= 30, "shortDescription: at most 30 characters (Codex compact views)"
     assert isinstance(iface.get("capabilities"), list) and iface["capabilities"]
     prompts = iface.get("defaultPrompt")
     assert isinstance(prompts, list) and 1 <= len(prompts) <= 3, "defaultPrompt: 1-3 entries"
     assert all(isinstance(p, str) and 0 < len(p) <= 128 for p in prompts), "each defaultPrompt <= 128 chars"
+    for k in ("composerIcon", "logo"):
+        assert k in iface, f"interface.{k}"
     for k in ("composerIcon", "logo", "logoDark"):
         if k in iface:
-            _inside(PLUGIN, iface[k])
+            p = _inside(PLUGIN, iface[k])
+            assert p.suffix == ".png" and p.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n", f"{k}: a PNG under ./assets/"
 
 
 def test_skill_roots_load_method_skills_and_start():
@@ -101,6 +104,65 @@ def test_skill_roots_load_method_skills_and_start():
             names.append(fm["name"])
     assert len(names) == len(set(names)), f"duplicate skill names across roots: {names}"
     assert METHOD_SKILLS | {"start"} <= set(names)
+
+
+def _skill_dirs() -> list[Path]:
+    return sorted(d for root in (PLUGIN / "skills", PLUGIN / "codex" / "skills") for d in root.iterdir()
+                  if (d / "SKILL.md").is_file())
+
+
+def test_frontmatter_is_plain_yaml_short_and_intent_first():
+    """Descriptions stay short (the skill listing has a shared budget: over it, Claude Code lists the least-used
+    skills by name only) and parse as plain YAML scalars (a ': ' or ' #' inside one breaks the YAML, and Claude Code
+    then loads the skill with no description). No angle brackets anywhere in frontmatter."""
+    for d in _skill_dirs():
+        text = (d / "SKILL.md").read_text(encoding="utf-8")
+        fm_text = text[4:text.find("\n---", 4)]
+        assert "<" not in fm_text and ">" not in fm_text, f"{d.name}: angle brackets in frontmatter"
+        desc = _frontmatter(d / "SKILL.md")["description"]
+        assert desc.startswith(("Use ", "Sub-step of the axis-migrate migrate flow. Use ")), f"{d.name}: intent first"
+        assert len(desc) <= 400, f"{d.name}: description {len(desc)} chars (keep it crisp)"
+        assert ": " not in desc and " #" not in desc and not desc.startswith(("'", '"', "[", "{")), d.name
+        try:
+            import yaml
+        except ImportError:
+            continue
+        fm = yaml.safe_load(fm_text)
+        assert fm["description"] == desc and fm["name"] == d.name
+        assert isinstance(fm.get("argument-hint", ""), str), f"{d.name}: argument-hint must be a string (quote it)"
+
+
+def test_axpy_preapproved_in_every_method_skill():
+    rule = "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *)"
+    for d in (PLUGIN / "skills").iterdir():
+        if (d / "SKILL.md").is_file():
+            assert rule in _frontmatter(d / "SKILL.md").get("allowed-tools", ""), f"{d.name}: allowed-tools"
+
+
+def test_codex_implicit_invocation_policy():
+    """Under Codex only migrate and start are offered implicitly; the sub-steps are read by path from the flow."""
+    for d in _skill_dirs():
+        y = d / "agents" / "openai.yaml"
+        assert y.is_file(), f"{d.name}: agents/openai.yaml"
+        text = y.read_text(encoding="utf-8")
+        m = re.search(r"^policy:\n  allow_implicit_invocation: (true|false)$", text, re.M)
+        assert m, f"{d.name}: policy.allow_implicit_invocation"
+        assert (m.group(1) == "true") == (d.name in {"migrate", "start"}), d.name
+        sd = re.search(r'^  short_description: "([^"]*)"$', text, re.M)
+        assert sd and 0 < len(sd.group(1)) <= 64, f"{d.name}: short_description"
+
+
+def test_versions_in_step():
+    v = _load(CLAUDE)["version"]
+    common = (PLUGIN / "lib" / "axis_common.py").read_text(encoding="utf-8")
+    assert f'PLUGIN_VERSION = "{v}"' in common, "lib/axis_common.py PLUGIN_VERSION == manifest version"
+    assert f"## {v}" in (PLUGIN / "CHANGELOG.md").read_text(encoding="utf-8"), "CHANGELOG.md has the version"
+
+
+def test_claude_user_config():
+    uc = _load(CLAUDE)["userConfig"]
+    assert uc["e2b_api_key"]["sensitive"] is True and uc["e2b_api_key"].get("required") is not True
+    assert uc["sandbox"]["options"] == ["local", "e2b"] and uc["sandbox"]["default"] == "local"
 
 
 def test_start_skill_is_thin_and_its_references_exist():
