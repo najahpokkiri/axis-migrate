@@ -429,6 +429,19 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False,
     check_coverage(mdir, graph, data, f)
 
     records = check_records(mdir, set(by_id), f, overrides.get("decisions.md"))
+    # an assumption recorded in decisions.md is an assumption in params.yaml too (B6: a param named by a kind:
+    # assumption decision stayed `confirmed`, so the report undercounted the assumptions)
+    withdrawn = {str(x) for d in records["decisions"] for x in _as_list(d.get("supersedes"))}
+    for d in records["decisions"]:
+        if d.get("kind") != "assumption" or str(d.get("id")) in withdrawn:
+            continue
+        for pid in _as_list(d.get("params")):
+            p = by_id.get(pid)
+            if p and p.get("status") != "assumed" and p.get("source") != "answer":
+                f.block("ASSUMPTION_NOT_ASSUMED", pid, f"{d.get('id')} records {pid} as an assumption but params.yaml "
+                                                       f"has status {p.get('status')!r}: set status assumed "
+                                                       "(record.py param) or have a person confirm it (record.py "
+                                                       "answer)")
 
     reads = pipeline_param_reads(mdir / "pipeline")
     summary = {"params": len(by_id), "modules": sorted(reads), "stage": stage}
@@ -491,8 +504,14 @@ def main(argv=None) -> int:
     ap.add_argument("--fill-used-by", action="store_true")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
+    mdir = Path(a.migration).resolve()
+    if (mdir / "graph.json").is_file() and not (mdir / "params.yaml").exists():
+        print(f"params_check: PARAMS_MISSING {mdir / 'params.yaml'} does not exist yet. Create it with "
+              f"`axpy record.py init {a.migration}` (version, budget, target), then add entries with "
+              "`record.py param`.", file=sys.stderr)
+        return 2
     try:
-        f, summary = check(Path(a.migration).resolve(), a.stage, a.fill_used_by)
+        f, summary = check(mdir, a.stage, a.fill_used_by)
     except Exception as e:  # checker fault, never a pass
         print(f"params_check: CHECKER_ERROR {type(e).__name__}: {e}", file=sys.stderr)
         traceback.print_exc()

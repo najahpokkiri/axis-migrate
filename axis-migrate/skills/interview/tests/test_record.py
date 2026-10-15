@@ -145,10 +145,11 @@ def test_answer_resolves_so_the_runtime_accepts_it(tmp_path):
 def test_param_creates_and_updates(tmp_path):
     mig = make(tmp_path)
     res = record.set_param(mig, "p.cell_m", {"node": "s01_a", "kind": "cell_size", "value": 100, "unit": "m",
-                                             "resolution": "resolved", "source": "code", "status": "confirmed",
+                                             "resolution": "resolved", "source": "code",
                                              "reason": "literal", "evidence": [{"ref": "a.py:1", "quote": "x = 1"}],
                                              "impact": {"datasets": ["ds.out"], "level": "high"}}, new=True)
     assert res["created"] and params(mig)["p.cell_m"]["value"] == 100
+    assert params(mig)["p.cell_m"]["status"] == "confirmed"      # stated by the files: the script confirms it
     assert list(params(mig)["p.cell_m"])[:3] == ["id", "node", "kind"]
     record.set_param(mig, "p.cell_m", {"value": 30})
     assert params(mig)["p.cell_m"]["value"] == 30
@@ -165,7 +166,7 @@ def test_param_refuses_what_belongs_to_answer_and_bad_states(tmp_path):
         record.set_param(mig, "p.policy", {"source": "answer"})
     with pytest.raises(ValueError, match="cannot set"):
         record.set_param(mig, "p.policy", {"question": "q01"})
-    with pytest.raises(ValueError, match="RESOLUTION_STATUS"):     # resolved must be confirmed: validated first
+    with pytest.raises(ValueError, match="QUESTION_ON_RESOLVED"):  # validated first: q01 asks about it
         record.set_param(mig, "p.policy", {"resolution": "resolved", "evidence": [{"ref": "a.py:1", "quote": "x = 1"}]})
     with pytest.raises(ValueError, match="not in decisions.md"):
         record.set_param(mig, "p.policy", {"decisions": ["D-009"]})
@@ -185,3 +186,53 @@ def test_param_cli(tmp_path):
                           "--json", str(e)], capture_output=True, text=True)
     assert out.returncode == 0, out.stderr
     assert "p.other updated (reason)" in out.stdout
+
+
+# B6 / B11 / B14 (BYU e2e) ------------------------------------------------------------------------------------------
+def test_param_never_takes_confirmed_from_the_agent(tmp_path):
+    mig = make(tmp_path)
+    before = (mig / "params.yaml").read_text()
+    with pytest.raises(ValueError, match="record.py answer"):
+        record.set_param(mig, "p.other", {"status": "confirmed"})
+    with pytest.raises(ValueError, match="resolution resolved needs"):      # an inference is not a file fact
+        record.set_param(mig, "p.other", {"resolution": "resolved", "source": "agent_decision", "value": 0.0892,
+                                          "evidence": [{"ref": "a.py:1", "quote": "x = 1"}]})
+    assert (mig / "params.yaml").read_text() == before
+    record.set_param(mig, "p.other", {"resolution": "inferred", "confidence": "low", "method": "unit-cell",
+                                      "status": "assumed", "value": 0.0892,
+                                      "evidence": [{"ref": "a.py:1", "quote": "x = 1"}]})
+    assert params(mig)["p.other"]["status"] == "assumed"
+
+
+def test_decision_with_question_points_to_answer(tmp_path):
+    mig = make(tmp_path)
+    with pytest.raises(ValueError, match="record.py answer"):
+        record.append(mig, "decision", entry(question="q01"))
+    assert not (mig / "decisions.md").exists()
+    assert record.append(mig, "decision", entry(kind="scope")) == "D-001"     # no question: fine
+
+
+def test_init_creates_params_yaml_once(tmp_path):
+    mig = make(tmp_path)
+    (mig / "params.yaml").unlink()
+    r = subprocess.run([sys.executable, str(HERE.parent / "params_check.py"), str(mig)], capture_output=True, text=True)
+    assert r.returncode != 0 and "record.py init" in r.stderr and "Traceback" not in r.stderr
+    assert record.main(["init", str(mig), "--max-questions", "5"]) == 0
+    doc = yaml.safe_load((mig / "params.yaml").read_text())
+    assert doc["version"] == 1 and doc["budget"] == {"max_questions": 5, "asked": 0} and doc["params"] == []
+    assert doc["target"]["platform"] == "databricks"
+    assert record.main(["init", str(mig)]) == 2                                 # never overwrites
+
+
+def test_assumption_decision_on_a_confirmed_param_blocks(tmp_path):
+    """B6: the decision says assumption, params.yaml says confirmed: params_check flags it (report count honest)."""
+    mig = make(tmp_path)
+    data = yaml.safe_load((mig / "params.yaml").read_text())
+    data["params"].append({"id": "p.cell_area_ha", "node": "s01_a", "kind": "other", "value": 0.0892,
+                           "resolution": "resolved", "source": "code", "status": "confirmed", "reason": "r",
+                           "evidence": [{"ref": "a.py:1", "quote": "x = 1"}]})
+    (mig / "params.yaml").write_text(yaml.safe_dump(data, sort_keys=False))
+    record.append(mig, "decision", {"title": "Real cell area", "kind": "assumption", "answer": "0.0892 ha",
+                                    "by": "agent", "params": ["p.cell_area_ha"]})
+    codes = {(i["code"], i["where"]) for i in pc.check(mig, "investigate")[0].blocking}
+    assert ("ASSUMPTION_NOT_ASSUMED", "p.cell_area_ha") in codes

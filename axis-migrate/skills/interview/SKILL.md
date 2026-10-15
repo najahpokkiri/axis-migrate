@@ -36,7 +36,11 @@ For every step in topological order (`graph.py show migration`), read its legacy
    question, recommended **keep for parity**.
 7. Fill `impact.datasets` from the graph's downstream closure. Add `p.measure_crs` (a local metric CRS, never degrees
    or EPSG:3857) whenever a vector dataset will be compared.
-8. Write each entry with `record.py param` (§3). Every tool setting and literal the scan found in in-scope code is
+8. Create `params.yaml` once with `"$P/scripts/axpy" "$P/skills/interview/record.py" init migration [--max-questions 5]
+   [--target none]` (never with Write), then write each entry with `record.py param` (§3). `param` never takes
+   `status: confirmed`: a value the files state verbatim (`resolution: resolved`, source code/notes/project/
+   input_data/reference_metadata, evidence) is confirmed by the script; a value you inferred or computed is
+   `inferred` + `assumed`; only a person's answer (`record.py answer`) confirms anything else. Every tool setting and literal the scan found in in-scope code is
    either cited by a parameter or waived: `record.py waive migration --id <id> [--id …] --reason "<why no output
    changes>"` (encoder options, thread counts; never a data type, CRS, extent, field name or formula constant). Run
    `params_check.py migration` until it exits 0 (`PARAM_COVERAGE` names what is still uncited).
@@ -69,7 +73,8 @@ what changes downstream"`; options: recommended first labelled "(Recommended)", 
   "Don't know" → `kind: assumption`, the value becomes `assumed`). An `assumed` output-changing parameter that parity
   cannot see caps the status at sandbox-validated (`ASSUMED_PARITY_BLIND`) until a person confirms it.
 - Every other params.yaml change goes through `record.py param migration --param p.x [--new] --json fields.json`
-  and decisions without a parameter through `record.py decision`. Never rewrite params.yaml or decisions.md with
+  and decisions without a parameter through `record.py decision` (a `decision` naming a `question` is refused:
+  answered questions go through `answer`, so the budget counts them). Never rewrite params.yaml or decisions.md with
   Python or an editor (a hook refuses it); correct an entry by recording a new one with `supersedes: D-nnn`.
 
 A free-text "Other" answer is restated as a concrete params change and confirmed once ("Recorded as X = …, correct?").

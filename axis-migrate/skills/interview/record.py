@@ -8,8 +8,15 @@
                             # create or update one params.yaml entry (investigation findings, fit blocks, …)
     axpy record.py waive    migration --id set.s01.op2.x [--id …] --reason "encoder option, no effect on values"
                             # settings/literals that change no output (params_check PARAM_COVERAGE)
+    axpy record.py init     migration [--max-questions 8] [--target databricks|none]
+                            # create params.yaml (version, budget, params: [], target block); refused if it exists
 
-params.yaml has only these two writers (plus params_check.py --fill-used-by for `used_by`): never rewrite it with ad
+Only `answer` makes a parameter `status: confirmed` by a person. `param` never takes `status: confirmed`: a value
+the files state verbatim (resolution resolved, source code|notes|project|input_data|reference_metadata, evidence)
+gets `confirmed` from the script; anything the agent inferred stays `assumed`/`open`. A `decision` that carries a
+`question` is refused: an answered question goes through `answer` (which counts it against the budget).
+
+params.yaml has only these writers (plus params_check.py --fill-used-by for `used_by`): never rewrite it with ad
 hoc Python or an editor. Both re-validate with params_check.py before writing and replace the file atomically.
 
 `answer` records what one interview question settled: it appends the decision (as `decision` does; `question` and
@@ -74,7 +81,7 @@ def append(mdir: Path, what: str, entry: dict) -> str:
     return nid
 
 
-def render(mdir: Path, what: str, entry: dict) -> tuple[Path, str, str]:
+def render(mdir: Path, what: str, entry: dict, *, answering: bool = False) -> tuple[Path, str, str]:
     """(file, its new full text, new id) for an entry; nothing is written."""
     entry = dict(entry)
     title = str(entry.pop("title", "")).strip()
@@ -86,6 +93,11 @@ def render(mdir: Path, what: str, entry: dict) -> tuple[Path, str, str]:
             raise ValueError(f"kind must be one of {sorted(DEC_KINDS)}")
         if not entry.get("by"):
             raise ValueError("by is required (user (AskUserQuestion) | user (graph) | user (chat) | agent)")
+        if entry.get("question") and not answering:
+            raise ValueError(f"a decision answering {entry['question']} is recorded with `record.py answer migration "
+                             f"--param p.x --question {entry['question']} --json entry.json` (decision and params.yaml "
+                             "together, and the question budget counts it); `decision` is for decisions without a "
+                             "question")
     else:
         path, prefix, keys = mdir / "known-differences.md", "KD", KD_KEYS
         if entry.get("kind") not in KD_KINDS:
@@ -167,7 +179,7 @@ def answer(mdir: Path, param_ids: list[str], question: str, entry: dict) -> dict
             changes[pid] = {"from": p.get("value"), "to": values[pid]}
     if changes and entry.get("changes") is None:
         entry["changes"] = changes
-    dpath, dtext, nid = render(mdir, "decision", entry)
+    dpath, dtext, nid = render(mdir, "decision", entry, answering=True)
     for pid in pids:
         p = by_id[pid]
         if pid in values:
@@ -207,6 +219,7 @@ PARAM_FIELDS = ["id", "node", "kind", "value", "unit", "resolution", "source", "
                 "method", "flags", "impact", "status", "question", "decisions", "used_by", "fit", "fitted_against"]
 SETTABLE = set(PARAM_FIELDS) - {"id", "question", "used_by", "decisions"}
 SETTLED_FIELDS = {"value", "source", "status", "resolution"}
+FILE_SOURCES = {"code", "notes", "project", "input_data", "reference_metadata"}
 
 
 def _validated_write(mdir: Path, new_ptext: str, extra: dict | None = None):
@@ -233,6 +246,10 @@ def set_param(mdir: Path, pid: str, fields: dict, *, new: bool = False) -> dict:
                          "question/source answer come from record.py answer, used_by from params_check --fill-used-by)")
     if fields.get("source") in ("answer", "assumption"):
         raise ValueError("source answer|assumption is written by `record.py answer` together with its decision")
+    if fields.get("status") == "confirmed":
+        raise ValueError("status: confirmed is set only by `record.py answer` (a person's answer). For a value the "
+                         "files state verbatim give resolution: resolved, source: code|notes|project|input_data|"
+                         "reference_metadata and evidence: the status follows. Anything inferred stays assumed/open")
     ptext = (mdir / "params.yaml").read_text(encoding="utf-8")
     data = yaml.safe_load(ptext) or {}
     params = data.setdefault("params", [])
@@ -254,6 +271,16 @@ def set_param(mdir: Path, pid: str, fields: dict, *, new: bool = False) -> dict:
         cur = {"id": pid}
         params.append(cur)
     cur.update(fields)
+    if cur.get("source") != "answer":
+        if cur.get("resolution") == "resolved":
+            if cur.get("source") not in FILE_SOURCES or not cur.get("evidence"):
+                raise ValueError(f"{pid}: resolution resolved needs a value the files state (source "
+                                 f"{'|'.join(sorted(FILE_SOURCES))} with evidence) or a person's answer "
+                                 "(`record.py answer`); an inferred value is resolution: inferred, status: assumed")
+            cur["status"] = "confirmed"                    # confirmed by the files, not by the agent's say-so
+        elif cur.get("status") == "confirmed":
+            raise ValueError(f"{pid} is confirmed but resolution {cur.get('resolution')!r}: only a resolved value "
+                             "the files state, or a person's answer, is confirmed (set status assumed or open)")
     if adds:
         cur["decisions"] = list(dict.fromkeys(list(cur.get("decisions") or []) + adds))
     ordered = {k: cur[k] for k in PARAM_FIELDS if k in cur}
@@ -285,9 +312,30 @@ def waive(mdir: Path, ids: list[str], reason: str, by: str = "agent") -> dict:
     return {"added": new, "already": sorted(set(ids) & have)}
 
 
+TARGET_DEFAULT = {"platform": "databricks", "runtime": "dbr-17.3-lts", "compute": "job_cluster_single_node",
+                  "node_memory_gb": None, "volume": {"catalog": None, "schema": None, "volume": None},
+                  "io": {"no_seek_roots": []}}
+
+
+def init(mdir: Path, max_questions: int = 8, target: str = "databricks") -> Path:
+    """Create params.yaml: version, budget, an empty params list and the target block (Databricks unless the user
+    said otherwise; `none` = local only). Never overwrites."""
+    p = mdir / "params.yaml"
+    if p.exists():
+        raise ValueError(f"{p} exists; change it with `record.py param` / `answer`")
+    if not (mdir / "graph.json").is_file():
+        raise ValueError(f"{mdir} has no graph.json: run discover first")
+    doc = {"version": 1, "budget": {"max_questions": int(max_questions), "asked": 0}, "params": []}
+    if target and target != "none":
+        doc["target"] = dict(TARGET_DEFAULT, platform=target)
+    text = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=120)
+    ac.atomic_write_text(p, text)
+    return p
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("what", choices=["decision", "kd", "answer", "param", "waive"])
+    ap.add_argument("what", choices=["decision", "kd", "answer", "param", "waive", "init"])
     ap.add_argument("migration")
     ap.add_argument("--json", help="path to entry.json, or - for stdin (all but waive)")
     ap.add_argument("--id", action="append", default=[], help="waive: an inventory setting/literal id (repeat)")
@@ -295,7 +343,17 @@ def main(argv=None) -> int:
     ap.add_argument("--param", action="append", default=[], help="answer: a parameter the question settles (repeat)")
     ap.add_argument("--question", help="answer: the graph question id (qNN)")
     ap.add_argument("--new", action="store_true", help="param: create the entry")
+    ap.add_argument("--max-questions", type=int, default=8, help="init: the question budget (demo 5)")
+    ap.add_argument("--target", default="databricks", help="init: target.platform, or none (local only)")
     a = ap.parse_args(argv)
+    if a.what == "init":
+        try:
+            out = init(Path(a.migration).resolve(), a.max_questions, a.target)
+        except (ValueError, OSError) as e:
+            print(f"record.py: refused: {e}", file=sys.stderr)
+            return 2
+        print(f"wrote {out} (budget {a.max_questions}, target {a.target})")
+        return 0
     if a.what == "answer" and not (a.param and a.question):
         ap.error("answer needs --param and --question")
     if a.what == "param" and (len(a.param) != 1 or a.question):
