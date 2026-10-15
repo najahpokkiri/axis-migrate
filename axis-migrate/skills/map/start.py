@@ -4,11 +4,16 @@
     python3 start.py <migration> [--port 0]
 
 Ensures the map env (mapenv.py), picks a free port on 127.0.0.1 (or uses --port), writes the per-session override
-(<migration>/.axis/map/override/{deployment.json, plugin-registry.json}: sharing off, local empty plugin registry,
-welcome off, embedOrigins = this server's own origin), starts serve.py in the background (pid file
+(<migration>/.axis/map/override/{deployment.json, plugin-registry.json, blocklist.json, geolibre-runtime-config.js}:
+sharing off, local empty plugin registry and blocklist, welcome off, embedOrigins = this server's own origin, GPU
+raster engine and readiness line), starts serve.py in the background (pid file
 <migration>/.axis/map/serve.pid, state <migration>/.axis/map/server.json, log serve.log) and prints ONE line of JSON:
 
-    {"url_base": "http://127.0.0.1:<port>", "port": <port>, "data_root": "<migration>", "pid": <pid>}
+    {"url_base": "http://127.0.0.1:<port>", "port": <port>, "data_root": "<migration>", "pid": <pid>,
+     "engine_preset": true, "geolibre": "3.4.0"}
+
+engine_preset: the page switches rasters to the GPU engine maplibre-gl-raster on load and shows a readiness line
+("axis-map: ready …"; <html data-axis-map="ready">); false on any other GeoLibre version (switch it by hand).
 
 `data_root` is served under /data/. A server already running for this migration is reused (same line printed).
 Nothing is written into the plugin folder. Exit: 0 running · 2 bad migration folder · 13 env/bind failure.
@@ -36,6 +41,8 @@ BIND_MSG = ("map server could not bind 127.0.0.1 — rerun this one command outs
             "with escalated permissions; Claude Code: sandbox.network.allowLocalBinding)")
 EXIT_ENV = 13
 READY_TIMEOUT_S = 15
+ENGINE_PRESET_VERSION = "3.4.0"       # override/geolibre-runtime-config.js was written against this GeoLibre build
+RUNTIME_JS = "geolibre-runtime-config.js"
 
 
 def state_dir(migration: Path) -> Path:
@@ -91,24 +98,49 @@ def pick_port(port: int) -> int:
         s.close()
 
 
-def write_override(sd: Path, port: int) -> Path:
+def geolibre_version(app: Path) -> str | None:
+    """Version of the GeoLibre package whose web app is served (from its dist-info next to the package)."""
+    for d in sorted(Path(app).resolve().parents[2].glob("geolibre-*.dist-info")):
+        try:
+            for ln in (d / "METADATA").read_text(errors="replace").splitlines():
+                if ln.startswith("Version:"):
+                    return ln.split(":", 1)[1].strip()
+        except OSError:
+            continue
+    return None
+
+
+def write_override(sd: Path, port: int, app: Path | None = None) -> tuple[Path, dict]:
+    """The per-session override folder serve.py serves at the app root: deployment.json (sharing off, this origin),
+    plugin-registry.json (empty), blocklist.json (empty: the app's 404 on it was the red Diagnostics badge) and, for
+    the pinned GeoLibre version only, geolibre-runtime-config.js (GPU raster engine on load + readiness marker)."""
     ovr = sd / "override"
     ovr.mkdir(parents=True, exist_ok=True)
     origin = f"http://127.0.0.1:{port}"
     dep = json.loads((HERE / "override" / "deployment.json").read_text())
     dep["sharing"]["embedOrigins"] = [origin]
-    for name, text in (("deployment.json", json.dumps(dep, indent=2, sort_keys=True) + "\n"),
-                       ("plugin-registry.json", (HERE / "override" / "plugin-registry.json").read_text())):
+    files = [("deployment.json", json.dumps(dep, indent=2, sort_keys=True) + "\n"),
+             ("plugin-registry.json", (HERE / "override" / "plugin-registry.json").read_text()),
+             ("blocklist.json", (HERE / "override" / "blocklist.json").read_text())]
+    ver = geolibre_version(app) if app else None
+    preset = {"geolibre": ver, "engine_preset": ver == ENGINE_PRESET_VERSION}
+    if preset["engine_preset"]:
+        files.append((RUNTIME_JS, (HERE / "override" / RUNTIME_JS).read_text()))
+    else:
+        preset["note"] = (f"GeoLibre {ver} is not {ENGINE_PRESET_VERSION}: no engine preset or readiness marker; "
+                          "switch the raster engine by hand (Add Data -> Raster Layer -> maplibre-gl-raster)")
+        (ovr / RUNTIME_JS).unlink(missing_ok=True)
+    for name, text in files:
         tmp = ovr / (name + ".tmp")
         tmp.write_text(text)
         os.replace(tmp, ovr / name)
-    return ovr
+    return ovr, preset
 
 
 def launch(migration: Path, app: Path, port: int) -> dict:
     sd = state_dir(migration)
     sd.mkdir(parents=True, exist_ok=True)
-    ovr = write_override(sd, port)
+    ovr, preset = write_override(sd, port, app)
     ready = sd / "ready.json"
     if ready.exists():
         ready.unlink()
@@ -137,7 +169,7 @@ def launch(migration: Path, app: Path, port: int) -> dict:
         p.terminate()
         raise BindRefused("bound but not reachable on 127.0.0.1")
     st = {"url_base": f"http://127.0.0.1:{port}", "port": port, "data_root": str(Path(migration).resolve()),
-          "pid": p.pid, "app": str(app), "override": str(ovr), "started_at": int(time.time())}
+          "pid": p.pid, "app": str(app), "override": str(ovr), "started_at": int(time.time()), **preset}
     (sd / "serve.pid").write_text(f"{p.pid}\n")
     tmp = sd / "server.json.tmp"
     tmp.write_text(json.dumps(st, indent=1, sort_keys=True) + "\n")
@@ -149,6 +181,9 @@ def start(migration: Path, port: int = 0) -> dict:
     migration = Path(migration).resolve()
     st = running(migration)
     if st:
+        if st.get("app"):                    # refresh the override (served per request) for a reused server
+            _, preset = write_override(state_dir(migration), int(st["port"]), Path(st["app"]))
+            st.update(preset)
         return st
     py = mapenv.ensure()
     app = mapenv.app_dir(py)
@@ -165,7 +200,7 @@ def start(migration: Path, port: int = 0) -> dict:
 
 
 def public(st: dict) -> dict:
-    return {k: st[k] for k in ("url_base", "port", "data_root", "pid")}
+    return {k: st.get(k) for k in ("url_base", "port", "data_root", "pid", "engine_preset", "geolibre")}
 
 
 def main(argv=None) -> int:

@@ -257,3 +257,77 @@ def test_changed_project_refused_and_stops_counting(proj, tmp_path):
     finally:
         p.write_bytes(keep)
     assert findings(mig).returncode == 0
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Lux e2e feedback: cameras fit a 1280×960 pane, no $TMPDIR writes, GPU engine preset + readiness line (headless)
+# ---------------------------------------------------------------------------------------------------------------
+def test_overview_fits_its_data_at_the_viewport(proj):
+    import math
+    d = doc(proj["mig"])
+    cam = d["projects"]["inputs-overview"]["camera"]
+    bbs = [e["bounds_4326"] for e in d["datasets"] if e["role"] == "input"]
+    w, s, e, n = (min(b[0] for b in bbs), min(b[1] for b in bbs), max(b[2] for b in bbs), max(b[3] for b in bbs))
+    merc = lambda lat: math.log(math.tan(math.pi / 4 + math.radians(lat) / 2)) / (2 * math.pi)  # noqa: E731
+    scale = 512 * 2 ** cam["zoom"]
+    width_px, height_px = (e - w) / 360 * scale, (merc(n) - merc(s)) * scale
+    assert width_px <= 1192 and height_px <= 860                            # whole extent in the map canvas
+    assert max(width_px / 1192, height_px / 860) > 0.5                      # and not a tiny speck in it
+    assert cam["center"][0] == pytest.approx((w + e) / 2, abs=1e-6)
+
+
+def test_no_writes_to_tmpdir(proj, tmp_path):
+    import os
+    td = tmp_path / "tmpdir"
+    td.mkdir()
+    env = dict(os.environ, TMPDIR=str(td), TMP=str(td), TEMP=str(td))
+    cp = run_cli("views.py", "inputs", proj["mig"], env=env)
+    assert cp.returncode == 0, cp.stderr
+    assert list(td.iterdir()) == []
+
+
+def chrome() -> str | None:
+    import shutil as sh
+    return next((c for c in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser") if sh.which(c)),
+                None)
+
+
+def test_crisp_metric_separates_squares_from_smoothing():
+    res = map_py("import render_check as R, io, json, numpy as np; from PIL import Image\n"
+                 "rng = np.random.default_rng(1); cells = rng.integers(0, 255, (12, 12, 3)).astype('uint8')\n"
+                 "sq = np.kron(cells, np.ones((64, 64, 1), dtype='uint8'))\n"
+                 "img = Image.fromarray(sq); sm = img.resize((48, 48)).resize(img.size, Image.BILINEAR)\n"
+                 "def png(i):\n b = io.BytesIO(); i.save(b, 'PNG'); return b.getvalue()\n"
+                 "rect = {'x': 384, 'y': 384, 'width': 768, 'height': 768}\n"
+                 "print(json.dumps([R.crisp_ratio(png(img), rect), R.crisp_ratio(png(sm), rect)]))")
+    crisp, smooth = res
+    assert crisp < 0.03 and smooth > 0.15
+
+
+@pytest.mark.skipif(chrome() is None, reason="no Chrome/Chromium for the headless render check")
+def test_engine_preset_and_readiness_headless(proj):
+    """Served override: the page switches rasters to maplibre-gl-raster itself (no Add Raster Layer dialog), marks
+    itself ready (data-axis-map, status line with the project sha256 and the click centre), and the cells are drawn
+    as squares. Without the override there is no readiness marker."""
+    cp = run_cli("check.py", "--inputs", proj["mig"], "--render", "--json", "--keep-server")
+    try:
+        assert cp.returncode == 0, cp.stdout + cp.stderr
+        res = json.loads(cp.stdout)
+        r = {x["view"]: x for x in res["render"]["results"]}
+        assert res["render"]["pages"] == 5 and set(r) >= {"inputs-overview", "grid-raw", "ds.raw/cell-max"}
+        for x in r.values():
+            assert x["ready"] and x["engine"] == "maplibre-gl-raster" and x["crisp"] <= 0.06, x
+        st = json.loads((proj["mig"] / ".axis" / "map" / "server.json").read_text())
+        d = doc(proj["mig"])
+        cell = ent(d, "ds.raw")["cells_to_identify"][0]
+        out = map_py("import render_check as R, json, views\n"
+                     f"u = views.page_url({st['port']}, {cell['url_path']!r})\n"
+                     "print(json.dumps(R.check_pages([u])[0]))")
+        assert out["status"]["projectSha256"] == cell["project_sha256"]           # the page hashed what it shows
+        assert "click centre" in out["status_line"] and out["status"]["centre"]["x"] > 0
+        (proj["mig"] / ".axis" / "map" / "override" / "geolibre-runtime-config.js").unlink()
+        out = map_py("import render_check as R, json, views\n"
+                     f"print(json.dumps(R.check_pages([views.page_url({st['port']}, {cell['url_path']!r})])[0]))")
+        assert "no readiness marker" in out["problem"]
+    finally:
+        run_cli("stop.py", proj["mig"])

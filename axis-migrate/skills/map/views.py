@@ -5,6 +5,7 @@
     python3 views.py url --run <run_dir> --dataset ds --view overview|worst|edges|nodata [--port N]
     python3 views.py url --run <run_dir> --dataset ds --cell worst|interior|edge [--port N]
     python3 views.py url --run <run_dir> --all [--port N] [--json]
+    python3 views.py list --run <run_dir> | --inputs <migration> [--port N] [--json]   every URL and cell in one call
     python3 views.py inputs <migration> [--json]                                  (discover, before compare)
     python3 views.py inputs-url <migration> --view inputs-overview|grid-<family> [--port N]
     python3 views.py inputs-url <migration> --dataset ds --cell <id> | --feature <id> [--port N]
@@ -68,6 +69,7 @@ PLUGIN = HERE.parents[1]
 sys.path.insert(0, str(PLUGIN / "lib"))
 sys.path.insert(0, str(HERE))
 import axis_common as ac  # noqa: E402
+import visual_receipt as vrc  # noqa: E402
 
 SCHEMA = "axis-migrate.map-views.v1"
 GENERATOR = {"name": "axis-migrate.map.views", "version": "1.0.0"}
@@ -202,9 +204,19 @@ def cog_copy(src: Path, dst: Path) -> None:
     os.replace(tmp, dst)
 
 
+def work_dir(dst: Path) -> Path:
+    """<migration>/.axis/tmp for scratch files (never $TMPDIR: it differs inside and outside a sandbox)."""
+    for p in Path(dst).resolve().parents:
+        if (p / "inventory.json").is_file() or (p / "graph.json").is_file() or (p / "runs").is_dir():
+            d = p / ".axis" / "tmp"
+            d.mkdir(parents=True, exist_ok=True)
+            return d
+    return Path(dst).resolve().parent
+
+
 def cog_write(dst: Path, arr, *, transform, crs, nodata) -> None:
     import rasterio
-    with tempfile.TemporaryDirectory(prefix="axis-views-") as td:
+    with tempfile.TemporaryDirectory(prefix="axis-views-", dir=work_dir(dst)) as td:
         t = Path(td) / "a.tif"
         with rasterio.open(t, "w", driver="GTiff", width=arr.shape[1], height=arr.shape[0], count=1,
                            dtype=arr.dtype.name, crs=crs, transform=transform, nodata=nodata, tiled=True,
@@ -302,7 +314,11 @@ def zoom_for(tr4326, grid_tr, row: int, col: int, px: int) -> float:
     return round(min(22.0, max(0.0, z)), 3)
 
 
-def fit_zoom(bbox: list[float], width=1024, height=768, pad=40) -> tuple[list[float], float]:
+VIEWPORT = (1280, 960)          # the pane size map SKILL §2 sets (resize_window) before the first view
+MAP_CANVAS = (1192, 860)        # GeoLibre's map canvas inside it (side rails, menu bar, status bar), with margin
+
+
+def fit_zoom(bbox: list[float], width=MAP_CANVAS[0], height=MAP_CANVAS[1], pad=40) -> tuple[list[float], float]:
     w, s, e, n = bbox
     merc = lambda lat: math.log(math.tan(math.pi / 4 + math.radians(max(-85.0, min(85.0, lat))) / 2)) / (2 * math.pi)  # noqa: E731
     fx = max((e - w) / 360.0, 1e-12)
@@ -638,6 +654,15 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
     if not places and wc:
         places.append({"name": "largest |new − legacy|", "center": cells["worst"]["camera"]["center"]})
         src = "views.py max |d|"
+    # ---- views that cannot show anything are not built (views.json says why: omitted_views)
+    omit = {}
+    if cmp.get("verdict") == "PASS_EXACT":
+        for v in ("worst", "edges", "nodata"):
+            omit[v] = "PASS_EXACT: equal values on every cell (one overview and one cell are enough)"
+        cells = {k: c for k, c in cells.items() if k == "interior"} or dict(list(cells.items())[:1])
+    elif lim == 0:
+        omit["worst"] = "no difference: max |new − legacy| = 0"
+        cells.pop("worst", None)
     # ---- cameras
     from rasterio.transform import array_bounds
     b = array_bounds(shape[0], shape[1], gtr)
@@ -684,7 +709,7 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
     view_cells = {"overview": ["interior"], "worst": ["worst", "interior"], "edges": ["edge", "interior"],
                   "nodata": ["edge", "interior"]}
     views = {}
-    for v in RASTER_VIEWS:
+    for v in [x for x in RASTER_VIEWS if x not in omit]:
         specs = []
         for lay in base:
             s = {k: lay[k] for k in ("name", "kind", "colormap", "rescale", "reversed", "style") if k in lay}
@@ -735,7 +760,7 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
             "diff_scale": {"min": -dl, "max": dl, "max_abs_diff": lim, "palette": DIFF_PALETTE + " reversed",
                            "meaning": "orange = new larger, purple = legacy larger, transparent = equal or nodata"},
             "validity_counts": counts, "bounds_4326": [round(x, 9) for x in bbox],
-            "places": {"source": src, "items": places}, "views": views}
+            "places": {"source": src, "items": places}, "views": views, "omitted_views": omit}
 
 
 def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) -> dict:
@@ -781,12 +806,17 @@ def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                     break
     else:
         cam["worst"] = {**cam["overview"], "source": "no geometric difference: data extent"}
+    omit = {}
+    if cmp.get("verdict") == "PASS_EXACT":
+        omit["worst"] = "PASS_EXACT: equal features (one overview is enough)"
+    elif piece is None:
+        omit["worst"] = "no geometric difference"
     specs = [{"name": "legacy", "role": "legacy", "kind": "vector", "path": files["legacy"],
               "style": {"fillColor": C_LEGACY, "fillOpacity": 0.15, "strokeColor": C_LEGACY, "strokeWidth": 2}},
              {"name": "new", "role": "new", "kind": "vector", "path": files["new"],
               "style": {"fillColor": C_NEW, "fillOpacity": 0.0, "strokeColor": C_NEW, "strokeWidth": 1.5}}]
     views = {}
-    for v in VECTOR_VIEWS:
+    for v in [x for x in VECTOR_VIEWS if x not in omit]:
         ls = [{"name": s["name"], "kind": "vector", "url": ctx.up(s["path"]), "visible": True, "style": s["style"]}
               for s in specs]
         bms = [{"name": f"feature: {f['side']}", "center": f["camera"]["center"], "zoom": f["camera"]["zoom"]}
@@ -806,7 +836,7 @@ def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                         "new": {"path": (cmp.get("new") or {}).get("path"), "sha256": ac.sha256_file(Np)
                                 if Np.is_file() else ac.tree_hash(Np)}},
             "files": {k: ctx.file_entry(p) for k, p in files.items()}, "crs": disp.get("crs"),
-            "bounds_4326": bbox, "views": views}
+            "bounds_4326": bbox, "views": views, "omitted_views": omit}
 
 
 def build_views(run_dir: Path, datasets: list[str] | None = None) -> tuple[dict, int]:
@@ -832,6 +862,13 @@ def build_views(run_dir: Path, datasets: list[str] | None = None) -> tuple[dict,
         skipped.pop(dsid, None)
         if fam not in ("raster", "vector"):
             skipped[dsid] = {"dataset": dsid, "reason": f"family {fam} has no map view"}
+            continue
+        nothing = vrc.nothing_to_show(ctx.run, cmp)          # identical to legacy, or reviewed before byte for byte
+        if nothing:
+            out = ctx.root / dsid
+            if out.exists():
+                shutil.rmtree(out)
+            skipped[dsid] = {"dataset": dsid, **nothing}
             continue
         L, N = rm.locate(ctx.run, cmp, ctx.graph, ctx.manifest)
         if L is None or N is None:
@@ -1460,6 +1497,73 @@ def cmd_inputs_url(a) -> int:
     return 0
 
 
+CLICK_NOTE = ("cell-/feature- projects open centred on their cell: after resize_window, click the map centre the "
+              "page's status line gives ('axis-map: ready … click centre x,y', CSS px = screenshot px at scale 1)")
+
+
+def cmd_list(a) -> int:
+    """Every view and cell of a run (or of discover's inputs) in one call: URLs, project shas, cell values."""
+    if a.inputs:
+        mig = Path(a.inputs).resolve()
+        idx = inputs_index(mig)
+    else:
+        run = Path(a.run).resolve()
+        idx = find_index(run)
+        try:
+            mig = migration_of(run)
+        except SetupError as e:
+            print(f"views.py: {e}", file=sys.stderr)
+            return 2
+    if idx is None:
+        print("views.py: no views index: run `views.py run --run <dir>` (or `views.py inputs <migration>`) first",
+              file=sys.stderr)
+        return 2
+    doc = _load(idx) or {}
+    port = _port(mig, a.port)
+    if port is None:
+        return 2
+    out = {"index": Path(idx).resolve().relative_to(mig).as_posix(), "mode": doc.get("mode") or "run",
+           "run_id": doc.get("run_id"), "click": CLICK_NOTE, "viewport": {"width": VIEWPORT[0], "height": VIEWPORT[1]},
+           "views": [], "cells": [], "features": [], "skipped": doc.get("skipped") or []}
+    ref = lambda x: {"project": x["project"], "project_sha256": x["project_sha256"]}  # noqa: E731
+    for name, pe in sorted((doc.get("projects") or {}).items()):
+        out["views"].append({"view": name, "url": page_url(port, pe["url_path"]), **ref(pe)})
+    for e in doc.get("datasets") or []:
+        ds = e["dataset"]
+        views = e.get("views")
+        if isinstance(views, dict):
+            for v, ve in sorted(views.items()):
+                out["views"].append({"dataset": ds, "view": v, "url": page_url(port, ve["url_path"]), **ref(ve)})
+            if e.get("omitted_views"):
+                out["views"] += [{"dataset": ds, "view": v, "omitted": why} for v, why in
+                                 sorted(e["omitted_views"].items())]
+        cells = {}
+        for c in (e.get("cells_to_identify") or []) + [c for ve in (views.values() if isinstance(views, dict) else [])
+                                                      for c in ve.get("cells_to_identify") or []]:
+            if c.get("id") and c.get("url_path"):
+                cells[c["id"]] = c
+        for k, c in sorted(cells.items()):
+            vals = {x: c.get(x) for x in ("value", "legacy_value", "new_value", "validity", "row", "col") if x in c}
+            out["cells"].append({"dataset": ds, "cell": k, "url": page_url(port, c["url_path"]), **ref(c), **vals})
+        for f in e.get("features_to_identify") or []:
+            if f.get("url_path"):
+                out["features"].append({"dataset": ds, "feature": f["id"], "url": page_url(port, f["url_path"]),
+                                        **ref(f), "properties": f.get("properties")})
+    if a.json:
+        print(json.dumps(out, sort_keys=True, indent=1))
+    else:
+        for v in out["views"]:
+            print(f"{v.get('dataset', '-')} {v['view']}: {v.get('url') or 'omitted (' + v['omitted'] + ')'}")
+        for c in out["cells"]:
+            print(f"{c['dataset']} cell-{c['cell']}: {c['url']}")
+        for f in out["features"]:
+            print(f"{f['dataset']} feature-{f['feature']}: {f['url']}")
+        for s_ in out["skipped"]:
+            print(f"{s_['dataset']}: no views ({s_['reason']})")
+        print(CLICK_NOTE)
+    return 0
+
+
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     ap = argparse.ArgumentParser(description="GeoLibre map views of a compared run (display only).")
@@ -1490,7 +1594,15 @@ def main(argv=None) -> int:
     iu.add_argument("--dataset")
     iu.add_argument("--port", type=int, default=0, help="server port (default: the one start.py recorded)")
     iu.add_argument("--json", action="store_true")
+    li = sub.add_parser("list", help="every view and cell to identify, with URLs and shas, in one call")
+    g2 = li.add_mutually_exclusive_group(required=True)
+    g2.add_argument("--run", help="a compared run (verify views)")
+    g2.add_argument("--inputs", metavar="MIGRATION", help="discover's inputs views")
+    li.add_argument("--port", type=int, default=0)
+    li.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
+    if a.cmd == "list":
+        return cmd_list(a)
     if a.cmd == "run":
         ensure_map_env(argv)
         return cmd_run(a)

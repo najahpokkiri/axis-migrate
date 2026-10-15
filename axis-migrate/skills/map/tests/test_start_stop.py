@@ -39,7 +39,8 @@ def test_start_stop_roundtrip(tmp_path):
     lines = cp.stdout.strip().splitlines()
     assert len(lines) == 1
     info = json.loads(lines[0])
-    assert set(info) == {"url_base", "port", "data_root", "pid"}
+    assert set(info) == {"url_base", "port", "data_root", "pid", "engine_preset", "geolibre"}
+    assert info["engine_preset"] is True and info["geolibre"] == "3.4.0"
     port = info["port"]
     assert info["url_base"] == f"http://127.0.0.1:{port}" and Path(info["data_root"]) == mig.resolve()
     try:
@@ -51,6 +52,13 @@ def test_start_stop_roundtrip(tmp_path):
         assert json.loads((sd / "override" / "plugin-registry.json").read_text()) == []
         with OPENER.open(f"{info['url_base']}/deployment.json", timeout=10) as r:
             assert json.loads(r.read()) == dep                            # served from the per-session override
+        # the override that sets the GPU raster engine and the readiness line, and an empty plugin blocklist (the
+        # app's 404 on /blocklist.json was the red Diagnostics badge)
+        with OPENER.open(f"{info['url_base']}/geolibre-runtime-config.js", timeout=10) as r:
+            js = r.read().decode()
+            assert "maplibre-gl-raster" in js and "data-axis-map" in js and "__GEOLIBRE_DEPLOYMENT_ENV__" in js
+        with OPENER.open(f"{info['url_base']}/blocklist.json", timeout=10) as r:
+            assert json.loads(r.read()) == {"blocked": []}
         with OPENER.open(f"{info['url_base']}/data/runs/hello.txt", timeout=10) as r:
             assert r.read() == b"hi\n"
         # the plugin's own template is untouched

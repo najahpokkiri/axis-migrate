@@ -132,7 +132,8 @@ def _ref_problem(x, what: str) -> str | None:
 
 
 def check_view_receipt(f: dict, *, family: str | None, lookup, cells: dict | None = None,
-                       validity_counts: dict | None = None, bounds: list | None = None) -> list[str]:
+                       validity_counts: dict | None = None, bounds: list | None = None,
+                       omitted: dict | None = None) -> list[str]:
     """Problems of a view receipt (empty = it counts). `lookup(rel)` → {name, sha256 (the indexed sha), current
     (sha of the bytes now, None when missing)} or None when the project is not a view of this dataset. `cells` (views.json
     cells_to_identify by id) enables the value check; `validity_counts` the 'nothing found' contradiction check;
@@ -176,9 +177,14 @@ def check_view_receipt(f: dict, *, family: str | None, lookup, cells: dict | Non
         names[info["name"]] = s["project"]
     if probs:
         return probs
-    missing = [x for x in REQUIRED_VIEWS[fam] if x not in names]
+    # views.py does not build views that cannot show anything (views.json omitted_views: PASS_EXACT, max|d| = 0);
+    # without the index (ladder.py: sealed views only) a required view that is not a view of this dataset is one
+    root, ds = root_of(rels[0]), f.get("dataset_id")
+    required = [x for x in REQUIRED_VIEWS[fam] if not (x in (omitted or {}) or (
+        omitted is None and lookup(f"{root}/{ds}/{x}.geolibre.json") is None))]
+    missing = [x for x in required if x not in names]
     if missing:
-        return [f"views_seen must include the {', '.join(REQUIRED_VIEWS[fam])} views of a {fam}; missing "
+        return [f"views_seen must include the {', '.join(required)} views of this {fam}; missing "
                 f"{', '.join(missing)}"]
     eng = f.get("engine")
     if fam == "raster" and eng != ENGINE_GPU:
@@ -283,7 +289,78 @@ def check_view_on_disk(run_dir: Path, run_id: str, f: dict, family: str | None) 
     _, cells = entry_projects(e)
     return check_view_receipt(f, family=family, lookup=disk_lookup(run_dir, e), cells=cells,
                               validity_counts=e.get("validity_counts") if family == "raster" else None,
-                              bounds=e.get("bounds_4326"))
+                              bounds=e.get("bounds_4326"), omitted=e.get("omitted_views") or {})
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# datasets with nothing to look at: identical to legacy, or byte-equal to an earlier run that was reviewed
+# ---------------------------------------------------------------------------------------------------------------
+IDENTICAL_CODE = "CANDIDATE_IDENTICAL_TO_REFERENCE"
+
+
+def _shas(res: dict) -> tuple:
+    return ((res.get("legacy") or {}).get("sha256"), (res.get("new") or {}).get("sha256"))
+
+
+def earlier_review(run_dir: Path, ds: str, shas: tuple) -> str | None:
+    """run_id of an earlier run of this migration whose compare result for `ds` has the same legacy and new bytes and
+    whose counting receipts for `ds` all found nothing (answer no). A flag is never carried over: look again."""
+    run_dir = Path(run_dir)
+    if not all(shas) or not run_dir.parent.is_dir():
+        return None
+    for other in sorted(run_dir.parent.iterdir(), reverse=True):
+        if other == run_dir or not (other / "verify" / "compare").is_dir():
+            continue
+        rr = RunReceipts(other)
+        res = rr.results().get(ds)
+        if not res or _shas(res) != tuple(shas) or not compared(res):
+            continue
+        mine = [f for f in rr.findings() if f.get("dataset_id") == ds and f.get("answer") in ("yes", "no")
+                and rr.problem(f) is None]
+        if mine and all(f.get("answer") == "no" for f in mine):
+            return rr.run_id
+    return None
+
+
+def nothing_to_show(run_dir: Path, res: dict) -> dict | None:
+    """A views.json `skipped` record when the dataset needs no map look (views.py builds nothing for it):
+    identical — PASS_EXACT and the new output has the legacy reference's bytes or content (compare.py
+    CANDIDATE_IDENTICAL_TO_REFERENCE); reviewed_before — byte-equal (legacy and new sha256) to an earlier run of
+    this migration whose receipts for it found nothing. Both count as reviewed (skip_counts); None otherwise."""
+    if not compared(res):
+        return None
+    ls, ns = _shas(res)
+    if res.get("verdict") == "PASS_EXACT" and IDENTICAL_CODE in (res.get("diagnostic_codes") or []):
+        return {"kind": "identical", "reason": "identical: the new output has the legacy reference's bytes or "
+                "content (compare CANDIDATE_IDENTICAL_TO_REFERENCE); nothing to show", "legacy_sha256": ls,
+                "new_sha256": ns, "counts_as_review": True}
+    rid = earlier_review(run_dir, res.get("dataset_id"), (ls, ns))
+    if rid:
+        return {"kind": "reviewed_before", "reason": f"same legacy and new bytes as run {rid}, looked at there and "
+                "nothing found; the review carries over by sha256", "carried_from": rid, "legacy_sha256": ls,
+                "new_sha256": ns, "counts_as_review": True}
+    return None
+
+
+def skip_counts(run_dir: Path, ds: str, res: dict | None = None) -> str | None:
+    """Why `ds` needs no receipt in this run (a views.json skipped record that still holds against the compare result
+    and, for a carried review, the earlier run's receipts), else None. compare.py aggregate, ladder.py, plot.py
+    review-status and the Stop gate count it like a receipt."""
+    run_dir = Path(run_dir)
+    if res is None:
+        res = RunReceipts(run_dir).results().get(ds)
+    if not res:
+        return None
+    for root in reversed(views_index_rel(run_dir)):
+        doc = load_index(run_dir, root) or {}
+        rec = next((x for x in doc.get("skipped") or [] if isinstance(x, dict) and x.get("dataset") == ds), None)
+        if not rec or not rec.get("counts_as_review"):
+            continue
+        now = nothing_to_show(run_dir, res)
+        if now and now["kind"] == rec.get("kind") and (now["legacy_sha256"], now["new_sha256"]) == (
+                rec.get("legacy_sha256"), rec.get("new_sha256")):
+            return now["reason"]
+    return None
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -362,9 +439,10 @@ class RunReceipts:
         return out
 
     def missing_reviews(self) -> list[str]:
-        """Compared raster/vector datasets of this run without a counting receipt (yes or no) of this run."""
+        """Compared raster/vector datasets of this run without a counting receipt (yes or no) of this run and without
+        a views.json skip that counts (identical to legacy, or reviewed before byte for byte: skip_counts)."""
         res = self.results()
-        want = sorted(ds for ds, r in res.items() if compared(r))
+        want = sorted(ds for ds, r in res.items() if compared(r) and not skip_counts(self.run, ds, r))
         if not want:
             return []
         have = set()

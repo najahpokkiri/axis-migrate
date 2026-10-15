@@ -5,6 +5,7 @@ compared with the real compare.py (pipeline env via scripts/axpy).
     s2 -> ds.b  raster, new shifted one cell east (data offset on the same grid)
     s3 -> ds.v  vector polygons, new with one feature moved
     s4 -> ds.c  table (no map view)
+    s5 -> ds.e  raster, new = legacy with a 3×3 NoData hole (values equal where both are valid: max|d| = 0)
 """
 from __future__ import annotations
 
@@ -87,23 +88,28 @@ def build(root: Path, *, compare: bool = True) -> Path:
     a = legacy_array()
     write_raster(legacy / "out" / "a.tif", a)
     write_raster(legacy / "out" / "b.tif", a)
+    write_raster(legacy / "out" / "e.tif", a)
     write_vector(legacy / "out" / "v.gpkg", frame())
     (legacy / "out").mkdir(parents=True, exist_ok=True)
     (legacy / "out" / "c.csv").write_text("id,amount\nr1,1.5\nr2,2.5\n")
     newd = root / "_new"
     write_raster(newd / "a.tif", a)
     write_raster(newd / "b.tif", shifted_east(a))
+    holed = a.copy()
+    holed[10:13, 10:13] = NODATA
+    write_raster(newd / "e.tif", holed)
     write_vector(newd / "v.gpkg", frame(moved=True))
     (newd / "c.csv").write_text("id,amount\nr1,1.5\nr2,2.5\n")
-    steps = [rb.step("s1"), rb.step("s2"), rb.step("s3"), rb.step("s4")]
+    steps = [rb.step("s1"), rb.step("s2"), rb.step("s3"), rb.step("s4"), rb.step("s5")]
     dsets = [rb.dataset("ds.a", "raster", "intermediate", "out/a.tif", produced_by="s1"),
              rb.dataset("ds.b", "raster", "intermediate", "out/b.tif", produced_by="s2"),
              rb.dataset("ds.v", "vector", "intermediate", "out/v.gpkg", layer="v", produced_by="s3",
                         compare={"key": ["key"], "measure_crs_param": "p.measure_crs"}),
-             rb.dataset("ds.c", "table", "final", "out/c.csv", produced_by="s4", compare={"key": ["id"]})]
+             rb.dataset("ds.c", "table", "final", "out/c.csv", produced_by="s4", compare={"key": ["id"]}),
+             rb.dataset("ds.e", "raster", "intermediate", "out/e.tif", produced_by="s5")]
     g = rb.graph(steps, dsets)
     run = rb.build(root, g, outputs={"ds.a": newd / "a.tif", "ds.b": newd / "b.tif", "ds.v": newd / "v.gpkg",
-                                     "ds.c": newd / "c.csv"})
+                                     "ds.c": newd / "c.csv", "ds.e": newd / "e.tif"})
     if compare:
         cp = subprocess.run([str(PLUGIN / "scripts" / "axpy"), str(PLUGIN / "skills" / "verify" / "compare.py"), "run",
                              "--run", str(run)], capture_output=True, text=True)

@@ -3,6 +3,8 @@
 
     python3 check.py --run <run_dir> [--json] [--keep-server]
     python3 check.py --inputs <migration> [--json] [--keep-server]     (discover's inputs views)
+    … --render      also open views in headless Chrome (render_check.py): readiness line, raster engine
+                    maplibre-gl-raster, cells drawn as squares; no Chrome = a problem saying so
 
 Starts the map server for the run's migration (or reuses the running one), then for every view and cell project in
 views.json: fetches the project over HTTP and checks its sha256 equals `project_sha256` (the bytes served are the
@@ -102,7 +104,24 @@ def _served(mig: Path, keep: bool, fn) -> dict:
             T.stop(mig)
 
 
-def check_run(run_dir: Path, keep: bool = False) -> dict:
+def _render(base: str, mig: Path, upaths: list[tuple[str, str]], problems: list) -> dict:
+    """Open each page in headless Chrome (render_check.py): ready marker, engine maplibre-gl-raster, crisp cells."""
+    import render_check as RC
+    port = int(base.rsplit(":", 1)[1])
+    try:
+        res = RC.check_pages([V.page_url(port, u) for _, u in upaths], tmp_root=mig / ".axis" / "tmp")
+    except RC.NoChrome as e:
+        problems.append(f"render: not checked ({e})")
+        return {"pages": 0}
+    for (name, _), r in zip(upaths, res):
+        if "problem" in r:
+            problems.append(f"{name}: render: {r['problem']}")
+    return {"pages": len(res), "results": [{"view": n, **{k: r.get(k) for k in ("ready", "seconds", "engine", "crisp",
+                                                                                     "problem")}}
+                                           for (n, _), r in zip(upaths, res)]}
+
+
+def check_run(run_dir: Path, keep: bool = False, render: bool = False) -> dict:
     run_dir = Path(run_dir).resolve()
     idx = V.find_index(run_dir)
     if idx is None:
@@ -124,12 +143,19 @@ def check_run(run_dir: Path, keep: bool = False) -> dict:
     def go(opener, base):
         problems: list[str] = []
         n_proj, n_files = _check_items(opener, base, run_dir, items, problems, set())
-        return {"run_id": doc.get("run_id"), "datasets": len(doc.get("datasets") or []), "projects": n_proj,
-                "layer_files": n_files, "problems": problems, "ok": not problems and n_proj > 0}
+        out = {"run_id": doc.get("run_id"), "datasets": len(doc.get("datasets") or []), "projects": n_proj,
+               "layer_files": n_files}
+        if render:
+            pages = []
+            for ds, p, _, _ in items:          # per dataset: its overview and its first cell project
+                pages += [(n, ve["url_path"]) for n, ve in p if n.endswith("/overview")]
+                pages += [(n, ve["url_path"]) for n, ve in p if "/cell-" in n][:1]
+            out["render"] = _render(base, V.migration_of(run_dir), pages, problems)
+        return {**out, "problems": problems, "ok": not problems and n_proj > 0}
     return _served(V.migration_of(run_dir), keep, go)
 
 
-def check_inputs(migration: Path, keep: bool = False) -> dict:
+def check_inputs(migration: Path, keep: bool = False, render: bool = False) -> dict:
     """The same checks for the discover inputs views (<migration>/discover/views.json)."""
     mig = Path(migration).resolve()
     idx = V.inputs_index(mig)
@@ -150,8 +176,15 @@ def check_inputs(migration: Path, keep: bool = False) -> dict:
     def go(opener, base):
         problems: list[str] = []
         n_proj, n_files = _check_items(opener, base, mig, items, problems, set())
-        return {"mode": "inputs", "datasets": len(doc.get("datasets") or []), "projects": n_proj,
-                "layer_files": n_files, "problems": problems, "ok": not problems and n_proj > 0}
+        out = {"mode": "inputs", "datasets": len(doc.get("datasets") or []), "projects": n_proj,
+               "layer_files": n_files}
+        if render:
+            pages = [(name, pe["url_path"]) for name, pe in sorted((doc.get("projects") or {}).items())]
+            pages += [(f"{e['dataset']}/cell-{e['cells_to_identify'][0]['id']}",
+                       e["cells_to_identify"][0]["url_path"]) for e in doc.get("datasets") or []
+                      if e.get("cells_to_identify")]
+            out["render"] = _render(base, mig, pages, problems)
+        return {**out, "problems": problems, "ok": not problems and n_proj > 0}
     return _served(mig, keep, go)
 
 
@@ -162,13 +195,15 @@ def main(argv=None) -> int:
     g.add_argument("--run", help="a compared run's views (verify/views.json or amend/views/views.json)")
     g.add_argument("--inputs", metavar="MIGRATION", help="discover's inputs views (<migration>/discover/views.json)")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--render", action="store_true",
+                    help="also open views and cell projects in headless Chrome: ready marker, GPU engine, crisp cells")
     ap.add_argument("--keep-server", action="store_true",
                     help="leave a server this check started running (open the views right after; stop.py ends it)")
     a = ap.parse_args(argv)
     V.ensure_map_env(argv, __file__)
     try:
-        res = check_inputs(Path(a.inputs), keep=a.keep_server) if a.inputs else \
-            check_run(Path(a.run), keep=a.keep_server)
+        res = check_inputs(Path(a.inputs), keep=a.keep_server, render=a.render) if a.inputs else \
+            check_run(Path(a.run), keep=a.keep_server, render=a.render)
     except V.SetupError as e:
         print(f"check.py: {e}", file=sys.stderr)
         return 2
@@ -182,7 +217,12 @@ def main(argv=None) -> int:
               f"and checked: {'OK' if res['ok'] else 'PROBLEMS'}")
         for p in res["problems"]:
             print(f"  - {p}")
-        print("headless only: what the map shows in a browser is not checked here")
+        if res.get("render"):
+            print(f"render: {res['render']['pages']} page(s) opened in headless Chrome (ready marker, engine, "
+                  "crisp cells)")
+        else:
+            print("headless only: what the map shows in a browser is not checked here (--render opens pages in "
+                  "headless Chrome)")
     return 0 if res["ok"] else 2
 
 

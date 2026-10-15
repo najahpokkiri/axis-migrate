@@ -33,9 +33,17 @@ def test_every_compared_dataset_has_views(synth_run):
     doc = views_doc(synth_run)
     assert doc["schema"] == "axis-migrate.map-views.v1" and doc["run_id"] == synth_run.name
     got = {e["dataset"]: sorted(e["views"]) for e in doc["datasets"]}
-    assert got == {"ds.a": ["edges", "nodata", "overview", "worst"], "ds.b": ["edges", "nodata", "overview", "worst"],
+    assert got == {"ds.b": ["edges", "nodata", "overview", "worst"], "ds.e": ["edges", "nodata", "overview"],
                    "ds.v": ["overview", "worst"]}
-    assert [s["dataset"] for s in doc["skipped"]] == ["ds.c"]          # a table has no map view
+    # ds.e differs only in NoData (max|d| = 0): no worst view, and views.json says why
+    assert entry(synth_run, "ds.e")["omitted_views"] == {"worst": "no difference: max |new − legacy| = 0"}
+    assert entry(synth_run, "ds.b")["omitted_views"] == {}
+    sk = {s["dataset"]: s for s in doc["skipped"]}
+    assert set(sk) == {"ds.a", "ds.c"} and "no map view" in sk["ds.c"]["reason"]   # a table has no map view
+    # ds.a is identical to legacy: nothing to show, no views built, and the skip counts as reviewed
+    assert sk["ds.a"]["kind"] == "identical" and sk["ds.a"]["counts_as_review"] is True
+    cmp = json.loads((synth_run / "verify" / "compare" / "ds.a.json").read_text())
+    assert sk["ds.a"]["new_sha256"] == cmp["new"]["sha256"] and not (synth_run / "verify" / "views" / "ds.a").exists()
     for e in doc["datasets"]:
         for v, ve in e["views"].items():
             p = synth_run / ve["project"]
@@ -48,7 +56,7 @@ def test_every_compared_dataset_has_views(synth_run):
 
 def test_projects_reload_through_geolibre(synth_run):
     res = map_py(VALIDATE, str(synth_run / "verify" / "views"))
-    assert len(res) == 4 + 4 + 2 + 1 + 3                                 # views + cell projects
+    assert len(res) == 4 + 3 + 3 + 2 + 2                                 # views + cell projects (ds.b, ds.e, ds.v)
     assert all(v == [] for v in res.values()), res
 
 
@@ -149,10 +157,11 @@ def test_validity_shows_a_one_cell_shift_as_stripes(synth_run):
     assert e["validity_counts"] == {"0": int((v == 0).sum()), "1": int((v == 1).sum()), "2": int((v == 2).sum()),
                                     "3": int((v == 3).sum())}
     assert int((v == 1).sum()) == synth_map.N + 3
-    e0 = entry(synth_run, "ds.a")                                          # identical pair: no stripes
+    e0 = entry(synth_run, "ds.e")                                          # hole in new only: 9 legacy-only cells
     with rasterio.open(synth_run / e0["files"]["validity"]["file"]) as ds:
         v0 = ds.read(1)
-    assert set(np.unique(v0)) <= {0, 3} and ((v0 == 3) == (a != synth_map.NODATA)).all()
+    assert int((v0 == 1).sum()) == 9 and not (v0 == 2).any() and (v0[10:13, 10:13] == 1).all()
+    assert {c["id"] for ve in e0["views"].values() for c in ve["cells_to_identify"]} == {"interior", "edge"}
     # the edges view looks at the stripe
     cam = e["views"]["edges"]["camera"]
     assert cam["source"] == "densest one-side-only cells"
@@ -230,7 +239,7 @@ def test_check_script(synth_run, tmp_path):
     assert res["ok"] and res["projects"] == 14 and res["layer_files"] == 10 and res["problems"] == []
     assert not (synth_run.parents[1] / ".axis" / "map" / "serve.pid").exists()     # it stopped its server
     # a project edited after views.json was written is caught
-    p = synth_run / entry(synth_run, "ds.a")["views"]["overview"]["project"]
+    p = synth_run / entry(synth_run, "ds.b")["views"]["overview"]["project"]
     keep = p.read_bytes()
     try:
         p.write_bytes(keep.replace(b'"basemapStyleUrl": ""', b'"basemapStyleUrl": "https://example.org/s.json"'))

@@ -1,6 +1,6 @@
 ---
 name: map
-description: Sub-step of the axis-migrate migrate flow. Use to show legacy and new results of a migration on a local GeoLibre map in the harness pane (display only; numbers still decide). Not for general web maps or GIS visualisation.
+description: Sub-step of the axis-migrate migrate flow. Use to show the legacy inputs (at discovery) and legacy vs new results of a migration on a local GeoLibre map in the browser pane (display only; numbers still decide). Not for general web maps or GIS visualisation.
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_ROOT}/scripts/axpy" *)
 ---
 
