@@ -7,16 +7,15 @@ input exceptions ∪ the eval-only siblings of the legacy root (`*.PROVENANCE.md
 
 The cache file `migration/.axis/protected.json` (schema axis-migrate.protected.v1) is owned by `graph.py protected`.
 `compute()` here is a pure re-implementation of that record (hooks must not write files); the test
-`hooks/tests/test_protected.py::test_matches_graph_py` keeps the two identical. `write_cache()` delegates to
-graph.py when it is importable.
+`hooks/tests/test_protected.py::test_matches_graph_py` keeps the two identical. To (re)write the cache, use
+`graph.py protected`.
 
-    protected.py <migration> [--json] [--write] [--check PATH ...]
+    protected.py <migration> [--json] [--check PATH ...]
 """
 from __future__ import annotations
 
 import argparse
 import fnmatch
-import importlib.util
 import json
 import os
 import sys
@@ -67,29 +66,6 @@ def compute(migration_dir: str | os.PathLike, graph: dict | None = None) -> dict
     return {"schema": SCHEMA, "graph_revision": g.get("revision"), "legacy_root": g["project"]["legacy_root"],
             "rule": RULE, "root_protected": True, "paths": sorted(prot), "input_exceptions": sorted(inputs),
             "legacy_output_dirs": sorted(g.get("legacy_output_dirs") or [])}
-
-
-def _graph_module():
-    p = Path(__file__).resolve().parents[1] / "discover" / "graph.py"
-    if not p.is_file():
-        return None
-    spec = importlib.util.spec_from_file_location("axis_graph_for_protected", p)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)  # type: ignore[union-attr]
-    return mod
-
-
-def write_cache(migration_dir: str | os.PathLike) -> dict:
-    """Write migration/.axis/protected.json through graph.py (the owner); fall back to the identical record."""
-    try:
-        gm = _graph_module()
-    except Exception:  # noqa: BLE001
-        gm = None
-    if gm is not None and hasattr(gm, "protected"):
-        return gm.protected(migration_dir)
-    rec = compute(migration_dir)
-    ac.dump_json(Path(migration_dir) / CACHE_REL, rec)
-    return rec
 
 
 class ProtectedSet:
@@ -164,14 +140,13 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Compute or show the protected path set R (08 §5a).")
     ap.add_argument("migration")
     ap.add_argument("--json", action="store_true", help="print the record as JSON")
-    ap.add_argument("--write", action="store_true", help="(re)write migration/.axis/protected.json (via graph.py)")
     ap.add_argument("--check", nargs="*", default=[], help="classify these paths")
     a = ap.parse_args(argv)
     mig = Path(a.migration)
     if not (mig / "graph.json").is_file():
         print(f"protected: no graph.json in {mig}", file=sys.stderr)
         return 2
-    rec = write_cache(mig) if a.write else compute(mig)
+    rec = compute(mig)
     ps = ProtectedSet(mig, rec)
     if a.json:
         out = dict(rec)

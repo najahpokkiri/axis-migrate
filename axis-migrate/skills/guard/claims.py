@@ -20,12 +20,16 @@ RUNG_ORDER = ["none", "generated", "sandbox-validated", "reference-verified", "t
 
 # 08 §5b step 3, verbatim alternation, plus "runs/ran successfully" from its phrase map.
 CLAIM_RE = re.compile(
-    r"\b(done|complete[ds]?|finished|works|verified|validated|"
+    r"\b((?:works|runs) (?:for|on|in) (?:any|every|all) (?:countr(?:y|ies)|regions?)|"
+    r"done|complete[ds]?|finished|works|verified|validated|"
     r"parity (?:(?:is|was|has\s+been)\s+)?(?:pass\w*|achieved|confirmed)|"
     r"(?:all|every) (?:checks?|steps?|outputs?|pairs?|tests?) (?:pass\w*|match\w*)|"
     r"match(?:es)? (?:the )?legacy|identical to (?:the )?legacy|reference-verified|target-ready|"
     r"production[- ]ready|ready to (?:deploy|ship)|"
-    r"(?:runs|ran|executed|completed) successfully)\b",
+    r"(?:runs|ran|executed|completed) successfully|"
+    # review §2c: generalisation is never a status; a region without a legacy reference has no parity
+    r"generali[sz]ed|any region|"
+    r"all regions)\b",
     re.I,
 )
 
@@ -53,8 +57,38 @@ CLAUSE_MARKERS_RE = re.compile(
     r"stops?\s+at|capped\s+at|at\s+most|up\s+to|limited\s+to|aim(?:s|ing)?\s+(?:at|for)|goal|target\s+is|"
     # future / modal phrasing: a plan, not a claim ("that run gets verified", "takes ... to", "after you sign")
     r"will|shall|going\s+to|gets?|getting|takes?|could|should|can|must|to\s+be|next\s+run|new\s+run|"
-    r"after\s+you|after\s+(?:the\s+)?(?:user|person|human|founder)|once\s+you|plan(?:s|ned)?\s+to)\b",
+    r"after\s+you|after\s+(?:the\s+)?(?:user|person|human|founder)|once\s+you|plan(?:s|ned)?\s+to|"
+    # a recommendation or proposal is a plan ("I recommend we rerun ... and confirm it still matches")
+    r"recommend(?:s|ed|ing)?|suggest(?:s|ed|ing)?|propos(?:e|es|ed|ing))\b",
     re.I)
+# A clause whose first content word is a task verb is a to-do, not a claim (review §3 cause 2): "rerun Luxembourg and
+# confirm it still matches the legacy outputs", "Step 3: rerun ...", "Please check that all checks pass", "- verify
+# parity is achieved". Optional lead-ins: a list marker or number, "Step 3:", then/please/and/next/also/first/now.
+TASK_VERB_RE = re.compile(
+    r"^[\s>*•+-]*(?:\(?\d+[.)]\s*|\(?[a-z][.)]\s+|step\s+\d+\w*\s*[:.)-]?\s*)?"
+    r"(?:(?:then|please|and|next|also|first|now|finally)\b[\s,:]*)*"
+    r"(?:confirm|check|verify|ensure|make\s+sure|re-?run|run|re-?prove|prove|test|see\s+if|see\s+whether|show|look|"
+    r"compare|measure|validate|double-check|re-?check|re-?verify)\b", re.I)
+# A list item under a plan heading is a to-do ("Plan:", "Next steps", "## Proposal", "Options:", "To do"): the review
+# §3 "bullet-plan items". The heading is the first non-item, non-blank line above the item's list.
+LIST_ITEM_RE = re.compile(r"^[ \t]*(?:[-*\u2022+]|\(?\d+[.)]|\(?[a-z][.)])[ \t]+")
+PLAN_HEAD_RE = re.compile(r"^[\s#>*_]*(?:the\s+|my\s+|our\s+|a\s+)?(?:\w+\s+){0,3}?(?:plan|proposal|proposed|"
+                          r"next\s+steps?|to-?\s?do|todo|follow-?ups?|options?|suggest\w*|recommend\w*|"
+                          r"what\s+(?:i|we)\s+(?:will|would|could)\s+do)\b[^\n]{0,60}$", re.I)
+
+
+def _in_plan_list(text: str, start: int) -> bool:
+    ls = text.rfind("\n", 0, start) + 1
+    if not LIST_ITEM_RE.match(text[ls:start]):
+        return False
+    lines = text[:ls].split("\n")[:-1]
+    for line in reversed(lines):
+        if not line.strip() or LIST_ITEM_RE.match(line) or line[:1] in (" ", "\t"):
+            continue
+        return bool(PLAN_HEAD_RE.match(line))
+    return False
+
+
 # "done/complete(d)/finished" followed by a manner or means phrase describes HOW, not THAT (orchestrator finding)
 COMPLETION_WORDS = {"done", "complete", "completed", "completes", "finished"}
 MANNER_RE = re.compile(r"[ \t]+(?:\w+[ \t]+)?(?:in[ \t]+(?:code|python|the[ \t]+(?:pipeline|code|runner|step)|"
@@ -124,7 +158,7 @@ def _negated(text: str, start: int, end: int | None = None) -> bool:
             return True
     breaks = list(CLAUSE_BREAK_RE.finditer(text, 0, start))
     clause = text[breaks[-1].end() if breaks else 0:start]
-    if CLAUSE_MARKERS_RE.search(clause):
+    if CLAUSE_MARKERS_RE.search(clause) or TASK_VERB_RE.match(clause) or _in_plan_list(text, start):
         return True
     # a sentence opened by a condition ("When the chained run passes, the step is verified.")
     sb = list(SENTENCE_BREAK_RE.finditer(text, 0, start))

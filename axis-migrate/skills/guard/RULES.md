@@ -124,8 +124,29 @@ Five block rules have no archive hits. Each is kept for the reason below.
   ("we can confirm all checks pass", "you will see that all steps pass", "you can see it is reference-verified");
   only real negation or a genuine condition in that sentence negates it ("I cannot confirm…", "we will confirm in the
   next run whether…"). "parity is/was/has been achieved|confirmed|passing" also matches now.
+- **Task verbs, proposals and plan lists are to-dos** (review 15 Oct §3; live false positive in an orchestrator
+  session). A clause whose first word, after an optional list marker or number, `Step 3:`, or
+  `then/please/and/next/also/first/now/finally`, is a task verb (`confirm|check|verify|ensure|make sure|re-run|run|
+  re-prove|prove|test|see if|see whether|show|look|compare|measure|validate|double-check|re-check|re-verify`) is not
+  a claim; `recommend/suggest/propose` anywhere in the clause negate it too; and a list item under a plan heading
+  (`Plan:`, `Next steps`, `Proposal`, `Options:`, `To do`, `Follow-ups`, `Recommendations`) is a to-do. Not claims:
+  "rerun Luxembourg end to end and confirm it still matches the legacy outputs" (and with `- `, `Step 3:`,
+  `Please`, `Next:`, `Proposal:`, `I recommend we …`, `I suggest we compare … and confirm they match …`),
+  "We will rerun Luxembourg and confirm …", "The rerun should match the legacy outputs", "1) Rerun Luxembourg.
+  2) Check that all checks pass.", "Then verify parity is achieved.", "Make sure every output matches legacy.",
+  "Look at the plots and see whether all pairs match.", "Validate that the output is identical to legacy.", and
+  "Plan:\n- Compare: all outputs match legacy". The verb must come first: "I reran it and it matches the legacy
+  outputs", "Rerun done; it still matches the legacy outputs", "I checked: all checks pass" and a `Results:` list
+  stay claims. Trade-off: a clause that opens with the noun "Run"/"Test"/"Compare" ("Compare shows all pairs
+  match") is read as a to-do; the colon, comma and full stop end a clause, so "Run r3 got verified: all checks pass"
+  is still a claim.
+- **Generalisation is never a status** (review §2c). `generalised`, `any region`, `all regions` and
+  `works/runs for|on|in any|every|all country/countries/region(s)` are claims at reference-verified level, so a
+  region run without a legacy reference cannot be described as parity.
 - **Quoted text.** A claim inside quotes still counts, so quoting cannot be used to evade the check. The words before
   the opening quote also apply: `I did not write "all checks pass"` is negated.
+- **Debug switch.** `claims.py [--json] [--rung <computed rung>] < message.txt` prints the claims; with `--rung` it
+  exits 1 when any claim needs a rung above the one given (the eval debug switch; nothing in the flow calls it).
 - **Remaining false positive (seen live in HM run 2).** "one completed with a warning" matches `complete[ds]?` and
   costs one rewrite turn. That cost is bounded by the 3-block cap.
 - **Evidence checks.** Missing evidence (compare files, report, EVIDENCE_ID) blocks only claims at reference-verified

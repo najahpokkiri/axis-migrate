@@ -72,10 +72,11 @@ def find_migration_dir(start) -> Path | None:
     return None
 
 
-def find_migration(data: dict) -> Path | None:
+def find_migration(data: dict, *, process_cwd: bool = True) -> Path | None:
     """migration/ for this session: from stdin `cwd` first, then the hook process cwd (the Codex desktop app runs hook
-    processes in the session root while the shell may be in a subfolder, and vice versa)."""
-    bases = [data.get("cwd"), os.getcwd()]
+    processes in the session root while the shell may be in a subfolder, and vice versa). The Stop gate passes
+    process_cwd=False: the cwd trap is about tool paths, and a Stop is scoped by session (touch_session)."""
+    bases = [data.get("cwd"), os.getcwd() if process_cwd else None]
     for b in dict.fromkeys(x for x in bases if x):
         try:
             m = find_migration_dir(b)
@@ -84,6 +85,64 @@ def find_migration(data: dict) -> Path | None:
         if m is not None:
             return m
     return None
+
+
+SESSIONS_REL = (".axis", "sessions.json")
+SESSIONS_SCHEMA = "axis-migrate.sessions.v1"
+PLUGIN_SCRIPT_RE = __import__("re").compile(r"scripts/axpy\b|skills/[\w-]+/[\w-]+\.py\b")
+
+
+def _sessions_file(mig: Path) -> Path:
+    return Path(mig).joinpath(*SESSIONS_REL)
+
+
+def sessions(mig: Path) -> dict:
+    """{session_id: record} of the sessions that worked on this migration (empty when none or unreadable)."""
+    try:
+        with open(_sessions_file(mig), encoding="utf-8") as fh:
+            doc = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    s = doc.get("sessions") if isinstance(doc, dict) else None
+    return s if isinstance(s, dict) else {}
+
+
+def touch_session(mig: Path, sid, data: dict | None = None) -> bool:
+    """Record that session `sid` works on this migration (a tool call wrote or read under migration/, or ran a plugin
+    script). The Stop gate gates only recorded sessions. Never raises: a guard must not fail because of this."""
+    if not isinstance(sid, str) or not sid:
+        return False
+    try:
+        if sid in sessions(mig):
+            return True
+        import datetime
+        import tempfile
+        d = _sessions_file(mig).parent
+        d.mkdir(parents=True, exist_ok=True)
+        cur = sessions(mig)  # merge with whatever a parallel hook wrote meanwhile
+        cur[sid] = {"at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "harness": harness(data if data is not None else _INPUT),
+                    "event": (data or _INPUT).get("hook_event_name"), "tool": (data or _INPUT).get("tool_name")}
+        fd, tmp = tempfile.mkstemp(prefix=".sessions.", suffix=".tmp", dir=str(d))
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump({"schema": SESSIONS_SCHEMA, "sessions": cur}, fh, sort_keys=True, indent=1)
+            fh.write("\n")
+        os.replace(tmp, _sessions_file(mig))
+        return True
+    except (OSError, ValueError, TypeError):
+        try:
+            os.unlink(tmp)  # type: ignore[possibly-undefined]
+        except (OSError, NameError):
+            pass
+        return False
+
+
+def under(p: Path, root: Path) -> bool:
+    try:
+        Path(p).relative_to(root)
+        return True
+    except ValueError:
+        return False
 
 
 def require_tool_payload(data: dict) -> str:

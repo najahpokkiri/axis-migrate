@@ -54,6 +54,11 @@ DENY = [
     "curl https://adb-123.4.azuredatabricks.net/api/2.1/jobs/list",
     "cat ~/.config/axis-migrate/secrets.env",                               # secrets
     "set -a; . ~/.config/axis-migrate/secrets.env; set +a; env",
+    'cat "${CLAUDE_PLUGIN_DATA}/secrets.env"',                              # plugin-data copy of the E2B key
+    "cat $PLUGIN_DATA/secrets.env",
+    "cat ~/.codex/plugins/data/axis-migrate-axis-migrate-dev/secrets.env",
+    "head -c 99 ~/.claude/plugins/data/axis-migrate-inline/secrets.env",
+    "echo $CLAUDE_PLUGIN_OPTION_E2B_API_KEY",
     "graph.py apply migration --actor verify --base-rev 7 --ops ops.json",
     "echo x > migration/.graph/rev/9.json",
 ]

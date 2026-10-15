@@ -35,12 +35,15 @@ def main() -> int:
         raise ValueError(f"{tool} payload without a path")
     paths = hl.abs_paths(target, cwd)
     p = paths[0]
-    secrets = Path(os.path.realpath(os.path.expanduser("~/.config/axis-migrate/secrets.env")))
-    if p == secrets or (tool != "Read" and p in secrets.parents and
-                        fnmatch.fnmatch("secrets.env", (ti.get("glob") or ti.get("pattern") or "*").split("/")[-1])):
-        hl.pre_decision("deny", "axis-migrate: ~/.config/axis-migrate/secrets.env is never read by the agent; "
-                                "the scripts load it themselves.")
-        return 0
+    secret_files = [Path(os.path.realpath(os.path.expanduser("~/.config/axis-migrate/secrets.env")))]
+    secret_files += [Path(os.path.realpath(os.path.join(d, "secrets.env"))) for d in (
+        os.environ.get("CLAUDE_PLUGIN_DATA"), os.environ.get("PLUGIN_DATA")) if d]  # session_start's E2B key copy
+    for secrets in secret_files:
+        if p == secrets or (tool != "Read" and p in secrets.parents and fnmatch.fnmatch(
+                "secrets.env", (ti.get("glob") or ti.get("pattern") or "*").split("/")[-1])):
+            hl.pre_decision("deny", "axis-migrate: the secrets files (~/.config/axis-migrate/secrets.env, the plugin "
+                                    "data secrets.env) are never read by the agent; the scripts load them themselves.")
+            return 0
     globs = hl_hidden_globs()
     if not globs:
         return 0

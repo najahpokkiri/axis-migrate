@@ -64,7 +64,11 @@ DATABRICKS_SUB = {"jobs", "clusters", "fs", "workspace", "auth", "configure", "a
 DATABRICKS_HOST_RE = re.compile(r"[\w.-]*(?:\.cloud\.databricks\.com|\.azuredatabricks\.net|\.gcp\.databricks\.com|"
                                 r"\.databricks\.(?:com|net|us)|azuredatabricks)\b", re.I)
 GRAPH_API_RE = re.compile(r"/api/(?:ops|submit)\b")
-SECRETS_RE = re.compile(r"axis-migrate/secrets\.env|secrets\.env\b.*axis-migrate|AXIS_MIGRATE_SECRETS", re.I)
+SECRETS_RE = re.compile(r"axis-migrate/secrets\.env|secrets\.env\b.*axis-migrate|AXIS_MIGRATE_SECRETS|"
+                        # the plugin-data copy written by session_start (Claude CLAUDE_PLUGIN_DATA, Codex PLUGIN_DATA)
+                        r"\$\{?(?:CLAUDE_)?PLUGIN_DATA\b[^\s;&|]*secrets\.env|"
+                        r"plugins/data/[^\s;&|]*secrets\.env|axis-migrate[^\s;&|/]*/secrets\.env|"
+                        r"CLAUDE_PLUGIN_OPTION_E2B_API_KEY", re.I)
 HEREDOC_RE = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][\w]*)\1")
 WRITE_WORD_RE = re.compile(r"\b(rm|mv|cp|touch|chmod|chown|truncate|tee|dd|sed|perl|ln|rsync|install|mkdir|"
                            r"ogr2ogr|gdal_translate|gdalwarp|gdal_edit(\.py)?|gdaladdo|qgis_process)\b|>")
@@ -146,6 +150,9 @@ class Ctx:
         self.runs_recorded = bool(hl.recorded_runs(mig))
         self.home = os.path.expanduser("~")
         self.secrets = Path(os.path.realpath(os.path.join(self.home, ".config/axis-migrate/secrets.env")))
+        # plus the plugin-data copy of the E2B key (session_start.write_plugin_secrets)
+        self.secret_files = {self.secrets} | {Path(os.path.realpath(os.path.join(d, "secrets.env"))) for d in (
+            os.environ.get("CLAUDE_PLUGIN_DATA"), os.environ.get("PLUGIN_DATA")) if d}
         self.hidden_globs = hl_hidden_globs()
         self.hidden_files = hidden_files(mig) if self.hidden_globs else []
 
@@ -628,8 +635,8 @@ def check_command(cmd: str, ctx: Ctx, cwd: str, v: Verdict, depth: int = 0) -> N
     if DATABRICKS_HOST_RE.search(cmd):
         v.deny.append("requests to Databricks hosts are refused: the plugin never contacts a workspace (D9-8)")
     if SECRETS_RE.search(cmd) or "secrets.env" in cmd and ".config/axis-migrate" in cmd:
-        v.deny.append("~/.config/axis-migrate/secrets.env is never read or printed by the agent; the scripts load "
-                      "it themselves")
+        v.deny.append("the axis-migrate secrets files (~/.config/axis-migrate/secrets.env, the plugin data "
+                      "secrets.env) are never read or printed by the agent; the scripts load them themselves")
     body_cmd, inline = strip_heredocs(cmd)
     try:
         toks = tokenize(body_cmd)
@@ -642,9 +649,29 @@ def check_command(cmd: str, ctx: Ctx, cwd: str, v: Verdict, depth: int = 0) -> N
     for argv in split_simple(toks):
         for raw in argv:
             p = ctx.resolve(raw, cwd) if ("/" in raw or raw.endswith(".env")) else None
-            if p is not None and p == ctx.secrets:
-                v.deny.append("~/.config/axis-migrate/secrets.env is never read by the agent")
+            if p is not None and p in ctx.secret_files:
+                v.deny.append("the axis-migrate secrets files are never read by the agent")
         cwd = check_simple(argv, ctx, cwd, v, inline, depth)
+
+
+def touches(cmd: str, mig: Path, cwd: str) -> bool:
+    """Does this command run a plugin script, or name a path under migration/ (from stdin cwd or the process cwd)?"""
+    if hl.PLUGIN_SCRIPT_RE.search(cmd):
+        return True
+    try:
+        toks = tokenize(strip_heredocs(cmd)[0])
+    except ValueError:
+        toks = cmd.split()
+    for t in toks:
+        t = t.split("=", 1)[1] if t.startswith("-") and "=" in t else t
+        if not t or t.startswith("-") or t in (";", "&", "|", "&&", "||", "(", ")", "<", ">", "\n"):
+            continue
+        try:
+            if any(hl.under(p, mig) for p in hl.abs_paths(t, cwd)):
+                return True
+        except (OSError, ValueError):
+            continue
+    return False
 
 
 def main() -> int:
@@ -658,6 +685,8 @@ def main() -> int:
     if not isinstance(cmd, str):
         raise ValueError("Bash payload without command")
     cwd = data.get("cwd") or os.getcwd()
+    if touches(cmd, mig.resolve(), cwd):
+        hl.touch_session(mig.resolve(), data.get("session_id"), data)  # Stop gate scope: this session works here
     ctx = Ctx(mig.resolve(), cwd)
     v = Verdict()
     check_command(cmd, ctx, cwd, v)

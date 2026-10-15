@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """H1 SessionStart (startup|resume|clear|compact|fork): status line, guard list, unacked graph edits, and
-`export GDAL_PAM_ENABLED=NO` into $CLAUDE_ENV_FILE (D8-11). Informational: fails open.
+`export GDAL_PAM_ENABLED=NO` into $CLAUDE_ENV_FILE (D8-11), the supported-scope line, and the E2B key from the
+Claude plugin option (CLAUDE_PLUGIN_OPTION_E2B_API_KEY, hook-only env) copied to ${CLAUDE_PLUGIN_DATA}/secrets.env
+(0600, atomic, never logged) for run_e2b.py. Informational: fails open.
 """
 from __future__ import annotations
 
@@ -65,6 +67,49 @@ def unacked_local(mig) -> int:
     return n
 
 
+SCOPE = ("axis-migrate scope: QGIS projects/models and Python scripts today; ArcGIS Pro projects partial; "
+         "ModelBuilder (.tbx/.mxd) inventory only.")
+E2B_OPTION = "CLAUDE_PLUGIN_OPTION_E2B_API_KEY"   # Claude userConfig (sensitive): reaches hooks only, never the shell
+SECRETS_NAME = "secrets.env"
+
+
+def write_plugin_secrets() -> str | None:
+    """Copy the E2B key from the plugin option into ${CLAUDE_PLUGIN_DATA}/secrets.env (0600, one `E2B_API_KEY=` line,
+    atomic) for run_e2b.py. Never logs the value. Returns a short note when something is wrong, else None."""
+    key = os.environ.get(E2B_OPTION)
+    data_dir = os.environ.get("CLAUDE_PLUGIN_DATA")
+    if not key or not data_dir:
+        return None
+    key = key.strip()
+    if not key or any(c.isspace() or c in "\"'$`\\" for c in key) or not key.isascii():
+        return "the E2B API key option has an unexpected format; it was not written (re-enter it in the plugin settings)"
+    import tempfile
+    d = os.path.realpath(data_dir)
+    os.makedirs(d, mode=0o700, exist_ok=True)
+    target = os.path.join(d, SECRETS_NAME)
+    line = f"E2B_API_KEY={key}\n"
+    try:
+        with open(target, encoding="utf-8") as fh:
+            if fh.read() == line and (os.stat(target).st_mode & 0o077) == 0:
+                return None
+    except OSError:
+        pass
+    fd, tmp = tempfile.mkstemp(prefix=".secrets.", suffix=".tmp", dir=d)
+    try:
+        os.fchmod(fd, 0o600) if hasattr(os, "fchmod") else None
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(line)
+        os.replace(tmp, target)
+        os.chmod(target, 0o600)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+    return None
+
+
 def main() -> int:
     data = hl.read_input()
     mig = hl.find_migration(data)
@@ -72,6 +117,15 @@ def main() -> int:
         hl.write_hooks_marker(data, mig)
     except OSError:
         pass
+    try:
+        secret_note = write_plugin_secrets()
+    except OSError as e:
+        secret_note = f"could not write the plugin secrets file ({e.__class__.__name__})"
+    if mig is None:
+        if secret_note:
+            hl.emit({"hookSpecificOutput": {"hookEventName": "SessionStart",
+                                            "additionalContext": hl.ascii_text("axis-migrate: " + secret_note)}})
+        return 0
     if mig is None:
         return 0
     notes = []
@@ -96,7 +150,9 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         n = None
         notes.append(f"unacked graph edits: unknown ({e.__class__.__name__})")
-    lines = [status_line(mig), f"migration: {mig}"]
+    if secret_note:
+        notes.append(secret_note)
+    lines = [status_line(mig), f"migration: {mig}", SCOPE]
     try:
         integ = hl.graph_integrity(mig)
     except Exception as e:  # noqa: BLE001 - informational

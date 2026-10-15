@@ -72,6 +72,16 @@ def decide(pr, msg, monkeypatch, rung, run_id=None):
     ("Status: currently sandbox-validated.", "sandbox-validated"),
     ("It is currently reference-verified and the report is written.", "reference-verified"),
     ("This is production-ready.", "deployed"),
+    # generalisation is never a status (review §2c)
+    ("The pipeline is generalised.", "reference-verified"),
+    ("It works for any country.", "reference-verified"),
+    ("It now runs on all regions.", "reference-verified"),
+    ("The code is ready for any region.", "reference-verified"),
+    # a finished task followed by a result is still a claim (the task-verb rule needs the verb FIRST in the clause)
+    ("I reran it and it matches the legacy outputs.", "reference-verified"),
+    ("Rerun done; it still matches the legacy outputs.", "reference-verified"),
+    ("I checked: all checks pass.", "reference-verified"),
+    ("Results:\n- s01: all checks pass\n- s02 matches legacy", "reference-verified"),
 ])
 def test_claim_rungs(text, rung):
     assert cl.strongest(cl.find_claims(text)).rung == rung
@@ -126,6 +136,27 @@ def test_claim_rungs(text, rung):
     "I can't say the outputs match legacy yet.",
     "We will confirm in the next run whether all checks pass.",
     "After you sign the records, the pipeline is reference-verified.",
+    # task verbs, imperatives and proposals: a to-do, not a claim (review §3 cause 2; live false positive 15 Oct)
+    "rerun Luxembourg end to end and confirm it still matches the legacy outputs",
+    "Rerun Luxembourg with the new compare and confirm it still matches the legacy outputs.",
+    "- rerun Luxembourg end to end and confirm it still matches the legacy outputs",
+    "Step 3: rerun Luxembourg end to end and confirm it still matches the legacy outputs.",
+    "Please rerun Luxembourg and confirm it still matches the legacy outputs.",
+    "Next: rerun Luxembourg and confirm it still matches the legacy outputs.",
+    "Proposal: rerun Luxembourg end to end and confirm it still matches the legacy outputs.",
+    "I recommend we rerun Luxembourg and confirm it still matches the legacy outputs.",
+    "I suggest we compare the new outputs and confirm they match the legacy outputs.",
+    "We will rerun Luxembourg and confirm it still matches the legacy outputs.",
+    "The rerun should match the legacy outputs.",
+    "1) Rerun Luxembourg. 2) Check that all checks pass.",
+    "Then verify parity is achieved.",
+    "Make sure every output matches legacy.",
+    "Look at the plots and see whether all pairs match.",
+    "Validate that the output is identical to legacy.",
+    # bullet-plan items under a plan heading
+    "Plan:\n- Rerun the chained run\n- Compare: all outputs match legacy",
+    "## Next steps\n\n1. s02: all checks pass after the fix\n2. sign the tolerance",
+    "Options:\n  a) keep the rule, all outputs match legacy\n  b) drop it",
 ])
 
 def test_negated_or_absent_claims(text):

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """H7 Stop gate (08 §5b, D8-8; DESIGN §4.2 for unacked graph edits). Reads files only, never runs compare.
 
-1. No migration/ -> allow. Status from ladder.compute() (newest sealed run); ladder unavailable -> rung "none".
+0. Scope: allow unless this session is listed in migration/.axis/sessions.json (guards record a session when one
+   of its tool calls writes or reads under migration/ or runs a plugin script: _hooklib.touch_session). migration/
+   is found from the payload cwd only (no hook-process-cwd fallback for Stop).
+1. No migration/ -> allow. A message with no claim and no status line, and no unacked user graph edits -> allow
+   before any ladder or hashing work. Status from ladder.compute() (newest sealed run); ladder unavailable -> rung "none".
 2. Live re-checks against the run's snapshot: params.yaml, tolerances.yaml, pipeline/ tree, graph.json (contract
    view via axis_common.graph_contract_sha256, so derive/ingest-verify projections do not count); legacy tree vs the
-   inventory baseline (a new .aux.xml counts); for claims >= reference-verified also compare files present and
+   inventory baseline (a new .aux.xml counts; content hashes cached by (path, size, mtime_ns) in
+   migration/.axis/hash-cache.json, lib/hashcache.py); for claims >= reference-verified also compare files present and
    bound to the run's outputs, and a report/evidence for this run newer than the compares; open high-impact questions.
 3. Claims in last_assistant_message (claims.py); negated ones and the quoted status line are ignored.
 4. Block iff a claim needs a rung above the computed one, or (2) found drift/missing evidence and a claim is present.
@@ -146,6 +151,15 @@ def legacy_drift(mig: Path) -> list[str]:
     base = {f.get("path"): f for f in inv.get("files") or [] if f.get("path")}
     if not base or not root.is_dir():
         return ["LEGACY_REF_CHANGED (legacy folder missing)"] if base else []
+    import hashcache
+    hc = hashcache.HashCache(mig)
+    try:
+        return _legacy_drift(root, base, hc)
+    finally:
+        hc.save()
+
+
+def _legacy_drift(root: Path, base: dict, hc) -> list[str]:
     live = {}
     total = 0
     for dp, dns, fns in os.walk(root):
@@ -163,7 +177,7 @@ def legacy_drift(mig: Path) -> list[str]:
         p = live[rel]
         if b.get("size") is not None and p.stat().st_size != b.get("size"):
             changed.append(rel)
-        elif total <= LEGACY_HASH_BUDGET_BYTES and b.get("sha256") and ac.sha256_file(p) != b.get("sha256"):
+        elif total <= LEGACY_HASH_BUDGET_BYTES and b.get("sha256") and hc.sha256(p) != b.get("sha256"):
             changed.append(rel)
     if added or missing or changed:
         ex = (added + missing + changed)[:3]
@@ -377,6 +391,14 @@ def decide(data: dict, mig: Path) -> dict | None:
     found = cl.find_claims(text)
     missing: list[str] = []
     rv_run = None
+    if not found and STATUS_MARK not in text:
+        # cheap exit first (no ladder, no hashing): only unacked user graph edits can block a non-finishing message
+        try:
+            n_unacked, _ = unacked(mig)
+        except Exception:  # noqa: BLE001 - unknown -> take the full path below, which reports it
+            n_unacked = 1
+        if not n_unacked:
+            return None
     try:
         res = ladder_status(mig)
         g = hl.load_graph(mig)
@@ -425,12 +447,20 @@ def decide(data: dict, mig: Path) -> dict | None:
     return {"reason": reason, "quote": quote, "rung": rung, "missing_reviews": missing, "review_run": rv_run}
 
 
+def allow(data: dict) -> int:
+    if hl.harness(data) == "codex":
+        hl.emit({})  # Codex: Stop expects JSON on stdout when it exits 0
+    return 0
+
+
 def main() -> int:
     data = hl.read_input()
-    mig = hl.find_migration(data)
+    mig = hl.find_migration(data, process_cwd=False)  # payload cwd only: a Stop is scoped by session, not folder
     if mig is None:
-        return 0
+        return allow(data)
     mig = mig.resolve()
+    if str(data.get("session_id") or "") not in hl.sessions(mig):
+        return allow(data)  # this session never worked on the migration (no write/read under it, no plugin script)
     sid = str(data.get("session_id") or "default")
     st = load_state(mig)
     n = int((st.get(sid) or {}).get("consecutive") or 0)
@@ -439,9 +469,7 @@ def main() -> int:
         if n:
             st.pop(sid, None)
             save_state(mig, st)
-        if hl.harness(data) == "codex":
-            hl.emit({})  # Codex: Stop expects JSON on stdout when it exits 0
-        return 0
+        return allow(data)
     if data.get("stop_hook_active") and n >= 2:
         st.pop(sid, None)
         save_state(mig, st)

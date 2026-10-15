@@ -283,7 +283,13 @@ def make_graph() -> dict:
     }
 
 
-def make_project(base: Path, *, runs: bool = False) -> Project:
+# session ids of the real payloads (Stop.json, codex_Stop.json) and the tests' default: the synthetic project counts as
+# worked on by these sessions (_hooklib.touch_session), so the Stop gate applies to them. Tests of the session scope
+# use other ids or make_project(..., sessions=()).
+WORKING_SESSIONS = ("7e6b66d4-6be1-4451-8c26-66590462d97b", "019a-codex-session", "s-1")
+
+
+def make_project(base: Path, *, runs: bool = False, sessions=WORKING_SESSIONS) -> Project:
     root = base / "proj"
     legacy = root / "legacy-demo"
     mig = root / "migration"
@@ -322,6 +328,9 @@ def make_project(base: Path, *, runs: bool = False) -> Project:
     (mig / "analysis").mkdir()
     if runs:
         add_run(pr, "r20261014T100000Z-abcdef12")
+    import _hooklib
+    for sid in sessions:
+        assert _hooklib.touch_session(mig, sid)
     return pr
 
 

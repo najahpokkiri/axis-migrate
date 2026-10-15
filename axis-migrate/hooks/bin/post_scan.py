@@ -28,6 +28,10 @@ def main() -> int:
     if hl.find_migration(data) is None and not patchy and (near is None or not near.exists()
                                                            or hl.find_migration_dir(near) is None):
         return 0  # idle fast path: no migration/ here
+    if fp:
+        mig = hl.find_migration(data) or (hl.find_migration_dir(near) if near and near.exists() else None)
+        if mig is not None and hl.under(hl.abs_path(fp, data.get("cwd")), mig.resolve()):
+            hl.touch_session(mig.resolve(), data.get("session_id"), data)  # Stop gate scope
     import codescan  # skills/guard, on sys.path via _hooklib
     return codescan.run_hook(raw)
 

@@ -268,6 +268,8 @@ def decide(data: dict) -> tuple[str, str] | None:
     if mig is None:
         return None
     mig = mig.resolve()
+    if any(hl.under(path, mig) for path, _ in targets):
+        hl.touch_session(mig, data.get("session_id"), data)   # this session works on the migration (Stop gate scope)
     ps = hl.protected_set(mig)
     return combine([check_target(mig, ps, path, fn) for path, fn in targets])
 
