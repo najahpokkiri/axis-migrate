@@ -318,3 +318,19 @@ def test_hooks_json_commands_as_launched(project, tmp_path, nopy, shell_bin, roo
     stop = launch("stop_gate", payload("Stop", cwd=str(project.root), last_assistant_message="All done."),
                   shell_bin=shell_bin, root_var=root_var, interp=None, nopy=nopy, tmp_path=tmp_path)
     assert stop.returncode in (0, 2)                        # Stop: never a launch error (127/126) in any shell
+
+
+def test_hooks_leave_no_bytecode_in_the_plugin(project, tmp_path):
+    """B10 (BYU e2e): a fresh install must stay clean, else doctor reports PLUGIN_NOT_CLEAN about its own hooks."""
+    copy = tmp_path / "plugin"
+    shutil.copytree(PLUGIN, copy, ignore=shutil.ignore_patterns("__pycache__", ".venv", "tests", "tests_codex",
+                                                                "fixtures", "*.tif", "*.gpkg"))
+    wrapper = copy / "hooks" / "run-hook.sh"
+    for hook, data in (("session_start", payload("SessionStart", cwd=str(project.root))),
+                       ("guard_write", write(project.root, str(project.mig / "analysis" / "x.py"))),
+                       ("guard_bash", bash(project.root, "ls")),
+                       ("stop_gate", payload("Stop", cwd=str(project.root), last_assistant_message="Done."))):
+        subprocess.run(["/bin/sh", str(wrapper), hook], input=json.dumps(data).encode(), capture_output=True,
+                       cwd=str(project.root), timeout=60)
+    left = sorted(str(p.relative_to(copy)) for p in copy.rglob("__pycache__"))
+    assert left == [], left

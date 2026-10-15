@@ -91,6 +91,12 @@ def test_amend_adds_visual_receipt_and_decision(proj):
     assert lad["evidence_id"] == res["evidence_id"]
     assert lad["datasets"]["ds.a_mask"]["visual"]["cleared"] == ["vf-ds.a_mask-q1"]
     assert lad["steps"]["s01_mask"]["disposition"] == "VERIFIED"
+    # B15: amending again with nothing new is not a failure: exit 0, same evidence, no new evidence file
+    assert sealmod.main([str(proj["migration"]), "--run", r["run_id"], "--amend"]) == 0
+    again = sealmod.amend(proj["migration"], r["run_id"])
+    assert again["unchanged"] and again["evidence_id"] == res["evidence_id"] and again["added"] == []
+    assert not (r["run_dir"] / "verify" / "evidence.2.json").exists()
+    assert ladder.compute(proj["migration"])["evidence_id"] == res["evidence_id"]
 
 
 def test_amend_visual_from_amend_folder(proj):

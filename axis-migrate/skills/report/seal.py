@@ -684,8 +684,9 @@ def amend(migration: Path, run_id: str, target: bool = False) -> dict:
             if p.is_dir():
                 bd.tree_obj("tgt", p, name=p.name)
     added = [bd.objects[i] for i in sorted(set(bd.objects) - before)]
-    if not added:
-        raise SealError("nothing to amend")
+    if not added:   # not a failure (B15): the sealed evidence already holds everything there is
+        return {"run_id": run_id, "evidence_id": parent_id, "parent_evidence_id": parent.get("parent_evidence_id"),
+                "amendment": parent.get("amendment", 0), "added": [], "unchanged": True}
     ev = dict(parent)
     ev["parent_evidence_id"] = parent_id
     ev["amendment"] = n
@@ -732,6 +733,9 @@ def main(argv=None) -> int:
         return 2
     if a.json:
         print(json.dumps(res, sort_keys=True, indent=1))
+    elif res.get("unchanged"):
+        print(f"nothing to amend: {res['run_id']} is sealed as {res['evidence_id']} and nothing new was found "
+              "(no visual review, decision, KD or target change since); evidence unchanged")
     else:
         print(f"sealed {res['run_id']}: {res['evidence_id']}")
         if res.get("secret_matches"):

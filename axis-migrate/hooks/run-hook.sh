@@ -166,7 +166,8 @@ fi
 
 if [ -n "$PY" ]; then
   PYTHONIOENCODING=utf-8
-  export PYTHONIOENCODING
+  PYTHONDONTWRITEBYTECODE=1   # -B covers the hook; this covers any Python it starts (doctor: PLUGIN_NOT_CLEAN)
+  export PYTHONIOENCODING PYTHONDONTWRITEBYTECODE
   printf '%s' "$PAYLOAD" | "$PY" -I -B "$SCRIPT"
   exit $?
 fi
