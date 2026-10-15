@@ -369,12 +369,21 @@ def env_venv_dir() -> Path:
     """The synced venv lives OUTSIDE the plugin folder, keyed by the lock:
     ${CLAUDE_PLUGIN_DATA}/env-<lock8> when set, else ${XDG_CACHE_HOME:-~/.cache}/axis-migrate/env-<lock8>.
     Must stay identical to scripts/axpy's shell logic."""
+    return env_venv_rule()[0]
+
+
+def env_venv_rule() -> tuple[Path, str]:
+    """(venv dir, which rule chose it). Claude Code exports CLAUDE_PLUGIN_DATA to hooks only, never to the Bash
+    tool, so from the agent's shell the second or third rule applies."""
     lock8 = env_lock_sha256()[:8]
     data = os.environ.get("CLAUDE_PLUGIN_DATA")
     if data:
-        return Path(data) / f"env-{lock8}"
-    cache = os.environ.get("XDG_CACHE_HOME") or str(Path.home() / ".cache")
-    return Path(cache) / "axis-migrate" / f"env-{lock8}"
+        return Path(data) / f"env-{lock8}", "CLAUDE_PLUGIN_DATA set in this shell"
+    if os.environ.get("XDG_CACHE_HOME"):
+        return (Path(os.environ["XDG_CACHE_HOME"]) / "axis-migrate" / f"env-{lock8}",
+                "CLAUDE_PLUGIN_DATA unset in this shell, XDG_CACHE_HOME set → $XDG_CACHE_HOME/axis-migrate")
+    return (Path.home() / ".cache" / "axis-migrate" / f"env-{lock8}",
+            "CLAUDE_PLUGIN_DATA unset in this shell → ~/.cache/axis-migrate")
 
 
 def env_python() -> Path:
@@ -384,3 +393,42 @@ def env_python() -> Path:
 def env_lock_marker() -> Path:
     """Written by scripts/axpy after a successful `uv sync --frozen`: holds the lock sha the venv was synced from."""
     return env_venv_dir() / ".axis-lock-sha256"
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Per-install settings outside the plugin: secrets.env (E2B key) and config.json (sandbox choice)
+# ---------------------------------------------------------------------------------------------------------------
+E2B_TEAM_SLUG = "abdulnajahp"          # E2B team slug that publishes the public template (Najah's team, 15 Oct)
+E2B_TEMPLATE_PREFIX = "axis-geo-migrate"
+
+
+def e2b_template_name(lock_sha256: str | None = None, slug: str | None = E2B_TEAM_SLUG) -> str:
+    """`<slug>/axis-geo-migrate-<lock8>` (public, usable from any E2B team); slug=None gives the bare name."""
+    lock8 = (lock_sha256 or env_lock_sha256())[:8]
+    return (f"{slug}/" if slug else "") + f"{E2B_TEMPLATE_PREFIX}-{lock8}"
+
+
+def plugin_data_dirs(environ=None) -> list[Path]:
+    """Every folder that may hold this install's secrets.env / config.json, in lookup order:
+    $PLUGIN_DATA (Codex hooks), $CLAUDE_PLUGIN_DATA (Claude hooks), the harness data folders found on disk
+    (${CLAUDE_CONFIG_DIR:-~/.claude}/plugins/data/axis-migrate-*, ${CODEX_HOME:-~/.codex}/plugins/data/axis-migrate-*:
+    the agent's shell has neither variable), then ~/.config/axis-migrate (person-run `axpy --configure`, dev)."""
+    env = os.environ if environ is None else environ
+    home = Path(env.get("HOME") or Path.home())
+    dirs = [env.get("PLUGIN_DATA"), env.get("CLAUDE_PLUGIN_DATA")]
+    for root in (Path(env.get("CLAUDE_CONFIG_DIR") or home / ".claude"), Path(env.get("CODEX_HOME") or home / ".codex")):
+        data = root / "plugins" / "data"
+        dirs += sorted(str(d) for d in data.glob("axis-migrate-*")) if data.is_dir() else []
+    dirs.append(str(home / ".config" / "axis-migrate"))
+    out: list[Path] = []
+    for d in dirs:
+        if d and Path(d) not in out:
+            out.append(Path(d))
+    return out
+
+
+def user_config_dir(environ=None) -> Path:
+    """Where person-run commands write: ${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-~/.config/axis-migrate}}."""
+    env = os.environ if environ is None else environ
+    home = Path(env.get("HOME") or Path.home())
+    return Path(env.get("PLUGIN_DATA") or env.get("CLAUDE_PLUGIN_DATA") or home / ".config" / "axis-migrate")

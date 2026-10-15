@@ -1,11 +1,35 @@
 {
- "build_id": "729afa7f-183e-45f6-a360-260b0633ebb9",
- "build_seconds": 79.9,
- "built_at": "2026-10-13T23:21:12Z",
- "cpu_count": 2,
+ "bare_name": "axis-geo-migrate-1eb65b36",
+ "base": "debian:stable",
+ "build_id": "1a832160-fd5c-4a6b-a69e-a34843c98144",
+ "build_seconds": 36.9,
+ "built_at": "2026-10-15T13:33:08Z",
+ "copied_files": [
+  {
+   "bytes": 483,
+   "path": "env/pyproject.toml",
+   "sha256": "792c73a72e4d2da52711c189e6897977985d8d8146dbfe37c1e8bfc4b21fa971"
+  },
+  {
+   "bytes": 90239,
+   "path": "env/uv.lock",
+   "sha256": "1eb65b368ad63edc0a44c9795e7ca4ef657ad7ac0ca96fe690a2a48ed23d0097"
+  },
+  {
+   "bytes": 26393,
+   "path": "axis_boot.py",
+   "sha256": "7a0fa916038089b6d91f4d59a584a2fc0a4af4ecf9800e9ba8d79c586d65179a"
+  }
+ ],
+ "cpu_count": 4,
  "lock_sha256": "1eb65b368ad63edc0a44c9795e7ca4ef657ad7ac0ca96fe690a2a48ed23d0097",
- "memory_mb": 2048,
- "name": "axis-geo-migrate-1eb65b36",
+ "memory_mb": 8192,
+ "name": "abdulnajahp/axis-geo-migrate-1eb65b36",
+ "names": [
+  "abdulnajahp/axis-geo-migrate-1eb65b36"
+ ],
+ "public": true,
+ "published_at": "2026-10-15T13:35:44Z",
  "template_id": "jybwir2outykhh2enymu",
  "uv": "0.13.0"
 }

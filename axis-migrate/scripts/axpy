@@ -6,8 +6,15 @@
 #   axpy <script.py|-m mod|-c code> …   run in the env (syncing it first when needed)
 #   axpy --print-python                 sync if needed, print the env's python path
 #   axpy --doctor                       preflight checks (stdlib; works before the env exists)
+#   axpy --configure e2b                the PERSON stores their E2B key (hidden prompt on their own terminal; 0600 file)
 PLUGIN="$(cd "$(dirname "$0")/.." && pwd)"
 ENV="$PLUGIN/skills/run/env"
+if [ "$1" = "--configure" ]; then
+  shift
+  PY3="$(command -v python3 || true)"
+  if [ -z "$PY3" ]; then echo "axpy --configure: no python3 on PATH" >&2; exit 13; fi
+  exec "$PY3" -I "$PLUGIN/skills/run/e2b/configure.py" "$@"
+fi
 if [ "$1" = "--doctor" ]; then
   shift
   PY3="$(command -v python3 || true)"
@@ -36,5 +43,11 @@ if [ ! -x "$PY" ] || [ "$(cat "$MARK" 2>/dev/null)" != "$LOCKSHA" ]; then
   echo "$LOCKSHA" > "$MARK"
 fi
 if [ "$1" = "--print-python" ]; then echo "$PY"; exit 0; fi
-export GDAL_PAM_ENABLED=NO PYTHONHASHSEED=0 AXIS_MIGRATE_PLUGIN="$PLUGIN"
+# matplotlib needs a writable config dir; ~/.matplotlib is not writable inside an agent sandbox (Lux e2e, 15 Oct)
+if [ -z "$MPLCONFIGDIR" ]; then
+  MPLCONFIGDIR="$VENV/.mplconfig"
+  mkdir -p "$MPLCONFIGDIR" 2>/dev/null || MPLCONFIGDIR="${TMPDIR:-/tmp}/axis-migrate-mplconfig-$(id -u)"
+  mkdir -p "$MPLCONFIGDIR" 2>/dev/null
+fi
+export MPLCONFIGDIR GDAL_PAM_ENABLED=NO PYTHONHASHSEED=0 AXIS_MIGRATE_PLUGIN="$PLUGIN"
 exec "$PY" "$@"

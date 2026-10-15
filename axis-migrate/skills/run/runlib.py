@@ -48,7 +48,7 @@ REFENV_PY = Path(os.environ.get("AXIS_REFENV_PYTHON", str(Path.home() / "microma
 
 MANIFEST_SCHEMA = "axis-migrate.run-manifest.v1"
 CTX_SCHEMA = "axis-migrate.ctx.v1"
-DEFAULT_TIMEOUT_S = 120
+DEFAULT_TIMEOUT_S = 600          # per step; raise one step with graph.py apply set_field timeout_s
 DETERMINISM_ENV = {
     "OGR_CURRENT_DATE": "2000-01-01T00:00:00Z", "GDAL_PAM_ENABLED": "NO", "PYTHONHASHSEED": "0", "TZ": "UTC",
     "LC_ALL": "C.UTF-8", "LANG": "C.UTF-8", "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",

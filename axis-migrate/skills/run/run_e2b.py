@@ -1,21 +1,28 @@
 """run_e2b: execute migration/pipeline/ step by step in one E2B sandbox (opt-in) and write one sealed run (05 §4).
 
-    set -a; . ~/.config/axis-migrate/secrets.env; set +a           # E2B_API_KEY into the environment only
     axpy run_e2b.py <migration> [--chain chained|isolated] [--steps a,b] [--resume-from <run_id>]
-                    [--allow-env-major] [--template axis-geo-migrate-<lock8>] --confirm-upload [--json]
+                    [--allow-env-major] [--template <slug>/axis-geo-migrate-<lock8>] [--upload-cap-mb 200]
+                    [--sandbox-timeout-s 3600] --confirm-upload [--json]
 
 Same plan, staging, preflight, evaluation and sealing as run_local (runlib); only execution moves:
+ * the key is loaded by this script (e2b/e2b_key.py: E2B_API_KEY in the environment, else the owner-only
+   secrets.env in the plugin data folder or ~/.config/axis-migrate/; never printed): E2B_KEY_MISSING,
+   SECRETS_FILE_MODE (file not 600 / not yours), E2B_KEY_REJECTED (401), all exit 13. It stays in this host process:
+   it is never in the sandbox's envs, commands, uploaded files, logs or the run directory;
  * the upload set is printed first (staged declared inputs, legacy_ro feeds only in isolated mode, the snapshot
    tarball, ctx files) with sizes and hashes; without --confirm-upload nothing leaves the machine (exit 13,
-   UPLOAD_NOT_CONFIRMED); cap 200 MB (D5-14);
- * `Sandbox.create(template, timeout=600, allow_internet_access=False, envs=<allow-list>, metadata={run_id})`;
-   the key comes from E2B_API_KEY in the process environment and never enters the sandbox;
+   UPLOAD_NOT_CONFIRMED); cap --upload-cap-mb (default 200 MB, D5-14; UPLOAD_TOO_LARGE);
+ * `Sandbox.create(template, timeout=--sandbox-timeout-s (default 3600 = the E2B Hobby maximum), allow_internet_access
+   =False, envs=<allow-list>, metadata={run_id})`; the default template is the public
+   `<slug>/axis-geo-migrate-<lock8>` (or the user's own build recorded by build_template.py --from); a template that
+   does not exist or is not visible to the key's team is exit 13 TEMPLATE_NOT_FOUND:<name>;
  * the sandbox is probed (`axis_boot --probe`): lock sha, freeze and native library versions must equal this
    machine's locked environment, otherwise exit 13 TEMPLATE_LOCK_MISMATCH;
  * one command per step (strace ledger inside the sandbox when available), typed CommandExitException /
    TimeoutException; logs, result and outputs are downloaded and hash-checked after EACH step;
  * the sandbox is always killed; `env.e2b` records template, sandbox id, bytes moved and `sandbox_destroyed`.
-Read ledger: `e2b-physical+strace` (undeclared files are absent from the sandbox; strace records what was opened).
+Read ledger: `e2b-physical+strace` when strace works in the sandbox (the published template installs it), else
+`e2b-physical+audit` (manifest `read_ledger_rung_cap: sandbox-validated`); undeclared files are absent from the sandbox.
 Exit codes as run_local (0/10/11/12/13/14/15/70).
 """
 from __future__ import annotations
@@ -25,7 +32,6 @@ import hashlib
 import importlib.metadata
 import io
 import json
-import os
 import shlex
 import sys
 import tarfile
@@ -34,11 +40,13 @@ import traceback
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent / "e2b"))
 import runlib as rl  # noqa: E402
 from runlib import ac  # noqa: E402
+import e2b_key  # noqa: E402
 
-UPLOAD_CAP_BYTES = 200 * 1024 * 1024
-SANDBOX_TIMEOUT_S = 600
+UPLOAD_CAP_MB = 200
+SANDBOX_TIMEOUT_S = 3600           # E2B Hobby: 1 h max continuous runtime; the sandbox is killed when the run ends
 DOWNLOAD_RESERVE_S = 60
 TEMPLATE_RECORD = Path(__file__).resolve().parent / "e2b" / "template.json"
 REMOTE = {"root": "/home/user/axis/run", "python": "/opt/axis/env/.venv/bin/python",
@@ -60,7 +68,30 @@ _PY_SHA = ("import hashlib,os,sys\n"
 
 
 def default_template() -> str:
-    return f"axis-geo-migrate-{rl.sha256_file(rl.LOCK)[:8]}"
+    """The user's own build for this lock (build_template.py --from), else Axis's public `<slug>/axis-geo-migrate-<lock8>`."""
+    lock = rl.sha256_file(rl.LOCK)
+    try:
+        rec = json.loads((ac.user_config_dir() / "e2b-template.json").read_text())
+        if rec.get("lock_sha256") == lock and rec.get("name"):
+            return rec["name"]
+    except (OSError, ValueError):
+        pass
+    return ac.e2b_template_name(lock)
+
+
+def classify_create_error(exc: BaseException, template: str) -> str:
+    """Sandbox.create failures are environment problems (exit 13), never a runner bug."""
+    try:
+        from e2b.exceptions import AuthenticationException, NotFoundException
+    except ImportError:  # pragma: no cover
+        AuthenticationException = NotFoundException = ()  # type: ignore[assignment]
+    status = getattr(exc, "status_code", None)
+    text = str(exc)
+    if isinstance(exc, AuthenticationException) or status == 401 or text.startswith("401"):
+        return "E2B_KEY_REJECTED"
+    if isinstance(exc, NotFoundException) or status in (403, 404) or text[:3] in ("403", "404"):
+        return f"TEMPLATE_NOT_FOUND:{template}"
+    return f"E2B_CREATE_FAILED:{type(exc).__name__}"
 
 
 def sandbox_factory(**kw):
@@ -184,7 +215,7 @@ def check_template(remote_probe: dict, local_probe: dict) -> list[str]:
 
 
 # ---------------------------------------------------------------------------------------------------------------
-def make_executor(rem: Remote, *, t_created: float, use_strace: bool):
+def make_executor(rem: Remote, *, t_created: float, use_strace: bool, sandbox_timeout_s: float | None = None):
     R = REMOTE["root"]
 
     def execute(run: rl.Run, ps: rl.PlannedStep) -> rl.ExecResult:
@@ -197,7 +228,7 @@ def make_executor(rem: Remote, *, t_created: float, use_strace: bool):
                 rem.renamed.add(sid)
         rem.sh(" && ".join(moves + [f"mkdir -p {R}/outputs/{ps.id}.tmp {R}/scratch/{ps.id} {R}/logs {R}/ctx"]))
         rem.write(f"{R}/ctx/{ps.id}.json", (run.dir / "ctx" / f"{ps.id}.json").read_bytes())
-        remaining = SANDBOX_TIMEOUT_S - (time.monotonic() - t_created) - DOWNLOAD_RESERVE_S
+        remaining = (sandbox_timeout_s or SANDBOX_TIMEOUT_S) - (time.monotonic() - t_created) - DOWNLOAD_RESERVE_S
         started_at, started_epoch, t0 = ac.utc_now_iso(), time.time(), time.monotonic()
         if ps.timeout_s > remaining:
             return rl.ExecResult(exit_code=None, timed_out=True, started_at=started_at, ended_at=ac.utc_now_iso(),
@@ -280,7 +311,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--steps")
     ap.add_argument("--resume-from")
     ap.add_argument("--allow-env-major", action="store_true")
-    ap.add_argument("--template", help="E2B template name (default axis-geo-migrate-<lock8>)")
+    ap.add_argument("--template", help="E2B template (default: your build for this lock, else the public "
+                                       "<slug>/axis-geo-migrate-<lock8>)")
+    ap.add_argument("--upload-cap-mb", type=float, default=None,
+                    help=f"refuse a larger upload set (default {UPLOAD_CAP_MB} MB)")
+    ap.add_argument("--sandbox-timeout-s", type=int, default=None,
+                    help=f"sandbox lifetime; step timeouts are deducted from it (default {SANDBOX_TIMEOUT_S} s = "
+                         "E2B Hobby's 1 h maximum)")
     ap.add_argument("--confirm-upload", action="store_true",
                     help="consent to upload the listed files (ask the user first; nothing is uploaded without it)")
     ap.add_argument("--json", action="store_true")
@@ -293,21 +330,25 @@ def main(argv: list[str] | None = None) -> int:
             print(f"run_e2b: no migration/graph.json at or above {mig}", file=sys.stderr)
             return rl.EXIT["harness"]
         mig = found
-    api_key = os.environ.get("E2B_API_KEY")
-    if not api_key:
-        print("run_e2b: E2B_KEY_MISSING (source the secrets file into the environment; the key is never read "
-              "from disk by this script)", file=sys.stderr)
+    try:
+        api_key, key_source = e2b_key.resolve()
+    except e2b_key.KeyProblem as exc:
+        print(f"run_e2b: {exc.code}: {exc.detail}", file=sys.stderr)
         return rl.EXIT["environment"]
     template = args.template or default_template()
+    upload_cap_mb = UPLOAD_CAP_MB if args.upload_cap_mb is None else args.upload_cap_mb
+    sandbox_timeout_s = SANDBOX_TIMEOUT_S if args.sandbox_timeout_s is None else args.sandbox_timeout_s
     run = rl.Run(mig, chain=args.chain, executor="e2b",
                  steps_filter=[s for s in (args.steps or "").split(",") if s] or None, resume_from=args.resume_from,
-                 allow_env_major=args.allow_env_major, run_stamp=args.run_stamp, read_ledger="e2b-physical+strace",
+                 allow_env_major=args.allow_env_major, run_stamp=args.run_stamp, read_ledger="e2b-physical",
                  argv=["<migration>" if a == args.migration else a for a in (argv or sys.argv[1:])])
     run.exec_root = REMOTE["root"]
     tmpl = json.loads(TEMPLATE_RECORD.read_text()) if TEMPLATE_RECORD.is_file() else {}
-    run.e2b_record = {"template": template, "template_id": tmpl.get("template_id") if tmpl.get("name") == template
-                      else None, "build_id": tmpl.get("build_id") if tmpl.get("name") == template else None,
-                      "sandbox_id": None, "sdk": _sdk_version(), "timeout_s": SANDBOX_TIMEOUT_S,
+    same = template in (tmpl.get("name"), tmpl.get("bare_name"))
+    run.e2b_record = {"template": template, "template_id": tmpl.get("template_id") if same else None,
+                      "build_id": tmpl.get("build_id") if same else None, "key_source": key_source,
+                      "sandbox_choice": e2b_key.read_config()[0].get("sandbox"), "upload_cap_mb": upload_cap_mb,
+                      "sandbox_id": None, "sdk": _sdk_version(), "timeout_s": sandbox_timeout_s,
                       "allow_internet_access": False, "envs_keys": None, "sandbox_destroyed": None,
                       "uploaded_bytes": 0, "downloaded_bytes": 0, "upload_confirmed_by": None,
                       "upload_files": [], "remote_root": REMOTE["root"], "strace_in_sandbox": None}
@@ -330,21 +371,27 @@ def main(argv: list[str] | None = None) -> int:
             run.run_smoke_tests()
             items = upload_set(run)
             total = sum(i["bytes"] for i in items)
-            print(f"run_e2b: upload set ({len(items)} files, {total / 1e6:.2f} MB) → template {template}:",
-                  file=sys.stderr)
+            print(f"run_e2b: upload set ({len(items)} files, {total / 1e6:.2f} MB; cap {upload_cap_mb:g} MB, "
+                  f"sandbox lifetime {sandbox_timeout_s} s) → template {template}:", file=sys.stderr)
             for it in items:
                 print(f"  {it['bytes']:>12,d}  {it['sha256'][:12]}  {it['path']}", file=sys.stderr)
             run.e2b_record["upload_files"] = [{k: v for k, v in i.items() if k != "src"} for i in items]
-            if total > UPLOAD_CAP_BYTES:
-                raise rl.RunAbort(rl.EXIT["environment"], ["UPLOAD_TOO_LARGE"])
+            if total > upload_cap_mb * 1024 * 1024:
+                raise rl.RunAbort(rl.EXIT["environment"], ["UPLOAD_TOO_LARGE"],
+                                  f"{total / 1e6:.1f} MB > --upload-cap-mb {upload_cap_mb:g}")
             if not args.confirm_upload:
                 raise rl.RunAbort(rl.EXIT["environment"], ["UPLOAD_NOT_CONFIRMED"])
             run.e2b_record["upload_confirmed_by"] = "--confirm-upload"
             envs = {k: v for k, v in {**rl.DETERMINISM_ENV, **rl.STEP_ENV_FIXED}.items()}
             run.e2b_record["envs_keys"] = sorted(envs)
             t_created = time.monotonic()
-            sb = sandbox_factory(template=template, timeout=SANDBOX_TIMEOUT_S, allow_internet_access=False,
-                                 envs=envs, metadata={"run_id": run.run_id}, api_key=api_key)
+            try:
+                sb = sandbox_factory(template=template, timeout=sandbox_timeout_s, allow_internet_access=False,
+                                     envs=envs, metadata={"run_id": run.run_id}, api_key=api_key)
+            except Exception as exc:  # noqa: BLE001 - classified: environment, never a runner bug
+                why = classify_create_error(exc, template)
+                print(f"run_e2b: {why}: {e2b_key.scrub(str(exc), api_key)[:300]}", file=sys.stderr)
+                raise rl.RunAbort(rl.EXIT["environment"], [why]) from None
             run.e2b_record["sandbox_id"] = getattr(sb, "sandbox_id", None)
             run.e2b_record["create_s"] = round(time.monotonic() - t_created, 2)
             rem = Remote(sb)
@@ -358,8 +405,8 @@ def main(argv: list[str] | None = None) -> int:
                                    reference=rl.reference_env_record(rl.REFENV_PY, crs),
                                    executor_python=REMOTE["python"], lock_mark_value=rprobe.get("_lock_sha256"),
                                    mismatch_reason="TEMPLATE_LOCK_MISMATCH")
-            if not rprobe.get("_strace"):
-                run.read_ledger = "e2b-physical+audit"
+            # known only after the probe: "e2b-physical" stays on a run that stopped before the sandbox was probed
+            run.read_ledger = "e2b-physical+strace" if rprobe.get("_strace") else "e2b-physical+audit"
             items = upload_set(run) + [{"path": "env/expect.json", "bytes": (run.dir / "env/expect.json").stat().st_size,
                                         "sha256": rl.sha256_file(run.dir / "env/expect.json")}]
             t_up = time.monotonic()
@@ -373,7 +420,8 @@ def main(argv: list[str] | None = None) -> int:
             if c != 0:
                 raise rl.RunAbort(rl.EXIT["contract"], ["UPLOAD_HASH_MISMATCH"], err[-500:])
             run.e2b_record["upload_s"] = round(time.monotonic() - t_up, 2)
-            code = run.run_steps(make_executor(rem, t_created=t_created, use_strace=bool(rprobe.get("_strace"))))
+            code = run.run_steps(make_executor(rem, t_created=t_created, use_strace=bool(rprobe.get("_strace")),
+                                               sandbox_timeout_s=sandbox_timeout_s))
         except rl.RunAbort as exc:
             code = exc.exit_code
             run.reasons += exc.reasons
@@ -384,7 +432,7 @@ def main(argv: list[str] | None = None) -> int:
                     run.e2b_record["sandbox_destroyed"] = True
                 except Exception as exc:  # noqa: BLE001 - recorded; the sandbox times out on its own at 600 s
                     run.e2b_record["sandbox_destroyed"] = False
-                    run.e2b_record["kill_error"] = f"{type(exc).__name__}: {exc}"[:300]
+                    run.e2b_record["kill_error"] = e2b_key.scrub(f"{type(exc).__name__}: {exc}", api_key)[:300]
             if rem is not None:
                 run.e2b_record["uploaded_bytes"] = rem.bytes_up
                 run.e2b_record["downloaded_bytes"] = rem.bytes_down
