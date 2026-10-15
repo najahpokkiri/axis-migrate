@@ -66,6 +66,8 @@ phrases:
   NULL_JOIN_INCREASE: "more unmatched join rows than legacy (diagnostic)"
   VERTEX_COUNT_DROP: "fewer vertices than legacy (diagnostic)"
   # --- review / decision
+  OPEN_QUESTION: "open question {id} ({kind}) on {node}: {header}"
+  PLAN_APPROVED_BY_STANDING_INSTRUCTION: "plan approved by standing instruction (steps: {steps}), not by the user on a shown plan.md"
   VISUAL_FLAG: "flagged in the visual review; a person must look"
   VISUAL_REVIEW_MISSING: "no visual review receipt cites this run's plots"
   BRANCH_NOT_EXERCISED: "a code branch has no legacy output to check against"
@@ -167,6 +169,17 @@ phrases:
   TC_PRINT_NOT_LOGGED: "pipeline modules print instead of logging (warning)"
   TC_SEEK_ON_VOLUME: "a write seeks on the Volume"
   TC_SQLITE_ON_VOLUME: "SQLite is opened read-write on the Volume"
+
+# --- why a dataset has no legacy reference (graph no_reference_reason; discover/lineage.py, graph.py
+# declare_no_reference). Not reason codes: an unknown reason is shown in brackets as written, never PHRASE_MISSING.
+no_reference_reasons:
+  unused: "no step reads or writes this file"
+  orphan_legacy_file: "a legacy file no step writes"
+  superseded_only: "only a superseded implementation uses this file"
+  display_only: "used only for display (a map style or project), not by the computation"
+  doc_only: "named only in documentation"
+  version_of_shared_file: "another version of a file a step already shares"
+  declared_by_user: "a person declared it has no reference"
 
 # --- plain words for the report's hero (what the computed rung means; never a claim beyond it)
 rungs:

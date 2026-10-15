@@ -126,8 +126,17 @@ class Phrases:
         self.headlines = {str(k): str(v) for k, v in (doc.get("headlines") or {}).items()}
         self.next_rung = {str(k): str(v) for k, v in (doc.get("next_rung") or {}).items()}
         self.glossary = [(str(k), str(v)) for k, v in (doc.get("glossary") or {}).items()]
+        self.no_ref = {str(k): str(v) for k, v in (doc.get("no_reference_reasons") or {}).items()}
         self.sha256 = ac.sha256_file(path)
         self.missing: set[str] = set()
+
+    def no_reference(self, reason: str | None) -> str:
+        """NO_REFERENCE with the graph's no_reference_reason in plain words (a reason, not a reason code: an unknown
+        one is shown as written and is not PHRASE_MISSING)."""
+        base = self.say("NO_REFERENCE")
+        if not reason or reason == "NO_REFERENCE":
+            return base
+        return f"{base} ({self.no_ref.get(reason, reason)})"
 
     def say(self, code: str | None, check: dict | None = None) -> str:
         if not code:
@@ -346,6 +355,28 @@ def map_views(project: Path, rd: Path, run_id: str, by_kind: dict, findings_by_d
     return out
 
 
+STANDING_INSTRUCTION = "agent (standing instruction)"
+
+
+def owner_items(migration: Path, lad: dict, snapshot_graph: dict) -> tuple[list, dict]:
+    """Open graph questions and a plan approved by standing instruction (B2, B3): they cap no rung, but the report
+    must never say "none" while either holds. Taken from ladder.compute's pipeline.open_questions/plan_approval;
+    a ladder without those keys gets the same rule applied here (live graph.json, else the run snapshot)."""
+    pl = lad.get("pipeline") or {}
+    oq, pa = pl.get("open_questions"), pl.get("plan_approval")
+    if oq is None or pa is None:
+        g = _load(migration / "graph.json") or snapshot_graph or {}
+        if oq is None:
+            oq = [{"id": q.get("id"), "kind": q.get("kind"), "header": q.get("header"), "node": q.get("node")}
+                  for q in g.get("questions") or [] if isinstance(q, dict) and q.get("status") == "open"]
+        if pa is None:
+            standing = sorted(str(s.get("id")) for s in g.get("steps") or [] if isinstance(s, dict)
+                              and s.get("scope") == "migrate"
+                              and (((s.get("plan") or {}).get("approved") or {}).get("by") or "") not in ("", "user"))
+            pa = {"by": STANDING_INSTRUCTION if standing else None, "standing_steps": standing}
+    return [q for q in oq or [] if isinstance(q, dict)], pa or {}
+
+
 def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
     project = migration.parent
     run_id = lad["run_id"]
@@ -437,7 +468,9 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
             "disp_style": DISP_STYLE.get(d["disposition"], ("grey", "·", d["disposition"])),
             "state_style": STATE_STYLE.get(d["state"], ("grey", "·")),
             "reason_codes": d["reason_codes"], "fails": fails,
-            "level_phrases": [{"code": c, "phrase": phrases.say(c)} for c in level_codes],
+            "level_phrases": [{"code": "NO_REFERENCE", "phrase": phrases.no_reference(c)}
+                              if d["disposition"] == "NO_REFERENCE" else {"code": c, "phrase": phrases.say(c)}
+                              for c in level_codes],
             "legacy_path": d["legacy_path"], "new_path": (g.get("new") or {}).get("path"),
             "metric": key_metric(cmp) if cmp else "—", "tolerances": sorted({c.get("tolerance_id") for c in
                                                                            cmp.get("checks") or []
@@ -692,6 +725,19 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
                             "cls": "grey", "code": b["code"], "phrase": b["phrase"] + (f" ({detail})" if detail
                                                                                        else ""),
                             "href": f"#ds-{rp.anchor(ds)}" if ds else "#steps"})
+    open_questions, plan_approval = owner_items(migration, lad, graph)
+    for q in open_questions:
+        att["decide"].append({"subject": str(q.get("id")), "step": q.get("node"), "disposition": "OPEN QUESTION",
+                              "glyph": "?", "cls": "purple", "code": "OPEN_QUESTION",
+                              "phrase": phrases.say("OPEN_QUESTION", {k: q.get(k) or "?" for k in
+                                                                      ("id", "kind", "node", "header")}),
+                              "href": "#graph"})
+    if plan_approval.get("by") == STANDING_INSTRUCTION:
+        st = plan_approval.get("standing_steps") or []
+        att["decide"].append({"subject": "plan.md", "step": None, "disposition": "PLAN APPROVAL", "glyph": "!",
+                              "cls": "purple", "code": "PLAN_APPROVED_BY_STANDING_INSTRUCTION",
+                              "phrase": phrases.say("PLAN_APPROVED_BY_STANDING_INSTRUCTION",
+                                                    {"steps": ", ".join(st) or "?"}), "href": "#steps"})
     attention = [{"key": k, "title": rp.GROUP_TITLE[k], "items": v} for k, v in att.items() if v]
     decision_cards = rp.decisions(parity, cmp_docs, lad, records, phrases, fmt)
     param_rows = []
@@ -722,13 +768,14 @@ def build_context(migration: Path, lad: dict, phrases: Phrases) -> dict:
         "integrity": integrity, "incomplete": p["incomplete"],
         "stale": [x for x in integrity if x.get("severity") == "stale"],
         "failures": failures, "pipe_items": pipe_items, "caveats": caveats,
+        "open_questions": open_questions, "plan_approval": plan_approval,
         "graph_svg": graphview.svg(lineage_model), "mermaid": graphview.mermaid(lineage_model),
         "isolated": sorted(n for n, v in lineage_model["nodes"].items() if v.get("isolated")),
         "hero": hero, "attention": attention, "decision_cards": decision_cards, "cards": parity,
         "param_rows": param_rows, "timeline": tl, "thumb_manifest": thumb_manifest,
         "glossary": phrases.glossary, "layers": layers, "default_layer": default_layer,
         "views_links": [(ds, v["anchor"]) for ds, v in sorted(views.items())
-                        if (lad["datasets"].get(ds) or {}).get("state")],
+                        if (lad["datasets"].get(ds) or {}).get("state") and v.get("tables")],
         "run_rel": f"migration/runs/{run_id}",
         "caption_default": CAPTION.format(crs=next((l["crs"] for l in layers if l["dataset"] == default_layer),
                                                    "native CRS")),
@@ -906,6 +953,8 @@ def render_files(migration: Path, run_id: str | None = None) -> tuple[int, dict,
            "next_rung": {"next": ctx["hero"]["next"]["next"],
                          "missing": [x["code"] for x in ctx["hero"]["next"]["items"]]},
            "decisions_for_you": [d["subject"] for d in ctx["decision_cards"]],
+           "open_questions": [q.get("id") for q in ctx["open_questions"]],
+           "plan_approval": ctx["plan_approval"].get("by"),
            "cards": [c["id"] for c in ctx["cards"]],
            "thumbnails": ctx["thumb_manifest"],
            "phrase_missing": ctx["phrase_missing"], "versions": ctx["versions"]}

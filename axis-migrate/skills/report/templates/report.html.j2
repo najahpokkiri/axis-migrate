@@ -416,7 +416,7 @@ each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not lo
 <section id="not-checked">
 <h2>Not checked</h2>
 <ul class="small">
-{% for r in not_checked.no_reference %}<li><code>{{ r.id }}</code>: no legacy reference ({{ r.reason_codes|join(', ') }})</li>{% endfor %}
+{% for r in not_checked.no_reference %}<li><code>{{ r.id }}</code>: {% if r.level_phrases %}{{ r.level_phrases[0].phrase }}{% else %}no legacy reference ({{ r.reason_codes|join(', ') }}){% endif %}</li>{% endfor %}
 {% for r in not_checked.not_compared %}<li><code>{{ r.id }}</code>: reference exists, not compared ({{ r.reason_codes|join(', ') }})</li>{% endfor %}
 {% for r in not_checked.bridged %}<li><code>{{ r.id }}</code>: bridged (legacy artefact used; never compared against itself)</li>{% endfor %}
 {% for ds, x in not_checked.compare_not_checked %}<li><code>{{ ds }}</code>: {{ x }}</li>{% endfor %}

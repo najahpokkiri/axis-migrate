@@ -140,6 +140,9 @@ def test_absent_views_json_falls_back_to_the_plots(sealed):
     card = html[html.index('id="ds-ds.a_mask"'):html.index('id="ds-', html.index('id="ds-ds.a_mask"') + 10)]
     assert 'src="data:image/png;base64,' in card and "worst_tiles.png" in card
     assert 'class="view-row"' not in html and "views.py" not in html
+    # no link to map views that do not exist (BYU e2e): neither the page nor the swipe map points at them
+    sw = (sealed["migration"] / "report" / "swipe.html").read_text(encoding="utf-8")
+    assert "GeoLibre map views per dataset" not in html and 'id="map-views-links"' not in sw
 
 
 def test_no_port_server_address_or_network_url(proj):
