@@ -10,6 +10,18 @@ from the project folder (they switch to the map env themselves; first use instal
 outside the plugin folder). Nothing here feeds a verdict: findings go through `plot.py review-add` as a view
 receipt (verify SKILL §3.6: view projects + sha256, engine, cells read) or, without a pane, as PNG receipts.
 
+## 0 Before compare (discover)
+`views.py inputs migration` (no run needed; reads `inventory.json`, roles from `graph.json` when it exists) writes
+`discover/views/`: per input raster and legacy intermediate/final raster a COG copy (`<ds>/data.tif`) and
+`cell-<id>` projects (`max`, `aoi-edge` or `edge`, `interior`); per input vector a GeoJSON (EPSG:4326, attributes
+kept) and `feature-<id>` projects (`first`, `largest`, `central`); `inputs-overview` (every input; legacy rasters in
+the Layers panel, hidden) and one `grid-<family>` per grid family (members toggleable, each member's cell edges,
+the AOI outline; bookmarks = `grid_corners.png`'s five windows). Index: `discover/views.json` (values of every cell
+and attributes of every feature to identify). `views.py inputs-url migration --view inputs-overview|grid-<family>`
+or `--dataset <ds> --cell <id> | --feature <id>` prints the URL; `check.py --inputs migration` is the headless
+check. §2–3 apply unchanged (open, engine, nudge, toggle, identify: for a feature the popup lists its attributes).
+Findings go through `scan.py annotate migration map-finding` (discover SKILL §2), never `plot.py`.
+
 ## 1 Build and serve
 - `views.py run --run <run>` after `compare.py run`: per compared raster `verify/views/<ds>/` gets `legacy.tif`,
   `new.tif` (COG copies; the legacy folder is only read), `diff.tif` (new − legacy) and `validity.tif`
@@ -21,7 +33,9 @@ receipt (verify SKILL §3.6: view projects + sha256, engine, cells read) or, wit
   `stop.py migration` when you are done.
 - `views.py url --run <run> --dataset <ds> --view overview|worst|edges|nodata` (or `--cell worst|interior|edge`)
   prints the page URL. `check.py --run <run>` is the headless check (every project and COG served, Range 206,
-  sha256 equal, projects valid; exit 0/2). It says nothing about what a browser shows.
+  sha256 equal, projects valid; exit 0/2). It says nothing about what a browser shows. It stops a server it
+  started, unless `--keep-server` (then open the views right away; `stop.py` ends it).
+- `mapenv.py --where` prints where the map env lives (no download): for a disk-space question or to remove it.
 
 ## 2 Open it where the person is
 - **Claude desktop app** (`mcp__Claude_Browser__*`): `mcp__Claude_Browser__preview_start {url}` for the first view;

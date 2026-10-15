@@ -5,6 +5,9 @@
     python3 views.py url --run <run_dir> --dataset ds --view overview|worst|edges|nodata [--port N]
     python3 views.py url --run <run_dir> --dataset ds --cell worst|interior|edge [--port N]
     python3 views.py url --run <run_dir> --all [--port N] [--json]
+    python3 views.py inputs <migration> [--json]                                  (discover, before compare)
+    python3 views.py inputs-url <migration> --view inputs-overview|grid-<family> [--port N]
+    python3 views.py inputs-url <migration> --dataset ds --cell <id> | --feature <id> [--port N]
 
 `run` (re-executes itself in the map env from mapenv.py, so plain python3 or scripts/axpy both work) reads
 verify/compare/<ds>.json and writes, per compared raster, under <run>/verify/views/<ds>/:
@@ -27,8 +30,18 @@ server port, so `project_sha256` in views.json is the sha of exactly what the se
 (`url`) carries the port: http://127.0.0.1:<port>/?url=<encoded absolute project URL>&panels=collapsed.
 
 After seal (verify/ read-only), views go to <run>/amend/views/ instead (display only; never part of the evidence).
+
+`inputs` (discover, no run yet) reads inventory.json (+ graph.json roles) and writes, always as a full deterministic
+rebuild, under <migration>/discover/views/: per input raster and legacy intermediate/final raster <ds>/data.tif (COG
+copy) and one cell-<id>.geolibre.json per cell to identify (max, an AOI-edge cell, one interior cell); per input
+vector <ds>/data.geojson (EPSG:4326, attributes kept) and one feature-<id>.geolibre.json per feature to identify
+(first, largest, central); the project inputs-overview (every input; legacy rasters present, hidden) and one
+grid-<family> project per grid family at discover/map.py grid_corners' five windows (bookmarks) with every member's
+cell edges. Index: <migration>/discover/views.json (same schema, `mode: inputs`). The legacy folder is only read.
 Exit: run 0 every requested compared raster/vector has views · 1 some could not be built · 2 setup error.
       url 0 printed · 2 no such view / server not running.
+      inputs 0 every input has views · 1 some could not be built (listed under skipped) · 2 setup error;
+      inputs-url as url.
 """
 from __future__ import annotations
 
@@ -850,6 +863,435 @@ def build_views(run_dir: Path, datasets: list[str] | None = None) -> tuple[dict,
 
 
 # ---------------------------------------------------------------------------------------------------------------
+# inputs mode (discover, before compare): the legacy inputs and legacy rasters as they are; display only
+# ---------------------------------------------------------------------------------------------------------------
+INPUTS_ROOT = "discover/views"                  # projects and layer files (relative to the migration folder)
+INPUTS_INDEX = "discover/views.json"
+OVERVIEW = "inputs-overview"
+INPUTS_CAPTION = ("Display only. Legacy inputs and legacy rasters as they are (cloud-optimised copies; the legacy "
+                  "folder is only read). A finding's numbers come from the inventory, the profiles or analysis code.")
+CLASS_MAX = 12                  # integer rasters with at most this many distinct values use min/max, not p2/p98
+MAX_FEATURES_TO_IDENTIFY = 3
+GRID_WINDOW_CELLS = 14          # discover/map.py grid_corners: 14×14-cell windows
+GRID_CELL_PX = 48               # a grid window spans ~670 px
+LINE_COLOURS = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d", "#666666"]
+
+
+def _pyval(v):
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    return v
+
+
+def inputs_datasets(migration: Path) -> tuple[dict, list[dict], list[dict], Path]:
+    """(inventory, [dataset to show], [skipped], legacy root). Shown: every input raster and vector and every legacy
+    intermediate/final raster that exists; roles from graph.json when it exists (the graph may correct a role),
+    else from inventory.json."""
+    migration = Path(migration)
+    inv = _load(migration / "inventory.json")
+    if not isinstance(inv, dict) or not inv.get("legacy_root"):
+        raise SetupError("no inventory.json: run discover's scan.py first")
+    legacy = (migration / inv["legacy_root"]).resolve()
+    graph = _load(migration / "graph.json") or {}
+    groles = {d["id"]: d.get("role") for d in graph.get("datasets") or [] if isinstance(d, dict) and "id" in d}
+    keep, skipped = [], []
+    for d in sorted(inv.get("datasets") or [], key=lambda x: x.get("id", "")):
+        role = groles.get(d.get("id"), d.get("role"))
+        legacy_raster = d.get("kind") == "raster" and role in ("intermediate", "final")
+        if role != "input" and not legacy_raster:
+            continue
+        if d.get("kind") not in ("raster", "vector"):
+            skipped.append({"dataset": d["id"], "reason": f"{d.get('kind')}: no map view"})
+        elif not d.get("exists") or not d.get("legacy_path"):
+            skipped.append({"dataset": d["id"], "reason": "file not found in the legacy folder"})
+        else:
+            keep.append({**d, "role": role})
+    return inv, keep, skipped, legacy
+
+
+class ICtx:
+    """Paths of the inputs views: everything under <migration>/discover/views, relative to the migration."""
+
+    def __init__(self, migration: Path, legacy: Path):
+        self.migration = Path(migration).resolve()
+        self.legacy = Path(legacy).resolve()
+        self.root = self.migration / INPUTS_ROOT
+        if self.root == self.legacy or self.legacy in self.root.parents or self.root in self.legacy.parents:
+            raise SetupError(f"{self.root} overlaps the legacy folder {self.legacy} (the legacy folder is read-only)")
+
+    def rel(self, p: Path) -> str:
+        return Path(p).resolve().relative_to(self.migration).as_posix()
+
+    def up(self, p: Path) -> str:
+        return url_path(self.migration, p)
+
+    def file_entry(self, p: Path) -> dict:
+        return {"file": self.rel(p), "url_path": self.up(p), "sha256": ac.sha256_file(p), "bytes": p.stat().st_size}
+
+    def save(self, path: Path, name: str, camera: dict, specs: list[dict], bookmarks: list[dict]) -> dict:
+        """specs: [{name, role, kind, path, visible, colormap?, rescale?, style?}] bottom → top."""
+        layers = [{**{k: s[k] for k in ("name", "kind", "colormap", "rescale", "style") if k in s},
+                   "url": self.up(s["path"]), "visible": s["visible"]} for s in specs]
+        pr = build_project(name, camera, layers, bookmarks, key=f"inputs/{self.rel(path)}")
+        pr["metadata"]["axis-migrate"]["caption"] = INPUTS_CAPTION
+        path.parent.mkdir(parents=True, exist_ok=True)
+        sha = save_project(path, pr)
+        rows = []
+        for s in specs:
+            row = {"name": s["name"], "role": s["role"], "kind": s["kind"], "visible": s["visible"],
+                   "url_path": self.up(s["path"]), "file": self.rel(s["path"]), "sha256": ac.sha256_file(s["path"])}
+            if s.get("dataset"):
+                row["dataset"] = s["dataset"]
+            if s["kind"] == "cog":
+                row.update(colormap=s["colormap"], rescale=s["rescale"])
+            rows.append(row)
+        return {"project": self.rel(path), "project_sha256": sha, "url_path": self.up(path), "camera": camera,
+                "bookmarks": [b["name"] for b in bookmarks], "layers": rows}
+
+
+def _source_sha(p: Path) -> str:
+    return ac.sha256_file(p) if p.is_file() else ac.tree_hash(p)
+
+
+def _read_vector(src: Path, layer: str | None):
+    import pyogrio
+    kw = {"IMMUTABLE": "YES"} if src.suffix.lower() in (".gpkg", ".sqlite") else {}   # never a -wal/-shm beside it
+    return pyogrio.read_dataframe(src, layer=layer, **kw) if layer else pyogrio.read_dataframe(src, **kw)
+
+
+def _erode(mask, outside: bool):
+    """Cells of `mask` whose four neighbours are in `mask` too (cells beyond the array count as `outside`)."""
+    import numpy as np
+    h, w = mask.shape
+    pad = np.pad(mask, 1, constant_values=outside)
+    inner = mask.copy()
+    for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+        inner &= pad[1 + dr:1 + dr + h, 1 + dc:1 + dc + w]
+    return inner
+
+
+def inputs_raster(ctx: ICtx, d: dict, src: Path, out: Path, aoi) -> dict:
+    """COG copy, display scale and the cells to identify (largest value, an AOI-edge cell, one interior cell), each
+    with a one-layer cell project centred on it."""
+    import numpy as np
+    plot = verify_plot()
+    S = plot.RSide(src, "input")
+    if not S.ok:
+        raise SetupError(f"raster: {S.err}")
+    if S.crs is None:
+        raise SetupError("no CRS: it cannot be placed on a map")
+    h, w = S.arr.shape
+    if h * w > MAX_CELLS:
+        raise SetupError(f"raster {S.arr.shape} exceeds {MAX_CELLS} cells")
+    kind = np.dtype(S.dtype).kind if S.dtype else "f"
+    valid = S.valid
+    n_valid = int(valid.sum())
+    vals = S.arr[valid]
+    if vals.size and kind in "iub" and np.unique(vals).size <= CLASS_MAX:
+        vmin, vmax, basis = float(vals.min()), float(vals.max()), "min/max of the integer classes"
+    elif vals.size:
+        vmin, vmax = (float(x) for x in np.percentile(vals, [2, 98]))
+        basis = "p2/p98 of the valid cells"
+    else:
+        vmin, vmax, basis = 0.0, 1.0, "no valid cells"
+    if not vmax > vmin:
+        vmax = vmin + 1.0
+    data = out / "data.tif"
+    cog_copy(src, data)
+    t4326 = _transformer(S.crs)
+
+    picks = []
+    if n_valid:
+        picks.append(("max", "largest value (first in row order)",
+                      divmod(int(np.argmax(np.where(valid, S.arr, -np.inf))), w)))
+    edge, edge_why = None, None
+    if aoi is not None and n_valid:
+        try:
+            from rasterio.features import geometry_mask
+            g = aoi.to_crs(S.crs.to_wkt()) if not aoi.crs.equals(S.crs.to_wkt()) else aoi
+            geoms = [x for x in g.geometry if x is not None and not x.is_empty]
+            inside = geometry_mask(geoms, out_shape=(h, w), transform=S.tr, invert=True) if geoms else None
+        except Exception:
+            inside = None
+        if inside is not None and inside.any():
+            ring = inside & ~_erode(inside, True)
+            edge = densest_block(ring & valid) or densest_block(ring)
+            edge_why = "cell on the AOI boundary (cell centre inside the AOI), where such cells concentrate"
+    if edge is None and n_valid:
+        edge = densest_block(valid & ~_erode(valid, False))
+        edge_why = "valid cell on the edge of the valid data (next to NoData or the raster edge)"
+    if edge is not None:
+        picks.append(("aoi-edge" if edge_why.startswith("cell on the AOI") else "edge", edge_why, edge))
+    picks.append(("interior", "valid interior cell nearest the centre of the valid cells", interior_cell(valid)))
+    cells, taken = [], set()
+    for cid, why, rc in picks:
+        if rc is None or tuple(rc) in taken:
+            continue
+        taken.add(tuple(rc))
+        r, c = int(rc[0]), int(rc[1])
+        x, y = S.tr * (c + 0.5, r + 0.5)
+        lon, lat = lonlat(t4326, x, y)
+        cam = {"center": [round(lon, 9), round(lat, 9)], "zoom": zoom_for(t4326, S.tr, r, c, IDENTIFY_CELL_PX)}
+        cells.append({"id": cid, "why": why, "row": r, "col": c, "x": float(x), "y": float(y),
+                      "lon": round(lon, 9), "lat": round(lat, 9),
+                      "value": _py(S.arr[r, c], kind) if valid[r, c] else None, "camera": cam})
+    spec = {"name": d["id"], "dataset": d["id"], "role": d["role"], "kind": "cog", "path": data,
+            "colormap": PALETTE, "rescale": [[vmin, vmax]]}
+    for c in cells:              # one-layer project per cell: camera on its centre, so a centre click identifies it
+        c.update({k: v for k, v in ctx.save(out / f"cell-{c['id']}.geolibre.json", f"{d['id']} · cell {c['id']}",
+                                            c["camera"], [{**spec, "visible": True}], []).items()
+                  if k in ("project", "project_sha256", "url_path")})
+    from rasterio.transform import array_bounds
+    b = array_bounds(h, w, S.tr)
+    corners = [lonlat(t4326, x, y) for x, y in ((b[0], b[1]), (b[0], b[3]), (b[2], b[1]), (b[2], b[3]))]
+    bbox = [min(p[0] for p in corners), min(p[1] for p in corners), max(p[0] for p in corners),
+            max(p[1] for p in corners)]
+    return {"entry": {"family": "raster", "files": {"data": ctx.file_entry(data)}, "crs": S.crs.to_string(),
+                      "bounds_4326": [round(x, 9) for x in bbox],
+                      "raster": {"band": 1, "bands": S.bands, "dtype": str(S.dtype),
+                                 "nodata": _py(S.nodata, "f") if S.nodata is not None else None, "shape": [h, w],
+                                 "transform": [S.tr.a, S.tr.b, S.tr.c, S.tr.d, S.tr.e, S.tr.f],
+                                 "counts": {"valid": n_valid, "nodata": int(h * w - n_valid)}},
+                      "scale": {"min": vmin, "max": vmax, "palette": PALETTE, "basis": basis},
+                      "cells_to_identify": cells, "features_to_identify": [],
+                      "nothing_to_identify": None if cells else "no valid cells"},
+            "spec": spec, "tr": S.tr, "crs": S.crs}
+
+
+def inputs_vector(ctx: ICtx, d: dict, src: Path, out: Path, colour: str) -> dict:
+    """GeoJSON (EPSG:4326, attributes kept) and the features to identify (first, largest, central), each with a
+    one-layer feature project centred on a point inside it."""
+    from shapely.geometry import mapping
+    rm = report_map()
+    g = _read_vector(src, d.get("layer"))
+    if g.crs is None:
+        raise SetupError("no CRS: it cannot be placed on a map")
+    g4 = g.to_crs("EPSG:4326")
+    feats = []
+    for rec in g4.to_dict("records"):
+        geom = rec.get("geometry")
+        feats.append({"type": "Feature", "properties": rm._props(rec),
+                      "geometry": mapping(geom) if geom is not None and not geom.is_empty else None})
+    data = out / "data.geojson"
+    ac.atomic_write_text(data, json.dumps({"type": "FeatureCollection", "features": feats}, sort_keys=True,
+                                          separators=(",", ":"), allow_nan=False,
+                                          default=lambda o: round(o, 9) if isinstance(o, float) else str(o)) + "\n")
+    geoms = list(g4.geometry)
+    ok = [i for i, gg in enumerate(geoms) if gg is not None and not gg.is_empty]
+    bbox = [float(x) for x in g4.geometry.iloc[ok].total_bounds.tolist()] if ok else None
+    picks = []
+    if ok:
+        picks.append(("first", "first feature in file order", ok[0]))
+        size = max((geoms[i].area or geoms[i].length, -i) for i in ok)
+        if size[0] > 0:
+            picks.append(("largest", "largest feature (area, else length)", -size[1]))
+        cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+        reps = {i: geoms[i].representative_point() for i in ok}
+        picks.append(("central", "feature nearest the centre of the layer extent",
+                      min(ok, key=lambda i: ((reps[i].x - cx) ** 2 + (reps[i].y - cy) ** 2, i))))
+    spec = {"name": d["id"], "dataset": d["id"], "role": d["role"], "kind": "vector", "path": data,
+            "style": {"fillColor": colour, "fillOpacity": 0.15, "strokeColor": colour, "strokeWidth": 1.5}}
+    features, taken = [], set()
+    for fid, why, i in picks:
+        if i in taken or len(features) >= MAX_FEATURES_TO_IDENTIFY:
+            continue
+        taken.add(i)
+        gg = geoms[i]
+        pt = gg.representative_point()
+        w, s, e, n = gg.bounds
+        dx, dy = max(e - w, 1e-5), max(n - s, 1e-5)
+        _, z = fit_zoom([w - dx, s - dy, e + dx, n + dy])
+        f = {"id": fid, "why": why, "index": i, "lon": round(pt.x, 9), "lat": round(pt.y, 9),
+             "geometry_type": gg.geom_type,
+             "properties": {k: _pyval(v) for k, v in sorted(feats[i]["properties"].items())},
+             "camera": {"center": [round(pt.x, 9), round(pt.y, 9)], "zoom": z}}
+        f.update({k: v for k, v in ctx.save(out / f"feature-{fid}.geolibre.json", f"{d['id']} · feature {fid}",
+                                            f["camera"], [{**spec, "visible": True}], []).items()
+                  if k in ("project", "project_sha256", "url_path")})
+        features.append(f)
+    return {"entry": {"family": "vector", "files": {"data": ctx.file_entry(data)}, "crs": g.crs.to_string(),
+                      "bounds_4326": [round(x, 9) for x in bbox] if bbox else None,
+                      "vector": {"features": len(g4), "with_geometry": len(ok), "layer": d.get("layer"),
+                                 "attributes": sorted(c for c in g4.columns if c != "geometry")},
+                      "cells_to_identify": [], "features_to_identify": features,
+                      "nothing_to_identify": None if features else "no features with a geometry"},
+            "spec": spec, "gdf": g}
+
+
+def grid_windows(ref_tr, ref_crs, shape, aoi) -> tuple[list[tuple[str, int, int]], str]:
+    """discover/map.py grid_corners' five windows: the four extreme points of the AOI and one point inside it, else
+    the corners and the centre of the reference raster. → [(name, col, row)], description."""
+    import numpy as np
+    H, W = shape
+    if aoi is not None and aoi.crs is not None and ref_crs is not None:
+        import shapely
+        g = aoi.to_crs(ref_crs.to_wkt()) if not aoi.crs.equals(ref_crs.to_wkt()) else aoi
+        xy = shapely.get_coordinates(g.geometry.values)
+        if len(xy):
+            inv_t = ~ref_tr
+            ext = {"west": xy[np.argmin(xy[:, 0])], "north": xy[np.argmax(xy[:, 1])],
+                   "east": xy[np.argmax(xy[:, 0])], "south": xy[np.argmin(xy[:, 1])]}
+            pts = []
+            for name in ("west", "north", "east", "south"):
+                cc, rr = inv_t * (float(ext[name][0]), float(ext[name][1]))
+                pts.append((f"{name} extreme of AOI", int(cc), int(rr)))
+            cen = shapely.union_all(g.geometry.values).representative_point()
+            cc, rr = inv_t * (cen.x, cen.y)
+            pts.append(("inside AOI", int(cc), int(rr)))
+            return pts, "four extreme points of the AOI and one point inside"
+    return ([("top-left", 0, 0), ("top-right", W - 1, 0), ("bottom-left", 0, H - 1), ("bottom-right", W - 1, H - 1),
+             ("centre", W // 2, H // 2)], "corners and centre of the reference raster")
+
+
+def grid_edges(ctx: ICtx, path: Path, member_tr, ref_tr, crs, windows) -> None:
+    """GeoJSON of one member's cell edges inside each window (the lines grid_corners draws), in EPSG:4326."""
+    t4326 = _transformer(crs)
+    half = GRID_WINDOW_CELLS // 2
+    feats = []
+    for name, cc, rr in windows:
+        x0, y0 = ref_tr * (cc - half, rr - half)
+        x1, y1 = ref_tr * (cc - half + GRID_WINDOW_CELLS, rr - half + GRID_WINDOW_CELLS)
+        xa, xb, ya, yb = min(x0, x1), max(x0, x1), min(y0, y1), max(y0, y1)
+        k0, k1 = math.floor((xa - member_tr.c) / member_tr.a) - 1, math.ceil((xb - member_tr.c) / member_tr.a) + 1
+        for k in range(min(k0, k1), max(k0, k1) + 1):
+            x = member_tr.c + k * member_tr.a
+            if xa <= x <= xb:
+                feats.append([name, "column edge", [lonlat(t4326, x, ya), lonlat(t4326, x, yb)]])
+        j0, j1 = math.floor((yb - member_tr.f) / member_tr.e) - 1, math.ceil((ya - member_tr.f) / member_tr.e) + 1
+        for j in range(min(j0, j1), max(j0, j1) + 1):
+            y = member_tr.f + j * member_tr.e
+            if ya <= y <= yb:
+                feats.append([name, "row edge", [lonlat(t4326, xa, y), lonlat(t4326, xb, y)]])
+    fc = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {"window": n, "edge": k},
+         "geometry": {"type": "LineString", "coordinates": [[round(a, 9), round(b, 9)] for a, b in pts]}}
+        for n, k, pts in feats]}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ac.atomic_write_text(path, json.dumps(fc, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n")
+
+
+def build_inputs_views(migration: Path) -> tuple[dict, int]:
+    """Write <migration>/discover/views/** and <migration>/discover/views.json (always a full, deterministic
+    rebuild). Reads the legacy folder only (GDAL_PAM_ENABLED=NO, GeoPackages opened IMMUTABLE); writes nothing
+    outside <migration>/discover/views and the index."""
+    migration = Path(migration).resolve()
+    inv, shown, skipped, legacy = inputs_datasets(migration)
+    ctx = ICtx(migration, legacy)
+    if ctx.root.is_dir():
+        shutil.rmtree(ctx.root)                                  # nothing stale survives a rebuild
+    ctx.root.mkdir(parents=True)
+    rc = 0
+    aoi_id = inv.get("aoi")
+    aoi = None
+    if aoi_id:
+        ad = next((d for d in inv.get("datasets") or [] if d.get("id") == aoi_id), None)
+        try:
+            aoi = _read_vector((legacy / ad["legacy_path"]).resolve(), ad.get("layer")) if ad else None
+            aoi = aoi if aoi is not None and aoi.crs is not None and len(aoi) else None
+        except Exception:
+            aoi = None
+    entries, built = {}, {}
+    vi = 0
+    for d in shown:
+        dsid = d["id"]
+        src = (legacy / d["legacy_path"]).resolve()
+        out = ctx.root / dsid
+        out.mkdir(parents=True)
+        try:
+            if legacy not in src.parents:
+                raise SetupError(f"{d['legacy_path']} resolves outside the legacy folder")
+            if d["kind"] == "raster":
+                res = inputs_raster(ctx, d, src, out, aoi)
+            else:
+                res = inputs_vector(ctx, d, src, out, LINE_COLOURS[vi % len(LINE_COLOURS)])
+                vi += 1
+            built[dsid] = res
+            entries[dsid] = {"dataset": dsid, "role": d["role"],
+                             "source": {"path": d["legacy_path"], "layer": d.get("layer"), "sha256": _source_sha(src),
+                                        "inventory_sha256": d.get("sha256")},
+                             "views": [OVERVIEW], **res["entry"]}
+        except Exception as ex:                                  # recorded per dataset, exit 1, never silent
+            shutil.rmtree(out, ignore_errors=True)
+            skipped.append({"dataset": dsid, "reason": f"{type(ex).__name__}: {ex}"[:300]})
+            rc = 1
+    projects = {}
+    # ---- inputs-overview: every input (vectors on top), legacy rasters present but hidden
+    rasters = [k for k in sorted(built) if built[k]["spec"]["kind"] == "cog"]
+    vectors = [k for k in sorted(built) if built[k]["spec"]["kind"] == "vector"]
+    specs = [{**built[k]["spec"], "visible": entries[k]["role"] == "input"} for k in rasters]
+    specs += [{**built[k]["spec"], "visible": True} for k in vectors]
+    bbs = [entries[k]["bounds_4326"] for k in built if entries[k]["bounds_4326"] and entries[k]["role"] == "input"] \
+        or [entries[k]["bounds_4326"] for k in built if entries[k]["bounds_4326"]]
+    if specs and bbs:
+        bbox = [min(b[0] for b in bbs), min(b[1] for b in bbs), max(b[2] for b in bbs), max(b[3] for b in bbs)]
+        oc, oz = fit_zoom(bbox)
+        cam = {"center": oc, "zoom": oz, "source": "extent of the inputs"}
+        bms = [{"name": f"{k} cell {c['id']}", "center": c["camera"]["center"], "zoom": c["camera"]["zoom"]}
+               for k in rasters for c in entries[k]["cells_to_identify"]]
+        bms += [{"name": f"{k} feature {f['id']}", "center": f["camera"]["center"], "zoom": f["camera"]["zoom"]}
+                for k in vectors for f in entries[k]["features_to_identify"]]
+        projects[OVERVIEW] = ctx.save(ctx.root / f"{OVERVIEW}.geolibre.json", "inputs overview", cam, specs, bms)
+    # ---- grid-<family>: the family's rasters at the five grid_corners windows, with every member's cell edges
+    for fam in inv.get("grids") or []:
+        fid = str(fam.get("id"))
+        members = [m["dataset"] for m in (fam.get("members") or []) + (fam.get("misaligned") or [])]
+        ref = fam.get("reference")
+        have = [m for m in members if m in built and built[m]["spec"]["kind"] == "cog"]
+        if ref not in have:
+            continue
+        name = "grid-" + (fid[len("grid."):] if fid.startswith("grid.") else fid)
+        R = built[ref]
+        windows, where = grid_windows(R["tr"], R["crs"], entries[ref]["raster"]["shape"], aoi)
+        t4326 = _transformer(R["crs"])
+        specs = [{**built[m]["spec"], "visible": True} for m in [ref] + [x for x in have if x != ref]]
+        for i, m in enumerate([ref] + [x for x in have if x != ref]):
+            p = ctx.root / name / f"edges-{m}.geojson"
+            grid_edges(ctx, p, built[m]["tr"], R["tr"], R["crs"], windows)
+            colour = "#000000" if m == ref else LINE_COLOURS[i % len(LINE_COLOURS)]
+            specs.append({"name": f"cell edges {m}", "dataset": m, "role": "cell edges", "kind": "vector",
+                          "path": p, "visible": True,
+                          "style": {"strokeColor": colour, "strokeWidth": 0.8 if m == ref else 1.4,
+                                    "fillOpacity": 0}})
+        if aoi_id in built and built[aoi_id]["spec"]["kind"] == "vector":
+            specs.append({**built[aoi_id]["spec"], "name": f"AOI ({aoi_id})", "role": "aoi", "visible": True,
+                          "style": {"strokeColor": "#ff0000", "strokeWidth": 1.4, "fillOpacity": 0}})
+        bms = []
+        for wname, cc, rr in windows:
+            x, y = R["tr"] * (cc, rr)
+            lon, lat = lonlat(t4326, x, y)
+            bms.append({"name": f"{fid} {wname} (cols {cc - GRID_WINDOW_CELLS // 2}-"
+                                f"{cc - GRID_WINDOW_CELLS // 2 + GRID_WINDOW_CELLS - 1}, rows "
+                                f"{rr - GRID_WINDOW_CELLS // 2}-{rr - GRID_WINDOW_CELLS // 2 + GRID_WINDOW_CELLS - 1})",
+                        "center": [round(lon, 9), round(lat, 9)],
+                        "zoom": zoom_for(t4326, R["tr"], rr, cc, GRID_CELL_PX)})
+        cam = {"center": bms[0]["center"], "zoom": bms[0]["zoom"], "source": f"first window: {windows[0][0]}"}
+        projects[name] = {**ctx.save(ctx.root / f"{name}.geolibre.json", f"grid family {fid}", cam, specs, bms),
+                          "family": fid, "reference": ref, "windows_at": where,
+                          "windows": [b["name"] for b in bms],
+                          "offsets_px": {m["dataset"]: m.get("offset_px") for m in
+                                         (fam.get("members") or []) + (fam.get("misaligned") or [])},
+                          "misaligned": [m["dataset"] for m in fam.get("misaligned") or []]}
+        for m in have:
+            entries[m]["views"].append(name)
+    doc = {"schema": SCHEMA, "mode": "inputs", "generator": GENERATOR, "caption": INPUTS_CAPTION, "run_id": None,
+           "root": INPUTS_ROOT, "legacy_root": os.path.relpath(legacy, migration), "aoi": aoi_id,
+           "served_as": "/data/ = the migration folder (start.py); project and layer URLs are origin-relative",
+           "page_url": "http://127.0.0.1:<port>/?url=<urlencoded http://127.0.0.1:<port><url_path>>&panels=collapsed",
+           "identify": {"raster": "cell-<id> project: switch the engine to maplibre-gl-raster, click the map centre, "
+                                  "read Band 1 (the popup rounds to ~3 significant figures)",
+                        "vector": "feature-<id> project: click the map centre, read the feature's attributes"},
+           "projects": projects,
+           "datasets": [entries[k] for k in sorted(entries)],
+           "skipped": sorted(skipped, key=lambda s: s["dataset"])}
+    ac.dump_json(migration / INPUTS_INDEX, doc)
+    return doc, rc
+
+
+def inputs_index(migration: Path) -> Path | None:
+    p = Path(migration) / INPUTS_INDEX
+    return p if p.is_file() else None
+
+# ---------------------------------------------------------------------------------------------------------------
 # server state (written by start.py)
 # ---------------------------------------------------------------------------------------------------------------
 def server_state(migration: Path) -> dict | None:
@@ -944,6 +1386,80 @@ def cmd_url(a) -> int:
     return 0
 
 
+def _port(migration: Path, port: int) -> int | None:
+    if port:
+        return int(port)
+    st = server_state(migration)
+    if not st:
+        print("views.py: map server not running: start it with `python3 $PLUGIN/skills/map/start.py "
+              "<migration>`", file=sys.stderr)
+        return None
+    return int(st["port"])
+
+
+def cmd_inputs(a) -> int:
+    mig = Path(a.migration)
+    try:
+        doc, rc = build_inputs_views(mig)
+    except SetupError as e:
+        print(f"views.py: {e}", file=sys.stderr)
+        return 2
+    if a.json:
+        print(json.dumps(doc, sort_keys=True, indent=1))
+    else:
+        for name, pe in sorted(doc["projects"].items()):
+            print(f"{name}: {pe['project']} ({len(pe['layers'])} layers, bookmarks: {len(pe['bookmarks'])})")
+        for e in doc["datasets"]:
+            ids = [c["id"] for c in e["cells_to_identify"]] or [f["id"] for f in e["features_to_identify"]]
+            what = "cells" if e["family"] == "raster" else "features"
+            print(f"{e['dataset']} [{e['role']}, {e['family']}]: {what} to identify {', '.join(ids) or 'none'}")
+        for s in doc["skipped"]:
+            print(f"{s['dataset']}: skipped ({s['reason']})")
+        print(f"index: {INPUTS_INDEX} · open one with `views.py inputs-url {a.migration} --view {OVERVIEW}` "
+              "(or --dataset <ds> --cell <id> | --feature <id>)")
+    if not doc["datasets"] and rc == 0:
+        return 2 if not doc["skipped"] else 0
+    return rc
+
+
+def cmd_inputs_url(a) -> int:
+    mig = Path(a.migration).resolve()
+    idx = inputs_index(mig)
+    if idx is None:
+        print(f"views.py: no {INPUTS_INDEX}: run `views.py inputs <migration>` first", file=sys.stderr)
+        return 2
+    doc = _load(idx) or {}
+    port = _port(mig, a.port)
+    if port is None:
+        return 2
+    rows = []
+    for name, pe in sorted((doc.get("projects") or {}).items()):
+        if a.all or (a.view and name == a.view):
+            rows.append({"view": name, "url": page_url(port, pe["url_path"]), "project_sha256": pe["project_sha256"]})
+    for e in doc.get("datasets") or []:
+        if not a.all and e["dataset"] != a.dataset:
+            continue
+        for key, want in (("cells_to_identify", a.cell), ("features_to_identify", a.feature)):
+            for c in e.get(key) or []:
+                if a.all or c["id"] == want:
+                    kind = "cell" if key == "cells_to_identify" else "feature"
+                    rows.append({"view": f"{e['dataset']} {kind}-{c['id']}", "dataset": e["dataset"], kind: c["id"],
+                                 "url": page_url(port, c["url_path"]), "project_sha256": c["project_sha256"]})
+    if not rows:
+        have = sorted(doc.get("projects") or {})
+        print(f"views.py: no such view in {INPUTS_INDEX} (projects: {', '.join(have)}; cells and features per "
+              "dataset: see the index)", file=sys.stderr)
+        return 2
+    if a.json:
+        print(json.dumps(rows, sort_keys=True, indent=1))
+    elif len(rows) == 1:
+        print(rows[0]["url"])
+    else:
+        for r in rows:
+            print(f"{r['view']}: {r['url']}")
+    return 0
+
+
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     ap = argparse.ArgumentParser(description="GeoLibre map views of a compared run (display only).")
@@ -961,10 +1477,30 @@ def main(argv=None) -> int:
     u.add_argument("--all", action="store_true", help="every view of every dataset")
     u.add_argument("--port", type=int, default=0, help="server port (default: the one start.py recorded)")
     u.add_argument("--json", action="store_true")
+    i = sub.add_parser("inputs", help="discover (before compare): views of the legacy inputs and legacy rasters")
+    i.add_argument("migration", help="the migration folder (with inventory.json)")
+    i.add_argument("--json", action="store_true")
+    iu = sub.add_parser("inputs-url", help="print the page URL of an inputs view for the running map server")
+    iu.add_argument("migration")
+    g = iu.add_mutually_exclusive_group(required=True)
+    g.add_argument("--view", help=f"{OVERVIEW} or grid-<family>")
+    g.add_argument("--cell", help="with --dataset: the project centred on that cell (max, aoi-edge|edge, interior)")
+    g.add_argument("--feature", help="with --dataset: the project centred on that feature (first, largest, central)")
+    g.add_argument("--all", action="store_true", help="every project")
+    iu.add_argument("--dataset")
+    iu.add_argument("--port", type=int, default=0, help="server port (default: the one start.py recorded)")
+    iu.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     if a.cmd == "run":
         ensure_map_env(argv)
         return cmd_run(a)
+    if a.cmd == "inputs":
+        ensure_map_env(argv)
+        return cmd_inputs(a)
+    if a.cmd == "inputs-url":
+        if (a.cell or a.feature) and not a.dataset:
+            ap.error("inputs-url --cell/--feature needs --dataset")
+        return cmd_inputs_url(a)
     if not a.all and not (a.dataset and (a.view or a.cell)):
         ap.error("url needs --dataset and --view or --cell (or --all)")
     return cmd_url(a)

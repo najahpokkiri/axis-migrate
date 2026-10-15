@@ -2,6 +2,11 @@
 """discover/map.py: the input map the agent looks at before any code exists (01 §4.7).
 
     map.py inputs <migration> [--json]
+    map.py findings <migration> [--json]
+
+`findings` lists every recorded map finding and whether it still counts (lib/visual_receipt.map_finding_problem: a
+PNG finding whose PNG still has its bytes, or a view receipt on the inputs views that still passes; both kinds count
+the same way) and the inputs no counting finding is about. Exit 0 every finding counts, 1 some do not.
 
 Writes <migration>/discover/inputs_overview.png, grid_corners.png and legacy_rasters.png (deterministic matplotlib
 Agg; no basemap, nothing fetched) and registers them in inventory.json through `scan.py annotate png`. Every number
@@ -330,13 +335,46 @@ def run_inputs(migration: Path) -> tuple[int, dict]:
     return 0, {"pngs": res}
 
 
+def findings_status(migration: Path) -> tuple[int, dict]:
+    import visual_receipt as vr
+    inv_p = migration / "inventory.json"
+    if not inv_p.exists():
+        return 2, {"error": "inventory.json not found: run scan.py first"}
+    inv = ac.load_json(inv_p)
+    rows, about = [], set()
+    for f in (inv.get("map") or {}).get("findings") or []:
+        prob = vr.map_finding_problem(migration, f)
+        rows.append({"id": f.get("id"), "kind": "view" if f.get("receipt") == "view" else "png",
+                     "severity": f.get("severity"), "about": f.get("about") or [], "counts": prob is None,
+                     "problem": prob})
+        if prob is None:
+            about |= set(f.get("about") or [])
+    inputs = sorted(d["id"] for d in inv.get("datasets") or [] if d.get("role") == "input" and d.get("exists")
+                    and d.get("kind") in ("raster", "vector"))
+    res = {"findings": rows, "inputs_without_finding": [d for d in inputs if d not in about]}
+    return (0 if all(r["counts"] for r in rows) else 1), res
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="map.py", description="Input maps for discover (deterministic PNGs).")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("inputs", help="inputs_overview.png, grid_corners.png, legacy_rasters.png")
     p.add_argument("migration", type=Path)
     p.add_argument("--json", action="store_true")
+    q = sub.add_parser("findings", help="which recorded map findings still count")
+    q.add_argument("migration", type=Path)
+    q.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
+    if a.cmd == "findings":
+        code, res = findings_status(a.migration.resolve())
+        if a.json or code == 2:
+            print(json.dumps(res, sort_keys=True, indent=1), file=sys.stderr if code == 2 else sys.stdout)
+        else:
+            for r in res["findings"]:
+                print(f"{r['id']} [{r['kind']}, {r['severity']}] about {', '.join(r['about']) or '-'}: "
+                      + ("counts" if r["counts"] else f"does not count ({r['problem']})"))
+            print("inputs no counting finding is about: " + (", ".join(res["inputs_without_finding"]) or "none"))
+        return code
     code, res = run_inputs(a.migration.resolve())
     if a.json:
         print(json.dumps(res, sort_keys=True, indent=1))

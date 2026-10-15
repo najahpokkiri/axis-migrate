@@ -14,6 +14,13 @@ Two receipt kinds, both written only by `plot.py review-add`:
 Both count the same way: a receipt says the dataset was looked at; a flag moves only a PASS_* dataset to NEEDS_REVIEW;
 nothing a reviewer records moves a verdict or a rung up. A view receipt whose project bytes changed after the review
 (sha256 ≠ the receipt's) does not count.
+
+Discover (before any run) uses the same view-receipt fields on its map findings (`scan.py annotate map-finding`):
+view, views_seen (must include inputs-overview), engine (maplibre-gl-raster when a raster is covered), cells_read
+[{dataset, cell, value}] and features_read [{dataset, feature, attribute, value}] against <migration>/discover/
+views.json (views.py inputs); at least one identified cell or feature attribute per input the finding covers, values
+as the popup shows them. A PNG finding and a view finding count the same way (map_finding_problem); neither resolves
+anything and there is no Stop-gate rule for discover.
 """
 from __future__ import annotations
 
@@ -398,6 +405,229 @@ def sealable_views(run_dir: Path, root: str) -> list[dict]:
                 out.append({"path": p, "sha256": info["sha256"], "dataset": e.get("dataset"), "view": info["name"],
                             "family": e.get("family"), "validity_counts": e.get("validity_counts")})
     return out
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# discover: map findings on the inputs views (skills/map/views.py inputs → <migration>/discover/views.json)
+# ---------------------------------------------------------------------------------------------------------------
+INPUTS_ROOT = "discover/views"
+INPUTS_INDEX = "discover/views.json"
+INPUTS_OVERVIEW = "inputs-overview"
+
+
+def inputs_rel_problem(rel) -> str | None:
+    if not isinstance(rel, str) or not rel:
+        return "project must be a path relative to the migration folder"
+    parts = rel.split("/")
+    if rel.startswith("/") or "\\" in rel or ".." in parts or "." in parts or "" in parts:
+        return f"project {rel!r} must be a plain relative path (no '..', no leading '/')"
+    if "/".join(parts[:2]) != INPUTS_ROOT or len(parts) not in (3, 4) or not rel.endswith(".geolibre.json"):
+        return (f"project {rel!r} is not an inputs view ({INPUTS_ROOT}/<view>.geolibre.json or "
+                f"{INPUTS_ROOT}/<ds>/cell-<id>|feature-<id>.geolibre.json, listed in {INPUTS_INDEX})")
+    return None
+
+
+def _inputs_ref_problem(x, what: str) -> str | None:
+    if not isinstance(x, dict) or set(x) != {"project", "project_sha256"}:
+        return f"{what} must be {{project, project_sha256}}"
+    if not isinstance(x["project_sha256"], str):
+        return f"{what}.project_sha256 must be the sha256 hex string from {INPUTS_INDEX}"
+    return inputs_rel_problem(x["project"])
+
+
+def inputs_projects(doc: dict) -> dict:
+    """{project rel: {name, sha256, dataset (None for a shared view), kind: view|cell|feature, id}}."""
+    out = {}
+    for name, pe in sorted((doc.get("projects") or {}).items()):
+        if isinstance(pe, dict) and pe.get("project"):
+            out[pe["project"]] = {"name": name, "sha256": pe.get("project_sha256"), "dataset": None, "kind": "view",
+                                  "id": name}
+    for e in doc.get("datasets") or []:
+        if not isinstance(e, dict):
+            continue
+        for key, kind in (("cells_to_identify", "cell"), ("features_to_identify", "feature")):
+            for c in e.get(key) or []:
+                if isinstance(c, dict) and c.get("id") and c.get("project"):
+                    out[c["project"]] = {"name": f"{kind}-{c['id']}", "sha256": c.get("project_sha256"),
+                                         "dataset": e.get("dataset"), "kind": kind, "id": c["id"]}
+    return out
+
+
+def attr_match(read, truth) -> bool:
+    """An attribute as the identify popup shows it: numbers to ~3 significant figures (popup_match), text exactly
+    (whitespace runs collapsed), null only as null."""
+    if truth is None or isinstance(truth, bool):
+        return read is truth if truth is None else read == truth
+    if isinstance(truth, (int, float)):
+        return popup_match(read, truth)
+    if not isinstance(read, str):
+        return False
+    return " ".join(read.split()) == " ".join(str(truth).split())
+
+
+def check_inputs_receipt(f: dict, doc: dict, current, inventory: dict | None = None) -> list[str]:
+    """Problems of a discover map finding that cites inputs views (empty = it counts). `current(rel)` → sha256 of the
+    project bytes now (None when missing). `inventory` (inventory.json now) enables the changed-input check."""
+    v, seen = f.get("view"), f.get("views_seen")
+    p = _inputs_ref_problem(v, "view")
+    if p:
+        return [p]
+    if not isinstance(seen, list) or not seen:
+        return ["views_seen must list every inputs view project you opened: [{project, project_sha256}, …]"]
+    for i, s in enumerate(seen):
+        p = _inputs_ref_problem(s, f"views_seen[{i}]")
+        if p:
+            return [p]
+    rels = [s["project"] for s in seen]
+    if len(set(rels)) != len(rels):
+        return ["views_seen lists a project twice"]
+    if v["project"] not in rels:
+        return [f"view {v['project']} must be one of views_seen"]
+    index = inputs_projects(doc)
+    probs, opened = [], {}
+    for s in seen:
+        info = index.get(s["project"])
+        if info is None:
+            probs.append(f"{s['project']} is not a view in {INPUTS_INDEX}")
+        elif s["project_sha256"] != info["sha256"]:
+            probs.append(f"project_sha256 of {s['project']} does not match {INPUTS_INDEX}")
+        elif current(s["project"]) != s["project_sha256"]:
+            probs.append(f"{s['project']} is missing or its bytes changed since {INPUTS_INDEX} (sha256 differs): "
+                         "rerun views.py inputs and look again")
+        else:
+            opened[(info["kind"], info["dataset"], info["id"])] = s["project"]
+    if probs:
+        return probs
+    if ("view", None, INPUTS_OVERVIEW) not in opened:
+        return [f"views_seen must include {INPUTS_ROOT}/{INPUTS_OVERVIEW}.geolibre.json (every input on one map)"]
+    entries = {e.get("dataset"): e for e in doc.get("datasets") or [] if isinstance(e, dict)}
+    about = f.get("about")
+    if not isinstance(about, list) or not all(isinstance(x, str) for x in about):
+        return ["about must list the dataset ids the finding is about"]
+    cr, fr = f.get("cells_read"), f.get("features_read")
+    if cr is None:
+        cr = []
+    if fr is None:
+        fr = []
+    if not isinstance(cr, list) or not isinstance(fr, list):
+        return ["cells_read and features_read must be lists"]
+    covered = {d for d in about if d in entries}
+    read_ok: set[str] = set()
+    for i, c in enumerate(cr):
+        if not isinstance(c, dict) or set(c) != {"dataset", "cell", "value"}:
+            return [f"cells_read[{i}] must be {{dataset, cell, value}} (value as the popup shows Band 1; null = "
+                    "NoData)"]
+        e = entries.get(c["dataset"])
+        if e is None or e.get("family") != "raster":
+            return [f"cells_read[{i}]: {c['dataset']!r} is not a raster in {INPUTS_INDEX}"]
+        truth = {x.get("id"): x for x in e.get("cells_to_identify") or []}.get(c["cell"])
+        if truth is None:
+            return [f"cells_read[{i}]: cell {c['cell']!r} is not a cell to identify of {c['dataset']} "
+                    f"({', '.join(x.get('id') for x in e.get('cells_to_identify') or [])})"]
+        if ("cell", c["dataset"], c["cell"]) not in opened:
+            return [f"cell {c['cell']} of {c['dataset']}: cite its project {truth.get('project')} in views_seen "
+                    f"(views.py inputs-url <migration> --dataset {c['dataset']} --cell {c['cell']})"]
+        if not popup_match(c["value"], truth.get("value")):
+            probs.append(f"{c['dataset']} cell {c['cell']}: read {c['value']!r} but {INPUTS_INDEX} has "
+                         f"{truth.get('value')!r} (the popup rounds to about 3 significant figures): wrong cell or "
+                         "wrong layer, or not read from the popup")
+            continue
+        covered.add(c["dataset"])
+        read_ok.add(c["dataset"])
+    for i, x in enumerate(fr):
+        if not isinstance(x, dict) or set(x) != {"dataset", "feature", "attribute", "value"}:
+            return [f"features_read[{i}] must be {{dataset, feature, attribute, value}} (as the popup shows it)"]
+        e = entries.get(x["dataset"])
+        if e is None or e.get("family") != "vector":
+            return [f"features_read[{i}]: {x['dataset']!r} is not a vector in {INPUTS_INDEX}"]
+        truth = {t.get("id"): t for t in e.get("features_to_identify") or []}.get(x["feature"])
+        if truth is None:
+            return [f"features_read[{i}]: feature {x['feature']!r} is not a feature to identify of {x['dataset']} "
+                    f"({', '.join(t.get('id') for t in e.get('features_to_identify') or [])})"]
+        if ("feature", x["dataset"], x["feature"]) not in opened:
+            return [f"feature {x['feature']} of {x['dataset']}: cite its project {truth.get('project')} in "
+                    f"views_seen (views.py inputs-url <migration> --dataset {x['dataset']} --feature {x['feature']})"]
+        props = truth.get("properties") or {}
+        if x["attribute"] not in props:
+            return [f"features_read[{i}]: {x['dataset']} has no attribute {x['attribute']!r} "
+                    f"({', '.join(sorted(props))})"]
+        if not attr_match(x["value"], props[x["attribute"]]):
+            probs.append(f"{x['dataset']} feature {x['feature']}: {x['attribute']} read {x['value']!r} but "
+                         f"{INPUTS_INDEX} has {props[x['attribute']]!r}: wrong feature or wrong layer, or not read "
+                         "from the popup")
+            continue
+        covered.add(x["dataset"])
+        read_ok.add(x["dataset"])
+    if probs:
+        return probs
+    if not covered:
+        return [f"about must name at least one dataset of {INPUTS_INDEX} (the inputs this finding is about)"]
+    for d in sorted(covered):
+        e = entries[d]
+        if d not in read_ok and not e.get("nothing_to_identify"):
+            what = "cell (cells_read)" if e.get("family") == "raster" else "feature attribute (features_read)"
+            ids = [t.get("id") for t in (e.get("cells_to_identify") or e.get("features_to_identify") or [])]
+            probs.append(f"{d}: identify at least one {what} of {', '.join(ids)} and record it as the popup shows it")
+    if probs:
+        return probs
+    rasters = [d for d in covered if entries[d].get("family") == "raster"]
+    eng = f.get("engine")
+    if rasters and eng != ENGINE_GPU:
+        return [f"engine {eng!r} refused: rasters must be looked at with the GPU engine {ENGINE_GPU}; {ENGINE_HINT}"]
+    if eng is not None and eng not in ENGINES:
+        return [f"engine {eng!r} unknown (one of {', '.join(ENGINES)}, or omit it when only vectors are covered)"]
+    if inventory is not None:
+        inv_sha = {x.get("id"): x.get("sha256") for x in inventory.get("datasets") or [] if isinstance(x, dict)}
+        for d in sorted(covered):
+            was = (entries[d].get("source") or {}).get("inventory_sha256")
+            if d in inv_sha and was and inv_sha[d] != was:
+                probs.append(f"{d}: the legacy file changed since views.py inputs (inventory sha256 differs): rerun "
+                             "views.py inputs and look again")
+    if probs:
+        return probs
+    bbs = [entries[d].get("bounds_4326") for d in sorted(covered) if entries[d].get("bounds_4326")]
+    bounds = [min(b[0] for b in bbs), min(b[1] for b in bbs), max(b[2] for b in bbs), max(b[3] for b in bbs)] \
+        if bbs else None
+    return _location_problems(f, bounds)
+
+
+def check_inputs_on_disk(migration: Path, f: dict) -> list[str]:
+    """Full check of a discover map finding with a view receipt against <migration>/discover/views.json, the project
+    bytes now and inventory.json (scan.py annotate, map.py findings)."""
+    migration = Path(migration)
+    try:
+        doc = ac.load_json(migration / INPUTS_INDEX)
+    except (OSError, ValueError):
+        return [f"no {INPUTS_INDEX}: run `views.py inputs <migration>` first"]
+    if not isinstance(doc, dict) or doc.get("schema") != VIEWS_SCHEMA or doc.get("mode") != "inputs":
+        return [f"{INPUTS_INDEX} is not an inputs views index"]
+    cache: dict[str, str | None] = {}
+
+    def current(rel: str):
+        if rel not in cache:
+            p = migration / rel
+            cache[rel] = ac.sha256_file(p) if p.is_file() else None
+        return cache[rel]
+    return check_inputs_receipt(f, doc, current, _load(migration / "inventory.json"))
+
+
+def map_finding_problem(migration: Path, f: dict) -> str | None:
+    """None when a stored discover map finding still counts: a PNG finding whose PNG still has its bytes, or a view
+    finding whose receipt still passes check_inputs_on_disk. Both kinds count the same way."""
+    if not isinstance(f, dict):
+        return "finding is not an object"
+    if f.get("receipt") == "view" or "view" in f:
+        probs = check_inputs_on_disk(migration, f)
+        return probs[0] if probs else None
+    png = f.get("png")
+    if not isinstance(png, str) or not png:
+        return "finding cites neither a png nor a view"
+    p = Path(migration) / png
+    if not p.is_file():
+        return f"{png} is missing"
+    if ac.sha256_file(p) != f.get("png_sha256"):
+        return f"{png} changed since the finding was recorded (png_sha256 differs)"
+    return None
 
 
 if __name__ == "__main__":      # debugging aid: python3 visual_receipt.py <run_dir>

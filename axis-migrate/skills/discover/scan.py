@@ -2,9 +2,10 @@
 """discover/scan.py: deterministic scanner of a read-only legacy GIS folder (axis-migrate.inventory.v1).
 
     scan.py <legacy_dir> --out <project>/migration [--json]
-    scan.py annotate <migration> map-finding --json finding.json
+    scan.py annotate <migration> map-finding --json finding.json      (a PNG finding or a view receipt)
     scan.py annotate <migration> note --json annotation.json
-    scan.py annotate <migration> png --path discover/x.png [--kind inputs_overview]
+    scan.py annotate <migration> png --path discover/x.png [--kind inputs_overview]   (CLI-internal: map.py calls
+                                                                                       scan.annotate() itself)
 
 The scan makes no model calls, never runs legacy code and opens nothing outside the legacy root. It hashes every file
 before and after (read_only_verified), sets GDAL_PAM_ENABLED=NO and opens GeoPackages read-only/immutable.
@@ -4945,7 +4946,10 @@ def annotate(migration: Path, what: str, payload: dict | None, path: str | None,
         return 2, "--json is required"
     if what == "map-finding":
         f = dict(payload)
-        for k in ("png", "observation", "severity"):
+        is_view = "view" in f or f.get("receipt") == "view"
+        if is_view and "png" in f:
+            return 2, "a finding cites a png or a view, not both"
+        for k in ("view" if is_view else "png", "observation", "severity"):
             if not f.get(k):
                 return 2, f"finding needs {k}"
         if f["severity"] not in ("info", "watch", "question"):
@@ -4959,13 +4963,28 @@ def annotate(migration: Path, what: str, payload: dict | None, path: str | None,
             return 2, "metric must be {name, value (number), computed_by}"
         if not has_metric and f["severity"] != "question":
             return 2, "a finding without a computed metric can only raise a question (severity: question)"
-        if not (migration / f["png"]).is_file():
-            return 2, f"png {f['png']} not found under the migration folder"
-        f["png_sha256"] = ac.sha256_file(migration / f["png"])
         f.setdefault("about", [])
+        if is_view:
+            import visual_receipt as vr       # lib/: the one rule for view receipts (verify and discover)
+            extra = sorted(set(f) - {"id", "view", "views_seen", "engine", "cells_read", "features_read", "about",
+                                     "observation", "severity", "metric", "location", "receipt", "model"})
+            if extra:
+                return 2, f"unknown field(s) in a view finding: {', '.join(extra)}"
+            probs = vr.check_inputs_on_disk(migration, f)
+            if probs:
+                return 2, "view receipt refused:\n  - " + "\n  - ".join(probs)
+            f["receipt"] = "view"
+            f["about"] = sorted(set(f["about"]) | {x["dataset"] for x in (f.get("cells_read") or [])
+                                                   + (f.get("features_read") or [])})
+            cite = f["view"]["project"]
+        else:
+            if not (migration / f["png"]).is_file():
+                return 2, f"png {f['png']} not found under the migration folder"
+            f["png_sha256"] = ac.sha256_file(migration / f["png"])
+            cite = f["png"]
         f["state"] = "ai_inferred"
         f["raises_question"] = not has_metric or f["severity"] == "question"
-        f["id"] = f.get("id") or "MF-" + hashlib.sha256(f"{f['png']}|{f['observation']}".encode()).hexdigest()[:8]
+        f["id"] = f.get("id") or "MF-" + hashlib.sha256(f"{cite}|{f['observation']}".encode()).hexdigest()[:8]
         inv["map"]["findings"] = sorted([x for x in inv["map"]["findings"] if x["id"] != f["id"]] + [f],
                                         key=lambda x: x["id"])
         ac.dump_json(inv_p, inv)
@@ -5011,8 +5030,9 @@ def main(argv=None) -> int:
         ap.add_argument("migration", type=Path)
         ap.add_argument("what", choices=["map-finding", "note", "png"])
         ap.add_argument("--json", dest="json_path", help="JSON file with the finding / annotation ('-' = stdin)")
-        ap.add_argument("--path", help="png path relative to the migration folder (what=png)")
-        ap.add_argument("--kind", help="png kind (what=png)")
+        ap.add_argument("--path", help="png path relative to the migration folder (what=png; CLI-internal, "
+                                       "map.py registers its PNGs through scan.annotate())")
+        ap.add_argument("--kind", help="png kind (what=png; CLI-internal)")
         a = ap.parse_args(argv[1:])
         payload = None
         if a.json_path:

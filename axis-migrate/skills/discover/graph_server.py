@@ -391,7 +391,6 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("wait", help="block until the user presses 'Send to agent' (exit 0) or timeout (exit 2)")
     p.add_argument("migration", nargs="?")
     p.add_argument("--timeout", type=float, default=540.0)
-    p.add_argument("--poll", type=float, default=0.2)
     a = ap.parse_args(argv)
     try:
         if a.cmd == "serve":
@@ -400,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:
         mdir = Path(a.migration) if a.migration else ac.find_migration_dir(Path.cwd())
         if mdir is None:
             raise G.ValidationError("no migration/graph.json found", code="no_graph")
-        return wait(mdir, a.timeout, a.poll)
+        return wait(mdir, a.timeout)
     except G.GraphError as exc:
         sys.stderr.write(f"graph_server.py: {exc.code}: {exc.message}\n")
         return 70 if a.cmd == "serve" else 1
