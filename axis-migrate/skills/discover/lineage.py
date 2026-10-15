@@ -140,8 +140,10 @@ class Lineage:
                     "node": s["id"], "fact": "superseded", "scope": "drop", "scope_reason": step["scope_reason"],
                     "twin_of": step["twin_of"], "missing_writes": sorted(set(missing)),
                     "evidence": [e["ref"] for e in step["evidence"][1:]],
-                    "summary": f"{c['path']} is marked superseded"
-                               + (f" (alternative implementation of {step['twin_of']})" if step["twin_of"] else "")
+                    "summary": (f"{c['path']} writes the same files as {step['twin_of']}: an alternative "
+                                f"implementation" if any(x["kind"] == "alternative_impl" for x in c["status_evidence"])
+                                else f"{c['path']} is marked superseded"
+                                + (f" (alternative implementation of {step['twin_of']})" if step["twin_of"] else ""))
                                + f"; {len(set(missing))} of its outputs do not exist", "for": "confirm_all"})
             steps.append(step)
             self.step_ids.add(s["id"])
@@ -344,6 +346,7 @@ class Lineage:
                     if l.get("subset_parsed"):
                         e["subset"] = l["subset_parsed"]
         self.edges = edges
+        self.split_multi_writers()
         for e in edges.values():
             e["lines"] = sorted(e["lines"])
             e["state"] = strongest([x["state"] for x in e["evidence"]])
@@ -353,10 +356,10 @@ class Lineage:
         self.unmatched_questions()
         # default new output names (CONTRACTS §4; graph.py re-derives them on every write)
         producer = {}
-        for e in edges.values():
+        scope = {s["id"]: s["scope"] for s in steps}
+        for e in sorted(edges.values(), key=lambda e: scope.get(e["from"]) == "drop"):
             if e["kind"] in ("writes", "reads_write") and e["from"] in self.step_ids:
                 producer.setdefault(e["to"], e["from"])
-        scope = {s["id"]: s["scope"] for s in steps}
         for did, d in self.datasets.items():
             pb = producer.get(did)
             if d["role"] != "input" and pb and scope.get(pb) == "migrate":
@@ -389,6 +392,41 @@ class Lineage:
                                                     f"{f.get('unused')} are present but unused", "for": "confirm_all"})
         g["scope_facts"] = sorted(self.scope_facts, key=lambda f: (f["node"], f["fact"]))
         return g
+
+    def split_multi_writers(self) -> None:
+        """A dataset written by several in-scope steps (B1/B2): the file on disk is the last writer's output; the
+        other writers get their own version `ds.x@<step>` and the choice becomes a question on the node, never an
+        invalid draft. Dropped steps (alternative implementations) do not compete."""
+        self.multi_writers = []
+        scope = {s["id"]: s["scope"] for s in self.steps}
+        order = {s["id"]: (s.get("order") or 10 ** 6, s["id"]) for s in self.steps}
+        writers = defaultdict(list)
+        for e in self.edges.values():
+            if e["kind"] in ("writes", "reads_write") and scope.get(e["from"]) in ("migrate", "keep_legacy"):
+                writers[e["to"]].append(e)
+        for did, es in sorted(writers.items()):
+            steps_ = sorted({e["from"] for e in es}, key=lambda x: order[x])
+            if len(steps_) < 2:
+                continue
+            keep = steps_[-1]
+            versions = []
+            for sid in steps_[:-1]:
+                vid = f"{did}@{sid.split('_', 1)[0]}"
+                base = self.datasets[did]
+                v = json.loads(json.dumps(base))
+                v.update({"id": vid, "title": f"{base['title']} ({sid})", "version_of": did,
+                          "reference": {"source": "none", "match_method": "lineage", "via_dataset": None,
+                                        "confirmed_by": None}, "no_reference_reason": "version_of_shared_file"})
+                v["legacy"] = dict(v["legacy"], exists=False)
+                self.datasets[vid] = v
+                self.ds[vid] = dict(self.ds[did], id=vid, exists=False)
+                for e in [e for e in es if e["from"] == sid]:
+                    del self.edges[e["id"]]
+                    e2 = dict(e, to=vid, id=f"e.{sid}>{vid}" + ("" if e["kind"] == "writes" else f"#{e['kind']}"))
+                    self.edges[e2["id"]] = e2
+                versions.append({"step": sid, "dataset": vid})
+            self.multi_writers.append({"dataset": did, "steps": steps_, "kept": keep, "versions": versions,
+                                       "evidence": sorted({x["ref"] for e in es for x in e["evidence"]})})
 
     def step_of_code(self, code_id: str | None) -> str | None:
         if not code_id:
@@ -578,6 +616,21 @@ class Lineage:
                {"value": "read_edited", "label": "Read the edited file",
                 "description": "Keep the hand-made file as a hash-pinned input (bridge)"}, dont_know],
               guess={"option": "derive", "why": "the rule explains all but the listed exceptions"})
+        # datasets written by several in-scope steps (split into versions by split_multi_writers)
+        for mw in self.multi_writers:
+            d = self.ds[mw["dataset"]]
+            q("lineage", mw["dataset"], [mw["dataset"]] + mw["steps"] + [v["dataset"] for v in mw["versions"]],
+              "Written by several steps",
+              f"{d['legacy_path']} is written by {len(mw['steps'])} steps ({', '.join(mw['steps'])}). The file can only "
+              f"be one step's output: which step produced it?",
+              "Only one step's output can be compared with the legacy file; the others get their own version.",
+              {"ref": mw["evidence"][0] if mw["evidence"] else f"inventory:{d['legacy_path']}", "quote": None},
+              [{"ref": r, "fact": "writes the same file"} for r in mw["evidence"][:4]], "medium",
+              [{"value": s, "label": s + (" (Recommended)" if s == mw["kept"] else ""),
+                "recommended": s == mw["kept"], "description": "last writer in run order" if s == mw["kept"]
+                else f"its output becomes {next(v['dataset'] for v in mw['versions'] if v['step'] == s)}"}
+               for s in mw["steps"]] + [dont_know],
+              guess={"option": mw["kept"], "why": "the last writer in run order leaves the file on disk"})
         # writes without files (live steps): branch probably never run
         miss = defaultdict(list)
         for f in C["failed"]:
@@ -737,6 +790,7 @@ def validate_draft(g: dict) -> list[str]:
         if lp and (os.path.isabs(lp) or "\\" in lp):
             errs.append(f"dataset {d['id']} legacy path")
     producers = defaultdict(set)
+    in_scope = {s["id"] for s in g["steps"] if s.get("scope") in ("migrate", "keep_legacy")}
     adj = defaultdict(list)
     for e in g["edges"]:
         k, f, t = e["kind"], e["from"], e["to"]
@@ -747,7 +801,8 @@ def validate_draft(g: dict) -> list[str]:
         if k in ("writes", "reads_write"):
             if not (f in steps and t in dsets):
                 errs.append(f"edge {e['id']}: {k} step->dataset")
-            producers[t].add(f)
+            if f in in_scope:  # a dropped step (alternative implementation) never runs: not a competing producer
+                producers[t].add(f)
         if k in ("reads", "reads_grid", "writes", "reads_write"):
             adj[f].append(t)
         if k == "equivalent_to" and not (f in dsets and t in dsets):

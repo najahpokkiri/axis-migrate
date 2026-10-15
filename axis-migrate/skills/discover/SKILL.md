@@ -84,7 +84,13 @@ Lineage checks the static lineage against the real files (writes exist, layer na
 mtime order as a warning only). Anything unmatched becomes a question linked to a node and a code line. Scope facts
 the files already answer (superseded code, display-only layers, unused classes) are in `graph.json.scope_facts`
 with evidence; the interview folds them into its confirm-all question instead of asking each one. Exit 3 means a
-graph already exists: change it only with `graph.py apply` (see `GRAPH_OPS.md`).
+graph already exists: change it only with `graph.py apply` (see `GRAPH_OPS.md`). Exit 2 means no graph was written:
+`inventory.json not found` → run `scan.py` first; `INVALID: …` lines → the draft is in `migration/.graph/draft.json`;
+do not edit it or write `graph.json` by hand and do not start the interview. Report the INVALID lines to the user as a
+plugin defect (with `scan.py`'s and `lineage.py`'s versions), and continue only with steps that need no graph.
+Live scripts that write the same files are paired as alternative implementations (one canonical, the others
+`scope: drop`, `alternative_impl`); a file still written by several in-scope steps becomes a "Written by several
+steps" question with a version `ds.x@<step>` per other writer.
 
 ## 4 The editor and the "Send to agent" channel
 ```

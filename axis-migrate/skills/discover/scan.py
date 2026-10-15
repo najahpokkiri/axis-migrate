@@ -58,6 +58,7 @@ PROJECT_EXT = {".qgs", ".qgz", ".model3", ".aprx", ".atbx"}
 LISTED_ONLY_EXT = {".mxd", ".tbx", ".lyr", ".lyrx", ".fmw", ".pdf", ".qlr", ".mxt", ".sde"}
 SHP_PARTS = {".dbf", ".shx", ".prj", ".cpg", ".sbn", ".sbx", ".qix", ".fix", ".shp.xml"}
 SIDECAR_TAILS = (".aux.xml", ".ovr", ".tfw", ".tifw", ".wld", ".msk", ".qmd", "-wal", "-shm", "-journal", ".lock")
+STATS_MAX_CELLS = 2 ** 26  # rasters above this many cells get sampled statistics (every k-th block)
 SECRET_RE = re.compile(r"(^|[._-])(env|secret|secrets|credential|credentials|token|password|passwd|private[-_]?key|"
                        r"id_rsa)([._-]|$)|\.(pem|key|p12|pfx)$", re.I)
 OUTPUT_DIR_RE = re.compile(r"(final|output|out|result|deliver|export|temp|tmp|work|scratch|intermediate)", re.I)
@@ -2754,7 +2755,7 @@ def aux_xml_stats(full: Path) -> dict | None:
     return out
 
 
-def profile_raster(full: Path) -> dict:
+def profile_raster(full: Path, stats: bool = True) -> dict:
     import numpy as np
     import rasterio
     from pyproj import CRS, Geod
@@ -2811,12 +2812,17 @@ def profile_raster(full: Path) -> dict:
         prof["embedded_stats"] = {"tags": emb or None, "aux_xml": sidecar,
                                   "approximate": bool((emb or {}).get("approximate") or (sidecar or {}).get("approximate")),
                                   "trusted": False, "note": "recorded only; every statistic used is computed"}
-        # computed statistics (float64 accumulators over block windows; strided above 2 GB)
-        big = full.stat().st_size > 2 * 1024 ** 3
+        if not stats:
+            return prof
+        # computed statistics (float64 accumulators over block windows; strided above 2 GB or STATS_MAX_CELLS cells:
+        # every k-th block, a systematic sample; counts and sums are then those of the sample)
+        cells = src.width * src.height
+        big = full.stat().st_size > 2 * 1024 ** 3 or cells > STATS_MAX_CELLS
         windows = [w for _, w in src.block_windows(1)] if src.count else []
         if big:
-            step = max(1, len(windows) // 2000)
+            step = max(1, len(windows) // 2000, math.ceil(cells / STATS_MAX_CELLS))
             windows = windows[::step]
+            prof["stats_sample"] = {"every_nth_block": step, "blocks": len(windows), "cells_total": cells}
         n = valid = nodata_n = nan_n = zero_n = 0
         s = 0.0
         mean = m2 = 0.0
@@ -2879,6 +2885,35 @@ def profile_raster(full: Path) -> dict:
                                   "approximate": st.get("approximate")}
         prof["embedded_vs_computed"] = diffs or None
     return prof
+
+
+def vrt_alias_source(full: Path, rel: str, known: set[str]) -> str | None:
+    """A .vrt with one band whose only source is a sibling file in the legacy tree, read whole and placed whole
+    (SrcRect = DstRect = the full raster): an alias of that file (m1). Returns the source's relative path."""
+    from defusedxml import ElementTree as DET
+    try:
+        root = DET.fromstring(full.read_bytes())
+    except Exception:  # noqa: BLE001
+        return None
+    if root.tag != "VRTDataset":
+        return None
+    bands = root.findall("VRTRasterBand")
+    srcs = [x for b in bands for x in b if x.tag in ("SimpleSource", "ComplexSource")]
+    if len(bands) != 1 or len(srcs) != 1 or bands[0].get("subClass"):
+        return None
+    fn = srcs[0].find("SourceFilename")
+    if fn is None or fn.get("relativeToVRT") != "1" or not fn.text or "/" in fn.text or "\\" in fn.text:
+        return None
+    sib = (rel.rsplit("/", 1)[0] + "/" if "/" in rel else "") + fn.text.strip()
+    if sib not in known:
+        return None
+    w, h = root.get("rasterXSize"), root.get("rasterYSize")
+    for tag in ("SrcRect", "DstRect"):
+        r = srcs[0].find(tag)
+        if r is not None and (r.get("xOff", "0") != "0" or r.get("yOff", "0") != "0" or r.get("xSize") != w
+                              or r.get("ySize") != h):
+            return None
+    return sib
 
 
 def read_layer(full: Path, layer: str | None):
@@ -3320,10 +3355,24 @@ class Scan:
     def profile_all(self, entries):
         profiles: dict[str, dict] = {}
         keep: dict = {}
-        for e in entries:
+        rasters = {e["path"] for e in entries if e["kind"] == "raster"}
+        self.vrt_alias: dict[str, str] = {}
+        for e in sorted(entries, key=lambda e: file_ext(e["path"]) == ".vrt"):  # sources before their VRTs
             rel, kind = e["path"], e["kind"]
             full = self.root / rel
             try:
+                sib = vrt_alias_source(full, rel, rasters) if kind == "raster" and file_ext(rel) == ".vrt" else None
+                if sib and "transform" in profiles.get(sib, {}):
+                    p = profile_raster(full, stats=False)
+                    src = profiles[sib]
+                    same = {k: p.get(k) == src.get(k) for k in ("shape", "transform", "dtype")}
+                    if all(same.values()):
+                        diff = {k: [p.get(k), src.get(k)] for k in ("nodata", "embedded_stats") if p.get(k) != src.get(k)}
+                        profiles[rel] = dict(src, driver=p.get("driver"), nodata=p.get("nodata"),
+                                             embedded_stats=p.get("embedded_stats"), alias_of=sib,
+                                             alias_differs=sorted(diff), computed_from=sib)
+                        self.vrt_alias[rel] = sib
+                        continue
                 if kind == "raster":
                     profiles[rel] = profile_raster(full)
                 elif kind in ("vector", "gdb"):
@@ -3647,8 +3696,9 @@ class Scan:
                                      "language": CODE_EXT.get(file_ext(e["path"]), "other"), "status": "unknown",
                                      "status_evidence": [], "twin_of": None, "ops": [], "flags": [],
                                      "parse_error": "not analysed (listed only)"}
-        # twins of superseded code: replacement named in a comment, the same numeric prefix, or similar code
         self.twins = []
+        self.alternative_implementations()
+        # twins of superseded code: replacement named in a comment, the same numeric prefix, or similar code
         live = {r: c for r, c in self.codes.items() if c["status"] == "live"}
         for rel, c in sorted(self.codes.items()):
             if c["status"] not in ("superseded", "twin") or c.get("twin_of"):
@@ -3677,6 +3727,56 @@ class Scan:
                 c["twin_of"] = live[target]["id"]
                 c["twin_evidence"] = why
                 self.twins.append(self.twin_record(rel, c))
+
+    def alternative_implementations(self) -> None:
+        """Live scripts whose write sets overlap are alternative implementations of one workflow (B1): one stays
+        canonical (its stem is the others' common prefix, else the most similar to the rest, else the first path);
+        the others become `superseded` with `twin_of` the canonical and twin kind `alternative_impl`."""
+        writes = {}
+        for rel, c in self.codes.items():
+            if c["status"] != "live":
+                continue
+            w = {x["dataset"] for o in self.ops if o["file"] == rel for x in o["writes"]
+                 if x["mode"] in ("create", "append") and x.get("dataset")}
+            if w:
+                writes[rel] = w
+        parent = {r: r for r in writes}
+
+        def find(r):
+            while parent[r] != r:
+                r = parent[r]
+            return r
+        rels = sorted(writes)
+        for i, a in enumerate(rels):
+            for b in rels[i + 1:]:
+                if writes[a] & writes[b]:
+                    parent[find(b)] = find(a)
+        groups = defaultdict(list)
+        for r in rels:
+            groups[find(r)].append(r)
+        for members in groups.values():
+            if len(members) < 2:
+                continue
+            stems = {r: stem_of(r).lower() for r in members}
+            prefix = [r for r in members if all(stems[o].startswith(stems[r]) for o in members)]
+            sim = {r: sum(self.similarity(r, o) for o in members if o != r) for r in members}
+            canon = prefix[0] if len(prefix) == 1 else max(sorted(members), key=lambda r: sim[r])
+            why = "stem_prefix" if len(prefix) == 1 else "most_similar"
+            for r in sorted(members):
+                if r == canon:
+                    continue
+                c = self.codes[r]
+                shared = sorted(writes[r] & writes[canon]) or sorted(writes[r] & set().union(
+                    *[writes[o] for o in members if o != r]))
+                c["status"] = "superseded"
+                c["status_evidence"].append({"kind": "alternative_impl", "value": stem_of(canon),
+                                             "shared_writes": shared})
+                c["twin_of"] = self.codes[canon]["id"]
+                c["twin_evidence"] = {"kind": "shared_writes", "value": shared, "canonical_by": why,
+                                      "similarity": round(self.similarity(r, canon), 3)}
+                rec = self.twin_record(r, c)
+                rec["kind"] = "alternative_impl"
+                self.twins.append(rec)
 
     def similarity(self, a: str, b: str) -> float:
         def norm(rel):
@@ -4810,6 +4910,9 @@ class Scan:
                               "data_rows": res_s.get("data_rows"), "categorical": False})
             elif prof and prof.get("format") == "csv":
                 hints.update({"header_row": 1, "sep": prof.get("sep"), "categorical": False})
+            if rel in self.vrt_alias:
+                d["alias_of"] = next((x for x, y in self.datasets.items() if y["legacy_path"] == self.vrt_alias[rel]),
+                                     None)
             d["compare_hints"] = hints
             d["reference_candidate"] = bool(d["exists"] and d["role"] in ("intermediate", "final"))
         step_candidates = []

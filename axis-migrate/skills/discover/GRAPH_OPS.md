@@ -63,7 +63,8 @@ axpy graph.py apply <migration> --actor agent --base-rev <N> --ops ops.json --ch
 Edge kinds and direction: `reads`, `reads_grid`: dataset → step · `writes`, `reads_write` (in place): step → dataset ·
 `equivalent_to`: dataset → dataset (knowledge; not data flow) · `displays`: `"project:<relpath>"` → dataset.
 Default edge id: `e.<from>><to>` for reads/writes, `e.<from>><to>#<kind>` otherwise. A dataset may have only one
-producing step (split versions as `ds.x@<step>`). Data-flow edges must be acyclic.
+in-scope producing step (split versions as `ds.x@<step>`); a dropped step (an alternative implementation kept as
+knowledge) may write the same dataset. Data-flow edges must be acyclic.
 Evidence item: `{"state": <evidence state>, "ref": "path:L[-L]" | "path#cell=N" | "inventory:path" | "qgz:…" |
 "answer:qNN" | "compare:runs/…", "summary": "…"}`. States: `directly_observed, structurally_inferred, ai_inferred,
 documented, user_asserted, runtime_probed, verified, rejected, superseded`. Edge `state` = strongest non-rejected

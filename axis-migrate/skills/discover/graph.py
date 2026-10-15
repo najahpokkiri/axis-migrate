@@ -604,7 +604,7 @@ def derive_structure(graph: dict) -> None:
         s["inputs"] = sorted(ins[sid] - outs[sid])
         s["outputs"] = sorted(outs[sid])
     for did, d in dsets.items():
-        p = sorted(prod[did], key=lambda t: (t[0], t[1], t[2] or ""))
+        p = sorted(prod[did], key=lambda t: (steps[t[1]].get("scope") == "drop", t[0], t[1], t[2] or ""))
         d["produced_by"] = {"step": p[0][1], "op": p[0][2]} if p else None
         d["consumed_by"] = sorted(cons[did])
     # Role: user override wins; otherwise lineage's role, adjusted for the I/O and scopes (02 §4.5):
@@ -820,7 +820,10 @@ def validate_graph(graph: dict) -> list[str]:
             errs.append(f"{w}: equivalent_to joins two different datasets")
         elif k == "displays" and not (isinstance(f, str) and EXTERNAL_RE.match(f) and t in dsets):
             errs.append(f"{w}: displays goes from 'project:<path>' to a dataset")
-        if k in WRITE_KINDS and e.get("state") != "rejected" and t in dsets:
+        # a dropped step never runs: only in-scope writers compete for a dataset (an alternative implementation
+        # kept as knowledge writes the same legacy file without conflict)
+        if k in WRITE_KINDS and e.get("state") != "rejected" and t in dsets and \
+                (steps.get(f) or {}).get("scope") != "drop":
             producers.setdefault(t, set()).add(f)
     for ds, ps in sorted(producers.items()):
         if len(ps) > 1:
