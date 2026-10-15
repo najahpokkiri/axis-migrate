@@ -19,6 +19,7 @@ known-differences.md, pipeline/ (golden, optionally with a mutant patch applied)
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -226,7 +227,10 @@ def main() -> int:
           "--channel", "interview", "--verbatim", Q03_VERBATIM)
     apply(mig, [{"type": "set_plan", "id": s, "plan": p} for s, p in plans().items()])
     if not a.no_approve:
-        apply(mig, [{"type": "approve_plan", "steps": "*"}], "--channel", "interview", "--verbatim", APPROVE_VERBATIM)
+        sh(AXPY, DISC / "graph.py", "render-plan", mig)   # the scripted oracle approves the plan.md it was shown
+        sha = hashlib.sha256((mig / "plan.md").read_bytes()).hexdigest()
+        apply(mig, [{"type": "approve_plan", "steps": "*", "plan_sha256": sha}], "--channel", "interview",
+              "--verbatim", APPROVE_VERBATIM)
     shutil.copyfile(a.params, mig / "params.yaml")
     (mig / "tolerances.yaml").write_text("version: 1\ndefaults: {}\nrecords: []\n")
     (mig / "known-differences.md").write_text("# Known differences\n")

@@ -691,3 +691,21 @@ def test_skipped_identical_receipt_counts_only_with_the_right_sha(proj, good):
         codes = res["datasets"]["ds.a_mask"]["reason_codes"]
         assert "UNBOUND_COMPARE" not in codes and res["datasets"]["ds.a_mask"]["state"] != "EVALUATOR_ERROR", codes
         assert ("VISUAL_REVIEW_MISSING" in codes) is (not good), (good, codes)
+
+
+def test_status_suffix_standing_instruction_and_open_questions(proj):
+    """B2/B3 (BYU e2e): a plan approved by a standing instruction and an open question show in the status line; they
+    cap no rung but can never read as user approval or '0 open items'."""
+    def edit(g):
+        for s in g["steps"]:
+            s["plan"] = {"summary": "x", "approved": {"by": ladder.STANDING_INSTRUCTION, "at": "2026-10-15T00:00:00Z"}}
+        g.setdefault("questions", []).append({"id": "q99", "kind": "legacy_bug", "status": "open", "node": "s01_mask",
+                                              "header": "Empty value"})
+    synth.update_graph(proj["migration"], edit)
+    proj.update(synth.make_run(proj, 1))
+    res = ladder.compute(proj["migration"])
+    assert res["pipeline"]["rung"] == "reference-verified"
+    assert res["status_line"].startswith(
+        "axis-migrate status: reference-verified · plan approved by standing instruction · 1 open question | run ")
+    assert [q["id"] for q in res["pipeline"]["open_questions"]] == ["q99"]
+    assert res["pipeline"]["plan_approval"]["by"] == ladder.STANDING_INSTRUCTION

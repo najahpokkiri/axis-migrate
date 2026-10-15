@@ -221,7 +221,15 @@ Rules: `legacy_ops[].ref` is `file:line[-line]`; `params` are `p.*` ids (checked
 {"type": "approve_plan", "steps": ["s01_clip", "s02_mask"]}
 ```
 `"steps": "*"` approves every `migrate` step that has a plan. Agent: only with `--channel interview --verbatim "…"`;
-editor: channel `graph`. Sets `plan.approved = {by: "user", at, channel, verbatim, recorded_by, rev}`.
+editor: channel `graph`. Sets `plan.approved = {by, at, channel, verbatim, recorded_by, rev, shown_sha256}`.
+- `by: "user"` only from the editor, or from the agent with `"plan_sha256": "<hex>"`: the sha256 that `render-plan`
+  printed for the `migration/plan.md` the user was shown and approved. It must equal the file's sha256 and the file
+  must still be the render of the current graph (else `plan_sha_mismatch` / `plan_stale`: re-render, show, ask again).
+- Without `plan_sha256` (e.g. a prompt that said "carry on without me", nobody saw plan.md) the approval is recorded
+  as `by: "agent (standing instruction)"`. Code may then be written, but ladder's status line says
+  "plan approved by standing instruction" and the report lists it; it never reads as the user's approval.
+- Refused (`open_questions`) while any question on a `migrate` step or its inputs/outputs is `open` (kind `target`
+  excepted): answer it or `assume_question` first (BUILD.md §0). If only the user can answer, stop and ask.
 `graph.plan_approved(graph, step_id)` is the check the write hook uses.
 
 ### Migration and pairing

@@ -1279,17 +1279,43 @@ def compute(migration_dir, run_id: str | None = None) -> dict:
               "dispositions": {k: sum(1 for e in sres.values() if e["disposition"] == k)
                                for k in ac.DISPOSITIONS}}
     suffix = f" · partial ({len(bridged)} bridged)" if bridged else ""
+    attention = owner_attention(migration, graph)
+    suffix += "".join(f" · {t}" for t in attention["suffix"])
     res = {"ladder_version": LADDER_VERSION, "run_id": run_id, "evidence_id": b.evidence_id,
            "pipeline": {"rung": rung, "suffix": suffix, "headline": headline or rung, "blockers": blockers,
                         "counts": counts, "bridged": len(bridged), "incomplete": incomplete,
                         "greyed": list(GREYED), "drift": drift, "target": target,
                         "full": bool(run.get("full")), "chain": run.get("chain"), "executor": run.get("executor"),
                         "isolation": run.get("isolation"), "order": [s for s in order if s in sres],
-                        "confirm_params": confirm, "report": report_path(migration)},
+                        "confirm_params": confirm, "report": report_path(migration),
+                        "open_questions": attention["open_questions"], "plan_approval": attention["plan_approval"]},
            "steps": sres, "datasets": dres, "integrity": b.integrity}
     assert rung in RUNGS  # never deployed / live-target-verified / customer-accepted
     res["status_line"] = status_line(res)
     return res
+
+
+STANDING_INSTRUCTION = "agent (standing instruction)"
+
+
+def owner_attention(migration: Path, snapshot_graph: dict | None) -> dict:
+    """What the status line must never hide, though it caps no rung (B2, B3): open questions and a plan approved by
+    a standing instruction instead of by the user on the plan.md they were shown. Read from the live graph (an
+    answer given after the run counts), else from the run snapshot."""
+    g = _load_json_quiet(migration / "graph.json") or snapshot_graph or {}
+    open_q = [{"id": q.get("id"), "kind": q.get("kind"), "header": q.get("header"), "node": q.get("node")}
+              for q in g.get("questions") or [] if q.get("status") == "open"]
+    standing = sorted(s.get("id") for s in g.get("steps") or [] if s.get("scope") == "migrate"
+                      and (((s.get("plan") or {}).get("approved") or {}).get("by") or "") not in ("", "user"))
+    out = []
+    if standing:
+        out.append("plan approved by standing instruction")
+    if open_q:
+        out.append(f"{len(open_q)} open question{'s' if len(open_q) != 1 else ''}")
+    return {"suffix": out, "open_questions": open_q,
+            "plan_approval": {"by": STANDING_INSTRUCTION if standing else ("user" if any(
+                ((s.get("plan") or {}).get("approved") or {}).get("by") == "user" for s in g.get("steps") or [])
+                else None), "standing_steps": standing}}
 
 
 def _finish_incomplete(b: Bundle) -> dict:

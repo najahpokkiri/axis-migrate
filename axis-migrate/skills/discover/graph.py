@@ -1436,15 +1436,58 @@ def op_set_plan(g: dict, op: dict, cx: Ctx) -> dict:
     return {"approval_invalidated": was_approved and not same}
 
 
+STANDING = "agent (standing instruction)"
+# Question kinds that may stay open past the plan: the target (workspace, catalog) is chosen after the build.
+PLAN_NONBLOCKING_KINDS = ("target",)
+
+
+def plan_blocking_questions(g: dict) -> list[str]:
+    """Open questions on an in-scope node (a migrate step, its inputs or outputs): BUILD.md §0 says each is answered
+    or assumed before the plan is approved."""
+    scope = set()
+    for s in g["steps"]:
+        if s.get("scope") == "migrate":
+            scope.update([s["id"], *s.get("inputs", []), *s.get("outputs", [])])
+    return sorted(q["id"] for q in g["questions"] if q.get("status") == "open"
+                  and q.get("kind") not in PLAN_NONBLOCKING_KINDS and scope.intersection(_question_nodes(q)))
+
+
 def op_approve_plan(g: dict, op: dict, cx: Ctx) -> dict:
+    """`by: user` only when the user approved the plan they were shown: from the graph editor (actor user), or by the
+    agent with the user's verbatim words AND `plan_sha256` = sha256 of migration/plan.md as rendered from this
+    graph (the text shown). Without `plan_sha256` the approval is recorded as `by: agent (standing instruction)`,
+    which ladder and the report never present as the user's approval (B2)."""
     _actor_in(cx, ("agent", "user"), "approve_plan")
-    _allowed_keys(op, ("steps",))
+    _allowed_keys(op, ("steps", "plan_sha256"))
     _need(op, "steps")
     channel = op.get("channel") or cx.channel or ("graph" if cx.actor == "user" else None)
     verbatim = op.get("verbatim") or cx.verbatim
     if cx.actor == "agent" and (channel != "interview" or not verbatim):
         _deny("plan approval by the agent needs channel interview and the user's verbatim words",
               "approval_needs_interview_verbatim")
+    blocking = plan_blocking_questions(g)
+    if blocking:
+        raise ValidationError(f"open question(s) {', '.join(blocking)} on in-scope steps/datasets: answer each "
+                              "(answer_question) or record a visible assumption (assume_question) before the plan is "
+                              "approved (BUILD.md §0); if only the user can answer, stop and ask",
+                              code="open_questions")
+    shown = op.get("plan_sha256")
+    if shown is not None:
+        if not (isinstance(shown, str) and re.fullmatch(r"(sha256:)?[0-9a-f]{64}", shown)):
+            raise ValidationError("plan_sha256 must be the 64-hex sha256 of migration/plan.md", code="bad_value")
+        shown = shown.split(":")[-1]
+        pm = (cx.mdir / "plan.md") if cx.mdir else None
+        if pm is None or not pm.is_file():
+            raise ValidationError("plan_sha256 given but migration/plan.md does not exist: run render-plan and show "
+                                  "it", code="plan_not_shown")
+        on_disk = pm.read_bytes()
+        if ac.sha256_bytes(on_disk).split(":")[-1] != shown:
+            raise ValidationError("plan_sha256 is not the sha256 of migration/plan.md: the user approved another "
+                                  "text; re-render, show plan.md again and ask again", code="plan_sha_mismatch")
+        if on_disk.decode("utf-8", "replace") != plan_text(g):
+            raise ValidationError("migration/plan.md is not the render of the current plan (graph changed since "
+                                  "render-plan): re-render, show it again and ask again", code="plan_stale")
+    by = "user" if cx.actor == "user" or shown else STANDING
     ids = op["steps"]
     if ids == "*" or ids == ["*"]:
         ids = [s["id"] for s in g["steps"] if s.get("plan") and s.get("scope") == "migrate"]
@@ -1455,11 +1498,11 @@ def op_approve_plan(g: dict, op: dict, cx: Ctx) -> dict:
         _, step = _get(g, sid, ("step",))
         if not step.get("plan"):
             raise ValidationError(f"{sid} has no plan to approve", code="no_plan")
-        step["plan"]["approved"] = {"by": "user", "at": cx.at, "channel": channel, "verbatim": verbatim,
-                                    "recorded_by": cx.actor, "rev": cx.rev}
+        step["plan"]["approved"] = {"by": by, "at": cx.at, "channel": channel, "verbatim": verbatim,
+                                    "recorded_by": cx.actor, "rev": cx.rev, "shown_sha256": shown}
         _record_edit(step, cx, ["plan.approved"])
         approved.append(sid)
-    return {"approved": approved}
+    return {"approved": approved, "by": by}
 
 
 def op_set_new(g: dict, op: dict, cx: Ctx) -> dict:
@@ -2211,9 +2254,15 @@ def ingest_verify(migration_dir: str | os.PathLike, run_id: str) -> dict:
 
 
 def render_plan(migration_dir: str | os.PathLike) -> Path:
+    """Write migration/plan.md; its sha256 is what `approve_plan` cites as `plan_sha256` once the user saw it."""
     mdir = Path(migration_dir)
     require_intact(mdir)
-    g = load_graph(mdir)
+    out = paths(mdir)["plan"]
+    ac.atomic_write_text(out, plan_text(load_graph(mdir)))
+    return out
+
+
+def plan_text(g: dict) -> str:
     steps = {s["id"]: s for s in g["steps"]}
     order = topo_steps(g)
     L = [f"# Migration plan — {g['project'].get('name') or 'project'}", "",
@@ -2291,9 +2340,7 @@ def render_plan(migration_dir: str | os.PathLike) -> Path:
             L.append(f"- `{sid}` · {s.get('title')}: {s.get('scope')}"
                      f"{' (' + s['scope_reason'] + ')' if s.get('scope_reason') else ''}")
         L.append("")
-    out = paths(mdir)["plan"]
-    ac.atomic_write_text(out, "\n".join(L).rstrip() + "\n")
-    return out
+    return "\n".join(L).rstrip() + "\n"
 
 
 def protected(migration_dir: str | os.PathLike) -> dict:
@@ -2533,7 +2580,10 @@ def main(argv: list[str] | None = None) -> int:
             return EXIT["invalid"] if res["errors"] else 0
         elif a.cmd == "render-plan":
             out = render_plan(_mdir(a.migration))
-            _print({"path": str(out)}, a.json, f"wrote {out}")
+            sha = ac.sha256_file(out).split(":")[-1]
+            _print({"path": str(out), "sha256": sha}, a.json,
+                   f"wrote {out}\nplan.md sha256 {sha} (show plan.md to the user; when they approve it, apply "
+                   f"approve_plan with \"plan_sha256\": \"{sha}\")")
         elif a.cmd == "protected":
             res = protected(_mdir(a.migration))
             _print(res, a.json, f"wrote .axis/protected.json: {len(res['paths'])} protected paths, "

@@ -348,10 +348,35 @@ def test_plan_set_render_approve(mdir: Path):
     text = out.read_text()
     assert "## s02_mask · Mask" in text and "`rasterio.features.rasterize`" in text and "not yet" in text
     assert "s03b_alt" in text.split("## Not migrated")[1]
-    agent(mdir, [{"type": "approve_plan", "steps": "*"}], channel="interview", verbatim="Yes, go ahead")
+    # B3: an open question on an in-scope node blocks the approval until it is answered or assumed
+    open_q = G.plan_blocking_questions(G.load_graph(mdir))
+    assert open_q
+    with pytest.raises(G.ValidationError) as e:
+        agent(mdir, [{"type": "approve_plan", "steps": "*"}], channel="interview", verbatim="Yes, go ahead")
+    assert e.value.code == "open_questions" and open_q[0] in e.value.message
+    for qid in open_q:
+        q = node(mdir, qid)
+        agent(mdir, [{"type": "assume_question", "id": qid, "value": q["options"][0]["value"], "reason": "test"}])
+    assert G.plan_blocking_questions(G.load_graph(mdir)) == []
+    out = G.render_plan(mdir)   # assumptions do not change the plan text, but re-render as the SKILL does
+    # B2: a wrong or stale plan_sha256 is refused; none at all is a standing instruction, never `by: user`
+    with pytest.raises(G.ValidationError) as e:
+        agent(mdir, [{"type": "approve_plan", "steps": "*", "plan_sha256": "0" * 64}], channel="interview",
+              verbatim="Yes, go ahead")
+    assert e.value.code == "plan_sha_mismatch"
+    agent(mdir, [{"type": "approve_plan", "steps": "*"}], channel="interview", verbatim="Carry it through")
+    appr = node(mdir, "s02_mask")["plan"]["approved"]
+    assert appr["by"] == G.STANDING and appr["shown_sha256"] is None
+    sha = G.ac.sha256_file(G.render_plan(mdir))
+    agent(mdir, [{"type": "approve_plan", "steps": "*", "plan_sha256": sha}], channel="interview",
+          verbatim="Yes, go ahead")
     g = G.load_graph(mdir)
     assert G.plan_approved(g, "s02_mask") and not G.plan_approved(g, "s01_clip")
-    assert node(mdir, "s02_mask")["plan"]["approved"]["verbatim"] == "Yes, go ahead"
+    appr = node(mdir, "s02_mask")["plan"]["approved"]
+    assert appr["verbatim"] == "Yes, go ahead" and appr["by"] == "user" and appr["shown_sha256"] == sha
+    with pytest.raises(G.ValidationError) as e:   # the graph now says "approved": plan.md is not its render any more
+        agent(mdir, [{"type": "approve_plan", "steps": "*", "plan_sha256": sha}], channel="interview", verbatim="ok")
+    assert e.value.code == "plan_stale"
     res = agent(mdir, [{"type": "set_plan", "id": "s02_mask", "plan": {**PLAN, "summary": "changed"}}])
     assert res["results"][0]["approval_invalidated"] is True
     assert not G.plan_approved(G.load_graph(mdir), "s02_mask")
