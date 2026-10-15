@@ -6,6 +6,8 @@
                             # the decision AND the params.yaml change of an answered question, together
     axpy record.py param    migration --param p.x [--new] --json fields.json
                             # create or update one params.yaml entry (investigation findings, fit blocks, …)
+    axpy record.py waive    migration --id set.s01.op2.x [--id …] --reason "encoder option, no effect on values"
+                            # settings/literals that change no output (params_check PARAM_COVERAGE)
 
 params.yaml has only these two writers (plus params_check.py --fill-used-by for `used_by`): never rewrite it with ad
 hoc Python or an editor. Both re-validate with params_check.py before writing and replace the file atomically.
@@ -265,11 +267,31 @@ def set_param(mdir: Path, pid: str, fields: dict, *, new: bool = False) -> dict:
                          and i["where"] == pid]}
 
 
+def waive(mdir: Path, ids: list[str], reason: str, by: str = "agent") -> dict:
+    """Append `not_output_changing` waivers to params.yaml: inventory settings/literals that change no output (an
+    encoder option, thread count, band 1 of a one-band raster), each with the reason. An output-changing setting is
+    never waived: it gets a parameter (`param`)."""
+    reason = (reason or "").strip()
+    if not reason or not ids:
+        raise ValueError("waive needs at least one --id and a --reason")
+    ptext = (mdir / "params.yaml").read_text(encoding="utf-8")
+    data = yaml.safe_load(ptext) or {}
+    have = {str(w.get("id")) for w in data.get("not_output_changing") or [] if isinstance(w, dict)}
+    new = [i for i in dict.fromkeys(ids) if i not in have]
+    data.setdefault("not_output_changing", []).extend({"id": i, "reason": reason, "by": by} for i in new)
+    new_ptext = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=120)
+    _validated_write(mdir, new_ptext)
+    ac.atomic_write_text(mdir / "params.yaml", new_ptext)
+    return {"added": new, "already": sorted(set(ids) & have)}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("what", choices=["decision", "kd", "answer", "param"])
+    ap.add_argument("what", choices=["decision", "kd", "answer", "param", "waive"])
     ap.add_argument("migration")
-    ap.add_argument("--json", required=True, help="path to entry.json, or - for stdin")
+    ap.add_argument("--json", help="path to entry.json, or - for stdin (all but waive)")
+    ap.add_argument("--id", action="append", default=[], help="waive: an inventory setting/literal id (repeat)")
+    ap.add_argument("--reason", help="waive: why these change no output")
     ap.add_argument("--param", action="append", default=[], help="answer: a parameter the question settles (repeat)")
     ap.add_argument("--question", help="answer: the graph question id (qNN)")
     ap.add_argument("--new", action="store_true", help="param: create the entry")
@@ -282,6 +304,17 @@ def main(argv=None) -> int:
         ap.error("--param/--question belong to answer and param")
     if a.new and a.what != "param":
         ap.error("--new belongs to param")
+    if a.what == "waive":
+        try:
+            res = waive(Path(a.migration).resolve(), a.id, a.reason or "")
+        except (ValueError, OSError) as e:
+            print(f"record.py: refused: {e}", file=sys.stderr)
+            return 2
+        print(f"params.yaml: {len(res['added'])} waiver(s) added" + (f", {len(res['already'])} already there"
+                                                                    if res["already"] else ""))
+        return 0
+    if not a.json:
+        ap.error("--json is required")
     raw = sys.stdin.read() if a.json == "-" else Path(a.json).read_text(encoding="utf-8")
     try:
         entry = json.loads(raw)

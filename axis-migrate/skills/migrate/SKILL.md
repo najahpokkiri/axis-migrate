@@ -48,7 +48,7 @@ start no migration (no `migration/` folder, no scan) unless the person asks to m
 ## Flow (follow the skills in this order; each SKILL.md has the exact commands)
 
 0. **Preflight** — `"$P/scripts/axpy" --doctor` once (uv, environment cache, pinned env, read ledger, port, `e2b`,
-   `refenv`, the max `rung` here); fix any FAIL first. Then `python3 -I "$P/skills/guard/hooks_active.py" --cwd "$PWD"`:
+   `refenv`, the max `rung` here); fix any FAIL first. Then `python3 -IB "$P/skills/guard/hooks_active.py" --cwd "$PWD"`:
    exit 1 → tell the person "the axis-migrate guards are OFF in this session" (enable the plugin, start a new session)
    and write nothing under `migration/` until they confirm. Say in one plain sentence: the sandbox stays on; only a
    local port (map) and the plugin's data and cache folders (paths from `--doctor`) need an exception, which

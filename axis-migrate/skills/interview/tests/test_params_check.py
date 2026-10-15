@@ -235,3 +235,74 @@ def test_wired_mirrors_every_runtime_refusal(tmp_path):
     assert runtime_refuses(mig, "p.thresh_m", decl) and "PARAM_MISSING_AT_RUN" in codes(f)
     mig, f, decl = wired("fine", good_param())
     assert not runtime_refuses(mig, "p.thresh_m", decl) and "PARAM_MISSING_AT_RUN" not in codes(f)
+
+
+# --- BYU dry run: NO_GRAPH, PARAM_COVERAGE, XML-escaped quotes ----------------------------------------------------
+def test_no_graph_is_a_clean_block(tmp_path):
+    mig = tmp_path / "migration"
+    mig.mkdir()
+    f, _ = pc.check(mig, "investigate")
+    assert [i["code"] for i in f.blocking] == ["NO_GRAPH"]
+
+
+def _coverage_project(tmp_path):
+    import json as _json
+    import yaml as _yaml
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    (legacy / "a.py").write_text("\n".join(f"line {i}" for i in range(1, 21)) + "\n")
+    (legacy / "m.model3").write_text('<x>\n<v value="amen_group( &quot;Amenity&quot;)"/>\n</x>\n')
+    mig = tmp_path / "migration"
+    mig.mkdir()
+    graph = {"legacy_root": str(legacy), "steps": [
+        {"id": "s01", "scope": "migrate", "legacy": {"source": "a.py", "lines": [[1, 10]]}, "params": []},
+        {"id": "s02", "scope": "drop", "legacy": {"source": "a.py", "lines": [[11, 20]]}, "params": []}],
+        "datasets": [], "questions": []}
+    (mig / "graph.json").write_text(_json.dumps(graph))
+    inv = {"settings": [{"id": "set.s01.op1.dtype", "file": "a.py", "line": 3},
+                        {"id": "set.s02.op1.dtype", "file": "a.py", "line": 12}],
+           "params": [{"id": "p.s01.op1.OPTS", "kind": "tool_literal", "file": "a.py", "line": 5},
+                      {"id": "p.s01.BASE", "kind": "assignment", "file": "a.py", "line": 1}]}
+    (mig / "inventory.json").write_text(_json.dumps(inv))
+    (mig / "params.yaml").write_text(_yaml.safe_dump({"version": 1, "params": []}))
+    return mig
+
+
+def test_param_coverage_blocks_until_cited_or_waived(tmp_path, monkeypatch):
+    import record
+    mig = _coverage_project(tmp_path)
+    monkeypatch.setattr(pc.ac, "legacy_root", lambda m, g: tmp_path / "legacy")
+    f, _ = pc.check(mig, "investigate")
+    cov = [i for i in f.blocking if i["code"] == "PARAM_COVERAGE"]
+    assert len(cov) == 1 and cov[0]["where"] == "s01"                      # dropped step s02 not counted
+    assert "set.s01.op1.dtype" in cov[0]["message"] and "p.s01.op1.OPTS" in cov[0]["message"]
+    assert "p.s01.BASE" not in cov[0]["message"]                           # plain assignments are not settings
+    record.waive(mig, ["p.s01.op1.OPTS"], "creation option: compression only")
+    f, _ = pc.check(mig, "investigate")
+    cov = [i for i in f.blocking if i["code"] == "PARAM_COVERAGE"]
+    assert len(cov) == 1 and "OPTS" not in cov[0]["message"]
+    import yaml as _yaml
+    d = _yaml.safe_load((mig / "params.yaml").read_text())
+    d["params"] = [{"id": "p.dtype", "node": "s01", "kind": "dtype", "value": "Int32", "resolution": "resolved",
+                    "source": "code", "status": "confirmed", "reason": "r",
+                    "evidence": [{"ref": "a.py:2-4", "quote": "line 3"}]}]
+    (mig / "params.yaml").write_text(_yaml.safe_dump(d))
+    f, _ = pc.check(mig, "investigate")
+    assert not [i for i in f.blocking if i["code"] == "PARAM_COVERAGE"]
+    d["not_output_changing"].append({"id": "set.nope", "reason": "x"})
+    (mig / "params.yaml").write_text(_yaml.safe_dump(d))
+    f, _ = pc.check(mig, "investigate")
+    assert [i["code"] for i in f.blocking] == ["WAIVER_UNKNOWN"]
+
+
+def test_xml_quote_decoded_or_raw(tmp_path):
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    (legacy / "m.model3").write_text('<x>\n<v value="amen_group( &quot;Amenity&quot;)"/>\n</x>\n')
+    for quote in ('amen_group( "Amenity")', "amen_group( &quot;Amenity&quot;)"):
+        f = pc.Findings()
+        pc.check_quote(legacy, "m.model3:2", quote, f, "p.x")
+        assert not f.blocking, quote
+    f = pc.Findings()
+    pc.check_quote(legacy, "m.model3:2", 'other( "Amenity")', f, "p.x")
+    assert [i["code"] for i in f.blocking] == ["EVIDENCE_QUOTE_MISMATCH"]

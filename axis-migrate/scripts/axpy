@@ -8,6 +8,9 @@
 #   axpy --doctor                       preflight checks (stdlib; works before the env exists)
 #   axpy --configure e2b                the PERSON stores their E2B key (hidden prompt on their own terminal; 0600 file)
 PLUGIN="$(cd "$(dirname "$0")/.." && pwd)"
+# never write __pycache__ into the plugin folder (an installed plugin stays clean; doctor's PLUGIN_NOT_CLEAN)
+PYTHONDONTWRITEBYTECODE=1
+export PYTHONDONTWRITEBYTECODE
 ENV="$PLUGIN/skills/run/env"
 if [ "$1" = "--configure" ]; then
   shift

@@ -36,7 +36,10 @@ For every step in topological order (`graph.py show migration`), read its legacy
    question, recommended **keep for parity**.
 7. Fill `impact.datasets` from the graph's downstream closure. Add `p.measure_crs` (a local metric CRS, never degrees
    or EPSG:3857) whenever a vector dataset will be compared.
-8. Write each entry with `record.py param` (above, §3); run `params_check.py migration` until it exits 0.
+8. Write each entry with `record.py param` (§3). Every tool setting and literal the scan found in in-scope code is
+   either cited by a parameter or waived: `record.py waive migration --id <id> [--id …] --reason "<why no output
+   changes>"` (encoder options, thread counts; never a data type, CRS, extent, field name or formula constant). Run
+   `params_check.py migration` until it exits 0 (`PARAM_COVERAGE` names what is still uncited).
 
 Schema (`params.yaml`): `version, budget{max_questions: 8 (demo 5), asked}, params[]{id: p.<slug>, node, kind, value,
 unit, resolution, source, evidence[{ref, quote}], reason, confidence, method, flags, impact{datasets, level},

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import html
 import json
 import re
 import sys
@@ -103,7 +104,8 @@ def check_quote(legacy: Path, ref: str, quote: str | None, f: Findings, where: s
         return
     text = _norm_ws(" ".join(lines[a - 1:b]))
     q = _norm_ws(quote.rstrip("…").rstrip("."))
-    if q and q not in text:
+    # XML sources (.model3, .qgs, .aprx): a quote may be written decoded ("x") or raw (&quot;x&quot;)
+    if q and q not in text and q not in _norm_ws(html.unescape(text)):
         f.block("EVIDENCE_QUOTE_MISMATCH", where, f"quote {quote!r} is not in {ref}")
 
 
@@ -231,12 +233,76 @@ def pipeline_param_reads(pdir: Path) -> dict[str, dict]:
     return out
 
 
+REF_SPAN_RE = re.compile(r"^(?P<path>.+?):(?P<a>\d+)(?:-(?P<b>\d+))?$")
+
+
+def check_coverage(mdir: Path, graph: dict, data: dict, f: Findings) -> None:
+    """PARAM_COVERAGE: every tool setting and literal the scan found inside an in-scope step's legacy code (inventory
+    `settings[]`, and `params[]` other than plain assignments) is either cited by a params.yaml entry (an evidence ref
+    `file:line[-line]` covering its line, or `inventory:<id>`) or waived in `not_output_changing` with a reason
+    (`record.py waive`). Otherwise an output-changing setting (a data type, a CRS, a formula constant) could be left
+    out and the check would still pass. One finding per step, naming the uncovered ids."""
+    inv = ac.load_json(mdir / "inventory.json") if (mdir / "inventory.json").is_file() else {}
+    if not inv:
+        return
+    spans: dict[str, list[tuple[int, int]]] = {}
+    step_of: dict[str, list[tuple[int, int, str]]] = {}
+    for st in graph.get("steps") or []:
+        if st.get("scope") not in ("migrate", "keep_legacy"):
+            continue
+        leg = st.get("legacy") or {}
+        if not leg.get("source"):
+            continue
+        for ln in leg.get("lines") or [[1, 10 ** 9]]:
+            a, b = int(ln[0]), int(ln[-1])
+            spans.setdefault(leg["source"], []).append((a, b))
+            step_of.setdefault(leg["source"], []).append((a, b, st["id"]))
+    cited: dict[str, list[tuple[int, int]]] = {}
+    cited_ids: set[str] = set()
+    for p in data.get("params") or []:
+        for e in (p.get("evidence") or []) if isinstance(p, dict) else []:
+            ref = str((e or {}).get("ref") or "")
+            if ref.startswith("inventory:"):
+                cited_ids.add(ref.split(":", 1)[1])
+                continue
+            m = REF_SPAN_RE.match(ref)
+            if m:
+                cited.setdefault(m.group("path"), []).append((int(m.group("a")), int(m.group("b") or m.group("a"))))
+    waived = {str(w.get("id")) for w in data.get("not_output_changing") or []
+              if isinstance(w, dict) and str(w.get("reason") or "").strip()}
+    items = list(inv.get("settings") or []) + [x for x in inv.get("params") or [] if x.get("kind") != "assignment"]
+    known = {str(it.get("id")) for it in items}
+    for w in data.get("not_output_changing") or []:
+        wid = str((w or {}).get("id")) if isinstance(w, dict) else str(w)
+        if not isinstance(w, dict) or not str(w.get("reason") or "").strip():
+            f.block("SCHEMA", "not_output_changing", f"{wid}: each waiver needs an id and a reason")
+        elif wid not in known:
+            f.block("WAIVER_UNKNOWN", "not_output_changing", f"{wid} is not a setting or literal in inventory.json")
+    missing: dict[str, list[str]] = {}
+    for it in items:
+        fp, ln, iid = it.get("file"), it.get("line"), str(it.get("id"))
+        if not fp or not isinstance(ln, int) or it.get("from_superseded") or iid in cited_ids or iid in waived:
+            continue
+        owners = [sid for a, b, sid in step_of.get(fp, []) if a <= ln <= b]
+        if not owners or any(a <= ln <= b for a, b in cited.get(fp, [])):
+            continue
+        missing.setdefault(owners[0], []).append(iid)
+    for sid, ids in sorted(missing.items()):
+        shown = ", ".join(ids[:8]) + (f" +{len(ids) - 8} more" if len(ids) > 8 else "")
+        f.block("PARAM_COVERAGE", sid, f"{len(ids)} setting(s)/literal(s) in the legacy code with no params.yaml entry "
+                                       f"citing them and no waiver: {shown}. Cite each output-changing one in a "
+                                       "parameter (record.py param); waive the rest with a reason (record.py waive)")
+
+
 def check(mdir: Path, stage: str, fill_used_by: bool = False,
           overrides: dict[str, str] | None = None) -> tuple[Findings, dict]:
     """`overrides` = {"params.yaml": text, "decisions.md": text}: check proposed contents without writing them
     (record.py answer validates its change this way before it touches either file)."""
     overrides = overrides or {}
     f = Findings()
+    if mdir.is_dir() and not (mdir / "graph.json").exists():
+        f.block("NO_GRAPH", "graph.json", "no workflow graph yet: run lineage.py, then graph.py init (skill discover)")
+        return f, {"params": 0, "modules": [], "stage": stage}
     graph = ac.load_json(mdir / "graph.json")
     legacy = ac.legacy_root(mdir, graph)
     steps = {s["id"]: s for s in graph.get("steps", [])}
@@ -359,6 +425,8 @@ def check(mdir: Path, stage: str, fill_used_by: bool = False,
         f.warn("BUDGET_EXCEEDED", "budget", f"asked {budget.get('asked')} > max {budget['max_questions']}: a soft "
                                             "limit; ask past it only items with score >= 12 (impact x uncertainty x "
                                             "cost), parity-blind ones first")
+
+    check_coverage(mdir, graph, data, f)
 
     records = check_records(mdir, set(by_id), f, overrides.get("decisions.md"))
 

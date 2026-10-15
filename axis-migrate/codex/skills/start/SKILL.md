@@ -5,12 +5,12 @@ description: Use first, before the migrate skill (this is the Codex entry point 
 
 # axis-migrate under Codex (thin layer: the method is in `skills/migrate/SKILL.md`)
 
-1. **Plugin root and hooks.** Run `python3 -I "<P>/skills/guard/hooks_active.py" --cwd "$PWD" --json`, where `<P>`
+1. **Plugin root and hooks.** Run `python3 -IB "<P>/skills/guard/hooks_active.py" --cwd "$PWD" --json`, where `<P>`
    is first the folder three levels above this file (holding `.codex-plugin/plugin.json`); plain `python3`, so no
    environment sync starts inside the sandbox. If the JSON has `plugin_root`, that is `P` from now on. Wherever a text
    says `${CLAUDE_PLUGIN_ROOT}`, `$PLUGIN` or `$P`, write `P` literally; `$ARGUMENTS` = the legacy folder the user
    named (none named: ask, then stop). Exit 0: say the hooks are active and go on.
-   Exit 1: run `python3 -I "<P>/skills/guard/codex_trust.py" --cwd "$PWD"` (which hooks are missing or untrusted),
+   Exit 1: run `python3 -IB "<P>/skills/guard/codex_trust.py" --cwd "$PWD"` (which hooks are missing or untrusted),
    say plainly "The axis-migrate guards are OFF: its hooks are not active in this chat", give the trust steps — open `/hooks` (desktop: Review hooks), select axis-migrate's definitions, press `t`, then start a NEW chat
    (an open chat never loads a newly installed plugin; every plugin update needs re-trust) — and do not write
    anything under `migration/` or run a pipeline until the person confirms (trusted and restarted, or "go on
@@ -33,5 +33,5 @@ description: Use first, before the migrate skill (this is the Codex entry point 
    wait (an elapsed wait is never an answer). `mcp__Claude_Browser__*` → give the URL once as a clickable link, open
    it in the in-app browser, then read and click as in Claude (annotate mode is not a channel). Read on a PNG →
    `view_image`. Never write a server token in chat.
-5. **Finish.** Start the last message with the status line of `python3 -I "<P>/skills/report/ladder.py" migration`,
+5. **Finish.** Start the last message with the status line of `python3 -IB "<P>/skills/report/ladder.py" migration`,
    quoted exactly; list every failing, unsigned or not-compared item; claim nothing above that line.
