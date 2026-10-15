@@ -28,7 +28,9 @@ DROP = Path("/tmp/axis-eval-drop")
 FIXTURES = ROOT / "fixtures"
 BASES = {"lux": FIXTURES / "lux-exposure-legacy",                      # case.yaml `base:` -> legacy folder
          "s1": EVALS / "cases" / "_bases" / "s1-buffers-legacy",
-         "s1L": EVALS / "cases" / "_bases" / "s1L-buffers-legacy"}
+         "s1L": EVALS / "cases" / "_bases" / "s1L-buffers-legacy",
+         # demo project, data outside git: devtools/fetch_byu.sh rebuilds it
+         "byu": Path(os.environ.get("AXIS_BYU_FIXTURE", Path.home() / "public-fixtures" / "byu-flood-impact-legacy"))}
 
 
 def sh(cmd, **kw):

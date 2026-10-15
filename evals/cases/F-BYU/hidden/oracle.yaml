@@ -1,0 +1,8 @@
+# The person's answers in the BYU demo dry runs (never shown to the agent; matched on the question text).
+default: recommended
+rules:
+  - {match: "approve.*plan|plan.*approv", answer: "approve|recommended"}
+  - {match: "which implementation|parity reference|reference implementation|QGIS model.*Python|three (versions|implementations)", answer: "QGIS model|qgis|model3|recommended"}
+  - {match: "amen_group|custom expression|expression function", answer: "same logic|python|fldimpact_def|recommended"}
+  - {match: "food|empty amenity|reversed containment|__contains__", answer: "keep for parity|keep|recommended"}
+  - {match: "sandbox|E2B|local only", answer: "local|recommended"}

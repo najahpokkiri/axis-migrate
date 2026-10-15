@@ -1,0 +1,9 @@
+id: F-BYU
+version: 1
+mode: fresh
+tier: demo
+base: byu
+legacy_name: byu-flood-impact-legacy
+prompt: "/axis-migrate:migrate ./byu-flood-impact-legacy"
+timeout_s: 3600
+max_turns: 500
