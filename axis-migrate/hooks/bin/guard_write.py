@@ -11,7 +11,11 @@ Codex apply_patch payloads (tool_input.command = patch text; Add/Update/Delete/M
 rules per touched file; Update hunks on content-checked files are applied to the current text (unapplicable -> deny).
 Under Codex an `ask` becomes a deny (Codex does not support ask; _hooklib.pre_decision).
 ask  : a new tolerance record after a run; a tolerance record carrying agreed_by (only a human signs);
-       a new KD block with owner: human:...; a params entry moving from fitted to source: answer.
+       a new KD block with owner: human:...; a params entry moving from fitted to source: answer; a params entry
+       becoming status: confirmed by a direct edit (only `record.py answer` confirms).
+Record files are read with yaml.safe_load (as compare/seal read them) and compared by id and value. Text that is not
+valid YAML, not plain block style (flow mappings, quoted keys, anchors, merge keys) or unreadable without PyYAML is
+never judged by guesswork: ask (B1, fail closed).
 """
 from __future__ import annotations
 
@@ -45,13 +49,48 @@ def proposed(tool: str, ti: dict, path) -> tuple[str, str] | None:
         return None
 
 
+KD_FENCE_RE = re.compile(r"```ya?ml\s*\n(.*?)```", re.S)
+KD_KEY_RE = re.compile(r"^([A-Za-z_][\w.\-]*)\s*:(?:\s|$)")
+
+
+def _kd_owner(block_text: str):
+    """The owner of a new KD block as compare.parse_known_differences reads it (first fenced yaml block,
+    yaml.safe_load), or None when that cannot be done with certainty: no fence, invalid YAML, not a mapping, or
+    keys the line reading does not see (flow mapping, quoted keys, anchors, merge keys). "" when there is no owner."""
+    m = KD_FENCE_RE.search(block_text)
+    if not m:
+        return None
+    try:
+        import yaml
+        d = yaml.safe_load(m.group(1))
+    except Exception:
+        return None
+    if not isinstance(d, dict):
+        return None
+    seen = {km.group(1) for km in map(KD_KEY_RE.match, m.group(1).splitlines()) if km}
+    if {str(k) for k in d} != seen:
+        return None
+    return d.get("owner") if d.get("owner") is not None else ""
+
+
 def check_append_only(rel: str, cur: str, new: str) -> tuple[str, str] | None:
     bad = rp.append_only_violations(cur, new)
     if bad:
         return ("deny", f"axis-migrate: {rel} is append-only (D3-13): {'; '.join(bad)}. Existing ## D-/KD- blocks "
                         "must stay byte-identical; append a new block (use `supersedes:` to correct an old one).")
     if rel == "known-differences.md":
-        human = [b.id for b in rp.new_blocks(cur, new) if rp.has_human_owner(b.text)]
+        human, unsure = [], []
+        for b in rp.new_blocks(cur, new):
+            owner = _kd_owner(b.text)
+            if owner is None:
+                unsure.append(b.id)
+            elif rp.has_human_owner(b.text) or (isinstance(owner, str) and owner.strip().startswith("human:")):
+                human.append(b.id)
+        if unsure:
+            return ("ask", f"axis-migrate: {', '.join(unsure)} cannot be read with certainty (no single fenced yaml "
+                           "mapping in plain block style, or PyYAML is not importable), so its owner is unknown. A KD "
+                           "with a human owner can turn a FAIL into ACCEPTED_DIFFERENCE; the guard fails closed. Write "
+                           "the yaml block one key per line; approve only if the user decided this difference.")
         if human:
             return ("ask", f"axis-migrate: {', '.join(human)} names a human owner (owner: human:...). A KD with a "
                            "human owner can turn a FAIL into ACCEPTED_DIFFERENCE, so only the user may add it. "
@@ -59,28 +98,88 @@ def check_append_only(rel: str, cur: str, new: str) -> tuple[str, str] | None:
     return None
 
 
-def _items(text: str, key: str) -> dict:
-    return {i.id: i for i in (rp.yaml_list_items(text, key) or []) if i.id}
+class Unparsed(ValueError):
+    """A record file the guard cannot read with certainty: the decision fails closed (ask)."""
+
+
+def _records(text: str, key: str) -> dict:
+    """Items of the top-level list `key` by id, read with yaml.safe_load (the reading compare/seal use). Raises
+    Unparsed when the text is not valid YAML, an item has no id or repeats one, or the list is not plain block style
+    (`- id: ...` items with unquoted keys, the same keys the line reader sees): flow mappings, quoted keys, anchors,
+    aliases and merge keys can hide a field from a line-based reading, so they are never judged by guesswork."""
+    if not text.strip():
+        return {}
+    try:
+        import yaml
+    except ImportError:
+        raise Unparsed("PyYAML is not importable by the hook interpreter (run scripts/axpy --print-python once)")
+    try:
+        doc = yaml.safe_load(text)
+    except yaml.YAMLError as e:
+        raise Unparsed(f"not valid YAML ({str(e).splitlines()[0] if str(e) else type(e).__name__})")
+    if doc is None:
+        return {}
+    if not isinstance(doc, dict):
+        raise Unparsed("the top level is not a mapping")
+    items = doc.get(key)
+    if items is None:
+        items = []
+    if not isinstance(items, list):
+        raise Unparsed(f"`{key}` is not a list")
+    out: dict = {}
+    for n, it in enumerate(items):
+        rid = it.get("id") if isinstance(it, dict) else None
+        if isinstance(rid, bool) or not isinstance(rid, (str, int)) or not str(rid).strip():
+            raise Unparsed(f"{key}[{n}] is not a mapping with an id")
+        if str(rid) in out:
+            raise Unparsed(f"{key} repeats id {rid}")
+        out[str(rid)] = it
+    lines = rp.yaml_list_items(text, key) or []
+    plain = (not any(b.flow for b in lines) and [b.id for b in lines] == list(out)
+             and all(set(b.fields) == {str(k) for k in out[b.id]} for b in lines))
+    if not plain:
+        raise Unparsed(f"`{key}` is not plain block style (one `- id: ...` item per record, unquoted keys; no flow "
+                       "mappings like [{...}], anchors, aliases or merge keys)")
+    return out
+
+
+def _top_level(text: str, key: str) -> dict:
+    import yaml
+    doc = yaml.safe_load(text) if text.strip() else None
+    return {k: v for k, v in (doc or {}).items() if k not in (key, "version")}
+
+
+def _signed(rec: dict) -> bool:
+    return any(rec.get(k) not in (None, "", [], {}) for k in ("agreed_by", "agreed_at"))
+
+
+def _unparsed(rel: str, e: Unparsed) -> tuple[str, str]:
+    return ("ask", f"axis-migrate: {rel} cannot be read with certainty: {e}. The guard fails closed: a signature, a "
+                   "widened tolerance or a confirmed value could hide in it. Rewrite it in plain block style "
+                   "(`- id: ...` items, one key per line); approve only if the user asked for exactly this text.")
 
 
 def check_tolerances(mig, cur: str, new: str) -> tuple[str, str] | None:
-    cur_items, new_items = _items(cur, "records"), _items(new, "records")
-    signed = sorted(i for i, it in new_items.items()
-                    if rp.item_scalar(it, "agreed_by") and (i not in cur_items or cur_items[i].text != it.text))
+    try:
+        cur_items, new_items = _records(cur, "records"), _records(new, "records")
+        top_changed = _top_level(cur, "records") != _top_level(new, "records")
+    except Unparsed as e:
+        return _unparsed("tolerances.yaml", e)
+    signed = sorted(i for i, it in new_items.items() if _signed(it) and cur_items.get(i) != it)
     runs = hl.recorded_runs(mig)
     if not runs:
         if signed:
-            return ("ask", f"axis-migrate: tolerances.yaml record(s) {', '.join(signed)} carry agreed_by. Only a "
-                           "human signs a tolerance; approve only if the user agreed these numbers.")
+            return ("ask", f"axis-migrate: tolerances.yaml record(s) {', '.join(signed)} carry agreed_by/agreed_at. "
+                           "Only a human signs a tolerance; approve only if the user agreed these numbers.")
         return None
 
     def strip_version(t: str) -> str:
         return "\n".join(l for l in rp.top_level_text(t, "records").splitlines() if not l.startswith("version:"))
 
-    if strip_version(cur) != strip_version(new):
+    if top_changed or strip_version(cur) != strip_version(new):
         return ("deny", "axis-migrate: tolerances.yaml defaults/top level changed after a run recorded its hash "
                         f"({runs[-1].name}). Tolerances are fixed before the run; propose a new versioned record.")
-    changed = sorted(i for i in cur_items if i not in new_items or new_items[i].text != cur_items[i].text)
+    changed = sorted(i for i in cur_items if new_items.get(i) != cur_items[i])
     if changed:
         return ("deny", f"axis-migrate: tolerance record(s) {', '.join(changed)} already existed when a run recorded "
                         f"tolerances.yaml ({runs[-1].name}); editing them is refused (TOLERANCE_CHANGED_AFTER_RUN). "
@@ -88,21 +187,23 @@ def check_tolerances(mig, cur: str, new: str) -> tuple[str, str] | None:
     added = sorted(i for i in new_items if i not in cur_items)
     if not added:
         return None
-    no_reason = [i for i in added if not (rp.item_scalar(new_items[i], "reason")
-                                          or rp.item_scalar(new_items[i], "decision_ref"))]
+    no_reason = [i for i in added if not (new_items[i].get("reason") or new_items[i].get("decision_ref"))]
     missing = (f" Record(s) {', '.join(no_reason)} give no reason or decision_ref (08 §5c expects one)."
                if no_reason else "")
+    sig = (f" Record(s) {', '.join(signed)} carry agreed_by/agreed_at: only a human signs." if signed else "")
     return ("ask", f"axis-migrate: new tolerance record(s) {', '.join(added)} after run {runs[-1].name}. This widens "
                    "a tolerance after seeing results; the report will show it as widened and a new run is needed."
-                   f"{missing} Approve only if the user agrees.")
+                   f"{missing}{sig} Approve only if the user agrees.")
 
 
 def check_proposed_tolerances(new: str) -> tuple[str, str] | None:
     """migration/tolerances.proposed.yaml: unsigned proposals, writable any time; signatures are refused."""
-    signed = []
-    for it in rp.yaml_list_items(new, "records") or []:
-        if rp.item_scalar(it, "agreed_by") or rp.item_scalar(it, "agreed_at"):
-            signed.append(it.id or f"record at line {it.start_line + 1}")
+    try:
+        items = _records(new, "records")
+    except Unparsed as e:
+        return ("deny", f"axis-migrate: tolerances.proposed.yaml cannot be read with certainty ({e}), so it cannot be "
+                        "shown to carry no signature; refused (fail closed). Write it in plain block style.")
+    signed = sorted(i for i, it in items.items() if _signed(it))
     if signed:
         return ("deny", f"axis-migrate: tolerances.proposed.yaml record(s) {', '.join(signed)} carry agreed_by/agreed_at. "
                         "Only a person signs; proposals stay unsigned (agreed_by: null, agreed_at: null).")
@@ -110,20 +211,29 @@ def check_proposed_tolerances(new: str) -> tuple[str, str] | None:
 
 
 def check_params(cur: str, new: str) -> tuple[str, str] | None:
-    cur_items, new_items = _items(cur, "params"), _items(new, "params")
-    lifted = []
+    try:
+        cur_items, new_items = _records(cur, "params"), _records(new, "params")
+    except Unparsed as e:
+        return _unparsed("params.yaml", e)
+    lifted, confirmed = [], []
     for pid, it in new_items.items():
         old = cur_items.get(pid)
+        if it.get("status") == "confirmed" and (old is None or old.get("status") != "confirmed"):
+            confirmed.append(pid)
         if old is None:
             continue
-        fitted = (rp.item_scalar(old, "source") == "fitted" or "fitted_against" in old.fields
-                  or rp.item_subtree(old, "fit").strip() not in ("", "null", "~"))
-        if fitted and rp.item_scalar(old, "source") != "answer" and rp.item_scalar(it, "source") == "answer":
+        fitted = (old.get("source") == "fitted" or "fitted_against" in old
+                  or old.get("fit") not in (None, "", [], {}))
+        if fitted and old.get("source") != "answer" and it.get("source") == "answer":
             lifted.append(pid)
     if lifted:
         return ("ask", f"axis-migrate: {', '.join(sorted(lifted))} change from a fitted value to source: answer. "
                        "That lifts the PARAM_FITTED_TO_REFERENCE cap and must be the user's confirmation. Approve "
                        "only if the user confirmed the value.")
+    if confirmed:
+        return ("ask", f"axis-migrate: {', '.join(sorted(confirmed))} would become status: confirmed by a direct edit. "
+                       "Only the user's answer confirms a parameter: record it with `record.py answer` (which counts "
+                       "against the question budget). Approve only if the user confirmed exactly these values.")
     return None
 
 

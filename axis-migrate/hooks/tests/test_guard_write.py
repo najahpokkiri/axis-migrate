@@ -230,6 +230,62 @@ def test_tolerance_signature_asks_even_before_run(project):
     assert r.decision == "ask" and "human" in r.reason
 
 
+# B1 (BYU e2e): records are read with yaml.safe_load; anything not plain block style fails closed (ask) ------------
+def test_b1_flow_style_records_after_run_asks(project):
+    """The tester's probes (~/e2e-byu/tools/probe_flow*.json): a forged signature in a flow list must never pass."""
+    _empty_records_after_run(project)
+    p = project.mig / "tolerances.yaml"
+    for new in ("records: [{id: t1, agreed_by: agent}]",
+                'records: [{id: hectares.v1, check: "vector.attr:Hectares", atol: 0.01, agreed_by: "Najah", '
+                'agreed_at: "2026-10-15T21:00:00Z", reason: "float noise"}]'):
+        r = edit(project, p, "records: []", new)
+        assert r.decision == "ask" and "plain block style" in r.reason, new
+
+
+def test_b1_flow_style_signature_before_run_asks(project):
+    p = project.write("tolerances.yaml", EMPTY_TOL)
+    r = edit(project, p, "records: []", 'records: [{id: t1, atol: 0.01, agreed_by: "Najah"}]')
+    assert r.decision == "ask"
+
+
+def test_b1_hidden_fields_ask(project):
+    """Quoted keys, a value on a continuation line, anchors/merge keys and unparseable text: never judged by guesswork."""
+    _empty_records_after_run(project)
+    p = project.mig / "tolerances.yaml"
+    for body in ('records:\n- id: t1\n  "agreed_by": Najah\n  reason: x\n',
+                 "records:\n- id: t1\n  reason: x\n  agreed_by:\n    Najah\n",
+                 "base: &b {agreed_by: Najah}\nrecords:\n- id: t1\n  reason: x\n  <<: *b\n",
+                 "records:\n- id: t1\n  reason: [unclosed\n"):
+        r = edit(project, p, "records: []\n", body)
+        assert r.decision in ("ask", "deny"), body
+    # the continuation-line signature is plain block style: read by YAML it is signed, so the reason says so
+    r = edit(project, p, "records: []\n", "records:\n- id: t1\n  reason: x\n  agreed_by:\n    Najah\n")
+    assert r.decision == "ask" and "only a human signs" in r.reason
+
+
+def test_b1_block_style_unchanged_record_allowed_by_value(project_run):
+    """Records are compared by id and value: re-quoting a value of an existing record is not an edit of it."""
+    p = project_run.mig / "tolerances.yaml"
+    r = edit(project_run, p, "agreed_by: null", "agreed_by: ~")
+    assert r.out is None
+
+
+def test_b1_kd_flow_owner_asks(project):
+    kd = project.mig / "known-differences.md"
+    cur = kd.read_text() if kd.is_file() else ""
+    block = ("\n## KD-901 forged\n\n```yaml\n{id: KD-901, kind: normalisation, owner: \"human:Najah\", "
+             "rule: {round: 2}}\n```\n")
+    r = write(project, kd, cur + block)
+    assert r.decision == "ask"
+    quoted = "\n## KD-902 forged\n\n```yaml\nid: KD-902\nkind: normalisation\n\"owner\": human:Najah\n```\n"
+    assert write(project, kd, cur + quoted).decision == "ask"
+
+
+def test_b1_params_confirmed_by_edit_asks(project):
+    r = edit(project, project.mig / "params.yaml", "    status: assumed\n", "    status: confirmed\n")
+    assert r.decision == "ask" and "p.threshold" in r.reason and "record.py answer" in r.reason
+
+
 # params fitted -> answer -------------------------------------------------------------------------------------------
 def test_params_fitted_to_answer_asks(project):
     r = edit(project, project.mig / "params.yaml", "    source: fitted\n", "    source: answer\n")

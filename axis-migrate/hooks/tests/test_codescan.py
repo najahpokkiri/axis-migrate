@@ -261,4 +261,4 @@ def test_guard_write_fitted_to_answer_flow_style(project):
     r = run_hook("guard_write.py", tool_payload("PreToolUse", "Edit", project.root, {
         "file_path": str(project.mig / "params.yaml"), "old_string": "source: fitted", "new_string": "source: answer",
         "replace_all": False}))
-    assert r.decision == "ask" and "p.threshold" in r.reason
+    assert r.decision == "ask" and "plain block style" in r.reason   # B1: flow style fails closed

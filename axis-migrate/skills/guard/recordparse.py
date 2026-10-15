@@ -218,6 +218,8 @@ def _make_item(lines: list[str], dash_ind: int, start_line: int) -> YamlItem:
         m = KEY_RE.match(line)
         if not m:
             continue
+        if n and m.group("dash"):
+            continue  # `  - ref: ...` at key indent is an entry of a nested sequence, not a key of this item
         ind = len(m.group("ind"))
         if n == 0 and m.group("dash"):
             ind = ind + len(m.group("dash"))
