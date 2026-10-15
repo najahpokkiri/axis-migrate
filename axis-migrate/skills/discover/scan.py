@@ -1952,7 +1952,7 @@ class PyAnalyzer:
         algv = b.get("algOrName", (UNK, node.lineno, None))[0]
         alg = algv.v if is_str(algv) else None
         pv, pline, pnode = b.get("parameters", (V("dict", {}), node.lineno, None))
-        spec = self.ctx.algs.get(alg) if alg else None
+        spec = alg_spec(self.ctx.algs, alg) or None
         io_source = "qgis_algs.json" if spec else "name_rule"
         reads, writes, grid, params, outputs = list(fr.reads), list(fr.writes), list(fr.reads_grid), {}, {}
         fields: list[dict] = []
@@ -1967,8 +1967,9 @@ class PyAnalyzer:
             ps = (spec or {}).get("params", {}).get(pname)
             is_dest = ps["is_destination"] if ps else pname.upper().startswith("OUTPUT")
             ptype = ps["type"] if ps else None
-            layerish = ptype in LAYER_TYPES if ps else looks_like_path(val.v) if is_str(val) else val.k in (
-                "layer", "mem", "toolres", "list")
+            layerish = ptype in LAYER_TYPES if ps else (False if is_expression_param(pname, {}) else
+                                                        looks_like_path(val.v) if is_str(val) else val.k in (
+                                                            "layer", "mem", "toolres", "list"))
             refs = []
             if is_dest:
                 refs = self.path_refs(val, line, pname, force_path=True)
@@ -2598,10 +2599,91 @@ def parse_qgis_project(rel: str, data: bytes, res: Resolver) -> dict:
             "annotations_ignored": sum(1 for ml in root.iter("maplayer") if ml.get("type") == "annotation")}
 
 
+EXPR_PARAM_NAMES = {"FORMULA", "EXPRESSION", "GROUP_BY", "FILTER", "WHERE", "SQL", "QUERY", "AGGREGATES",
+                    "FIELDS_MAPPING"}
+NON_PATH_TYPES = {"expression", "raster_calc_expression", "string", "number", "enum", "boolean", "field", "aggregates",
+                  "fields_mapping", "crs", "extent", "distance", "band", "matrix", "point", "scale", "duration",
+                  "color", "area"}
+
+
+def alg_spec(algs: dict, alg_id: str | None) -> dict:
+    """qgis_algs.json entry; a QGIS 3 `qgis:` id that QGIS 4 moved to `native:` resolves to the native entry."""
+    if not alg_id:
+        return {}
+    if alg_id in algs:
+        return algs[alg_id]
+    if ":" in alg_id:
+        return algs.get("native:" + alg_id.split(":", 1)[1], {})
+    return {}
+
+
+def is_expression_param(pname: str, ps: dict) -> bool:
+    """FORMULA / EXPRESSION / string-like parameter values are never datasets, whatever they contain (B5)."""
+    return (ps.get("type") in NON_PATH_TYPES) if ps else pname.upper() in EXPR_PARAM_NAMES
+
+
+def name_tokens(text: str) -> set[str]:
+    """Lower-case word tokens of a name: snake/kebab/space and camelCase split, digits dropped, plus the acronym of
+    a camelCase name (OpenStreetMap -> osm)."""
+    parts = re.findall(r"[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+", text or "")
+    toks = {p.lower() for p in parts if len(p) > 1}
+    for w in re.split(r"[^A-Za-z0-9]+", text or ""):
+        if w and not w.isdigit():
+            toks.add(re.sub(r"\d+", "", w.lower()))
+            caps = re.findall(r"[A-Z][a-z]+", w)
+            if len(caps) >= 3:
+                toks.add("".join(c[0] for c in caps).lower())
+    return {t for t in toks if len(t) > 1}
+
+
+def token_near(a: str, b: str) -> bool:
+    """Weak token match: one is a prefix of the other, or the first three letters of one occur in the other."""
+    if min(len(a), len(b)) < 3:
+        return False
+    return a.startswith(b) or b.startswith(a) or a[:3] in b or b[:3] in a
+
+
+def expression_numbers(expr: str) -> list[int | float]:
+    """Numeric literals of a QGIS expression, in order, outside quoted strings and field names."""
+    bare = re.sub(r"'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"", " ", expr or "")
+    out = []
+    for m in re.finditer(r"(?<![\w.])(\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?(?![\w.])", bare):
+        t = m.group(0)
+        out.append(float(t) if any(c in t for c in ".eE") else int(t))
+    return out
+
+
+def xml_with_lines(data: bytes):
+    """defusedxml parse that records each element's start line as the attribute `__line` (no lxml in the env)."""
+    import xml.etree.ElementTree as ET
+    from defusedxml.ElementTree import DefusedXMLParser
+
+    class LineParser(DefusedXMLParser):
+        def _start(self, tag, attrs):
+            el = super()._start(tag, attrs)
+            el.set("__line", str(self.parser.CurrentLineNumber))
+            return el
+    p = LineParser(target=ET.TreeBuilder())
+    p.feed(data)
+    return p.close()
+
+
+def _opt(el, name: str):
+    return next((c for c in el if c.tag == "Option" and c.get("name") == name), None) if el is not None else None
+
+
+def _line(el) -> int | None:
+    return int(el.get("__line")) if el is not None and el.get("__line") else None
+
+
+MODEL_DEST_TYPES = {"sink", "vectorDestination", "rasterDestination", "fileDestination", "folderDestination",
+                    "vectorTileDestination", "pointCloudDestination"}
+
+
 def parse_model3(rel: str, data: bytes) -> dict:
-    """QGIS model (.model3, Option XML): child algorithms with static parameter values and model inputs."""
-    from defusedxml import ElementTree as DET
-    root = DET.fromstring(data)
+    """QGIS model (.model3, Option XML): child algorithms with static parameter values (and their XML lines), model
+    input parameters (type, geometry types) and model outputs (child, output name)."""
+    root = xml_with_lines(data)
 
     def opt_value(el):
         t = el.get("type")
@@ -2612,28 +2694,53 @@ def parse_model3(rel: str, data: bytes) -> dict:
         return el.get("value")
     top = root.find("Option") if root.tag != "Option" else root
     doc = opt_value(top) if top is not None else {}
-    children = []
+    children, outputs = [], []
+    ch_el = _opt(top, "children")
     for cid, ch in sorted((doc.get("children") or {}).items()):
         if not isinstance(ch, dict):
             continue
+        cel = _opt(ch_el, cid)
+        pel = _opt(cel, "params")
         params = {}
         for pname, pv in (ch.get("params") or {}).items():
             vals = pv if isinstance(pv, list) else [pv]
-            for v in vals:
+            pe = _opt(pel, pname)
+            items = [c for c in pe if c.tag == "Option"] if pe is not None and pe.get("type") == "List" else [pe]
+            for v, ve in zip(vals, items + [None] * len(vals)):
                 if isinstance(v, dict):
                     src = v.get("source")
+                    line = _line(_opt(ve, "static_value")) or _line(_opt(ve, "parameter_name")) or _line(ve) \
+                        or _line(pe)
                     params[pname] = {"static_value": v.get("static_value"), "source": src,
                                      "parameter_name": v.get("parameter_name"), "child_id": v.get("child_id"),
-                                     "output_name": v.get("output_name")}
+                                     "output_name": v.get("output_name"), "line": line}
         outs = {}
+        oel = _opt(cel, "outputs")
         for oname, ov in (ch.get("outputs") or {}).items():
             if isinstance(ov, dict):
-                outs[oname] = {"name": ov.get("name"), "default_value": ov.get("default_value")}
+                outs[oname] = {"name": ov.get("name"), "default_value": ov.get("default_value"),
+                               "output_name": ov.get("output_name"), "line": _line(_opt(oel, oname))}
+                outputs.append({"name": ov.get("name") or oname, "child": cid,
+                                "output_name": ov.get("output_name") or "OUTPUT", "line": _line(_opt(oel, oname))})
+        lines = [int(x.get("__line")) for x in cel.iter() if x.get("__line")] if cel is not None else []
         children.append({"id": cid, "alg_id": ch.get("alg_id"), "params": params, "outputs": outs,
-                         "dependencies": ch.get("dependencies")})
+                         "dependencies": ch.get("dependencies"), "description": ch.get("component_description"),
+                         "active": ch.get("active") != "false",
+                         "line": _line(cel), "end_line": max(lines) if lines else _line(cel)})
+    defs = doc.get("parameterDefinitions") or {}
+    dfel = _opt(top, "parameterDefinitions")
+    input_defs = {}
+    for name, d in sorted(defs.items()):
+        if not isinstance(d, dict) or d.get("parameter_type") in MODEL_DEST_TYPES:
+            continue
+        dt = d.get("data_types")
+        input_defs[name] = {"type": d.get("parameter_type"), "description": d.get("description"),
+                            "data_types": [int(x) for x in dt if str(x).lstrip("-").isdigit()]
+                            if isinstance(dt, list) else None, "line": _line(_opt(dfel, name))}
     inputs = sorted((doc.get("parameterDefinitions") or doc.get("parameters") or {}).keys())
     return {"path": rel, "kind": "qgis_model", "name": doc.get("model_name"), "group": doc.get("model_group"),
-            "children": children, "inputs": inputs}
+            "children": children, "inputs": inputs, "input_defs": input_defs,
+            "outputs": sorted(outputs, key=lambda o: (o["child"], o["name"]))}
 
 
 def parse_aprx(rel: str, full: Path, res: Resolver) -> dict:
@@ -3191,6 +3298,7 @@ class Scan:
                      for e in entries if e["kind"] == "doc"]
         self.projects = self.parse_projects(entries)
         self.profiles, self.keep_values = self.profile_all(entries)
+        self.bind_model_inputs()
         self.build_datasets()
         self.build_ops()
         self.code_records(code_entries, other_code)
@@ -3323,33 +3431,155 @@ class Scan:
         return out
 
     def model_ops(self, rec: dict) -> None:
-        """Child algorithms of a .model3 become ops (family qgis_model); static paths are resolved."""
+        """Child algorithms of a .model3 become ops (family qgis_model) at their XML lines; static paths are resolved;
+        expression values (FORMULA, EXPRESSION, ...) are never paths (B5). Model outputs are bound to a file only
+        through a folder named after the model holding `<output name, spaces→_>.<ext>` (B3); model input parameters
+        are bound later (bind_model_inputs, needs the profiles)."""
         rel = rec["path"]
         sid = self.step_of[rel]
         an = PyAnalyzer(self.ctx, rel, "code." + sid, rel.rsplit("/", 1)[0] if "/" in rel else "")
         an.cell = None
+        out_files = self.model_output_files(rel, rec)
+        rec["pending_inputs"] = []
         for i, ch in enumerate(rec["children"], start=1):
-            spec = self.ctx.algs.get(ch["alg_id"] or "", {})
+            spec = alg_spec(self.ctx.algs, ch["alg_id"])
+            line = ch.get("line") or i
             node = ast.Constant(value=None)
-            node.lineno, node.col_offset, node.end_lineno = i, 0, i
+            node.lineno, node.col_offset, node.end_lineno = line, 0, ch.get("end_line") or line
             reads, writes, params = [], [], {}
             for pname, pv in ch["params"].items():
                 ps = spec.get("params", {}).get(pname, {})
                 sv = pv.get("static_value")
                 params[pname] = {"value": sv, "source": pv.get("source"), "from_child": pv.get("child_id"),
-                                 "from_input": pv.get("parameter_name")}
-                if isinstance(sv, str) and (ps.get("type") in LAYER_TYPES or looks_like_path(sv)):
-                    reads += [r for r in an.path_refs(V("const", sv), i, pname, force_path=True) if "ref" in r]
+                                 "from_input": pv.get("parameter_name"), "arg_line": pv.get("line")}
+                if pv.get("parameter_name"):
+                    rec["pending_inputs"].append({"child": ch["id"], "param": pname, "input": pv["parameter_name"],
+                                                  "line": pv.get("line") or line, "key": None})
+                if isinstance(sv, str) and not is_expression_param(pname, ps) and \
+                        (ps.get("type") in LAYER_TYPES or (not ps and looks_like_path(sv))):
+                    reads += [r for r in an.path_refs(V("const", sv), pv.get("line") or line, pname, force_path=True)
+                              if "ref" in r]
             for oname, ov in ch["outputs"].items():
                 dv = ov.get("default_value")
                 if isinstance(dv, str) and dv:
-                    writes += [dict(r, mode="create") for r in an.path_refs(V("const", dv), i, oname, force_path=True)
-                               if "ref" in r]
-            an.emit(node, "model3.child", ch["alg_id"] or "?", "qgis_model",
-                    "qgis_algs.json" if spec else "name_rule", reads=reads, writes=writes, params=params,
-                    flags=["model_child:" + ch["id"]])
+                    writes += [dict(r, mode="create") for r in an.path_refs(V("const", dv), ov.get("line") or line,
+                                                                            oname, force_path=True) if "ref" in r]
+                bound = out_files.get((ch["id"], ov.get("name") or oname))
+                if bound and not (isinstance(dv, str) and dv):
+                    writes += [dict(r, mode="create", binding="model_output_folder")
+                               for r in an.path_refs(V("const", bound), ov.get("line") or line,
+                                                     ov.get("output_name") or "OUTPUT", force_path=True) if "ref" in r]
+            key = an.emit(node, "model3.child", ch["alg_id"] or "?", "qgis_model",
+                          "qgis_algs.json" if spec else "name_rule", reads=reads, writes=writes, params=params,
+                          flags=["model_child:" + ch["id"]] + ([] if ch.get("active", True) else ["inactive_child"]))
+            for pi in rec["pending_inputs"]:
+                if pi["child"] == ch["id"]:
+                    pi["key"] = key
+        rec["output_bindings"] = [{"child": c, "output": o, "path": p, "rule": "model_output_folder"}
+                                  for (c, o), p in sorted(out_files.items())]
         self.analysers[rel] = an
         an.comments, an.stmt_starts = {None: []}, {None: []}
+
+    def model_output_files(self, rel: str, rec: dict) -> dict:
+        """(child, output name) -> legacy file: a folder named exactly like the model (stem) holding exactly one data
+        file whose stem is the output name with spaces as underscores. Folder + exact name is the evidence; a
+        name-only match elsewhere is never used."""
+        stem = stem_of(rel).lower()
+        data = [e["path"] for e in self.entries if e["kind"] in ("vector", "raster", "table")]
+        out = {}
+        for o in rec.get("outputs", []):
+            want = re.sub(r"\s+", "_", (o["name"] or "").strip()).lower()
+            hits = [p for p in data if "/" in p and p.rsplit("/", 2)[-2].lower() == stem
+                    and stem_of(p).lower() == want]
+            if len(hits) == 1:
+                out[(o["child"], o["name"])] = hits[0]
+        return out
+
+    def bind_model_inputs(self) -> None:
+        """Model input parameters -> files on disk, as agent guesses (B3): by type (raster / vector, point / line /
+        polygon from the profile), then name tokens (parameter name and description vs file stem and folders), then
+        elimination. The reads join the child ops with `guess: model_input_binding`; one open item asks to confirm."""
+        written = {self.ctx.refs[w["ref"]]["rel"] for o in self.ctx.ops.values() for w in o["writes"] if w.get("ref")}
+        alias = set(getattr(self, "vrt_alias", {}))
+        geom = {}
+        for e in self.entries:
+            prof = self.profiles.get(e["path"], {})
+            if e["kind"] == "vector":
+                gts = set()
+                for l in prof.get("layers", []):
+                    gts |= {re.sub(r"^Multi|[ZM]+$", "", g).lower() for g in (l.get("geom_types") or {})}
+                    if l.get("declared_geometry"):
+                        gts.add(re.sub(r"^Multi|[ZM ]+$", "", l["declared_geometry"]).lower())
+                geom[e["path"]] = gts
+        cands = [e for e in self.entries if e["kind"] in ("raster", "vector") and e["path"] not in written
+                 and e["path"] not in alias and "error" not in self.profiles.get(e["path"], {})]
+        qtype = {0: "point", 1: "linestring", 2: "polygon"}
+        self.model_bindings = []
+        for rec in self.projects:
+            if rec.get("kind") != "qgis_model" or not rec.get("input_defs"):
+                continue
+            bound_out = {b["path"] for b in rec.get("output_bindings", [])}
+            pool = [e for e in cands if e["path"] not in bound_out]
+            scores = []
+            for name, d in rec["input_defs"].items():
+                kind = {"raster": "raster", "vector": "vector", "source": "vector", "layer": None,
+                        "multilayer": None, "file": None}.get(d.get("type"), "skip")
+                if kind == "skip":
+                    continue
+                want = {qtype[t] for t in (d.get("data_types") or []) if t in qtype}
+                ptoks = name_tokens(name) | name_tokens(d.get("description") or "")
+                for e in pool:
+                    if kind and e["kind"] != kind:
+                        continue
+                    if want and e["kind"] == "vector" and geom.get(e["path"]) and not geom[e["path"]] & want:
+                        continue
+                    stoks = name_tokens(stem_of(e["path"]))
+                    ftoks = set().union(*[name_tokens(x) for x in e["path"].split("/")[:-1]]) if "/" in e["path"] \
+                        else set()
+                    sc, why = 0, []
+                    for t in sorted(ptoks):
+                        if t in stoks:
+                            sc, why = sc + 3, why + [f"name token {t!r}"]
+                        elif t in ftoks:
+                            sc, why = sc + 2, why + [f"folder token {t!r}"]
+                        elif any(token_near(t, x) for x in stoks | ftoks):
+                            sc, why = sc + 1, why + [f"near token {t!r}"]
+                    scores.append((sc, name, e["path"], why, kind, want))
+            used_p, used_f, out = set(), set(), []
+            for sc, name, path, why, kind, want in sorted(scores, key=lambda x: (-x[0], x[1], x[2])):
+                if sc <= 0 or name in used_p or path in used_f:
+                    continue
+                rivals = [x for x in scores if x[1] == name and x[0] == sc and x[2] not in used_f and x[2] != path]
+                if rivals:
+                    continue  # a tie is not a guess
+                used_p.add(name)
+                used_f.add(path)
+                out.append({"input": name, "path": path, "score": sc, "why": why, "rule": "name_tokens"})
+            for name, d in sorted(rec["input_defs"].items()):  # elimination: one type-compatible file left
+                if name in used_p:
+                    continue
+                left = sorted({x[2] for x in scores if x[1] == name and x[2] not in used_f})
+                if len(left) == 1:
+                    used_p.add(name)
+                    used_f.add(left[0])
+                    out.append({"input": name, "path": left[0], "score": 0, "why": ["only type-compatible file left"],
+                                "rule": "elimination"})
+            for b in out:
+                d = rec["input_defs"][b["input"]]
+                b.update({"model": rec["path"], "type": d.get("type"), "data_types": d.get("data_types"),
+                          "line": d.get("line"), "state": "agent_guess"})
+                res = self.res.resolve(b["path"])
+                key = self.ctx.ref(res["rel"], None, res, b["path"])
+                for pi in rec.get("pending_inputs", []):
+                    op = self.ctx.ops.get(pi["key"]) if pi["key"] else None
+                    if op is not None and pi["input"] == b["input"]:
+                        r = {"ref": key, "param": pi["param"], "line": pi["line"], "guess": "model_input_binding"}
+                        if r not in op["reads"]:
+                            op["reads"].append(r)
+            rec["input_bindings"] = sorted(out, key=lambda b: b["input"])
+            rec["unbound_inputs"] = sorted(set(rec["input_defs"]) - {b["input"] for b in out})
+            self.model_bindings.append({"model": rec["path"], "bindings": rec["input_bindings"],
+                                        "unbound": rec["unbound_inputs"]})
 
     # ------------------------------------------------------------------ profiles
     def profile_all(self, entries):
@@ -3539,7 +3769,7 @@ class Scan:
                 for r in op["reads"]:
                     if r.get("ref"):
                         d = {"dataset": self.ds_of_ref(r["ref"]), "param": r["param"], "line": r["line"]}
-                        for k in ("via", "subset", "phi"):
+                        for k in ("via", "subset", "phi", "guess"):
                             if r.get(k):
                                 d[k] = r[k]
                         if d not in reads:
@@ -3553,6 +3783,8 @@ class Scan:
                     if w.get("ref"):
                         d = {"dataset": self.ds_of_ref(w["ref"]), "param": w["param"], "line": w["line"],
                              "mode": w.get("mode", "create")}
+                        if w.get("binding"):
+                            d["binding"] = w["binding"]
                         if d not in writes:
                             writes.append(d)
                 for g in op["reads_grid"]:
@@ -3910,8 +4142,13 @@ class Scan:
             for o, w in W:
                 ev.append({"kind": "code_write", "op": o["id"], "file": o["file"], "line": o["line"],
                            "arg_line": w["line"], "mode": w["mode"]})
+                if w.get("binding") == "model_output_folder":
+                    ev[-1]["binding"] = w["binding"]
+                    ev[-1]["rule"] = "folder named after the model + file named after the model output"
             for o, r in R:
                 e = {"kind": "code_read", "op": o["id"], "file": o["file"], "line": r["line"]}
+                if r.get("guess"):
+                    e["guess"] = r["guess"]
                 if e not in ev:
                     ev.append(e)
             top = rel.split("/")[0] if "/" in rel else ""
@@ -3962,7 +4199,8 @@ class Scan:
             ds = {"id": did, "legacy_path": rel, "layer": layer, "kind": en["kind"] or "vector",
                   "format": self.format_of(rel, en), "exists": exists, "role": role,
                   "role_state": "structurally_inferred" if any(x["kind"] in ("code_write", "code_read", "project_layer")
-                                                               for x in ev) else (
+                                                               and not x.get("guess") for x in ev) else
+                  "ai_inferred" if any(x.get("guess") for x in ev) else (
                       "documented" if doc_mentions.get(rel) else "ai_inferred"),
                   "role_evidence": ev, "unused_kind": unused_kind, "conflict": conflict,
                   "produced_by": sorted({o["id"] for o, _ in W}),
@@ -4202,9 +4440,11 @@ class Scan:
         for o in self.ops:
             if o["family"] not in ("pyqgis", "arcpy", "qgis_model"):
                 continue
+            ospec = alg_spec(self.ctx.algs, o["tool"]).get("params", {}) if o["family"] != "arcpy" else {}
             for pname, pv in sorted(o["params"].items()):
                 val = pv.get("value") if isinstance(pv, dict) else None
-                if isinstance(val, (int, float, bool)) or (isinstance(val, str) and not looks_like_path(val)
+                expr = o["family"] != "arcpy" and is_expression_param(pname, ospec.get(pname, {}))
+                if isinstance(val, (int, float, bool)) or (isinstance(val, str) and (expr or not looks_like_path(val))
                                                             and len(val) < 200):
                     if isinstance(pv, dict) and pv.get("chain"):
                         continue  # a named constant: reported under its name
@@ -4212,6 +4452,25 @@ class Scan:
                                 "value": val, "file": o["file"], "line": pv.get("arg_line") or o["line"],
                                 "kind": "tool_literal", "op": o["id"], "used_at": [{"op": o["id"], "param": pname,
                                                                                     "line": pv.get("arg_line")}],
+                                "doc_mentions": [], "shadowed_by": None, "flags": [], "comment": None,
+                                "code": o["code"], "from_superseded": status.get(o["code"]) in ("superseded", "twin")})
+        # numeric literals inside expression parameters (FORMULA `(30*30)/10000`): each number is a parameter (B5)
+        for o in self.ops:
+            if o["family"] not in ("pyqgis", "qgis_model"):
+                continue
+            spec = alg_spec(self.ctx.algs, o["tool"])
+            for pname, pv in sorted(o["params"].items()):
+                val = pv.get("value") if isinstance(pv, dict) else None
+                ptype = spec.get("params", {}).get(pname, {}).get("type")
+                if not isinstance(val, str) or not (ptype in ("expression", "raster_calc_expression") or
+                                                    (ptype is None and pname.upper() in EXPR_PARAM_NAMES)):
+                    continue
+                for i, num in enumerate(expression_numbers(val), start=1):
+                    out.append({"id": f"p.{short_step(o['id'])}.{o['id'].split('.')[-1]}.{pname.lower()}.n{i}",
+                                "name": f"{pname}#{i}", "value": num, "file": o["file"],
+                                "line": pv.get("arg_line") or o["line"], "kind": "expression_literal",
+                                "expression": val, "op": o["id"],
+                                "used_at": [{"op": o["id"], "param": pname, "line": pv.get("arg_line")}],
                                 "doc_mentions": [], "shadowed_by": None, "flags": [], "comment": None,
                                 "code": o["code"], "from_superseded": status.get(o["code"]) in ("superseded", "twin")})
         for l in self.ctx.literals:
@@ -4758,6 +5017,19 @@ class Scan:
                                 unused=unused)
         for oc in self.order_conflicts:
             add("order_conflict", "medium", [], [oc])
+        # model input parameters bound to files by guess (B3): one confirmation, never silent
+        for mb in getattr(self, "model_bindings", []):
+            if not mb["bindings"] and not mb["unbound"]:
+                continue
+            code = self.codes.get(mb["model"], {})
+            ids = {b["input"]: next((d for d, x in self.datasets.items() if x["legacy_path"] == b["path"]), None)
+                   for b in mb["bindings"]}
+            add("model_input_binding", "medium", [code.get("id")] + sorted(i for i in ids.values() if i),
+                [{"kind": "model_parameter", "file": mb["model"], "line": b["line"], "input": b["input"],
+                  "type": b["type"], "data_types": b["data_types"], "dataset": ids[b["input"]], "rule": b["rule"],
+                  "why": b["why"]} for b in mb["bindings"]], state="agent_guess", model=mb["model"],
+                unbound=mb["unbound"])
+            items[-1]["agent_guess"] = {b["input"]: ids[b["input"]] for b in mb["bindings"]}
         for lm in self.layer_mismatch:
             if lm.get("reason") == "layer_not_given":
                 continue

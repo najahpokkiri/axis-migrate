@@ -258,6 +258,13 @@ class Lineage:
                     if did in written_by_step[sid]:
                         self.intra_step.append({"step": sid, "op": o["id"], "dataset": did, "line": r["line"]})
                         continue
+                    if r.get("guess") == "model_input_binding":
+                        p = (o["params"].get(r["param"]) or {}) if isinstance(o["params"].get(r["param"]), dict) else {}
+                        add_edge(did, sid, "reads", o["id"], [[o["line"], o["end_line"]]],
+                                 [ev("ai_inferred", ref(o["file"], r["line"]),
+                                     f"{o['tool']} {r['param']} = model input {p.get('from_input')!r}, bound to this "
+                                     f"file by type and name (a guess to confirm)")])
+                        continue
                     add_edge(did, sid, "reads", o["id"], [[o["line"], o["end_line"]]],
                              [ev(state, ref(o["file"], o["line"], o["end_line"]),
                                  f"{o['tool']} {r['param']} (line {r['line']})")])
@@ -616,6 +623,28 @@ class Lineage:
                {"value": "read_edited", "label": "Read the edited file",
                 "description": "Keep the hand-made file as a hash-pinned input (bridge)"}, dont_know],
               guess={"option": "derive", "why": "the rule explains all but the listed exceptions"})
+        # model input parameters bound to files by guess: one confirmation per in-scope model
+        for it in self.inv.get("open_items", []):
+            if it["kind"] != "model_input_binding":
+                continue
+            sid = self.step_of_code(it["about"][0])
+            if sid not in live:
+                continue
+            bound = [x for x in it["evidence"] if x.get("dataset")]
+            listing = "; ".join(f"{x['input']} ({x['type']}) -> {self.ds[x['dataset']]['legacy_path']}" for x in bound)
+            q("lineage", sid, [sid] + [x["dataset"] for x in bound], "Model inputs",
+              f"{it['model']} takes its inputs as parameters; I matched them to files by type and name: {listing}"
+              + (f". Not matched: {', '.join(it['unbound'])}" if it.get("unbound") else "") + ". Are these the files "
+              f"the model was run on?",
+              "The model names no files; the run reads whatever these parameters are bound to.",
+              {"ref": ref(it["model"], bound[0]["line"]) if bound and bound[0].get("line") else f"{it['model']}:1",
+               "quote": None},
+              [{"ref": ref(it["model"], x["line"]) if x.get("line") else it["model"],
+                "fact": f"{x['input']}: {', '.join(x['why'])}"} for x in bound], "high",
+              [{"value": "confirm", "label": "Yes, these files (Recommended)", "recommended": True,
+                "description": "Bind the parameters as listed"},
+               {"value": "other", "label": "Other files", "description": "Name the files per parameter"}, dont_know],
+              guess={"option": "confirm", "why": "type and name tokens match; see the evidence per parameter"})
         # datasets written by several in-scope steps (split into versions by split_multi_writers)
         for mw in self.multi_writers:
             d = self.ds[mw["dataset"]]
