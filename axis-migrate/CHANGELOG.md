@@ -6,7 +6,15 @@ number (Codex caches installs by version, so every shipped change needs a bump).
 
 ## Unreleased
 
-Nothing yet.
+Report (from the BYU headless end-to-end run)
+- "What needs attention" lists every open graph question and a plan approved by standing instruction, and counts
+  them, so it can no longer say "none" while an owner question is open.
+- No more `PHRASE_MISSING: unused`: a dataset with no legacy reference says why in plain words.
+- No link to GeoLibre map views when the run has none.
+- A version-drift note under Parity when the legacy model's application version and the references' differ (once
+  discovery records both).
+- BUILD §1 and the report SKILL: approve the plan with the shown plan.md's sha256 (or say it was a standing
+  instruction); every report script named by its full path.
 
 ## 0.4.0 — 15 Oct 2026 (demo build)
 
