@@ -1207,25 +1207,65 @@ class VectorPlotter:
             self.N = self.N.to_crs(self.L.crs)
             self.notes.append("new reprojected to the legacy CRS for display only (CRS differs)")
         rename = self.spec.get("rename") or {}
-        self.key = list(self.spec.get("key") or [])
+        key = self.spec.get("key") or []
+        self.key = [key] if isinstance(key, str) else list(key)
         self.nkey = [rename.get(k, k) for k in self.key]
         self.match = self._match()
         self.metrics = self._metrics()
 
+    def _row_keys(self) -> tuple[list, list] | None:
+        """Per-row match keys as compare.py builds them: the declared key, else `compare.match: full_row` (every
+        compared attribute, ignore/rename applied, with an occurrence count) or `geometry` (normalised WKB with an
+        occurrence count). None when compare would have no key either (KEY_UNDECLARED)."""
+        import collections
+        import hashlib
+        import compare
+        match = self.spec.get("match")
+        if self.key:
+            return ([_key_tuple(row, self.key) for _, row in self.L.iterrows()],
+                    [_key_tuple(row, self.nkey) for _, row in self.N.iterrows()])
+
+        def counted(keys):
+            seen, out = collections.Counter(), []
+            for k in keys:
+                seen[k] += 1
+                out.append(k + (str(seen[k]),))
+            return out
+        if match == "full_row":
+            rename = self.spec.get("rename") or {}
+            ignore = set(self.spec.get("ignore") or [])
+            lgeom, ngeom = self.L.geometry.name, self.N.geometry.name
+            ncols = set(self.N.columns) - {ngeom}
+            colmap = {c: rename.get(c, c) for c in self.L.columns
+                      if c != lgeom and c not in ignore and rename.get(c, c) in ncols}
+            cols = sorted(colmap)
+            return (counted([tuple(compare._canon_key(row[c]) for c in cols) for _, row in self.L.iterrows()]),
+                    counted([tuple(compare._canon_key(row[colmap[c]]) for c in cols) for _, row in self.N.iterrows()]))
+        if match == "geometry":
+            def wkb(g):
+                cg = compare._canon_geom(g)
+                return (hashlib.sha1(cg.wkb if cg is not None else b"").hexdigest(),)
+            return counted([wkb(g) for g in self.L.geometry]), counted([wkb(g) for g in self.N.geometry])
+        return None
+
     def _match(self) -> dict:
         m = {"pairs": [], "legacy_only": [], "new_only": [], "keyed": False}
-        if self.L is None or self.N is None or not self.key:
+        if self.L is None or self.N is None or not (self.key or self.spec.get("match") in ("full_row", "geometry")):
             return m
-        if not all(k in self.L.columns for k in self.key) or not all(k in self.N.columns for k in self.nkey):
+        if self.key and (not all(k in self.L.columns for k in self.key)
+                         or not all(k in self.N.columns for k in self.nkey)):
             self.notes.append(f"declared key {self.key} not present on both sides")
+            return m
+        keys = self._row_keys()
+        if keys is None:
             return m
         m["keyed"] = True
         li = {}
-        for i, (_, row) in enumerate(self.L.iterrows()):
-            li.setdefault(_key_tuple(row, self.key), i)
+        for i, k in enumerate(keys[0]):
+            li.setdefault(k, i)
         ni = {}
-        for i, (_, row) in enumerate(self.N.iterrows()):
-            ni.setdefault(_key_tuple(row, self.nkey), i)
+        for i, k in enumerate(keys[1]):
+            ni.setdefault(k, i)
         for k in sorted(li, key=str):
             if k in ni:
                 m["pairs"].append((k, li[k], ni[k]))
@@ -1390,7 +1430,8 @@ class VectorPlotter:
         nL = len(self.L) if self.L is not None else 0
         nN = len(self.N) if self.N is not None else 0
         nd = sum(1 for r in self.metrics if (r["ratio"] or 0) > 0 or (r["haus"] or 0) > 0)
-        keyinfo = (f"key {self.key}: {len(self.match['pairs'])} matched, {nd} differ in geometry, "
+        keyinfo = (f"{'key ' + str(self.key) if self.key else 'match ' + str(self.spec.get('match'))}: "
+                   f"{len(self.match['pairs'])} matched, {nd} differ in geometry, "
                    f"{len(self.match['legacy_only'])} legacy-only, {len(self.match['new_only'])} new-only"
                    if self.match["keyed"] else "no declared key on both sides: no per-key matching")
         ax.set_title(f"overlay · legacy {nL} features · new {nN} features\n{keyinfo}", fontsize=7)

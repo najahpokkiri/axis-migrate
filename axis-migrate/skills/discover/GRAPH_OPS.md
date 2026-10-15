@@ -17,11 +17,18 @@ Contents (read only the section you need):
 ## 1 How to write
 
 ```
-axpy graph.py apply <migration> --actor agent --base-rev <N> --ops ops.json        # or --ops - (stdin)
-axpy graph.py apply <migration> --actor agent --base-rev <N> --ops ops.json --channel interview --verbatim "<user's words>"
+axpy graph.py apply <migration> --actor agent --base-rev <N> --ops - <<'EOF'
+[{"type": "add_note", "id": "s01_clip", "text": "…"}]
+EOF
+axpy graph.py apply <migration> --actor agent --base-rev <N> --channel interview --verbatim "<user's words>" --ops - <<'EOF'
+[{"type": "answer_question", "id": "q01", "value": "derive"}]
+EOF
 ```
 
-- `ops.json` is a JSON **list** of op objects (a single object or `{"ops": [...]}` is also accepted). All ops in one
+- Pass the ops on stdin (`--ops -`, a quoted heredoc as above). Never write an ops file in a shared folder such as
+  `/tmp`: an `--ops <file>` not owned by you or world-writable is refused (`ops_not_owned`), because a stale file of
+  another project with the same name would otherwise be applied. A file of your own under `migration/analysis/` works.
+- The ops are a JSON **list** of op objects (a single object or `{"ops": [...]}` is also accepted). All ops in one
   call are applied atomically as **one revision**; any failure applies nothing.
 - `--base-rev` is the `revision` you read (`graph.py show --json | jq .revision`). If the graph moved on, the call fails
   with exit **3** (conflict, `{"error":"conflict","revision":R,"conflicting_seqs":[…]}` with `--json`): re-read, re-think,

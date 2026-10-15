@@ -555,3 +555,24 @@ def test_automate_obligation_mentions_open_policy_question(mdir: Path):
     user(mdir, [{"type": "answer_question", "id": "q01", "value": "derive"}])  # what the page sends with it
     ob = [o for o in G.diff(mdir, since_rev=1)["obligations"] if o["code"] == "automate_manual_step"][0]
     assert "still open" not in ob["obligation"]
+
+
+# ------------------------------------------------------------------------------------------------ B7: --ops files
+def test_ops_file_must_be_own_and_not_world_writable(tmp_path: Path, monkeypatch):
+    p = tmp_path / "q05.json"
+    p.write_text('[{"type": "add_note", "id": "s01_clip", "text": "x"}]')
+    p.chmod(0o600)
+    assert G.read_ops_file(str(p)).startswith("[")
+    p.chmod(0o666)
+    with pytest.raises(G.ValidationError) as e:
+        G.read_ops_file(str(p))
+    assert e.value.code == "ops_not_owned"
+    p.chmod(0o644)
+    real = G.os.getuid()
+    monkeypatch.setattr(G.os, "getuid", lambda: real + 1)    # as if another account (e.g. axis-eval) owned it
+    with pytest.raises(G.ValidationError) as e:
+        G.read_ops_file(str(p))
+    assert e.value.code == "ops_not_owned" and "--ops -" in e.value.message
+    with pytest.raises(G.ValidationError) as e:
+        G.read_ops_file(str(tmp_path / "missing.json"))
+    assert e.value.code == "bad_ops"

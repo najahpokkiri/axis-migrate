@@ -476,10 +476,13 @@ def check_t9(mig: Path, run_id: str, members: dict[str, bytes], dbx: Path) -> tu
     if wp is None or ac.sha256_bytes(wp) != sp:
         codes.append("TC_PARAMS_CHANGED")
         ev.append("params.yaml packaged in the wheel ≠ the verified run's")
-    sg = ac.sha256_file(snap / "graph.json")
-    if ac.sha256_file(mig / "graph.json") != sg:
+    # contract views, as ladder's drift check (ladder._graph_contract_hex): seal, ingest-verify and derive write
+    # projections (rungs, verdicts, revision) into graph.json; they are not a change of the verified workflow (B4)
+    sg = ac.graph_contract_sha256(snap / "graph.json")
+    if ac.graph_contract_sha256(mig / "graph.json") != sg:
         codes.append("TC_GRAPH_CHANGED")
-        ev.append("live graph.json ≠ the verified run's")
+        ev.append("live graph.json's contract view (steps, datasets, scope, plans, questions, compare settings) ≠ "
+                  "the verified run's")
     regen = None
     try:
         regen = md.generate(mig, run_id)
@@ -741,6 +744,7 @@ def target_check(mig: Path, run_id: str, *, keep: bool = False, use_strace: bool
     hashes = {"code": md.wheel_code_tree_hash(members), "pipeline_tree": ac.tree_hash(mig / "pipeline"),
               "params": "sha256:" + ac.sha256_bytes(members.get(f"{md.PACKAGE}/params.yaml", b"")),
               "graph": "sha256:" + ac.sha256_file(mig / "graph.json"),
+              "graph_contract": "contract-sha256:" + ac.graph_contract_sha256(mig / "graph.json"),
               "lock": "sha256:" + ac.sha256_file(snap / "uv.lock"),
               "target_lock": "sha256:" + ac.sha256_file(dbx / "requirements-target.lock"),
               "wheel": "sha256:" + wheel_sha, "bundle": "sha256:" + ac.sha256_file(dbx / "databricks.yml"),

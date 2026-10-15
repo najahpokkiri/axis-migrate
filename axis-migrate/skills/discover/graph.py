@@ -2452,6 +2452,25 @@ def _print(obj: Any, as_json: bool, text: str | None = None) -> None:
                                                                    ensure_ascii=False)) + "\n")
 
 
+def read_ops_file(path: str) -> str:
+    """An --ops file this user owns and nobody else may write (B7: a stale /tmp/q05.json of another project, owned
+    by another account, was read and applied). Checked on the open descriptor; prefer `--ops -` (stdin)."""
+    try:
+        fh = open(path, "r", encoding="utf-8")
+    except OSError as exc:
+        raise ValidationError(f"--ops {path}: {exc.strerror or exc}", code="bad_ops")
+    with fh:
+        st = os.fstat(fh.fileno())
+        if hasattr(os, "getuid") and st.st_uid != os.getuid():
+            raise ValidationError(f"--ops {path} is owned by uid {st.st_uid}, not by you (uid {os.getuid()}): "
+                                  "refused (it may be another project's ops). Pass the ops on stdin: --ops -",
+                                  code="ops_not_owned")
+        if st.st_mode & 0o002:
+            raise ValidationError(f"--ops {path} is world-writable (mode {st.st_mode & 0o777:o}): refused. "
+                                  "Pass the ops on stdin: --ops -", code="ops_not_owned")
+        return fh.read()
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="graph.py", description="Single writer of migration/graph.json (GRAPH_OPS.md).")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -2510,7 +2529,7 @@ def main(argv: list[str] | None = None) -> int:
                                code="user_actor_refused")
             if a.actor not in CLI_ACTORS:
                 raise ValidationError(f"--actor must be one of {CLI_ACTORS}", code="bad_actor")
-            raw = sys.stdin.read() if a.ops == "-" else Path(a.ops).read_text(encoding="utf-8")
+            raw = sys.stdin.read() if a.ops == "-" else read_ops_file(a.ops)
             try:
                 ops = json.loads(raw)
             except json.JSONDecodeError as exc:

@@ -60,7 +60,7 @@ def raster_run(tmp: Path, legacy: np.ndarray, new: np.ndarray | None, *, new_tr=
     return run
 
 
-def vector_run(tmp: Path, *, drop_key=None, shrink=0.0) -> Path:
+def vector_run(tmp: Path, *, drop_key=None, shrink=0.0, cmp=None, one_multipoint=False) -> Path:
     import geopandas as gpd
     from shapely.geometry import box
     leg = tmp / "legacy" / "out" / "v.gpkg"
@@ -68,6 +68,10 @@ def vector_run(tmp: Path, *, drop_key=None, shrink=0.0) -> Path:
     geoms = [box(500000 + 100 * i, 5500000, 500000 + 100 * i + 60, 5500060) for i in range(6)]
     df = gpd.GeoDataFrame({"zid": [f"z{i}" for i in range(6)], "val": [float(i) for i in range(6)]},
                           geometry=geoms, crs=CRS_M)
+    if one_multipoint:   # BYU Agriculture_Flood: one aggregate MultiPoint row, no key column
+        from shapely.geometry import MultiPoint
+        df = gpd.GeoDataFrame({"Hectares": [88.38]}, geometry=[MultiPoint([(500000 + 30 * i, 5500000)
+                                                                          for i in range(40)])], crs=CRS_M)
     df.to_file(leg, layer="v", driver="GPKG")
     nd = df.copy()
     if shrink:
@@ -78,7 +82,7 @@ def vector_run(tmp: Path, *, drop_key=None, shrink=0.0) -> Path:
     newp.parent.mkdir(parents=True, exist_ok=True)
     nd.to_file(newp, layer="v", driver="GPKG")
     g = rb.graph([rb.step("s1")], [rb.dataset("ds.v", "vector", "intermediate", "out/v.gpkg", layer="v",
-                                              produced_by="s1", compare={"key": ["zid"],
+                                              produced_by="s1", compare=cmp or {"key": ["zid"],
                                                                          "measure_crs_param": "p.measure_crs"})])
     run = rb.build(tmp, g, outputs={"ds.v": newp})
     compare.run_compare(run)
@@ -307,6 +311,20 @@ def test_vector_plots_label_unmatched_and_shrink(tmp_path):
     wf = next(e for e in d["png"] if e["name"] == "worst_features.png")
     assert wf["features"][0]["key"] == ["z3"] and wf["features"][0]["kind"] == "legacy only"
     assert wf["features"][1]["symdiff_ratio"] > 0.1
+
+
+@pytest.mark.parametrize("match", ["full_row", "geometry"])
+def test_vector_plots_pair_by_compare_match_not_legacy_only(tmp_path, match):
+    """B8 (BYU e2e): a keyless layer compared with compare.match full_row/geometry is paired the way compare pairs
+    it; the plots must not draw every feature as 'legacy only' next to PASS_EXACT."""
+    run = vector_run(tmp_path, cmp={"match": match, "measure_crs_param": "p.measure_crs"}, one_multipoint=True)
+    assert plot_run(run) == 0
+    d = pj(run, "ds.v")
+    ov = next(e for e in d["png"] if e["name"] == "overlay.png")
+    assert ov["unmatched"] == {"legacy_only": [], "new_only": []}
+    wf = next(e for e in d["png"] if e["name"] == "worst_features.png")
+    feats = wf.get("features") or []
+    assert feats and all(f["kind"].startswith("equal") and f["hausdorff"] == 0.0 for f in feats), feats
 
 
 def test_table_residuals(tmp_path):

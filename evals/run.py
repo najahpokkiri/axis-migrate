@@ -95,7 +95,8 @@ REMOTE = r'''
 set -eu
 mkdir -p "$HOME/ws"; chmod 311 "$HOME/ws"   # create/traverse only: no listing of sibling trials
 T="$HOME/ws/{trial}"
-rm -rf "$T"; mkdir -p "$T/home" "$T/out"
+rm -rf "$T"; mkdir -p "$T/home" "$T/out"; mkdir -m 700 "$T/tmp"
+export TMPDIR="$T/tmp"; trap 'rm -rf "$T/tmp"' EXIT   # private temp dir: no file of one trial is seen by another
 P="$HOME/plugins/{sha12}"
 if [ ! -d "$P/axis-migrate" ]; then mkdir -p "$P"; tar -xf {plugin_tar} -C "$P"; fi
 tar -xf {ws_tar} -C "$T"
@@ -119,7 +120,7 @@ def run_trial(case_id, cdir, case, sha, plugin_tar, model, trial_idx, results_ro
     oracle = yaml.safe_load((cdir / "hidden" / "oracle.yaml").read_text()) if (cdir / "hidden" / "oracle.yaml").exists() \
         else {"default": "recommended", "rules": []}
     home = f"/home/axis-eval/ws/{trial}/home"
-    job = {"trial_dir": f"/home/axis-eval/ws/{trial}/out", "home_dir": home,
+    job = {"trial_dir": f"/home/axis-eval/ws/{trial}/out", "home_dir": home, "tmp_dir": f"/home/axis-eval/ws/{trial}/tmp",
            "plugin_dir": f"/home/axis-eval/plugins/{sha[:12]}/axis-migrate",
            "project_dir": f"/home/axis-eval/ws/{trial}/project",
            "prompt": case.get("prompt", "/axis-migrate:migrate ./lux-exposure-legacy"), "model": model,
@@ -162,6 +163,7 @@ def main():
     ap.add_argument("--allow-dirty", action="store_true")
     ap.add_argument("--skip-fence-probe", action="store_true")
     a = ap.parse_args()
+    started = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
     DROP.mkdir(exist_ok=True)
     os.chmod(DROP, 0o711)   # traverse only: file names (random) are not listable
     if not a.skip_fence_probe:
@@ -182,6 +184,19 @@ def main():
                 print("trial done:", j.result())
             except Exception as e:  # harness error: recorded, never scored
                 print("trial harness_error:", type(e).__name__, str(e)[:500])
+    clean_shared_tmp(started)
+
+
+def clean_shared_tmp(since: dt.datetime) -> None:
+    """Remove what the trials still wrote straight into the shared /tmp (an agent writing /tmp/q05.json ignores
+    TMPDIR): top-level files of axis-eval newer than this batch. A stale foreign ops file there was once read by
+    another project's `graph.py apply --ops /tmp/q05.json` (B7)."""
+    cmd = ["sudo", "-n", "-u", "axis-eval", "find", "/tmp", "-maxdepth", "1", "-user", "axis-eval",
+           "(", "-type", "f", "-o", "-type", "l", ")", "-newermt", since.strftime("%Y-%m-%d %H:%M:%S UTC"),
+           "-print", "-delete"]
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    gone = [l for l in p.stdout.splitlines() if l.strip()]
+    print(f"shared /tmp: removed {len(gone)} file(s) the trials left there" + (f": {gone}" if gone else ""))
 
 
 if __name__ == "__main__":

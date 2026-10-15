@@ -85,7 +85,8 @@ async def main():
     env = {"AXIS_MIGRATE_EVAL": "1", "UV_CACHE_DIR": os.path.expanduser("~/uvcache"),
            "UV_PYTHON_INSTALL_DIR": os.path.expanduser("~/uvpython"),
            "HOME": JOB["home_dir"], "CLAUDE_CONFIG_DIR": os.path.join(JOB["home_dir"], ".claude"),
-           "PATH": os.path.expanduser("~/.local/bin") + ":/usr/local/bin:/usr/bin:/bin"}
+           "PATH": os.path.expanduser("~/.local/bin") + ":/usr/local/bin:/usr/bin:/bin",
+           **({"TMPDIR": JOB["tmp_dir"]} if JOB.get("tmp_dir") else {})}
     opts = ClaudeAgentOptions(
         model=JOB["model"], cwd=JOB["project_dir"], can_use_tool=can_use_tool,
         permission_mode=JOB.get("permission_mode", "bypassPermissions"), max_turns=JOB.get("max_turns", 400),

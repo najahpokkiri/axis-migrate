@@ -245,6 +245,30 @@ def test_at9_07_code_drift_after_verify(project):
     assert manifest(mig)["status"] != "target-ready"
 
 
+@needs_reference_verified
+def test_t9_ignores_derive_and_ingest_projections(project):
+    """B4 (BYU e2e): the report order seal -> ingest-verify -> derive -> target rewrites graph.json projections; T9
+    compares contract views (as ladder does), so no second chained run is forced. A real graph edit still fails T9."""
+    mig, run_id = project
+    graph_py = PLUGIN / "skills" / "discover" / "graph.py"
+    raw = (mig / "graph.json").read_bytes()
+    run(graph_py, "ingest-verify", mig, "--run", run_id, ok=(0,))
+    run(graph_py, "derive", mig, ok=(0,))
+    assert make(mig)[0] == 0
+    code, res = check(mig, run_id)
+    st = states(mig)
+    assert st["T9"]["state"] == "PASS", st["T9"]
+    assert (mig / "graph.json").read_bytes() != raw          # the projections did change the raw bytes
+    assert manifest(mig)["hashes"]["graph_contract"].startswith("contract-sha256:")
+    rev = json.loads((mig / "graph.json").read_text())["revision"]
+    ops = mig.parent / "ops-note.json"
+    ops.write_text(json.dumps([{"type": "add_note", "id": "s01_clip_population", "text": "changed after verify"}]))
+    os.chmod(ops, 0o600)
+    run(graph_py, "apply", mig, "--actor", "agent", "--base-rev", rev, "--ops", ops, ok=(0,))
+    check(mig, run_id)
+    assert "TC_GRAPH_CHANGED" in states(mig)["T9"]["reason_codes"]
+
+
 def test_at9_09_no_cloud_contact(project, tmp_path):
     mig, run_id = project
     home = tmp_path / "home"

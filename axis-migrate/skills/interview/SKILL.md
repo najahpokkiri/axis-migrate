@@ -8,7 +8,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/axpy *) Bash("${CLAUDE_PLUGIN_
 
 `$P` = plugin root. Scripts: `"$P/scripts/axpy" "$P/skills/interview/params_check.py" migration [--stage investigate|wired]`,
 `"$P/scripts/axpy" "$P/skills/interview/fit.py" declare|run migration --param p.x`. Graph writes only through
-`"$P/scripts/axpy" "$P/skills/discover/graph.py" apply migration --actor agent --base-rev N --ops ops.json` (op shapes:
+`"$P/scripts/axpy" "$P/skills/discover/graph.py" apply migration --actor agent --base-rev N --ops - <<'EOF'` (ops JSON on stdin; op shapes:
 `$P/skills/discover/GRAPH_OPS.md`). One owner per fact: values in `params.yaml`, questions and node state in
 `graph.json`, reasoning in `decisions.md` (append-only).
 
