@@ -74,3 +74,24 @@ def test_model_ops_cite_xml_lines(pm):
         child = next(f for f in o["flags"] if f.startswith("model_child:")).split(":", 1)[1]
         assert f'name="{child}"' in src[o["line"] - 1], (o["line"], child)
         assert o["end_line"] >= o["line"]
+
+
+def test_custom_expression_function_is_flagged_and_linked_to_the_python_def(pm):
+    inv = pm["inv"]
+    oi = [i for i in inv["open_items"] if i["kind"] == "custom_expression_function"]
+    assert [i["function"] for i in oi] == ["group_label"]  # upper() is a built-in
+    assert oi[0]["state"] == "agent_guess" and oi[0]["agent_guess"]["python_def"] == "scripts/helpers.py:1"
+    assert oi[0]["agent_guess"]["reversed_containment"]["empty_matches"] == "food"
+    src = (pm["leg"] / "models" / "impact_model.model3").read_text().splitlines()
+    assert "group_label" in src[oi[0]["evidence"][0]["line"] - 1]
+    q = [q for q in pm["graph"]["questions"] if q["header"] == "Custom expression function"]
+    assert len(q) == 1 and q[0]["agent_guess"]["option"] == "python_def" and "'food'" in q[0]["text"]
+
+
+def test_reversed_containment_flags(pm):
+    code = next(c for c in pm["inv"]["code"] if c["path"] == "scripts/helpers.py")
+    fl = [f for f in code["flags"] if f["kind"] == "reversed_containment"]
+    assert [(f["line"], f["arg"]) for f in fl] == [(5, "kind"), (8, "kind")]
+    assert fl[0]["empty_matches"] == "food" and "empty_matches" not in fl[1]
+    oi = next(i for i in pm["inv"]["open_items"] if i["kind"] == "reversed_containment")
+    assert oi["empty_matches"] == "food" and oi["function"] == "group_label"

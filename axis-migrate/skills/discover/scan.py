@@ -589,6 +589,7 @@ class PyAnalyzer:
                 self.flags.append({"kind": "parse_error", "cell": cell, "line": exc.lineno, "msg": str(exc.msg)})
                 continue
             self.collect_literal_params(tree)
+            self.flags += containment_flags(tree, cell)
             self.exec_body(tree.body, module_level=True)
         for name, f in sorted(self.funcs.items()):
             if not f["called"]:
@@ -2641,6 +2642,62 @@ def token_near(a: str, b: str) -> bool:
     if min(len(a), len(b)) < 3:
         return False
     return a.startswith(b) or b.startswith(a) or a[:3] in b or b[:3] in a
+
+
+def containment_flags(tree: ast.Module, cell) -> list[dict]:
+    """`reversed_containment` (M8): inside a loop over a constant list of strings, `item.__contains__(arg)` or
+    `arg in item` tests whether the ARGUMENT is a substring of each list item. An empty argument matches the first
+    item of the first such loop, so a missing value falls into that loop's group (recorded as `empty_matches`)."""
+    out = []
+    scopes = [n for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))] + [tree]
+    for sc in scopes:
+        lists, first = {}, None
+        body = sc.body
+        for st in ast.walk(sc) if sc is not tree else body:
+            if isinstance(st, ast.Assign) and isinstance(st.value, (ast.List, ast.Tuple)) and st.value.elts and \
+                    all(isinstance(e, ast.Constant) and isinstance(e.value, str) for e in st.value.elts):
+                for t in st.targets:
+                    if isinstance(t, ast.Name):
+                        lists[t.id] = [e.value for e in st.value.elts]
+        loops = [n for n in (ast.walk(sc) if sc is not tree else body) if isinstance(n, ast.For)
+                 and isinstance(n.target, ast.Name)]
+        for lp in sorted(loops, key=lambda n: n.lineno):
+            items = lists.get(lp.iter.id) if isinstance(lp.iter, ast.Name) else (
+                [e.value for e in lp.iter.elts] if isinstance(lp.iter, (ast.List, ast.Tuple)) and lp.iter.elts and all(
+                    isinstance(e, ast.Constant) and isinstance(e.value, str) for e in lp.iter.elts) else None)
+            if not items:
+                continue
+            var = lp.target.id
+            for n in ast.walk(lp):
+                arg = None
+                if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "__contains__" \
+                        and isinstance(n.func.value, ast.Name) and n.func.value.id == var and n.args:
+                    arg = n.args[0]
+                elif isinstance(n, ast.Compare) and len(n.ops) == 1 and isinstance(n.ops[0], ast.In) and \
+                        isinstance(n.comparators[0], ast.Name) and n.comparators[0].id == var:
+                    arg = n.left
+                if arg is None or isinstance(arg, ast.Constant):
+                    continue
+                ret = next((r.value.value for r in ast.walk(lp) if isinstance(r, ast.Return)
+                            and isinstance(r.value, ast.Constant)), None)
+                rec = {"kind": "reversed_containment", "line": n.lineno, "cell": cell, "loop_line": lp.lineno,
+                       "list": lp.iter.id if isinstance(lp.iter, ast.Name) else None, "items": len(items),
+                       "first_item": items[0], "arg": ast.unparse(arg), "returns": ret,
+                       "function": sc.name if sc is not tree else None,
+                       "note": f"tests whether {ast.unparse(arg)} is a substring of each item; an empty value matches "
+                               f"{items[0]!r}"}
+                if first is None:
+                    first = rec
+                    rec["empty_matches"] = ret if ret is not None else items[0]
+                out.append(rec)
+                break
+    return out
+
+
+def expression_functions(expr: str) -> list[str]:
+    """Function names called in a QGIS expression (outside quoted strings and "field" names)."""
+    bare = re.sub(r"'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"", " ", expr or "")
+    return list(dict.fromkeys(m.group(1) for m in re.finditer(r"(?<![\w.])([A-Za-z_]\w*)\s*\(", bare)))
 
 
 def expression_numbers(expr: str) -> list[int | float]:
@@ -5017,6 +5074,65 @@ class Scan:
                                 unused=unused)
         for oc in self.order_conflicts:
             add("order_conflict", "medium", [], [oc])
+        for c in sorted(self.codes.values(), key=lambda c: c["path"]):
+            for f in c.get("flags", []):
+                if f["kind"] == "reversed_containment" and f.get("empty_matches") is not None:
+                    add("reversed_containment", "medium", [c["id"]],
+                        [{"kind": "code", "file": c["path"], "line": f["line"], "loop_line": f["loop_line"]}],
+                        function=f.get("function"), arg=f["arg"], empty_matches=f["empty_matches"],
+                        detail=f"{f.get('function') or 'module'}(): {f['note']}; an empty or missing value is "
+                               f"classified as {f['empty_matches']!r}")
+        # custom expression functions (M1): a function the expression calls that is not a QGIS built-in and is not
+        # shipped with the model; a Python def of the same name is cross-referenced as a guess
+        builtin = {n.lower() for n in (self.ctx.qgis.get("expression_functions") or {}).get("names", [])}
+        qv = str((self.ctx.qgis.get("expression_functions") or {}).get("qgis_version") or "").split("-")[0]
+        defs = defaultdict(list)
+        for rel, an in sorted(self.analysers.items()):
+            for name, f in an.funcs.items():
+                deco = [ast.unparse(d) for d in getattr(f["node"], "decorator_list", [])]
+                defs[name.lower()].append({"file": rel, "line": f["node"].lineno, "name": name,
+                                           "qgsfunction": any("qgsfunction" in d for d in deco)})
+        rev = {}
+        for c in self.codes.values():
+            for f in c.get("flags", []):
+                if f["kind"] == "reversed_containment" and f.get("empty_matches") is not None:
+                    rev[(c["path"], f.get("function"))] = f
+        seen = {}
+        for o in self.ops:
+            if o["family"] not in ("qgis_model", "pyqgis") or not builtin:
+                continue
+            spec = alg_spec(self.ctx.algs, o["tool"]).get("params", {})
+            for pname, pv in sorted(o["params"].items()):
+                val = pv.get("value") if isinstance(pv, dict) else None
+                ptype = spec.get(pname, {}).get("type")
+                if not isinstance(val, str) or not (ptype in ("expression",) or (ptype is None and pname.upper() in
+                                                                                 EXPR_PARAM_NAMES)):
+                    continue
+                for fn in expression_functions(val):
+                    if fn.lower() in builtin:
+                        continue
+                    ev = {"kind": "expression", "op": o["id"], "file": o["file"], "line": pv.get("arg_line") or o["line"],
+                          "param": pname, "text": val.strip()}
+                    if (o["code"], fn) in seen:
+                        seen[(o["code"], fn)]["evidence"].append(ev)
+                        continue
+                    cands = defs.get(fn.lower(), [])
+                    add("custom_expression_function", "high", [o["code"], o["id"]], [ev],
+                        state="agent_guess" if cands else "inferred", function=fn,
+                        builtin_table=qv, python_defs=cands,
+                        detail=f"{fn}() is not a QGIS {qv} built-in expression function and is not shipped with {o['file']}; the model fails "
+                               f"with 'Function {fn} is not known' unless it is registered")
+                    it = items[-1]
+                    if cands:
+                        c0 = sorted(cands, key=lambda c: (not c["qgsfunction"], c["file"]))[0]
+                        r = rev.get((c0["file"], c0["name"]))
+                        it["agent_guess"] = {"python_def": f"{c0['file']}:{c0['line']}",
+                                             "why": "same name" + ("; decorated with @qgsfunction" if c0["qgsfunction"]
+                                                                   else "; a plain Python function, not registered "
+                                                                        "as a QGIS function: same logic is a guess"),
+                                             "reversed_containment": ({"line": r["line"], "empty_matches":
+                                                                       r["empty_matches"]} if r else None)}
+                    seen[(o["code"], fn)] = it
         # model input parameters bound to files by guess (B3): one confirmation, never silent
         for mb in getattr(self, "model_bindings", []):
             if not mb["bindings"] and not mb["unbound"]:

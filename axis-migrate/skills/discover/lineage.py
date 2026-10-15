@@ -645,6 +645,34 @@ class Lineage:
                 "description": "Bind the parameters as listed"},
                {"value": "other", "label": "Other files", "description": "Name the files per parameter"}, dont_know],
               guess={"option": "confirm", "why": "type and name tokens match; see the evidence per parameter"})
+        # custom expression functions an in-scope model calls (not a QGIS built-in, not shipped)
+        for it in self.inv.get("open_items", []):
+            if it["kind"] != "custom_expression_function":
+                continue
+            sid = self.step_of_code(it["about"][0])
+            if sid not in live:
+                continue
+            e0 = it["evidence"][0]
+            g = it.get("agent_guess") or {}
+            rc = g.get("reversed_containment")
+            q("lineage", sid, [sid], "Custom expression function",
+              f"{e0['file']} calls {it['function']}() ({ref(e0['file'], e0['line'])}: {e0['text']}), which is not a "
+              f"QGIS {it.get('builtin_table') or ''} built-in and is not shipped with the model. "
+              + (f"{g['python_def']} defines a Python function of that name"
+                 + (f" (an empty value is classified as {rc['empty_matches']!r}, line {rc['line']})" if rc else "")
+                 + ". Is that the function the model ran with?" if g.get("python_def") else
+                 "Where is its definition?"),
+              "Without the function the model cannot run; with a different one every grouped count changes.",
+              {"ref": ref(e0["file"], e0["line"]), "quote": e0["text"]},
+              [{"ref": ref(x["file"], x["line"]), "fact": f"calls {it['function']}()"} for x in it["evidence"][:3]]
+              + ([{"ref": g["python_def"], "fact": g["why"]}] if g.get("python_def") else []), "high",
+              ([{"value": "python_def", "label": f"Yes, {g['python_def']} (Recommended)", "recommended": True,
+                 "description": "Port that function; parity on the grouped table is then measured, not assumed"}]
+               if g.get("python_def") else []) +
+              [{"value": "provide", "label": "I will provide the function",
+                "recommended": not g.get("python_def"), "description": "Add its definition to the legacy folder"},
+               dont_know],
+              guess={"option": "python_def", "why": g["why"]} if g.get("python_def") else None)
         # datasets written by several in-scope steps (split into versions by split_multi_writers)
         for mw in self.multi_writers:
             d = self.ds[mw["dataset"]]

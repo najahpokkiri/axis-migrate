@@ -6,7 +6,11 @@ algorithm of the native:, gdal: and qgis: providers, and keeps only what discove
 alg id -> {params: {NAME: {type, is_destination, optional[, parent][, options]}}, outputs: {NAME: type}}.
 Stamped with the QGIS / GDAL / PROJ versions. Deterministic output (sorted keys).
 
+Also records `expression_functions`: every built-in QGIS expression function name and alias (QgsExpression.Functions()
+in the same env), so the scan can tell a custom (unshipped) expression function from a built-in one.
+
 Usage: python3 devtools/make_qgis_algs.py [--out PATH] [--mamba ~/.local/bin/micromamba] [--env qgis] [--jobs 8]
+       python3 devtools/make_qgis_algs.py --expr-only     (refresh expression_functions in the existing file only)
 """
 from __future__ import annotations
 
@@ -51,13 +55,40 @@ def slim(help_doc):
     return {"params": params, "outputs": outputs}
 
 
+EXPR_PY = """
+from qgis.core import Qgis, QgsApplication, QgsExpression
+app = QgsApplication([], False)
+app.initQgis()
+names = sorted({f.name() for f in QgsExpression.Functions()} | {a for f in QgsExpression.Functions() for a in f.aliases()})
+import json
+print("AXIS_EXPR_JSON" + json.dumps({"qgis_version": Qgis.version(), "names": names}))
+"""
+
+
+def expression_functions(mamba, env):
+    e = dict(os.environ, QT_QPA_PLATFORM="offscreen")
+    r = subprocess.run([mamba, "run", "-n", env, "python", "-c", EXPR_PY], capture_output=True, text=True, env=e,
+                       timeout=600)
+    line = next((x for x in r.stdout.splitlines() if x.startswith("AXIS_EXPR_JSON")), None)
+    if line is None:
+        raise RuntimeError(f"expression functions: no output (exit {r.returncode}): {r.stderr[-400:]}")
+    return json.loads(line[len("AXIS_EXPR_JSON"):])
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=str(DEFAULT_OUT))
     ap.add_argument("--mamba", default=str(Path.home() / ".local/bin/micromamba"))
     ap.add_argument("--env", default="qgis")
     ap.add_argument("--jobs", type=int, default=8)
+    ap.add_argument("--expr-only", action="store_true", help="refresh only expression_functions in --out")
     a = ap.parse_args(argv)
+    if a.expr_only:
+        doc = json.loads(Path(a.out).read_text(encoding="utf-8"))
+        doc["expression_functions"] = expression_functions(a.mamba, a.env)
+        Path(a.out).write_text(json.dumps(doc, sort_keys=True, indent=0, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"wrote {a.out}: {len(doc['expression_functions']['names'])} expression functions", file=sys.stderr)
+        return 0
 
     lst = qp(["list"], a.mamba, a.env)
     ids = []
@@ -91,7 +122,8 @@ def main(argv=None):
     doc = {"schema": "axis-migrate.qgis-algs.v1",
            "generated_by": "devtools/make_qgis_algs.py (qgis_process --json help)",
            "source": stamp or {}, "providers": list(PROVIDERS), "count": len(algs),
-           "failed": sorted(failed), "algorithms": dict(sorted(algs.items()))}
+           "failed": sorted(failed), "algorithms": dict(sorted(algs.items())),
+           "expression_functions": expression_functions(a.mamba, a.env)}
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(doc, sort_keys=True, indent=0, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {a.out}: {len(algs)} algorithms", file=sys.stderr)
