@@ -17,7 +17,7 @@ for d in "$PLUGIN"/skills/*/tests "$PLUGIN"/hooks/tests "$PLUGIN"/tests_codex; d
   code=$?
   last="$(tail -1 "$log")"
   echo "$name: $last"
-  if [ $code -ne 0 ] || echo "$last" | grep -qE "failed|error|no tests ran"; then
+  if [ $code -ne 0 ] || echo "$last" | grep -qE "[0-9]+ failed|[0-9]+ errors?|no tests ran"; then  # "1 xfailed" is not a failure
     rc=1
     summary="$summary
 == $name ($log)

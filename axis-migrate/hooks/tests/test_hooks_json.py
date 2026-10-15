@@ -27,10 +27,10 @@ def test_command_paths_exist_and_form():
 def test_matchers_and_failure_modes():
     table = {(e, m): h for e, m, h in entries()}
     assert table[("PreToolUse", "Write|Edit|MultiEdit|NotebookEdit|apply_patch")]["onFailure"] == "block"
-    assert table[("PreToolUse", "Bash")]["onFailure"] == "block"
+    assert table[("PreToolUse", "Bash|PowerShell")]["onFailure"] == "block"
     assert table[("PreToolUse", "Read|Grep|Glob")]["onFailure"] == "block"
     assert table[("PostToolUse", "Write|Edit|MultiEdit|NotebookEdit|apply_patch")]["onFailure"] == "block"
-    assert table[("PostToolUse", "Bash")]["onFailure"] == "block"  # Codex: apply_patch heredocs in the shell
+    assert table[("PostToolUse", "Bash|PowerShell")]["onFailure"] == "block"  # Codex: apply_patch heredocs in the shell
     assert "onFailure" not in table[("SessionStart", "startup|resume|clear|compact|fork")]
     assert "onFailure" not in table[("UserPromptSubmit", None)]
     assert table[("Stop", None)]["timeout"] == 15

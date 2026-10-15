@@ -18,6 +18,11 @@ import traceback
 from pathlib import Path
 
 PLUGIN = Path(__file__).resolve().parents[2]
+WINDOWS = os.name == "nt"
+try:  # Codex on Windows rejects CRLF hook output ({}\r\n fails): every hook prints LF-only
+    sys.stdout.reconfigure(newline="\n")  # type: ignore[attr-defined]
+except (AttributeError, ValueError, OSError):
+    pass
 for _p in (PLUGIN / "lib", PLUGIN / "skills" / "guard"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
@@ -160,7 +165,7 @@ def abs_paths(p: str, cwd: str | None) -> list[Path]:
     """Every place a relative path could land: against stdin `cwd` (primary) and against the hook process cwd when
     that differs. Guards deny when ANY of them is protected (Codex desktop cwd trap)."""
     out = [abs_path(p, cwd)]
-    q = os.path.expanduser(p)
+    q = os.path.expanduser(norm_input_path(p))
     if not os.path.isabs(q):
         alt = Path(os.path.realpath(os.path.join(os.getcwd(), q)))
         if alt not in out:
@@ -168,8 +173,31 @@ def abs_paths(p: str, cwd: str | None) -> list[Path]:
     return out
 
 
+_MSYS_RE = __import__("re").compile(r"^/(?:cygdrive/)?([A-Za-z])(?=/|$)")
+
+
+def norm_input_path(p: str, windows: bool | None = None) -> str:
+    """A tool path as Windows sends it: backslashes (even under Git Bash), forward slashes, a drive letter, a UNC
+    share, or a Git Bash/Cygwin path (/c/Users/x, /cygdrive/c/x). On Windows the result uses forward slashes with a
+    drive letter (os.path and Path accept them; Path compares case-insensitively there); elsewhere it is unchanged,
+    since a backslash is an ordinary file-name character on macOS and Linux."""
+    if not isinstance(p, str):
+        return p
+    if not (WINDOWS if windows is None else windows):
+        return p
+    q = p.replace("\\", "/")
+    if q.startswith("//?/") and len(q) > 6 and q[5] == ":":
+        q = q[4:]                                   # \\?\C:\x long-path prefix
+    m = _MSYS_RE.match(q)
+    if m:
+        q = m.group(1).upper() + ":" + (q[m.end():] or "/")
+    if len(q) >= 2 and q[1] == ":" and q[0].isalpha():
+        q = q[0].upper() + q[1:]
+    return q
+
+
 def abs_path(p: str, cwd: str | None) -> Path:
-    p = os.path.expanduser(p)
+    p = os.path.expanduser(norm_input_path(p))
     if not os.path.isabs(p):
         p = os.path.join(cwd or os.getcwd(), p)
     return Path(os.path.realpath(p))

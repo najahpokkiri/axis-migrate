@@ -80,3 +80,15 @@ def test_no_option_no_file(tmp_path):
     r = run_hook("session_start.py", payload("SessionStart", cwd=str(tmp_path)),
                  env={"CLAUDE_PLUGIN_DATA": str(data), "CLAUDE_ENV_FILE": str(tmp_path / "e")})
     assert r.rc == 0 and not (data / "secrets.env").exists()
+
+
+def test_latest_unsealed_run_listed(project, tmp_path):
+    rd = project.mig / "runs" / "r20261015T120000Z-abcdef12"
+    rd.mkdir(parents=True)
+    (rd / "manifest.json").write_text(json.dumps({"chain": "isolated", "steps": [{"step_id": "s01",
+                                                                                   "status": "succeeded"}]}))
+    r = run_hook("session_start.py", payload("SessionStart", cwd=str(project.root)),
+                 env={"CLAUDE_ENV_FILE": str(tmp_path / "e")})
+    ctx = r.out["hookSpecificOutput"]["additionalContext"]
+    assert ctx.startswith("axis-migrate status:")
+    assert "axis-migrate brief: run r20261015T120000Z-abcdef12 (isolated, unsealed: no rung)" in ctx

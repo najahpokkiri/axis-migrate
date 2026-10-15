@@ -13,7 +13,12 @@ deny : write verbs / redirections on the legacy root, migration/runs/**, graph.j
        (AXIS_MIGRATE_HIDDEN_GLOBS) reads of hidden grader files.
 ask  : `graph.py apply` ops that demote a compared dataset, delete a pair, or bridge/keep/drop a step whose last
        verdict is FAIL.
-`python -c` writes are undecidable; the legacy tree hash (runner, compare, Stop gate) is the authority there.
+`python -c` writes are undecidable; the legacy tree hash (runner, compare, Stop gate) is the authority there. One
+exception: inline Python (-c, `python - <<EOF`) that names params.yaml, decisions.md, known-differences.md or a
+tolerances file AND writes (open(.., 'w'), write_text, yaml dump, os.replace, ...) is refused: those records are
+written by record.py or the Edit tool, which the guards check.
+PowerShell (the shell tool on Windows without Git Bash): each statement is translated to POSIX argv (pwsh_cmd.py)
+and checked by the same rules.
 """
 from __future__ import annotations
 
@@ -64,6 +69,12 @@ DATABRICKS_SUB = {"jobs", "clusters", "fs", "workspace", "auth", "configure", "a
 DATABRICKS_HOST_RE = re.compile(r"[\w.-]*(?:\.cloud\.databricks\.com|\.azuredatabricks\.net|\.gcp\.databricks\.com|"
                                 r"\.databricks\.(?:com|net|us)|azuredatabricks)\b", re.I)
 GRAPH_API_RE = re.compile(r"/api/(?:ops|submit)\b")
+# records that only record.py / the Edit tool (content-checked by guard_write) may change (Lux e2e, 15 Oct: params.yaml
+# was rewritten four times by `python - <<EOF ... yaml.safe_dump` with no message)
+RECORD_FILE_RE = re.compile(r"\b(?:params\.yaml|decisions\.md|known-differences\.md|tolerances(?:\.proposed)?\.yaml)\b")
+PY_WRITE_RE = re.compile(r"""open\([^)]*,\s*['"][rbt]*[wax+][rbtwax+]*['"]|\bmode\s*=\s*['"][wax]|\.write_(?:text|bytes)\(|"""
+                         r"""(?<!stdout)(?<!stderr)\.write\(|\b(?:safe_)?dump(?:_all)?\((?![^)]*sys\.std)[^)]*,|\bos\.(?:replace|rename)\(|"""
+                         r"""\bshutil\.(?:copy\w*|move)\(|\.rename\(|\.unlink\(|\.touch\(""")
 SECRETS_RE = re.compile(r"axis-migrate/secrets\.env|secrets\.env\b.*axis-migrate|AXIS_MIGRATE_SECRETS|"
                         # the plugin-data copy written by session_start (Claude CLAUDE_PLUGIN_DATA, Codex PLUGIN_DATA)
                         r"\$\{?(?:CLAUDE_)?PLUGIN_DATA\b[^\s;&|]*secrets\.env|"
@@ -164,7 +175,7 @@ class Ctx:
             t = t.split("=", 1)[1]
         if not t or "://" in t:
             return None
-        t = os.path.expanduser(t)
+        t = os.path.expanduser(hl.norm_input_path(t))
         if not os.path.isabs(t):
             t = os.path.join(cwd or self.cwd, t)
         return Path(os.path.realpath(t))
@@ -512,6 +523,13 @@ def check_python(rest: list[str], ctx: Ctx, cwd: str, v: Verdict, inline: list[s
         if PIPELINE_CODE_RE.search(code or ""):
             v.deny.append("UNLEDGERED_RUN: inline Python imports the pipeline package; run steps with run_local.py")
             break
+    for code in code_texts:
+        rec = RECORD_FILE_RE.search(code or "")
+        if rec and PY_WRITE_RE.search(code or ""):
+            v.deny.append(f"inline Python writes {rec.group(0)}: the records are written by record.py "
+                          "(param | answer | decision, skill interview) or with the Edit tool, which the guards check "
+                          "(an ad hoc Python or YAML dump bypasses those checks)")
+            break
 
 
 def _load_ops(spec: str, cwd: str):
@@ -654,6 +672,44 @@ def check_command(cmd: str, ctx: Ctx, cwd: str, v: Verdict, depth: int = 0) -> N
         cwd = check_simple(argv, ctx, cwd, v, inline, depth)
 
 
+def check_command_ps(cmd: str, ctx: Ctx, cwd: str, v: Verdict, depth: int = 0) -> None:
+    """The PowerShell tool (Windows without Git Bash): translate each statement to POSIX argv (pwsh_cmd) and apply
+    the same rules. An unreadable line that names the legacy folder next to a write verb is refused."""
+    if depth > 4:
+        return
+    import pwsh_cmd
+    if GRAPH_API_RE.search(cmd) and re.search(r"\b(curl|wget|iwr|irm|invoke-webrequest|invoke-restmethod|python\d*|"
+                                              r"node)\b", cmd, re.I):
+        v.deny.append("requests to the graph server's /api/ops or /api/submit create user edits; the agent changes "
+                      "the graph only with graph.py apply --actor agent")
+    if DATABRICKS_HOST_RE.search(cmd):
+        v.deny.append("requests to Databricks hosts are refused: the plugin never contacts a workspace (D9-8)")
+    if SECRETS_RE.search(cmd.replace("\\", "/")) or ("secrets.env" in cmd and "axis-migrate" in cmd):
+        v.deny.append("the axis-migrate secrets files (~/.config/axis-migrate/secrets.env, the plugin data "
+                      "secrets.env) are never read or printed by the agent; the scripts load them themselves")
+    try:
+        tr = pwsh_cmd.translate(cmd, ctx.home)
+    except Exception:  # noqa: BLE001 - unreadable: fall back to the word test
+        legacy_names = {ctx.ps.root.name, str(ctx.ps.root)}
+        if any(n.lower() in cmd.lower() for n in legacy_names) and PS_WRITE_WORD_RE.search(cmd):
+            v.deny.append("unparseable PowerShell command that mentions the legacy folder and a write verb; use a "
+                          "script under migration/analysis/ instead")
+        return
+    for argv in tr.argvs:
+        for raw in argv:
+            p = ctx.resolve(raw, cwd) if ("/" in raw or "\\" in raw or raw.endswith(".env")) else None
+            if p is not None and p in ctx.secret_files:
+                v.deny.append("the axis-migrate secrets files are never read by the agent")
+        cwd = check_simple(argv, ctx, cwd, v, tr.inline, depth)
+    for sub in tr.nested:
+        check_command_ps(sub, ctx, cwd, v, depth + 1)
+
+
+PS_WRITE_WORD_RE = re.compile(r"\b(set-content|add-content|out-file|new-item|copy-item|move-item|remove-item|"
+                              r"rename-item|clear-content|tee-object|sc|ac|ni|cp|copy|mv|move|rm|del|erase|ren|"
+                              r"gdal_translate|gdalwarp|ogr2ogr|gdal_edit|gdaladdo|qgis_process)\b|>", re.I)
+
+
 def touches(cmd: str, mig: Path, cwd: str) -> bool:
     """Does this command run a plugin script, or name a path under migration/ (from stdin cwd or the process cwd)?"""
     if hl.PLUGIN_SCRIPT_RE.search(cmd):
@@ -662,6 +718,7 @@ def touches(cmd: str, mig: Path, cwd: str) -> bool:
         toks = tokenize(strip_heredocs(cmd)[0])
     except ValueError:
         toks = cmd.split()
+    toks = toks + [t.strip("'\"") for t in cmd.split()]   # PowerShell quoting, backslash paths
     for t in toks:
         t = t.split("=", 1)[1] if t.startswith("-") and "=" in t else t
         if not t or t.startswith("-") or t in (";", "&", "|", "&&", "||", "(", ")", "<", ">", "\n"):
@@ -676,26 +733,28 @@ def touches(cmd: str, mig: Path, cwd: str) -> bool:
 
 def main() -> int:
     data = hl.read_input()
-    if hl.require_tool_payload(data) != "Bash":
+    tool = hl.require_tool_payload(data)
+    if tool not in ("Bash", "PowerShell"):
         return 0
     mig = hl.find_migration(data)
     if mig is None:
         return 0
     cmd = (data.get("tool_input") or {}).get("command")
     if not isinstance(cmd, str):
-        raise ValueError("Bash payload without command")
+        raise ValueError(f"{tool} payload without command")
     cwd = data.get("cwd") or os.getcwd()
     if touches(cmd, mig.resolve(), cwd):
         hl.touch_session(mig.resolve(), data.get("session_id"), data)  # Stop gate scope: this session works here
     ctx = Ctx(mig.resolve(), cwd)
     v = Verdict()
-    check_command(cmd, ctx, cwd, v)
+    check = check_command_ps if tool == "PowerShell" else check_command
+    check(cmd, ctx, cwd, v)
     proc_cwd = os.getcwd()
     if os.path.realpath(proc_cwd) != os.path.realpath(cwd):
         # Codex desktop: the hook process may run in the session root while the shell runs in a subfolder (or the
         # reverse). Relative paths are judged from both bases; a deny from either one stands.
-        check_command(cmd, ctx, proc_cwd, v)
-    if "*** Begin Patch" in cmd:
+        check(cmd, ctx, proc_cwd, v)
+    if "*** Begin Patch" in cmd and tool == "Bash":
         # Codex can also edit through the shell (`apply_patch <<'EOF' ... EOF`): same per-file rules as guard_write
         import guard_write
         import recordparse as rp

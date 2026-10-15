@@ -114,19 +114,28 @@ class ProtectedSet:
             return None
         if rel == ".":
             return "protected"
-        if rel in self.protected or any(rel.startswith(p + "/") for p in self.protected):
+        k = _key
+        prot = {k(p) for p in self.protected}
+        inputs = {k(i) for i in self.inputs}
+        rel = k(rel)
+        if rel in prot or any(rel.startswith(p + "/") for p in prot):
             return "protected"
-        if rel in self.inputs:
+        if rel in inputs:
             return "input"
         for suf in ac.SIDECAR_SUFFIXES:
-            if rel.endswith(suf) and rel[: -len(suf)] in self.inputs:
+            if rel.endswith(k(suf)) and rel[: -len(suf)] in inputs:
                 return "input"
-        if Path(os.path.realpath(path)).is_dir() and any(i.startswith(rel + "/") for i in self.inputs):
+        if Path(os.path.realpath(path)).is_dir() and any(i.startswith(rel + "/") for i in inputs):
             return "input_dir"
         return "protected"
 
     def is_protected(self, path) -> bool:
         return self.classify(path) in ("protected", "hidden")
+
+
+def _key(p: str) -> str:
+    """Comparison key for legacy-relative paths: case-insensitive on Windows (NTFS), exact elsewhere."""
+    return p.casefold() if os.name == "nt" else p
 
 
 def _norm(p: str) -> str:

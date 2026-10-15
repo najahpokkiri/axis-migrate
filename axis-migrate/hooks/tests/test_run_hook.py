@@ -278,3 +278,43 @@ def test_hooks_through_wrapper_behave_as_before(project, tmp_path, shell):
     assert r.returncode == 0 and json.loads(r.out)["hookSpecificOutput"]["permissionDecision"] == "deny"
     r = run("guard_bash", "{broken", shell=shell, proc_cwd=project.root)
     assert r.returncode == 2                                    # malformed payload in a migration: fail closed
+
+
+# --- the hooks.json command strings, launched the way each app launches them ---------------------------------------
+# Claude Code and Codex run a hook's `command` through a shell (`<shell> -c "<command>"`); on macOS that shell may be
+# zsh or bash, on Linux sh/dash. Claude sets CLAUDE_PLUGIN_ROOT, Codex sets PLUGIN_ROOT only. Each combination with
+# python3 only, python only (no python3) and no interpreter: fail closed inside a migration, a no-op outside one.
+LAUNCH_SHELLS = [s for s in ("/bin/sh", "/bin/bash", shutil.which("zsh") or "", shutil.which("dash") or "") if s]
+HJ_CMDS = {h["command"].rsplit(" ", 1)[1]: h["command"]
+           for groups in json.loads((PLUGIN / "hooks" / "hooks.json").read_text())["hooks"].values()
+           for g in groups for h in g["hooks"]}
+
+
+def launch(hook, data, *, shell_bin, root_var, interp, nopy, tmp_path, proc_cwd="/"):
+    env = dict(nopy)
+    env[root_var] = str(PLUGIN)
+    if interp:
+        (Path(nopy["PATH"]) / interp).symlink_to(SYS_PY)
+    stdin = json.dumps(data).encode()
+    return subprocess.run([shell_bin, "-c", HJ_CMDS[hook]], input=stdin, capture_output=True, env=env,
+                          cwd=str(proc_cwd), timeout=30)
+
+
+@pytest.mark.parametrize("shell_bin", LAUNCH_SHELLS)
+@pytest.mark.parametrize("root_var", ["CLAUDE_PLUGIN_ROOT", "PLUGIN_ROOT"])
+@pytest.mark.parametrize("interp", ["python3", "python", None])
+def test_hooks_json_commands_as_launched(project, tmp_path, nopy, shell_bin, root_var, interp):
+    inside = launch("guard_write", write(project.root, "legacy-demo/NOTES.txt"), shell_bin=shell_bin,
+                    root_var=root_var, interp=interp, nopy=nopy, tmp_path=tmp_path)
+    if interp:
+        assert inside.returncode == 0 and "deny" in inside.stdout.decode(), inside.stderr.decode()
+    else:
+        assert inside.returncode == 2 and "NEEDS_PYTHON3" in inside.stderr.decode()
+    other = tmp_path / "elsewhere"
+    other.mkdir()
+    outside = launch("guard_bash", bash(other, "rm -rf x"), shell_bin=shell_bin, root_var=root_var, interp=None,
+                     nopy=nopy, tmp_path=tmp_path)
+    assert outside.returncode == 0 and outside.stdout.decode().strip() == ""
+    stop = launch("stop_gate", payload("Stop", cwd=str(project.root), last_assistant_message="All done."),
+                  shell_bin=shell_bin, root_var=root_var, interp=None, nopy=nopy, tmp_path=tmp_path)
+    assert stop.returncode in (0, 2)                        # Stop: never a launch error (127/126) in any shell

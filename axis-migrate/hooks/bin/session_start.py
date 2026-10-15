@@ -41,6 +41,18 @@ def status_line(mig) -> str:
         return f"axis-migrate status: unknown (ladder failed: {e.__class__.__name__})"
 
 
+def latest_run_line(mig) -> str | None:
+    """`ladder.py --brief` when the newest run is not sealed (Lux e2e: after nine runs the status still said 'run
+    none'), so a resumed or compacted session sees where the work stands without reading it as a rung."""
+    try:
+        sys.path.insert(0, str(hl.PLUGIN / "skills" / "report"))
+        import ladder  # type: ignore
+        line = ladder.brief(str(mig))
+        return line if "unsealed" in line else None
+    except Exception:  # noqa: BLE001 - informational
+        return None
+
+
 def unacked_edits(mig) -> int:
     try:
         sys.path.insert(0, str(hl.PLUGIN / "skills" / "discover"))
@@ -152,7 +164,7 @@ def main() -> int:
         notes.append(f"unacked graph edits: unknown ({e.__class__.__name__})")
     if secret_note:
         notes.append(secret_note)
-    lines = [status_line(mig), f"migration: {mig}", SCOPE]
+    lines = [status_line(mig)] + [x for x in (latest_run_line(mig),) if x] + [f"migration: {mig}", SCOPE]
     try:
         integ = hl.graph_integrity(mig)
     except Exception as e:  # noqa: BLE001 - informational
