@@ -29,14 +29,17 @@ def server(tmp_path_factory):
                        crs="EPSG:4326", transform=from_origin(6.0, 50.0, 0.001, 0.001), nodata=-1) as ds:
         ds.write(a, 1)
     rasterio.shutil.copy(str(root / "plain.tif"), str(data / "runs" / "r1" / "a cog.tif"), driver="COG")
-    (root / "secret.txt").write_text("outside the data root\n")
-    os.symlink(root / "secret.txt", data / "link-out.txt")
+    (root / "secret.txt").write_text("outside the data root\n", newline="\n")
+    try:
+        os.symlink(root / "secret.txt", data / "link-out.txt")
+    except OSError:   # Windows without the symlink privilege: that one case is skipped (test_traversal_refused)
+        pass
     (data / "sub").mkdir()
-    (data / "sub" / "x.json").write_text('{"a": 1}\n')
+    (data / "sub" / "x.json").write_text('{"a": 1}\n', newline="\n")
     ovr = root / "override"
     ovr.mkdir()
-    (ovr / "deployment.json").write_text('{"version": 1}\n')
-    (ovr / "only-override.json").write_text("[]\n")
+    (ovr / "deployment.json").write_text('{"version": 1}\n', newline="\n")
+    (ovr / "only-override.json").write_text("[]\n", newline="\n")
     srv = serve.make_server(str(app), str(data), 0, str(ovr))
     t = threading.Thread(target=srv.serve_forever, daemon=True)
     t.start()
@@ -117,6 +120,8 @@ def test_range_on_the_app_bundle(server):
     "/data/link-out.txt", "/data/", "/data", "/data/..\\secret.txt",
 ])
 def test_traversal_refused(server, path):
+    if path == "/data/link-out.txt" and not os.path.islink(server["data"] / "link-out.txt"):
+        pytest.skip("no symlink privilege (Windows): the link case cannot be built here")
     code, _, body = req(server, path)
     assert code in (400, 403), (path, code)
     assert b"outside the data root" not in body and b"root:" not in body

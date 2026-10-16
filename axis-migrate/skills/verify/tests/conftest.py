@@ -22,6 +22,7 @@ for p in (str(VERIFY), str(PLUGIN / "lib"), str(HERE)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+import axis_common as ac  # noqa: E402
 import compare  # noqa: E402
 
 CRS_M = "EPSG:32632"
@@ -169,7 +170,7 @@ def check(result, cid):
 
 
 def run_cli(*args):
-    return subprocess.run([str(PLUGIN / "scripts" / "axpy"), str(VERIFY / "compare.py"), *map(str, args)],
+    return subprocess.run([*ac.axpy_cmd(), str(VERIFY / "compare.py"), *map(str, args)],
                           capture_output=True, text=True)
 
 

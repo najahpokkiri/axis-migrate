@@ -23,6 +23,7 @@ PLUGIN = HERE.parents[2]
 VTESTS = PLUGIN / "skills" / "verify" / "tests"
 sys.path.insert(0, str(VTESTS))
 sys.path.insert(0, str(PLUGIN / "lib"))
+import axis_common as ac  # noqa: E402
 import _runbuilder as rb  # noqa: E402
 
 CRS = "EPSG:32632"
@@ -111,7 +112,7 @@ def build(root: Path, *, compare: bool = True) -> Path:
     run = rb.build(root, g, outputs={"ds.a": newd / "a.tif", "ds.b": newd / "b.tif", "ds.v": newd / "v.gpkg",
                                      "ds.c": newd / "c.csv", "ds.e": newd / "e.tif"})
     if compare:
-        cp = subprocess.run([str(PLUGIN / "scripts" / "axpy"), str(PLUGIN / "skills" / "verify" / "compare.py"), "run",
+        cp = subprocess.run([*ac.axpy_cmd(), str(PLUGIN / "skills" / "verify" / "compare.py"), "run",
                              "--run", str(run)], capture_output=True, text=True)
         if not (run / "verify" / "compare" / "ds.a.json").is_file():
             raise RuntimeError(f"compare.py failed: {cp.stdout[-1500:]} {cp.stderr[-1500:]}")

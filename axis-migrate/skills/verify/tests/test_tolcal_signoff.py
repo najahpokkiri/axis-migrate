@@ -14,7 +14,7 @@ import tolcal
 
 
 def _cli(script, *args):
-    return subprocess.run([str(PLUGIN / "scripts" / "axpy"), str(VERIFY / script), *map(str, args)],
+    return subprocess.run([*ac.axpy_cmd(), str(VERIFY / script), *map(str, args)],
                           capture_output=True, text=True)
 
 
