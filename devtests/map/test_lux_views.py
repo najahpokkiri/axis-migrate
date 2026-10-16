@@ -125,7 +125,7 @@ def test_every_compared_dataset_has_views(clean):
         assert "CANDIDATE_IDENTICAL_TO_REFERENCE" in r["diagnostic_codes"] and r["verdict"] == "PASS_EXACT"
         assert not (clean / "verify" / "views" / ds).exists()
     for ds, e in got.items():
-        names = {"raster": {"overview", "worst", "edges", "nodata"}, "vector": {"overview", "worst"}}[e["family"]]
+        names = {"raster": {"overview", "worst", "edges"}, "vector": {"overview", "worst"}}[e["family"]]
         assert set(e["views"]) == names - set(e["omitted_views"]), ds
         if e["verdict"] == "PASS_EXACT":                       # an exact pass: one overview and one cell at most
             assert set(e["views"]) == {"overview"}, ds

@@ -169,8 +169,8 @@ def test_project_paths(same, tmp_path):
 def test_required_views_and_cells(same, tmp_path):
     run, doc = same
     good = vb.view_receipt(doc, "ds.r")
-    no_nodata = [s for s in good["views_seen"] if "nodata" not in s["project"]]
-    refused(run, tmp_path, dict(good, views_seen=no_nodata), "missing nodata")
+    no_edges = [s for s in good["views_seen"] if "/edges." not in s["project"]]
+    refused(run, tmp_path, dict(good, views_seen=no_edges), "missing edges")
     refused(run, tmp_path, dict(good, cells_read=[]), "at least one cell")
     f = dict(good, cells_read=[{"cell": "interior", "legacy": 10.7, "new": 10.6}])
     refused(run, tmp_path, f, "wrong cell or wrong layer")

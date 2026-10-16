@@ -28,8 +28,9 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
 ## 1 Build and serve
 - `views.py run --run <run>` after `compare.py run`: per compared raster `verify/views/<ds>/` gets `legacy.tif`,
   `new.tif` (COG copies; the legacy folder is only read), `diff.tif` (new − legacy) and `validity.tif`
-  (1 legacy only, 2 new only, 3 both), and the projects `overview`, `worst`, `edges`, `nodata` plus `cell-<id>`
-  projects centred on each cell to identify; vectors get GeoJSON (EPSG:4326) and `overview`, `worst`. Views that
+  (1 legacy only, 2 new only, 3 both), and the projects `overview`, `worst` (only when max |d| > 0), `edges`
+  (validity over legacy) plus one `cell-<id>` project centred on the cell to identify (worst, else edge, else
+  interior); vectors get GeoJSON (EPSG:4326) and `overview`, `worst` (only when a feature differs). Views that
   cannot show anything are not built: a dataset identical to legacy (or byte-equal to one reviewed before with
   nothing found) gets none (`skipped: identical (<sha256>)` in views.json; verify SKILL §3), a PASS_EXACT dataset
   only `overview` and one cell, max |d| = 0 no `worst` (`omitted_views` says why). Index: `verify/views/views.json`
@@ -39,7 +40,7 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
   `stop.py migration` when you are done.
 - `views.py list --run <run> --json`: every view URL, every cell (URL, legacy/new value, row/col) and every skipped
   dataset in one call; use it instead of one `url` call per view. `views.py url --run <run> --dataset <ds> --view
-  overview|worst|edges|nodata` (or `--cell worst|interior|edge`) prints one page URL. `check.py --run <run>` is the headless check (every project and COG served, Range 206,
+  overview|worst|edges` (or `--cell <id>`) prints one page URL. `check.py --run <run>` is the headless check (every project and COG served, Range 206,
   sha256 equal, projects valid; exit 0/2); `--render` also opens overviews and cells in headless Chrome (ready line,
   GPU engine, cells drawn as squares). It stops a server it
   started, unless `--keep-server` (then open the views right away; `stop.py` ends it).
@@ -67,7 +68,7 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
    a forced repaint. The sha must be the view's `project_sha256` from `views.json`; otherwise you are on the wrong
    view. Then take **one** screenshot. "loading (tab hidden …)" means the tab is not visible: show it. `start.py`
    printing `engine_preset: false` (another GeoLibre version) is the only case for switching the engine by hand.
-2. Overviews (and `nodata`, `inputs-overview`) fit the whole data extent into whatever canvas the pane has; `worst`,
+2. Overviews (and `inputs-overview`) fit the whole data extent into whatever canvas the pane has; `worst`,
    `edges` and cell/feature projects open on their place. If you pan or zoom, the line says `drawing` until ready.
 3. **Compare by toggling layers** in the Layers panel (eye icon). Do not use swipe: its two sides use different
    engines.
@@ -87,8 +88,9 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
 ## 4 What each view is for
 - `overview`: legacy and new over the whole extent (toggle new off to see legacy).
 - `worst`: camera on the largest |new − legacy|; diff on top; bookmarks for plot.py's worst tiles or compare samples.
-- `edges`: where cells valid on one side only concentrate (a one-cell shift shows as a blue stripe on one side and
-  an orange one on the other); `nodata`: the validity layer alone over the whole extent.
+- `edges`: validity over legacy where cells valid on one side only concentrate (a one-cell shift shows as a blue
+  stripe on one side and an orange one on the other); its bookmark "whole extent (validity everywhere)" shows
+  where NoData differs over the whole extent (what the `nodata` view showed in older runs).
 
 ## 5 Rules
 - Cite a view by dataset, view and `project_sha256`; the project bytes do not depend on the port (layer URLs are

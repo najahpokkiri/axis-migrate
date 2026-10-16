@@ -34,8 +34,12 @@ def test_every_compared_dataset_has_views(synth_run):
     doc = views_doc(synth_run)
     assert doc["schema"] == "axis-migrate.map-views.v1" and doc["run_id"] == synth_run.name
     got = {e["dataset"]: sorted(e["views"]) for e in doc["datasets"]}
-    assert got == {"ds.b": ["edges", "nodata", "overview", "worst"], "ds.e": ["edges", "nodata", "overview"],
-                   "ds.v": ["overview", "worst"]}
+    assert got == {"ds.b": ["edges", "overview", "worst"], "ds.e": ["edges", "overview"],
+                   "ds.v": ["overview", "worst"]}             # nodata folded into edges (map review C7)
+    ed = json.loads((synth_run / entry(synth_run, "ds.b")["views"]["edges"]["project"]).read_text())
+    assert {lay["name"].split(" ")[0]: lay["visible"] for lay in ed["layers"]} == \
+        {"legacy": True, "new": False, "diff": False, "validity": True}   # validity over legacy
+    assert "whole extent (validity everywhere)" in entry(synth_run, "ds.b")["views"]["edges"]["bookmarks"]
     # ds.e differs only in NoData (max|d| = 0): no worst view, and views.json says why
     assert entry(synth_run, "ds.e")["omitted_views"] == {"worst": "no difference: max |new − legacy| = 0"}
     assert entry(synth_run, "ds.b")["omitted_views"] == {}
@@ -57,7 +61,7 @@ def test_every_compared_dataset_has_views(synth_run):
 
 def test_projects_reload_through_geolibre(synth_run):
     res = map_py(VALIDATE, str(synth_run / "verify" / "views"))
-    assert len(res) == 4 + 3 + 3 + 2 + 2                                 # views + cell projects (ds.b, ds.e, ds.v)
+    assert len(res) == 3 + 1 + 2 + 1 + 2                                 # views + one cell project (ds.b, ds.e, ds.v)
     assert all(v == [] for v in res.values()), res
 
 
@@ -137,7 +141,7 @@ def test_known_cells_equal_the_sources(synth_run):
     leg_src = synth_run.parents[2] / "legacy" / "out" / "b.tif"
     new_src = synth_run / "outputs" / "s2" / "b.tif"
     cells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
-    assert set(cells) == {"worst", "interior", "edge"}
+    assert set(cells) == {"worst"}                          # one cell to read: the worst when max |d| > 0
     for c in cells.values():
         for side, src, rk, ck in (("legacy", leg_src, "row", "col"), ("new", new_src, "new_row", "new_col")):
             with rasterio.open(src) as s:
@@ -164,7 +168,6 @@ def test_known_cells_equal_the_sources(synth_run):
     both = (a != synth_map.NODATA) & (b != synth_map.NODATA)
     d = np.where(both, b - a, 0)
     assert abs(w["diff"]) == np.abs(d).max()
-    assert cells["edge"]["validity"] in (1, 2) and cells["interior"]["validity"] == 3
 
 
 def test_validity_shows_a_one_cell_shift_as_stripes(synth_run):
@@ -186,7 +189,7 @@ def test_validity_shows_a_one_cell_shift_as_stripes(synth_run):
     with rasterio.open(synth_run / e0["files"]["validity"]["file"]) as ds:
         v0 = ds.read(1)
     assert int((v0 == 1).sum()) == 9 and not (v0 == 2).any() and (v0[10:13, 10:13] == 1).all()
-    assert {c["id"] for ve in e0["views"].values() for c in ve["cells_to_identify"]} == {"interior", "edge"}
+    assert {c["id"] for ve in e0["views"].values() for c in ve["cells_to_identify"]} == {"edge"}   # no worst: edge
     # the edges view looks at the stripe
     cam = e["views"]["edges"]["camera"]
     assert cam["source"] == "densest one-side-only cells"
@@ -261,7 +264,7 @@ def test_check_script(synth_run, tmp_path):
     cp = run_cli("check.py", "--run", synth_run, "--json")
     assert cp.returncode == 0, cp.stdout + cp.stderr
     res = json.loads(cp.stdout)
-    assert res["ok"] and res["projects"] == 14 and res["layer_files"] == 10 and res["problems"] == []
+    assert res["ok"] and res["projects"] == 9 and res["layer_files"] == 10 and res["problems"] == []
     assert not (synth_run.parents[1] / ".axis" / "map" / "serve.pid").exists()     # it stopped its server
     # a project edited after views.json was written is caught
     p = synth_run / entry(synth_run, "ds.b")["views"]["overview"]["project"]

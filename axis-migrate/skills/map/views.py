@@ -2,7 +2,7 @@
 """views.py — GeoLibre map views of a compared run (display only; nothing here feeds a verdict).
 
     python3 views.py run --run <run_dir> [--dataset ds]… [--json]
-    python3 views.py url --run <run_dir> --dataset ds --view overview|worst|edges|nodata [--port N]
+    python3 views.py url --run <run_dir> --dataset ds --view overview|worst|edges [--port N]
     python3 views.py url --run <run_dir> --dataset ds --cell worst|interior|edge [--port N]
     python3 views.py url --run <run_dir> --all [--port N] [--json]
     python3 views.py list --run <run_dir> | --inputs <migration> [--port N] [--json]   every URL and cell in one call
@@ -16,7 +16,9 @@ verify/compare/<ds>.json and writes, per compared raster, under <run>/verify/vie
                           new output, values and nodata untouched, overviews by nearest neighbour
   diff.tif                new − legacy (float64, NaN where either side is nodata) on the display grid
   validity.tif            uint8 on the display grid: 1 legacy only · 2 new only · 3 both (0 = neither, nodata)
-  <view>.geolibre.json    one GeoLibre project per view: overview, worst, edges, nodata
+  <view>.geolibre.json    one GeoLibre project per view: overview, worst (only when max |d| > 0), edges (validity
+                          over legacy; bookmark "whole extent" for NoData everywhere), and one cell-<id> project
+                          (worst, else edge, else interior)
 and per compared vector: <ds>.legacy.geojson / <ds>.new.geojson (EPSG:4326, attributes kept; written by
 report/map.py's vector_display) and the overview and worst projects. views.json indexes everything.
 
@@ -34,7 +36,7 @@ Views that cannot show anything are not built: a dataset identical to legacy (co
 on a PASS_EXACT) or byte-equal to one reviewed with nothing found in an earlier run is listed under `skipped` as
 `skipped: identical (<sha256 of the new output>)` (lib/visual_receipt.py re-hashes the bytes before it counts); a
 PASS_EXACT dataset gets only overview and one cell; max |new − legacy| = 0 gets no worst (`omitted_views`).
-Cameras: overview/nodata (and inputs-overview) carry metadata["axis-migrate"].fit_bounds; the page's override fits
+Cameras: overview (and inputs-overview) carry metadata["axis-migrate"].fit_bounds; the page's override fits
 them into the canvas it really has. Every project carries metadata["axis-migrate"].label (title "<ds> · <view>", each
 layer's id, name and colour scale): the override draws it as a caption in the canvas corner. Projects switch off the app's animated atmosphere (starry sky) plugin.
 
@@ -84,7 +86,7 @@ import visual_receipt as vrc  # noqa: E402
 
 SCHEMA = "axis-migrate.map-views.v1"
 GENERATOR = {"name": "axis-migrate.map.views", "version": "1.0.0"}
-RASTER_VIEWS = ("overview", "worst", "edges", "nodata")
+RASTER_VIEWS = ("overview", "worst", "edges")       # nodata folded into edges (map review C7)
 VECTOR_VIEWS = ("overview", "worst")
 CAPTION = ("Display only. Verdicts are computed by compare.py on the native grid; nothing in these views feeds a "
            "verdict.")
@@ -706,12 +708,14 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
     # ---- views that cannot show anything are not built (views.json says why: omitted_views)
     omit = {}
     if cmp.get("verdict") == "PASS_EXACT":
-        for v in ("worst", "edges", "nodata"):
+        for v in ("worst", "edges"):
             omit[v] = "PASS_EXACT: equal values on every cell (one overview and one cell are enough)"
         cells = {k: c for k, c in cells.items() if k == "interior"} or dict(list(cells.items())[:1])
     elif lim == 0:
         omit["worst"] = "no difference: max |new − legacy| = 0"
         cells.pop("worst", None)
+    keep = next((k for k in ("worst", "edge", "interior") if k in cells), None)     # one cell to read is enough
+    cells = {keep: cells[keep]} if keep else {}
     # ---- cameras
     from rasterio.transform import array_bounds
     b = array_bounds(shape[0], shape[1], gtr)
@@ -736,7 +740,6 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                         "no one-side-only cells: densest data-extent edge"}
     else:
         cam["edges"] = {**cam["overview"], "source": "no valid cells: data extent"}
-    cam["nodata"] = {**cam["overview"], "source": "data extent"}
 
     # ---- layers
     zone = ctx.zone_layer(dsid)
@@ -754,9 +757,8 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                      "path": ctx.run / zone["file"],
                      "style": {"fillOpacity": 0, "strokeColor": C_ZONES, "strokeWidth": 1.5}})
     visible = {"overview": {"legacy", "new", "zones"}, "worst": {"legacy", "new", "diff", "zones"},
-               "edges": {"legacy", "new", "validity", "zones"}, "nodata": {"validity", "zones"}}
-    view_cells = {"overview": ["interior"], "worst": ["worst", "interior"], "edges": ["edge", "interior"],
-                  "nodata": ["edge", "interior"]}
+               "edges": {"legacy", "validity", "zones"}}
+    view_cells = {v: list(cells) for v in RASTER_VIEWS}
     views = {}
     for v in [x for x in RASTER_VIEWS if x not in omit]:
         specs = []
@@ -770,6 +772,9 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                for c in cl]
         if v == "worst":
             bms += [{"name": p["name"], "center": p["center"], "zoom": cam["worst"]["zoom"]} for p in places]
+        if v == "edges":                        # what the nodata view was: validity over the whole extent
+            bms.append({"name": "whole extent (validity everywhere)", "center": cam["overview"]["center"],
+                        "zoom": cam["overview"]["zoom"]})
         ppath = out / f"{v}.geolibre.json"
         pr = build_project(f"{dsid} · {v}", cam[v], specs, bms, key=f"{ctx.run_id}/{dsid}/{v}",
                            fit_bounds=bbox if cam[v].get("source") == "data extent" else None)

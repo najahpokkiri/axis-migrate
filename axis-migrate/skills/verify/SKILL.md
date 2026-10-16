@@ -76,13 +76,13 @@ Desktop: `views.py run --run <run>`, `start.py migration`, `views.py list --run 
    {"dataset_id": "ds.x", "question_id": "Q6", "answer": "yes", "effect": "flag", "category": "boundary_stripes",
     "view": {"project": "verify/views/ds.x/edges.geolibre.json", "project_sha256": "<views.json>"},
     "views_seen": [{"project": "verify/views/ds.x/overview.geolibre.json", "project_sha256": "…"}, … worst, edges,
-                   nodata, cell-edge],
+                   cell-edge],
     "engine": "maplibre-gl-raster", "cells_read": [{"cell": "edge", "legacy": 1, "new": null}], "layer": "validity",
     "location": {"crs": "EPSG:4326", "bbox": [west, south, east, north]},
     "observations": [{"what": "cells valid on legacy only, west edge", "value": 812, "unit": "cells"}],
     "note": "one-cell blue stripe west, orange stripe east", "model": "<your model id>"}
    ```
-   Enforced: `views_seen` holds every view views.json built of overview, worst, edges, nodata (vector: overview,
+   Enforced: `views_seen` holds every view views.json built of overview, worst, edges (vector: overview,
    worst; `omitted_views` are not required) and the `cell-<id>` project of every cell read, each sha equal to views.json and to the file; rasters need `engine: maplibre-gl-raster` and at
    least one cell, values as the popup shows them (checked to ~3 significant figures; null = nodata); a yes needs
    `location` (lon/lat), a note and `observations` with numbers. Nothing found = one `Q-all` view receipt with answer

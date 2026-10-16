@@ -8,7 +8,7 @@ Three receipt kinds, all written only by `plot.py review-add`:
         headless runs and evals.
   view  cites GeoLibre map views of this run (skills/map/views.py): view{project, project_sha256} (the view the
         finding is about), views_seen[{project, project_sha256}] (every project opened: for a raster overview, worst,
-        edges, nodata and the cell-<id> project of every cell read; for a vector overview and worst), engine (rasters:
+        edges (and nodata in older runs) and the cell-<id> project of every cell read; for a vector overview and worst), engine (rasters:
         maplibre-gl-raster), cells_read[{cell, legacy, new}] (rasters: at least one, values as the identify popup
         shows them, checked against views.json to the popup's ~3 significant figures).
   skipped  `skipped: identical (<sha256 of the new output>)` for a dataset views.py built no views for because there
@@ -40,7 +40,7 @@ import axis_common as ac  # noqa: E402
 
 ENGINE_GPU = "maplibre-gl-raster"
 ENGINES = ("maplibre-gl-raster", "cog-tiler-wasm", "titiler")
-REQUIRED_VIEWS = {"raster": ("overview", "worst", "edges", "nodata"), "vector": ("overview", "worst")}
+REQUIRED_VIEWS = {"raster": ("overview", "worst", "edges"), "vector": ("overview", "worst")}
 VIEW_ROOTS = ("verify/views", "amend/views")
 VIEWS_SCHEMA = "axis-migrate.map-views.v1"
 NOT_COMPARED_STATES = ("NOT_COMPARED", "EVALUATOR_ERROR", "BLOCKED")
@@ -240,8 +240,8 @@ def check_view_receipt(f: dict, *, family: str | None, lookup, cells: dict | Non
         if n1 or n2:
             return [f"'nothing found' refused: views.json counts {n1} cell(s) valid on legacy only (validity 1, blue) "
                     f"and {n2} valid on new only (validity 2, orange) for {f.get('dataset_id')}; flag what the edges "
-                    "and nodata views show (e.g. Q1 boundary_stripes / whole_offset, Q4 missing_region / holes, "
-                    "Q6 boundary_stripes) with the counts, or answer cannot_tell"]
+                    "view and its 'whole extent' bookmark show (e.g. Q1 boundary_stripes / whole_offset, Q4 "
+                    "missing_region / holes, Q6 boundary_stripes) with the counts, or answer cannot_tell"]
     return _location_problems(f, bounds)
 
 

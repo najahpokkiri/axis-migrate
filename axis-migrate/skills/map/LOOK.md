@@ -24,7 +24,7 @@ One path per dataset, never both.
 | check | the question | view (desktop) | PNG | number from |
 |---|---|---|---|---|
 | place | Is the data where the AOI or outline is, in the right CRS and units, not shifted? | `overview`, `grid-<family>` | `overview.png`, `worst_tiles.png`, `grid_corners.png`, `inputs_overview.png` | compare grid gate, `extent_relations` |
-| coverage | Is anything missing, empty or outside the AOI? | `overview` (toggle new), `nodata` | `mask_diff.png`, `inputs_overview.png` | `map.py metrics`, compare `raster.mask`, feature counts |
+| coverage | Is anything missing, empty or outside the AOI? | `overview` (toggle new), `edges` bookmark "whole extent" | `mask_diff.png`, `inputs_overview.png` | `map.py metrics`, compare `raster.mask`, feature counts |
 | edges | Cells valid on one side only along a border; paired stripes (a one-cell shift)? | `edges` (validity over legacy) | `mask_diff.png`, `worst_tiles.png` | views.json `validity_counts`, compare `raster.mask` |
 | values | Same picture under the shared scale; does the range fit the unit? | `overview` + one cell read as text | `overview.png`, `hist.png` | compare `raster.values`, the cell read |
 | classes | Is a class or feature type absent on one side? (`n/a` for continuous rasters) | `overview`, layers toggled | `overlay.png`, `per_feature.png` | compare key set, class counts |
@@ -44,7 +44,9 @@ A check you could not do is `cannot_tell` with why. A finding with no number is 
   `legacy_rasters.png` / `legacy_vectors.png`); read **one cell per raster and one feature per vector** (that is
   what the finding rule checks). Numbers from `map.py metrics` (`discover/metrics.json`). Record with
   `scan.py annotate migration map-finding` (discover SKILL §2). Budget: ≤ 10 min, ≤ 15 browser calls.
-- **Verify, each isolated run**: the views `views.json` lists for the dataset, or every PNG in `plots.json`. Receipt:
+- **Verify, each isolated run**: the views `views.json` lists for the dataset (raster `overview` + `edges` + one
+  cell, `worst` only when max |d| > 0; vector `overview`, `worst` only when a feature differs), or every PNG in
+  `plots.json`. Receipt:
   `plot.py review-template` → fill → `plot.py review-add` (verify SKILL §3).
 - **Chained verify**: only datasets not listed under `skipped` (byte-equal to a reviewed output carries over).
 - **Report**: quote each dataset's `looked` line (the report prints it); never "looked at on the map" without a

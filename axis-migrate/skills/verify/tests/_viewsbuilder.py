@@ -69,8 +69,8 @@ def view_receipt(doc: dict, ds: str, *, flag: bool = False, cells=("interior",),
     seen = [{"project": ve["project"], "project_sha256": ve["project_sha256"]} for _, ve in sorted(e["views"].items())]
     allcells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
     read = []
-    for cid in (cells if fam == "raster" else ()):
-        c = allcells[cid]
+    for cid in ([x for x in cells if x in allcells] or sorted(allcells) if fam == "raster" else ()):
+        c = allcells[cid]                    # views.py builds one cell now: the asked ones it has, else that one
         seen.append({"project": c["project"], "project_sha256": c["project_sha256"]})
         read.append({"cell": cid, "legacy": _popup(c["legacy_value"]), "new": _popup(c["new_value"])})
     mv = e["views"][main or ("edges" if (flag and fam == "raster") else "overview")]
