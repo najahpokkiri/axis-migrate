@@ -5787,8 +5787,8 @@ def annotate(migration: Path, what: str, payload: dict | None, path: str | None,
         if not p.is_file():
             return 2, f"PNG not found: {path}"
         rec = {"path": posix(path), "kind": kind or stem_of(path), "sha256": ac.sha256_file(p)}
-        inv["map"]["pngs"] = sorted([x for x in inv["map"]["pngs"] if x["path"] != rec["path"]] + [rec],
-                                    key=lambda x: x["path"])
+        inv["map"]["pngs"] = sorted([x for x in inv["map"]["pngs"] if x["path"] != rec["path"]
+                                     and (migration / x["path"]).is_file()] + [rec], key=lambda x: x["path"])
         ac.dump_json(inv_p, inv)
         return 0, f"registered {rec['path']}"
     if payload is None:

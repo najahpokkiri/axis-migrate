@@ -15,7 +15,9 @@ features that do not touch the AOI. Map findings cite it as metric.computed_by. 
 PNG finding whose PNG still has its bytes, or a view receipt on the inputs views that still passes; both kinds count
 the same way) and the inputs no counting finding is about. Exit 0 every finding counts, 1 some do not.
 
-Writes <migration>/discover/inputs_overview.png, grid_corners.png and legacy_rasters.png (deterministic matplotlib
+Writes <migration>/discover/metrics.json (as `metrics`), inputs_overview.png (AOI first: one panel per input raster
+over the AOI extent + 25 %, NoData in pink, vectors on top; the full extents as outlines only), grid_corners.png and
+legacy_rasters.png — legacy_vectors.png instead when no intermediate/final raster exists (deterministic matplotlib
 Agg; no basemap, nothing fetched) and registers them in inventory.json through `scan.py annotate png`. Every number
 printed in a caption comes from the inventory (extent_relations, profiles); the agent records what it sees with
 `scan.py annotate <migration> map-finding --json f.json` (a finding without a computed metric can only raise a
@@ -132,155 +134,209 @@ def aoi_dataset(inv: dict, ds: list[dict], migration: Path) -> tuple[dict | None
     return None, None
 
 
-def inputs_overview(inv: dict, legacy: Path, out: Path) -> dict:
+C_NODATA = "#d4d4d4"          # NoData cells inside a raster's extent (outside it: white); verify/plot.py's grey
+C_AOI = "#d7191c"
+MAX_PANELS = 6
+
+
+def _window_read(path: Path, win: tuple, disp, max_px: int = 700):
+    """The raster inside win (x0, x1, y0, y1, display CRS) at ≤ max_px, nearest; None when its CRS is not the
+    display CRS or it does not overlap. Returns (masked array, extent, valid-in-extent mask, 1:f)."""
+    import rasterio
+    from pyproj import CRS
+    from rasterio.windows import Window, from_bounds
+    with rasterio.open(path) as src:
+        if src.crs is None or not CRS.from_wkt(src.crs.to_wkt()).equals(disp):
+            return None
+        f = from_bounds(win[0], win[2], win[1], win[3], src.transform)
+        c0, r0 = max(math.floor(f.col_off), 0), max(math.floor(f.row_off), 0)
+        c1, r1 = min(math.ceil(f.col_off + f.width), src.width), min(math.ceil(f.row_off + f.height), src.height)
+        if c1 <= c0 or r1 <= r0:
+            return None
+        w = Window(c0, r0, c1 - c0, r1 - r0)
+        k = max(1, math.ceil(max(w.width, w.height) / max_px))
+        a = src.read(1, window=w, out_shape=(max(1, int(w.height) // k), max(1, int(w.width) // k)), masked=True,
+                     resampling=rasterio.enums.Resampling.nearest).astype("float64")
+        b = rasterio.windows.bounds(w, src.transform)
+        return a, (b[0], b[2], b[1], b[3]), k
+
+
+def _draw_vectors(ax, gdfs: list, aoi_id: str | None, small: bool = False) -> list:
+    handles = []
+    for i, (d, g) in enumerate(gdfs):
+        if d["id"] == aoi_id:
+            g.boundary.plot(ax=ax, color=C_AOI, lw=1.0 if small else 2.0, zorder=20)
+            handles.append(plt.Line2D([0], [0], color=C_AOI, lw=2, label=f"AOI {d['id']}"))
+            continue
+        col = PALETTE[i % len(PALETTE)]
+        kinds = set(g.geom_type.dropna().unique())
+        if kinds and all(k.endswith("Point") for k in kinds):
+            pc = "black" if not any(h.get_marker() == "o" for h in handles) else col
+            g.plot(ax=ax, color=pc, markersize=4 if small else 16, edgecolor="white", linewidth=0.6, zorder=22 + i)
+            handles.append(plt.Line2D([0], [0], color=pc, marker="o", lw=0, label=f"{d['id']} ({len(g)} points)"))
+        else:
+            g.boundary.plot(ax=ax, color=col, lw=0.6 if small else 1.4, ls=["-", "--", ":", "-."][i % 4], zorder=21 + i)
+            handles.append(plt.Line2D([0], [0], color=col, lw=2, ls=["-", "--", ":", "-."][i % 4],
+                                      label=f"{d['id']} ({len(g)} features)"))
+    return handles
+
+
+def inputs_overview(inv: dict, legacy: Path, out: Path, mdoc: dict | None = None) -> dict:
+    """AOI first (map review C5): one panel per input raster over the AOI extent + 25 %, the raster clipped to that
+    window (nearest; NoData cells in pink, so a hole inside the AOI shows), every vector and the AOI outline on top;
+    the full extents only as a small panel of outlines (no pixels) with the 'area outside' numbers. Panel titles
+    carry discover/metrics.json's numbers. Without an AOI the window is the union of the drawn extents."""
+    from matplotlib.colors import ListedColormap
+    from matplotlib.patches import Patch, Rectangle
     from pyproj import CRS
     ds, fallback = map_datasets(inv)
     aoi, aoi_note = aoi_dataset(inv, ds, out.parent)
-    profiles = {}
-    for d in ds:
-        pr = inv_profile(out.parent.parent, d)
-        if pr:
-            profiles[d["id"]] = pr
-    crss = []
-    for d in ds:
-        p = profiles.get(d["id"], {})
-        c = p.get("crs") or {}
-        if c.get("wkt"):
-            crss.append(CRS.from_wkt(c["wkt"]))
+    profiles = {d["id"]: pr for d in ds if (pr := inv_profile(out.parent.parent, d))}
+    crss = [CRS.from_wkt(p["crs"]["wkt"]) for p in profiles.values() if (p.get("crs") or {}).get("wkt")]
     geographic = all(c.is_geographic for c in crss) if crss else True
     disp = CRS.from_epsg(4326) if geographic else next(
         (CRS.from_user_input(p["crs"]["authid"]) for p in inv.get("projects", []) if (p.get("crs") or {}).get("authid")),
         crss[0] if crss else CRS.from_epsg(4326))
-    fig, ax = plt.subplots(figsize=(10, 9))
-    handles, notes = [], [x for x in (fallback, aoi_note) if x]
+    notes = [x for x in (fallback, aoi_note) if x]
     rasters = sorted([d for d in ds if d["kind"] == "raster"], key=lambda d: d["id"])
     vectors = sorted([d for d in ds if d["kind"] == "vector"], key=lambda d: d["id"])
-    all_bounds = []
-    for i, d in enumerate(rasters):
-        a, ext, rcrs, f = read_thumb(legacy / d["legacy_path"])
-        if rcrs is not None and not CRS.from_wkt(rcrs.to_wkt()).equals(disp):
-            notes.append(f"{d['id']}: native CRS differs from the display CRS, drawn as bbox only")
-        else:
-            lo, hi = stretch(a)
-            ax.imshow(a, extent=ext, cmap="Greys", vmin=lo, vmax=hi, interpolation="nearest", zorder=1, alpha=0.9)
-            notes.append(f"{d['id']}: 2-98 % stretch [{lo:.3g}, {hi:.3g}], thumbnail 1:{f} nearest")
-        ax.plot([ext[0], ext[1], ext[1], ext[0], ext[0]], [ext[2], ext[2], ext[3], ext[3], ext[2]], color="black",
-                lw=1, ls="--", zorder=5)
-        ax.text(ext[0], ext[3], " " + d["id"] + " (bbox)", va="bottom", fontsize=7)
-        all_bounds.append(ext)
-    for i, d in enumerate(vectors):
-        col = PALETTE[i % len(PALETTE)]
-        style = ["-", "--", ":", "-."][i % 4]
+    gdfs, full = [], {}
+    for d in vectors:
         try:
             g = read_vec(legacy, d, disp)
         except Exception as exc:  # noqa: BLE001
             notes.append(f"{d['id']}: not drawn ({exc})")
             continue
-        lw = 2.4 - 0.5 * (i % 3) if len(g) <= 200 else 0.4
-        if len(g) and all(t.endswith("Point") for t in g.geom_type.dropna().unique()):
-            g.plot(ax=ax, color=col, markersize=4 if len(g) <= 200 else 1, zorder=3 + i)  # points have no boundary
-        else:
-            g.boundary.plot(ax=ax, color=col, lw=lw, ls=style, zorder=3 + i)
-        b = g.total_bounds
-        all_bounds.append((b[0], b[2], b[1], b[3]))
-        handles.append(plt.Line2D([0], [0], color=col, lw=2, ls=style, label=f"{d['id']} ({len(g)} features)"))
-    if all_bounds:
-        x0 = min(b[0] for b in all_bounds)
-        x1 = max(b[1] for b in all_bounds)
-        y0 = min(b[2] for b in all_bounds)
-        y1 = max(b[3] for b in all_bounds)
-        pad = 0.03 * max(x1 - x0, y1 - y0)
+        gdfs.append((d, g))
+        if len(g):
+            b = g.total_bounds
+            full[d["id"]] = (b[0], b[2], b[1], b[3])
+    import rasterio
+    for d in rasters:
+        with rasterio.open(legacy / d["legacy_path"]) as src:
+            if src.crs is not None and CRS.from_wkt(src.crs.to_wkt()).equals(disp):
+                b = src.bounds
+                full[d["id"]] = (b.left, b.right, b.bottom, b.top)
+    aoi_ext = full.get(aoi["id"]) if aoi else None
+    if aoi_ext:
+        pad = 0.25 * max(aoi_ext[1] - aoi_ext[0], aoi_ext[3] - aoi_ext[2])
+        win = (aoi_ext[0] - pad, aoi_ext[1] + pad, aoi_ext[2] - pad, aoi_ext[3] + pad)
+        where = f"AOI {aoi['id']} extent + 25 %"
+    elif full:
+        win = (min(v[0] for v in full.values()), max(v[1] for v in full.values()),
+               min(v[2] for v in full.values()), max(v[3] for v in full.values()))
+        pad = 0.03 * max(win[1] - win[0], win[3] - win[2])
+        win = (win[0] - pad, win[1] + pad, win[2] - pad, win[3] + pad)
+        where = "union of the drawn extents (no AOI)"
+    else:
+        win, where = None, "nothing to draw"
+    mr = {r["dataset"]: r for r in (mdoc or {}).get("rasters") or []}
+    shown = rasters[:MAX_PANELS]
+    if len(rasters) > MAX_PANELS:
+        notes.append(f"{len(rasters) - MAX_PANELS} more rasters not drawn: " + ", ".join(d["id"] for d in rasters[MAX_PANELS:]))
+    npan = max(1, len(shown))
+    ncols = min(3, npan)
+    nrows = math.ceil(npan / ncols)
+    fig = plt.figure(figsize=(4.6 * ncols + 3.4, 4.9 * nrows + 1.6))
+    gs = fig.add_gridspec(nrows, ncols + 1, width_ratios=[1] * ncols + [0.62], wspace=0.28, hspace=0.42,
+                          left=0.06, right=0.98, top=1 - 0.75 / (4.9 * nrows + 1.6), bottom=0.9 / (4.9 * nrows + 1.6))
+    aspect = (1 / math.cos(math.radians((win[2] + win[3]) / 2))) if (win and geographic) else 1.0
+    handles = []
+    for i in range(npan):
+        ax = fig.add_subplot(gs[i // ncols, i % ncols])
+        ax.set_facecolor("white")
+        title = "vectors over the AOI window" if not shown else shown[i]["id"]
+        if shown and win:
+            d = shown[i]
+            got = _window_read(legacy / d["legacy_path"], win, disp)
+            if got is None:
+                ax.text(0.5, 0.5, "native CRS differs from the display CRS\nor no overlap with this window",
+                        transform=ax.transAxes, ha="center", va="center", fontsize=8)
+            else:
+                a, ext, k = got
+                nd = np.ma.getmaskarray(a)
+                ax.imshow(np.where(nd, 1.0, np.nan), extent=ext, cmap=ListedColormap([C_NODATA]), vmin=0, vmax=1,
+                          interpolation="nearest", zorder=1)
+                if a.count():
+                    lo, hi = stretch(a)
+                    im = ax.imshow(a, extent=ext, cmap="viridis", vmin=lo, vmax=hi, interpolation="nearest", zorder=2)
+                    cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02, shrink=0.8)
+                    cb.ax.tick_params(labelsize=6)
+                    cb.set_label(f"p2–p98 in this window, 1:{k} nearest", fontsize=6)
+            r = mr.get(d["id"]) or {}
+            title += f"\n{r.get('dtype', '')} · nodata {r.get('nodata')}"
+            if "cells_inside_aoi" in r:
+                title += (f"\ninside AOI: {r['valid_inside_aoi']:,} valid of {r['cells_inside_aoi']:,} cells "
+                          f"({r['nodata_inside_aoi_pct']:g} % NoData)")
+        hs = _draw_vectors(ax, gdfs, aoi["id"] if aoi else None)
+        handles = handles or hs
+        if win:
+            ax.set_xlim(win[0], win[1])
+            ax.set_ylim(win[2], win[3])
+            ax.set_aspect(aspect)
+            km_scalebar(ax, win, geographic)
+        ax.set_title(title, fontsize=8)
+        ax.tick_params(labelsize=6)
+        ax.ticklabel_format(useOffset=False)
+    # full extents: outlines only, AOI filled red
+    side = gs[:, ncols].subgridspec(2, 1, height_ratios=[1, 1.1], hspace=0.12)
+    ax = fig.add_subplot(side[0])
+    ax.set_title("where: full extents\n(outlines only)", fontsize=8)
+    if full:
+        x0, x1 = min(v[0] for v in full.values()), max(v[1] for v in full.values())
+        y0, y1 = min(v[2] for v in full.values()), max(v[3] for v in full.values())
+        for i, (k, e) in enumerate(sorted(full.items())):
+            is_aoi = aoi is not None and k == aoi["id"]
+            ax.add_patch(Rectangle((e[0], e[2]), e[1] - e[0], e[3] - e[2], fill=is_aoi,
+                                   facecolor=C_AOI if is_aoi else "none", lw=2.5 if is_aoi else 1.0,
+                                   edgecolor=C_AOI if is_aoi else ("black" if k in {d["id"] for d in rasters}
+                                                                  else PALETTE[i % len(PALETTE)]),
+                                   ls="-" if is_aoi else "--", zorder=5 if is_aoi else 3))
+            if not is_aoi:
+                ax.text(e[0], e[3], " " + k.removeprefix("ds."), fontsize=5.5, va="top", ha="left", clip_on=True)
+        if win:
+            ax.add_patch(Rectangle((win[0], win[2]), win[1] - win[0], win[3] - win[2], fill=False,
+                                   edgecolor=C_AOI, lw=0.8, zorder=6))
+        pad = 0.04 * max(x1 - x0, y1 - y0)
         ax.set_xlim(x0 - pad, x1 + pad)
         ax.set_ylim(y0 - pad, y1 + pad)
         if geographic:
             ax.set_aspect(1 / math.cos(math.radians((y0 + y1) / 2)))
-        km_scalebar(ax, (x0 - pad, x1 + pad, y0 - pad, y1 + pad), geographic)
+    ax.tick_params(labelsize=5)
     rel_lines = []
     for r in inv.get("extent_relations", []):
         if r["relation"] == "a_outside_b_extent":
             rel_lines.append(f"{r['a']} area outside {r['b']} extent: {r['area_outside_km2']:.2f} km2")
         elif r["relation"] == "features_vs_aoi":
-            by = "; ".join(f"{c}: " + ", ".join(f"{k} {v}" for k, v in vals.items())
-                           for c, vals in r.get("features_outside_by_value", {}).items())
-            rel_lines.append(f"{r['a']} features not touching {r['b']}: {r['features_outside']}/{r['count']}"
-                             + (f" ({by})" if by else ""))
+            rel_lines.append(f"{r['a']} features not touching {r['b']}: {r['features_outside']}/{r['count']}")
         elif r["relation"] == "nodata_inside_aoi":
             rel_lines.append(f"{r['a']} NoData cells inside {r['b']}: {r['nodata_cells_inside_aoi']} "
                              f"({r['nodata_inside_aoi_km2']:.2f} km2, cell centre)")
-    ax.legend(handles=handles, loc="upper right", fontsize=7, framealpha=0.9)
-    ax.set_title(f"Inputs overview ({disp.to_string()}; display only, nothing reprojected for checks)"
-                 + (" — no inputs: all on-disk data" if fallback else ""), fontsize=9)
-    ax.set_xlabel("x" if not geographic else "longitude")
-    ax.set_ylabel("y" if not geographic else "latitude")
-    zoom = aoi_zoom(fig, ax, legacy, aoi, rasters, vectors, disp, all_bounds, geographic)
-    if zoom:
-        notes.append(zoom)
-    caption = "\n".join(rel_lines + notes)
-    fig.text(0.01, 0.01, caption, fontsize=7, va="bottom", family="monospace")
-    fig.subplots_adjust(bottom=0.06 + 0.017 * len(caption.splitlines()))
+    drawn = {d["id"] for d in ds}
+    for v in (mdoc or {}).get("vectors") or []:
+        if v["dataset"] in drawn and "not_touching_aoi" in v and \
+                not any(x.startswith(f"{v['dataset']} features not touching") for x in rel_lines):
+            rel_lines.append(f"{v['dataset']} features not touching {mdoc['aoi']}: {v['not_touching_aoi']}/{v['features']}")
+    tx = fig.add_subplot(side[1])
+    tx.axis("off")
+    tx.text(0.0, 1.0, "\n".join(_wrap(x.replace("ds.", ""), 38) for x in rel_lines), fontsize=6.5, va="top",
+            ha="left", family="monospace", transform=tx.transAxes)
+    handles += [Patch(facecolor=C_NODATA, label="NoData cell (inside the raster)")] if shown else []
+    fig.legend(handles=handles, loc="lower center", ncol=min(4, max(1, len(handles))), fontsize=7, frameon=False)
+    fig.suptitle(f"Inputs over the area of interest · window: {where} · {disp.to_string()} · display only"
+                 + (" · no inputs: all on-disk data" if fallback else ""), fontsize=10)
+    if notes:
+        fig.text(0.01, 0.995, "\n".join(notes), fontsize=6, va="top", family="monospace")
     path = out / "inputs_overview.png"
     save(fig, path)
     return {"path": "discover/inputs_overview.png", "kind": "inputs_overview", "datasets": [d["id"] for d in ds],
             "metrics": rel_lines + [x for x in (fallback, aoi_note) if x], "fallback": bool(fallback),
-            "aoi": aoi["id"] if aoi else None}
+            "aoi": aoi["id"] if aoi else None, "window": where}
 
 
-def aoi_zoom(fig, ax, legacy: Path, aoi: dict | None, rasters: list, vectors: list, disp, all_bounds: list,
-             geographic: bool) -> str | None:
-    """When the AOI covers under 1 % of the drawn extent it would be a speck: an inset zoomed to the AOI (+25 %),
-    rasters read for that window only (nearest), vectors on top."""
-    import rasterio
-    from pyproj import CRS
-    from rasterio.windows import from_bounds
-    if aoi is None or not all_bounds:
-        return None
-    try:
-        g = read_vec(legacy, aoi, disp)
-    except Exception:  # noqa: BLE001
-        return None
-    b = g.total_bounds
-    x0, x1 = min(x[0] for x in all_bounds), max(x[1] for x in all_bounds)
-    y0, y1 = min(x[2] for x in all_bounds), max(x[3] for x in all_bounds)
-    full = max((x1 - x0) * (y1 - y0), 1e-12)
-    if (b[2] - b[0]) * (b[3] - b[1]) / full >= 0.01:
-        return None
-    pad = 0.25 * max(b[2] - b[0], b[3] - b[1])
-    zx0, zx1, zy0, zy1 = b[0] - pad, b[2] + pad, b[1] - pad, b[3] + pad
-    ins = ax.inset_axes([0.58, 0.04, 0.40, 0.40])
-    ins.set_facecolor("#f4f4f4")
-    for d in rasters:
-        with rasterio.open(legacy / d["legacy_path"]) as src:
-            if src.crs is not None and not CRS.from_wkt(src.crs.to_wkt()).equals(disp):
-                continue
-            w = from_bounds(zx0, zy0, zx1, zy1, src.transform).round_offsets().round_lengths()
-            if w.width <= 0 or w.height <= 0:
-                continue
-            f = max(1, math.ceil(max(w.width, w.height) / 600))
-            a = src.read(1, window=w, out_shape=(max(1, int(w.height) // f), max(1, int(w.width) // f)),
-                         boundless=True, masked=True,
-                         resampling=rasterio.enums.Resampling.nearest).astype("float64")
-            wb = rasterio.windows.bounds(w, src.transform)
-            lo, hi = stretch(a) if a.count() else (0, 1)
-            ins.imshow(a, extent=(wb[0], wb[2], wb[1], wb[3]), cmap="Greys", vmin=lo, vmax=hi,
-                       interpolation="nearest", alpha=0.6)
-    for i, d in enumerate(vectors):
-        try:
-            gv = read_vec(legacy, d, disp)
-        except Exception:  # noqa: BLE001
-            continue
-        col = PALETTE[i % len(PALETTE)]
-        if all(t.endswith("Point") for t in gv.geom_type.unique()):
-            gv.plot(ax=ins, color=col, markersize=6, zorder=4 + i)
-        else:
-            gv.boundary.plot(ax=ins, color=col, lw=1.2, zorder=4 + i)
-    ins.set_xlim(zx0, zx1)
-    ins.set_ylim(zy0, zy1)
-    if geographic:
-        ins.set_aspect(1 / math.cos(math.radians((zy0 + zy1) / 2)))
-    ins.tick_params(labelsize=5)
-    ins.set_title(f"zoom to AOI {aoi['id']}", fontsize=7)
-    ax.indicate_inset_zoom(ins, edgecolor="red")
-    return f"inset: zoom to the AOI {aoi['id']} (it covers under 1 % of the drawn extent)"
+def _wrap(text: str, width: int) -> str:
+    import textwrap
+    return "\n  ".join(textwrap.wrap(text, width)) or text
 
 
 def inv_profile(migration: Path, d: dict) -> dict | None:
@@ -427,14 +483,15 @@ def legacy_rasters(inv: dict, legacy: Path, out: Path) -> dict:
 
 
 def legacy_vectors(inv: dict, legacy: Path, out: Path) -> dict:
-    """No intermediate or final raster exists: legacy_rasters.png draws the intermediate/final vectors instead (the
-    references), each with its feature count, and says so; with none at all it says that in words."""
+    """No intermediate or final raster exists: legacy_vectors.png (instead of legacy_rasters.png) draws the
+    intermediate/final vectors (the references) in one row (up to 4 per row), each with its feature count; with none
+    at all it says that in words."""
     ds = sorted([d for d in inv["datasets"] if d["kind"] == "vector" and d["exists"]
                  and d["role"] in ("intermediate", "final")], key=lambda d: (d["role"] != "intermediate", d["id"]))
     n = max(1, len(ds))
-    cols = min(3, n)
+    cols = min(4, n)
     rows = math.ceil(n / cols)
-    fig, axes = plt.subplots(rows, cols, figsize=(5.2 * cols, 4.6 * rows + 0.4), squeeze=False)
+    fig, axes = plt.subplots(rows, cols, figsize=(4.2 * cols, 4.4 * rows + 0.4), squeeze=False)
     for i in range(rows * cols):
         ax = axes[i // cols][i % cols]
         if i >= len(ds):
@@ -454,18 +511,20 @@ def legacy_vectors(inv: dict, legacy: Path, out: Path) -> dict:
             g.plot(ax=ax, color=PALETTE[i % len(PALETTE)], markersize=8)
         elif len(g):
             g.plot(ax=ax, color=PALETTE[i % len(PALETTE)], alpha=0.5, edgecolor="black", lw=0.6)
-        ax.set_title(f"{d['id']} [{d['role']}]\n{len(g)} feature(s), {', '.join(sorted(kinds)) or 'no geometry'}; "
-                     f"columns {', '.join(c for c in g.columns if c != 'geometry')[:60]}", fontsize=7)
+        ax.set_title(f"{d['id']} [{d['role']}]\n{len(g)} feature(s), {', '.join(sorted(kinds)) or 'no geometry'}\n"
+                     f"columns {', '.join(c for c in g.columns if c != 'geometry')[:48]}", fontsize=7)
         if g.crs is not None and g.crs.is_geographic and len(g):
             b = g.total_bounds
             ax.set_aspect(1 / math.cos(math.radians((b[1] + b[3]) / 2)))
-        ax.tick_params(labelsize=5)
-    fig.suptitle("Legacy intermediate and final datasets: no raster among them, the vectors are drawn", fontsize=10)
-    fig.tight_layout(rect=(0, 0, 1, 0.96))
-    path = out / "legacy_rasters.png"
+        ax.tick_params(labelsize=6)
+        ax.ticklabel_format(useOffset=False)
+        for lab in ax.get_xticklabels():
+            lab.set_rotation(30)
+    fig.suptitle("Legacy intermediate and final vectors (the references every step is compared against)", fontsize=10)
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
+    path = out / "legacy_vectors.png"
     save(fig, path)
-    return {"path": "discover/legacy_rasters.png", "kind": "legacy_rasters", "datasets": [d["id"] for d in ds],
-            "fallback": "vectors"}
+    return {"path": "discover/legacy_vectors.png", "kind": "legacy_vectors", "datasets": [d["id"] for d in ds]}
 
 
 def run_inputs(migration: Path) -> tuple[int, dict]:
@@ -475,13 +534,16 @@ def run_inputs(migration: Path) -> tuple[int, dict]:
     inv = ac.load_json(inv_p)
     legacy = (migration / inv["legacy_root"]).resolve()
     out = migration / "discover"
-    res = [inputs_overview(inv, legacy, out), grid_corners(inv, legacy, out), legacy_rasters(inv, legacy, out)]
+    _, mdoc = metrics(migration)
+    res = [inputs_overview(inv, legacy, out, mdoc), grid_corners(inv, legacy, out), legacy_rasters(inv, legacy, out)]
+    for stale in ({"discover/legacy_rasters.png", "discover/legacy_vectors.png"} - {r["path"] for r in res}):
+        (migration / stale).unlink(missing_ok=True)       # the other name of the third PNG, from an earlier run
     import scan  # same directory: the inventory has one writer
     for r in res:
         code, msg = scan.annotate(migration, "png", None, r["path"], r["kind"])
         if code:
             return code, {"error": msg}
-    return 0, {"pngs": res}
+    return 0, {"pngs": res, "metrics": metrics_table(mdoc)}
 
 
 METRICS_SCHEMA = "axis-migrate.discover-metrics.v1"
@@ -718,6 +780,7 @@ def main(argv=None) -> int:
             print(r["path"])
             for m in r.get("metrics", []):
                 print("  " + m)
+        print("\n".join(res["metrics"]))
         print("Look at each PNG, then record findings with a computed metric: "
               "scan.py annotate <migration> map-finding --json finding.json")
     return code

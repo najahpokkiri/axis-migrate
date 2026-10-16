@@ -103,8 +103,12 @@ def test_question_budget(byu):
 def test_input_maps_are_not_blank(byu):
     pngs = {p["kind"]: p for p in byu["map"]["pngs"]}
     assert len(pngs["inputs_overview"]["datasets"]) >= 4
-    for name in ("inputs_overview.png", "grid_corners.png", "legacy_rasters.png"):
+    for name in ("inputs_overview.png", "grid_corners.png", "legacy_vectors.png"):   # BYU's references are vectors
         assert ink(byu["mig"] / "discover" / name) > 0.02, name
+    ov = pngs["inputs_overview"]
+    assert ov["aoi"] == "ds.inirida_crs_10aug18_srh2d" and ov["window"].startswith("AOI ")
+    assert sorted(p["path"] for p in json.loads((byu["mig"] / "inventory.json").read_text())["map"]["pngs"]) == \
+        ["discover/grid_corners.png", "discover/inputs_overview.png", "discover/legacy_vectors.png"]
 
 
 def test_legacy_copy_and_fixture_untouched_and_scan_fast(byu):

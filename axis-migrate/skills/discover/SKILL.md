@@ -49,7 +49,7 @@ Read the PNGs → PNG findings.** Both count the same; neither resolves anything
   first|largest|central`). Record a **view finding**.
 - **Codex desktop**: the same in the in-app browser through browser use. Record a **view finding**.
 - **Everywhere**: **Read every PNG** `map.py inputs` lists (`discover/inputs_overview.png`, `grid_corners.png`,
-  `legacy_rasters.png`; Codex has no Read tool: open each PNG with `view_image`).
+  `legacy_rasters.png` or `legacy_vectors.png`; Codex has no Read tool: open each PNG with `view_image`).
 
 Checklist (views and PNGs alike):
 - every input covers the area of interest; quantify slivers outside (`extent_relations`);

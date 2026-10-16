@@ -160,6 +160,14 @@ def test_map_inputs_pngs_registered_and_deterministic(tmp_path):
     assert sorted(p["path"] for p in inv["map"]["pngs"]) == sorted(f"discover/{n}" for n in names)
     run(MAP, "inputs", mig)
     assert {n: (mig / "discover" / n).read_bytes() for n in names} == first
+    # the third PNG's other name from an earlier run is removed and unregistered
+    import scan as scan_mod
+    (mig / "discover" / "legacy_vectors.png").write_bytes(first["grid_corners.png"])
+    assert scan_mod.annotate(mig, "png", None, "discover/legacy_vectors.png", "legacy_vectors")[0] == 0
+    run(MAP, "inputs", mig)
+    assert not (mig / "discover" / "legacy_vectors.png").exists()
+    inv = json.loads((mig / "inventory.json").read_text())
+    assert sorted(p["path"] for p in inv["map"]["pngs"]) == sorted(f"discover/{n}" for n in names)
 
 
 def test_map_metrics_nodata_inside_aoi_and_cells_lost_along_a_family(tmp_path):

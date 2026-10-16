@@ -193,4 +193,6 @@ def test_maps_fall_back_to_on_disk_data_and_the_single_polygon_aoi(tmp_path):
     assert any("no dataset has role input" in m for m in ov["metrics"])
     assert ink(mig / "discover" / "inputs_overview.png") > 0.05
     assert "corners and centre" not in " ".join(pngs["grid_corners"]["metrics"])  # AOI windows, not corners
-    assert ink(mig / "discover" / "legacy_rasters.png") > 0.001  # says in words that nothing exists
+    assert ov["window"].startswith("AOI ds.zones")                                 # AOI first (map review C5)
+    assert ink(mig / "discover" / "legacy_vectors.png") > 0.001  # says in words that nothing exists
+    assert not (mig / "discover" / "legacy_rasters.png").exists()
