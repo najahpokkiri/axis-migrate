@@ -44,9 +44,18 @@ unescape() {
 }
 
 # ---- find migration/ -----------------------------------------------------------------------------------------
+# Git Bash on Windows: payload paths come as C:\a\b (a backslash is a separator there, so walking up must split on
+# it too, and C:\ / C:/ is absolute). On macOS and Linux a backslash is a file-name character: nothing changes.
+WIN=0
+if [ -n "${WINDIR:-}${SYSTEMROOT:-}" ]; then
+  case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) WIN=1 ;; esac
+fi
+winpath() {
+  if [ "$WIN" = 1 ]; then printf '%s' "$1" | tr '\\' '/'; else printf '%s' "$1"; fi
+}
 MIG=""
 walk() {  # $1 = a folder (or a path inside one that may not exist yet)
-  d="$1"
+  d="$(winpath "$1")"
   while [ -n "$d" ] && [ ! -d "$d" ]; do
     case "$d" in */*) d="${d%/*}" ;; *) d="" ;; esac
   done
@@ -77,8 +86,12 @@ if [ "$HOOK" != "stop_gate" ]; then   # Stop: payload cwd only
     for v in $(json_values "$key"); do
       [ -n "$MIG" ] && break
       mark_unsure "$v"
-      p="$(unescape "$v")"
-      case "$p" in /*) ;; *) p="${FIRST_CWD:-.}/$p" ;; esac
+      p="$(winpath "$(unescape "$v")")"
+      case "$p" in
+        /*) ;;
+        [A-Za-z]:/*) [ "$WIN" = 1 ] || p="${FIRST_CWD:-.}/$p" ;;
+        *) p="$(winpath "${FIRST_CWD:-.}")/$p" ;;
+      esac
       walk "$(dirname "$p")"
     done
   done

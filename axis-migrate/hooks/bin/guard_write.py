@@ -371,8 +371,11 @@ def decide(data: dict) -> tuple[str, str] | None:
     mig = hl.find_migration(data)
     if mig is None:
         for path, _ in targets:
-            if path.parent.exists():
-                mig = hl.find_migration_dir(path.parent)
+            anc = path.parent
+            while not anc.exists() and anc.parent != anc:   # Write creates missing folders: legacy/new/x.txt counts
+                anc = anc.parent
+            if anc.exists():
+                mig = hl.find_migration_dir(anc)
                 if mig:
                     break
     if mig is None:

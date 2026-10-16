@@ -104,7 +104,7 @@ def test_powershell_records_session(project):
 
 def test_translation_shapes():
     t = pwsh_cmd.translate("Copy-Item -LiteralPath:a,b -Destination:c; Rename-Item x\\y.txt z.txt", "/h")
-    assert t.argvs == [["cp", "a", "b", "c"], ["mv", "x\\y.txt", "x/z.txt"]]
+    assert t.argvs == [["cp", "a", "b", "c"], ["mv", "x\\y.txt", "x\\z.txt" if os.name == "nt" else "x/z.txt"]]
     t = pwsh_cmd.translate("Set-Content `\n  -Path p.txt -Value 'it''s'  # comment", "/h")
     assert t.argvs == [["tee", "p.txt"]]
     t = pwsh_cmd.translate("Get-Content ~/x; Get-Content $HOME\\y", "/h")
@@ -134,8 +134,9 @@ def test_classify_is_case_insensitive_on_windows(project, monkeypatch):
     rec = dict(ps_.record, input_exceptions=[p.upper() for p in ps_.record["input_exceptions"]])
     up = prot.ProtectedSet(project.mig, rec)
     assert up.classify(project.legacy / "03_INPUT" / "pop.tif") == "input"
-    monkeypatch.setattr(prot.os, "name", "posix")
-    assert prot.ProtectedSet(project.mig, rec).classify(project.legacy / "03_INPUT" / "pop.tif") == "protected"
+    if os.name != "nt":   # pathlib cannot pretend to be POSIX on real Windows
+        monkeypatch.setattr(prot.os, "name", "posix")
+        assert prot.ProtectedSet(project.mig, rec).classify(project.legacy / "03_INPUT" / "pop.tif") == "protected"
 
 
 # --- inline Python writing the records (Lux e2e: params.yaml rewritten by `python - <<EOF`) -------------------------
@@ -204,3 +205,19 @@ def test_every_hook_output_is_lf_only_with_known_fields(project, tmp_path):
         for script, data in cases:
             r = run_hook(script, data, env=env)
             _check_output(r.raw)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Git Bash on Windows: backslash payload paths through run-hook.sh")
+def test_run_hook_walks_backslash_paths(project, tmp_path):
+    """run-hook.sh finds migration/ from a C:-drive backslash path into a new legacy subfolder with the session cwd
+    elsewhere (it split paths on '/' only and took a drive path for a relative one, so it exited 0 without Python)."""
+    import shutil
+    import subprocess
+    from conftest import PLUGIN
+    other = tmp_path / "elsewhere"
+    other.mkdir()
+    data = tool_payload("PreToolUse", "Write", str(other),
+                        {"file_path": str(project.legacy / "new_folder" / "x.txt"), "content": "x"})
+    cp = subprocess.run([shutil.which("sh"), str(PLUGIN / "hooks" / "run-hook.sh"), "guard_write"],
+                        input=json.dumps(data).encode(), capture_output=True, cwd=str(other), timeout=60)
+    assert cp.returncode == 0 and '"deny"' in cp.stdout.decode(), cp.stderr.decode()

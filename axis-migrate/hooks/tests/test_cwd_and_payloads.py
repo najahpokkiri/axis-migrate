@@ -60,7 +60,7 @@ def test_codex_absolute_patch_paths(project):
 
 def test_migration_found_from_process_cwd(project, tmp_path):
     """stdin cwd outside the project (session root elsewhere), hook process in the project: still guarded."""
-    data = tool_payload("PreToolUse", "Bash", str(tmp_path), {"command": f"rm {project.legacy}/NOTES.txt"})
+    data = tool_payload("PreToolUse", "Bash", str(tmp_path), {"command": f"rm {project.legacy.as_posix()}/NOTES.txt"})
     r = run_hook("guard_bash.py", data, proc_cwd=str(project.root))
     assert r.decision == "deny"
 
@@ -114,3 +114,11 @@ def test_marker_dir_created_when_missing(project, tmp_path):
     d = codex("SessionStart", cwd=str(project.root))
     r = run_hook("session_start.py", d, env={"PLUGIN_ROOT": "/p", "PLUGIN_DATA": str(data_dir)})
     assert r.rc == 0 and json.loads((data_dir / "hooks-active.json").read_text())["harness"] == "codex"
+
+
+def test_write_into_a_new_legacy_subfolder_from_elsewhere(project, tmp_path):
+    """Write creates missing folders: legacy/<new>/x.txt from a session cwd outside the project is still a legacy
+    write (Windows e2e prep, 16 Oct: the lookup only tried the target's parent, which did not exist yet)."""
+    target = project.legacy / "new_folder" / "deeper" / "x.txt"
+    data = tool_payload("PreToolUse", "Write", str(tmp_path), {"file_path": str(target), "content": "x"})
+    assert run_hook("guard_write.py", data, proc_cwd=str(tmp_path)).decision == "deny"

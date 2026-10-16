@@ -29,7 +29,12 @@ def test_g1_new_input_file_denied(project):
 
 def test_g1_symlink_into_legacy_denied(project):
     link = project.mig / "analysis" / "link"
-    link.symlink_to(project.legacy / "05_TEMP")
+    try:
+        link.symlink_to(project.legacy / "05_TEMP")
+    except OSError:   # Windows without the symlink privilege: a junction, which any user can make
+        import subprocess
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(project.legacy / "05_TEMP")], check=True,
+                       capture_output=True)
     assert write(project, link / "01_mid.tif").decision == "deny"
 
 
