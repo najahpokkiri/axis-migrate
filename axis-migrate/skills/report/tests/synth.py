@@ -256,7 +256,7 @@ SHIFT_CHECKS = [
 
 def make_run(proj: dict, n: int = 1, *, compares: dict | None = None, skip_compare=(), visual="pass",
              flag: str | None = None, shift_new: bool = False, chain="chained", seal=True, display=True,
-             step_status: dict | None = None, plots=True) -> dict:
+             step_status: dict | None = None, plots=True, looked: bool = False) -> dict:
     """Build runs/<id>/ for the current project state. `compares` maps ds → (state, checks, reason_codes)."""
     mig = proj["migration"]
     leg = proj["legacy"]
@@ -389,6 +389,16 @@ def make_run(proj: dict, n: int = 1, *, compares: dict | None = None, skip_compa
                              "panel": "tile 1 diff", "location": None,
                              "note": "paired stripes on east edges" if is_flag else "no offset visible",
                              "model": "claude-test", "created_at": ENDED})
+            if looked and not is_flag:              # a Q-all receipt that says what was looked at (map/LOOK.md)
+                findings[-1].update(
+                    finding_id=f"vf-{dsid}-all", question_id="Q-all", panel="all", note="",
+                    plot=f"plots/{dsid}/{pngs[0]['name']}", plot_sha256=pngs[0]["sha256"],
+                    plots_seen=[{"plot": f"plots/{dsid}/{x['name']}", "plot_sha256": x["sha256"]} for x in pngs],
+                    looked=[{"check": c, "answer": "n/a" if c == "classes" else "ok", "where": "overview.png",
+                             "saw": f"{c} seen on overview.png",
+                             **({"number": {"name": "NoData cells inside the AOI", "value": 9179, "unit": "cells",
+                                            "computed_by": "map.py metrics"}} if c == "coverage" else {})}
+                            for c in ("place", "coverage", "edges", "values", "classes")])
     ac.dump_json(v / "visual-review.json", {"schema": "axis-migrate.visual-review.v1", "rubric_id": "rubric.v1",
                                             "rubric_sha256": "2" * 64, "findings": findings})
     ac.dump_json(v / "verdict.json", {"run_id": rid, "mode": chain, "pipeline": {"verdict": "see compare"}})

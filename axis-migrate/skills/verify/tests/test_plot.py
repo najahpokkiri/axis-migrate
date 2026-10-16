@@ -440,7 +440,10 @@ def test_q_all_receipt_and_review_status(shifted, tmp_path):
     partial = finding(shifted, "ds.r", question_id="Q-all", name="overview.png", panel="all", plots_seen=seen[:2])
     code, err = add(shifted, tmp_path, partial)
     assert code == plot.EXIT_REJECTED and "every plot" in err
-    full = finding(shifted, "ds.r", question_id="Q-all", name="overview.png", panel="all", plots_seen=seen)
+    full = finding(shifted, "ds.r", question_id="Q-all", name="overview.png", panel="all", plots_seen=seen,
+                   looked=[{"check": c, "answer": "ok", "where": "overview.png", "saw": f"{c}: seen on the overview",
+                            **({"number": {"name": "one-sided cells", "value": 3, "computed_by": "compare.py"}}
+                               if c == "edges" else {})} for c in plot.LOOK_CHECKS])
     code, err = add(shifted, tmp_path, full)
     assert code == 0, err
     st = plot.review_status(plot.Run(shifted))

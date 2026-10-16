@@ -328,3 +328,15 @@ def test_transform_phrase_sign():  # rehearsal D6: +y pixels = south on a north-
                                                "diagnostics": {"shift_px": [1, 2]}})
     assert "1 px east, 2 px south" in txt
     assert "north" not in txt.split("(")[0]
+
+
+def test_looked_line_per_dataset(proj):
+    """map/LOOK.md: the report quotes what each Q-all receipt says was looked at (index.html and REPORT.md)."""
+    proj.update(synth.make_run(proj, 1, looked=True))
+    code, rep, html = render(proj["migration"])
+    assert code == 0
+    line = ("place ✓ coverage ✓ edges ✓ values ✓ classes n/a — NoData cells inside the AOI: 9179 cells "
+            "(map.py metrics)")
+    assert html.count("looked: " + line) >= 1
+    md = (proj["migration"] / "report" / "REPORT.md").read_text(encoding="utf-8")
+    assert "## Visual review" in md and line in md

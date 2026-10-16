@@ -345,7 +345,7 @@ def map_views(project: Path, rd: Path, run_id: str, by_kind: dict, findings_by_d
                 "bbox": fmt((f.get("location") or {}).get("bbox")) if isinstance(f.get("location"), dict) and
                 (f.get("location") or {}).get("bbox") else None,
                 "crs": (f.get("location") or {}).get("crs") if isinstance(f.get("location"), dict) else None,
-                "note": f.get("note"), "status": status, "why": why,
+                "note": f.get("note"), "status": status, "why": why, "looked": vrc.looked_line(f.get("looked")),
                 "flag": f.get("answer") == "yes" and f.get("effect") == "flag"})
         n_view = sum(1 for r in receipts if r["kind"] == "view" and r["status"] == "counts")
         n_png = sum(1 for r in receipts if r["kind"] == "PNG" and r["status"] == "counts")

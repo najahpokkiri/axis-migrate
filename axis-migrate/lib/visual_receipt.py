@@ -794,3 +794,22 @@ def map_finding_problem(migration: Path, f: dict) -> str | None:
 if __name__ == "__main__":      # debugging aid: python3 visual_receipt.py <run_dir>
     rr = RunReceipts(Path(sys.argv[1]))
     print(json.dumps({"run_id": rr.run_id, "missing_reviews": rr.missing_reviews()}, indent=1))
+
+
+# ---- what a Q-all receipt says was looked at (skills/map/LOOK.md; validated by verify/plot.py review-add)
+LOOK_CHECKS = ("place", "coverage", "edges", "values", "classes")
+
+
+def looked_line(looked) -> str | None:
+    """'place ✓ coverage ✓ edges ✓ values ✓ classes n/a — <first number>' for the report; None without looked."""
+    if not isinstance(looked, list):
+        return None
+    mark = {"ok": "✓", "defect": "✗", "cannot_tell": "?", "n/a": "n/a"}
+    by = {x.get("check"): x for x in looked if isinstance(x, dict)}
+    head = " ".join(f"{c} {mark.get((by.get(c) or {}).get('answer'), '–')}" for c in LOOK_CHECKS)
+    num = next((x["number"] for x in looked if isinstance(x, dict) and isinstance(x.get("number"), dict)), None)
+    if num:
+        v = num.get("value")
+        head += f" — {num.get('name')}: " + (f"{v:g}" if isinstance(v, (int, float)) else str(v))
+        head += (f" {num['unit']}" if num.get("unit") else "") + f" ({num.get('computed_by')})"
+    return head

@@ -80,6 +80,8 @@ def view_receipt(doc: dict, ds: str, *, flag: bool = False, cells=("interior",),
     if fam == "raster":
         f["engine"] = "maplibre-gl-raster"
         f["cells_read"] = read
+    w = Path(mv["project"]).name.replace(".geolibre.json", "")
+    f["looked"] = [{"check": c, "answer": "ok", "where": w, "saw": "stand-in: " + c + " checked on " + w, **({"number": {"name": "cells valid on one side only", "value": 0, "computed_by": "test stand-in"}} if c == "edges" else {})} for c in ("place", "coverage", "edges", "values", "classes")]
     if flag:
         f.update(question_id="Q1" if fam == "vector" else "Q6", answer="yes", effect="flag",
                  category="boundary_stripes", layer="validity" if fam == "raster" else "new",

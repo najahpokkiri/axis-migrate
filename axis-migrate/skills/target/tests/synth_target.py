@@ -316,6 +316,7 @@ def receipts(run_dir: Path) -> None:
             continue
         f = {"dataset_id": ds, "question_id": "Q-all", "category": "none", "answer": "no", "effect": "none",
              "plot": seen[0]["plot"], "plot_sha256": seen[0]["plot_sha256"], "panel": "all",
+             "looked": [{"check": c, "answer": "ok", "where": Path(seen[0]["plot"]).name, "saw": "stand-in: " + c + " checked on " + Path(seen[0]["plot"]).name, **({"number": {"name": "cells valid on one side only", "value": 0, "computed_by": "test stand-in"}} if c == "edges" else {})} for c in ("place", "coverage", "edges", "values", "classes")],
              "note": "test stand-in receipt", "model": "test-stand-in", "plots_seen": seen,
              "finding_id": f"vf-{ds[3:]}-all", "run_id": run_dir.name}
         fp = run_dir.parent.parent / "analysis" / f"receipt-{ds}.json"

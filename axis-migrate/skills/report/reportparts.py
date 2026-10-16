@@ -574,6 +574,14 @@ def report_md(ctx: dict, mermaid: str) -> str:
                      f"{', '.join('`' + c + '`' for c in r['cites']) or '—'} |")
         L.append("")
     L += ["## Lineage", "", "```mermaid", mermaid, "```", ""]
+    looked = [(c["id"], r) for c in ctx["cards"] for r in (c.get("views") or {}).get("receipts") or []
+              if r.get("status") == "counts" and (r.get("looked") or r.get("flag"))]
+    if looked:
+        L += ["## Visual review", "", "What the reviewing model says it looked at (its receipts; model-written):", ""]
+        for ds, r in looked:
+            what = r["looked"] if r.get("looked") else (f"flag {r['question']} {r['category']}: {_md(r.get('note'))}")
+            L.append(f"- `{ds}` ({r['kind']} receipt): {_md(what)}")
+        L.append("")
     views = [(c["id"], c["views"]) for c in ctx["cards"] if c.get("views") and c["views"].get("tables")]
     if views:
         L += ["## Map views", ""]
@@ -589,7 +597,8 @@ def report_md(ctx: dict, mermaid: str) -> str:
           "- `parity.xlsx`: the same numbers as a workbook (values only)",
           "- `REPORT.json`: machine-readable status and the sha256 of every file in this folder",
           f"- evidence: `../runs/{ctx['run_id']}/verify/evidence.json`", "",
-          f"_Rendered by report.py from evidence `{ctx['evidence_id']}`; nothing in this file is model-written. "
+          f"_Rendered by report.py from evidence `{ctx['evidence_id']}`; nothing in this file is model-written except "
+          "the quoted visual-review lines. "
           "Agent notes, if any, are in index.html under \"Agent notes\"._", ""]
     return "\n".join(L)
 

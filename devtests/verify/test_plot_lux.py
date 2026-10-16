@@ -49,7 +49,8 @@ def q_all(run: Path, ds: str) -> dict:
     seen = [{"plot": f"plots/{ds}/{e['name']}", "plot_sha256": e["sha256"]} for e in d["png"]]
     return {"dataset_id": ds, "question_id": "Q-all", "category": "none", "answer": "no", "effect": "none",
             "plot": seen[0]["plot"], "plot_sha256": seen[0]["plot_sha256"], "panel": "all", "note": "",
-            "model": "devtest", "plots_seen": seen}
+            "model": "devtest", "plots_seen": seen,
+            "looked": [{"check": c, "answer": "ok", "where": Path(seen[0]["plot"]).name, "saw": "stand-in: " + c + " checked on " + Path(seen[0]["plot"]).name, **({"number": {"name": "cells valid on one side only", "value": 0, "computed_by": "test stand-in"}} if c == "edges" else {})} for c in ("place", "coverage", "edges", "values", "classes")]}
 
 
 @pytest.fixture(scope="module")

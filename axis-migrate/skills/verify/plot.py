@@ -1885,7 +1885,7 @@ def cmd_run(args) -> int:
 # =================================================================================================================
 FINDING_REQUIRED = ("dataset_id", "question_id", "category", "answer", "effect", "plot", "plot_sha256", "panel",
                     "note", "model")
-FINDING_OPTIONAL = ("finding_id", "run_id", "location", "plots_seen")
+FINDING_OPTIONAL = ("finding_id", "run_id", "location", "plots_seen", "looked")
 FINDING_ADDED = ("rubric_id", "rubric_sha256", "created_at")
 Q_ALL = "Q-all"
 FID_RE = re.compile(r"^vf-[A-Za-z0-9_.-]{1,64}$")
@@ -1915,6 +1915,92 @@ def _png_entry(doc: dict, plot: str, ds: str) -> dict | None:
         if e.get("name") == name:
             return e
     return None
+
+
+# ---- what was looked at (skills/map/LOOK.md): the five checks, each with where and what was seen
+LOOK_CHECKS = vrc.LOOK_CHECKS
+looked_line = vrc.looked_line
+LOOK_ANSWERS = ("ok", "defect", "cannot_tell", "n/a")
+LOOK_TEXT_MAX = 120
+VAGUE_RE = re.compile(r"^\W*((\w+\s+){0,3}?\w+\s*(:|\bis\b|\bare\b|\blooks?\b)\s*)?(all|everything)?\s*(green|white|equal|"
+                      r"same|identical|uniform( diff(erence)?)?|fine|ok|good|clean|right|correct|as expected|"
+                      r"nothing( found| to (see|flag))?|no (issues?|problems?|differences?)|looks? (right|fine|good|ok|"
+                      r"correct|the same|identical)|(the )?same|fine)\W*$", re.I)
+
+
+def looked_names(f: dict) -> set[str]:
+    """The names a `looked` entry may give as `where`: the views (overview, edges, cell-interior …) or PNGs
+    (overview.png …) the receipt itself cites."""
+    out = set()
+    for c in f.get("views_seen") or []:
+        if isinstance(c, dict) and isinstance(c.get("project"), str):
+            out.add(Path(c["project"]).name.replace(".geolibre.json", ""))
+    for c in f.get("plots_seen") or []:
+        if isinstance(c, dict) and isinstance(c.get("plot"), str):
+            n = Path(c["plot"]).name
+            out |= {n, n.removesuffix(".png")}
+    return out
+
+
+def looked_problems(looked: Any, names: set[str]) -> list[str]:
+    """A Q-all receipt's `looked`: every check of LOOK_CHECKS once; ok/defect with `where` (cited views or PNGs,
+    joined with '+') and `saw` (≤ 120 characters, more than 'all green'); cannot_tell/n/a with `why`; n/a only for
+    classes; at least one entry with number {name, value, unit?, computed_by}."""
+    shape = ('looked must be a list of {"check": place|coverage|edges|values|classes, "answer": ok|cannot_tell|n/a, '
+             '"where": "<a view or PNG this receipt cites>", "saw": "<what you saw, with where>", "number": '
+             '{"name", "value", "unit", "computed_by"}} — one per check (map/LOOK.md)')
+    if not isinstance(looked, list) or not all(isinstance(x, dict) for x in looked):
+        return [shape]
+    errs = []
+    got = [x.get("check") for x in looked]
+    if sorted(map(str, got)) != sorted(LOOK_CHECKS):
+        errs.append(f"looked needs each check exactly once: {', '.join(LOOK_CHECKS)} (got {got})")
+    n_num = 0
+    for x in looked:
+        c, a = x.get("check"), x.get("answer")
+        extra = sorted(set(x) - {"check", "answer", "where", "saw", "why", "number"})
+        if extra:
+            errs.append(f"looked {c}: unknown fields {extra}")
+        if a not in LOOK_ANSWERS:
+            errs.append(f"looked {c}: answer must be one of {LOOK_ANSWERS}")
+            continue
+        if a in ("ok", "defect"):
+            where = x.get("where")
+            parts = [w.strip() for w in where.split("+")] if isinstance(where, str) else []
+            if not parts or not all(parts):
+                errs.append(f"looked {c}: where names the view(s) or PNG(s) you looked at (cited by this receipt)")
+            elif names and not set(parts) <= names:
+                errs.append(f"looked {c}: where {sorted(set(parts) - names)} is not cited by this receipt "
+                            f"(one of {sorted(names)})")
+            saw = x.get("saw")
+            if not isinstance(saw, str) or not saw.strip() or len(saw) > LOOK_TEXT_MAX:
+                errs.append(f"looked {c}: saw is what you saw, 1–{LOOK_TEXT_MAX} characters")
+            elif VAGUE_RE.match(saw.strip()):
+                errs.append(f"looked {c}: {saw!r} says nothing a person can check: say what you saw where "
+                            "(e.g. 'one-cell blue ring along the west edge only in legacy: 0 cells per views.json')")
+        else:
+            why = x.get("why")
+            if not isinstance(why, str) or not why.strip() or len(why) > LOOK_TEXT_MAX:
+                errs.append(f"looked {c}: {a} needs why (1–{LOOK_TEXT_MAX} characters)")
+            if a == "n/a" and c != "classes":
+                errs.append(f"looked {c}: n/a is only for classes (continuous data); otherwise cannot_tell with why")
+        num = x.get("number")
+        if num is not None:
+            if not (isinstance(num, dict) and {"name", "value", "computed_by"} <= set(num)
+                    and set(num) <= {"name", "value", "unit", "computed_by"} and isinstance(num["name"], str)
+                    and num["name"].strip() and _finite(num["value"]) and isinstance(num["computed_by"], str)
+                    and num["computed_by"].strip() and (num.get("unit") is None or isinstance(num["unit"], str))):
+                errs.append(f"looked {c}: number is {{name, value (a number), unit?, computed_by (script or file)}}")
+            else:
+                n_num += 1
+    if not n_num and not errs:
+        errs.append("looked needs at least one number from a script (the one thing worth knowing, e.g. "
+                    '{"name": "NoData cells inside the AOI", "value": 9179, "unit": "cells", '
+                    '"computed_by": "views.json validity_counts"})')
+    if any(x.get("answer") == "defect" for x in looked):
+        errs.append("looked has a defect: record it as a flag receipt (question_id Q1…Q7, answer yes, effect flag), "
+                    f"not as {Q_ALL} 'nothing found'")
+    return errs
 
 
 def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple[list[str], dict | None]:
@@ -2026,6 +2112,10 @@ def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple
         if f["panel"] != "all":
             return [f"{Q_ALL}: panel must be 'all'"], None
         out["plots_seen"] = sorted(seen, key=lambda s: s["plot"])
+        lp = looked_problems(f.get("looked"), looked_names(f))
+        if lp:
+            return lp, None
+        out["looked"] = f["looked"]
     else:
         allowed = (qs[q].get("plots") or {}).get(fam, [])
         if kind not in allowed:
@@ -2034,6 +2124,7 @@ def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple
             return [f"panel {f['panel']!r} is not a panel of {f['plot']}: {entry.get('panel_names')}"], None
         if f.get("plots_seen") is not None:
             return ["plots_seen is only for a Q-all receipt"], None
+
     loc = f.get("location")
     if loc is None:
         if ans == "yes":
@@ -2067,7 +2158,7 @@ def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple
 
 # ---- view receipts (GeoLibre map views, skills/map/views.py; acceptance rule in lib/visual_receipt.py)
 VIEW_REQUIRED = ("dataset_id", "question_id", "category", "answer", "effect", "view", "views_seen", "note", "model")
-VIEW_OPTIONAL = ("finding_id", "run_id", "location", "engine", "cells_read", "layer", "observations")
+VIEW_OPTIONAL = ("finding_id", "run_id", "location", "engine", "cells_read", "layer", "observations", "looked")
 VIEW_ADDED = FINDING_ADDED + ("receipt",)
 VIEW_LAYERS = ("legacy", "new", "diff", "validity", "zones")
 OBS_MAX = 20
@@ -2178,11 +2269,15 @@ def validate_view_finding(run: Run, f: dict, rubric: dict, existing_ids: set) ->
     probs = vrc.check_view_on_disk(run.dir, run.run_id, f, fam)
     if probs:
         return probs, None
+    if q == Q_ALL:
+        lp = looked_problems(f.get("looked"), looked_names(f))
+        if lp:
+            return lp, None
     out = {k: f[k] for k in VIEW_REQUIRED}
     out["views_seen"] = sorted(f["views_seen"], key=lambda s: s["project"])
     out["engine"] = f.get("engine")
     out["cells_read"] = sorted(f.get("cells_read") or [], key=lambda c: str(c["cell"]))
-    for k in ("location", "layer", "observations"):
+    for k in ("location", "layer", "observations") + (("looked",) if q == Q_ALL else ()):
         if f.get(k) is not None:
             out[k] = f[k]
     out["run_id"] = run.run_id
@@ -2419,6 +2514,56 @@ def _first_plot(doc: dict) -> str | None:
     return names[0] if names else None
 
 
+def looked_template(run: Run, ds: str, fam: str, names: list[str]) -> list[dict]:
+    """The five checks prefilled for a Q-all receipt: where (from the views or PNGs the receipt cites) and the
+    numbers compare already has; answer and saw stay empty (review-add refuses them until you fill them)."""
+    res = run.results([ds]).get(ds) or {}
+    chk = {c.get("id"): c for c in res.get("checks") or [] if isinstance(c, dict)}
+    spec = (run.datasets.get(ds) or {}).get("compare") or {}
+    categorical = bool(spec.get("categorical")) or spec.get("measure") in ("categorical", "mask")
+
+    def first(*cands):
+        for c in cands:
+            if all(x in names for x in c.split("+")):
+                return c
+        return names[0] if names else ""
+
+    def num(cid, name, field="value", unit=None):
+        v = (chk.get(cid) or {}).get(field)
+        if not _finite(v):
+            return None
+        return {"name": name, "value": v, **({"unit": unit} if unit else {}),
+                "computed_by": f"compare.py {cid}.{field} (verify/compare/{ds}.json)"}
+    cell = next((n for n in names if n.startswith("cell-")), None)
+    if fam == "raster":
+        where = {"place": first("overview", "overview.png"),
+                 "coverage": first("nodata", "overview", "mask_diff.png"),
+                 "edges": first("edges", "mask_diff.png"),
+                 "values": first(f"overview+{cell}" if cell else "overview", "overview.png+hist.png", "overview.png"),
+                 "classes": first("overview", "overview.png")}
+        vm = (chk.get("raster.values") or {}).get("metric") or ""
+        nums = {"coverage": num("raster.mask", "valid cells in new", "new", "cells"),
+                "edges": num("raster.mask", "cells valid on one side only", "value", "cells"),
+                "values": num("raster.values", f"raster.values {vm}".strip())}
+    else:
+        where = {"place": first("overview", "overlay.png"), "coverage": first("overview", "overlay.png"),
+                 "edges": first("worst", "overview", "worst_features.png", "overlay.png"),
+                 "values": first("overview", "per_feature.png", "overlay.png"),
+                 "classes": first("overview", "overlay.png")}
+        nums = {"coverage": num("vector.feature_count", "features in new", "new", "features"),
+                "edges": num("vector.hausdorff_m", "largest Hausdorff distance", "value", "m"),
+                "classes": num("vector.key_set", "keys missing + extra", "value", "keys")}
+    out = []
+    for c in LOOK_CHECKS:
+        e = {"check": c, "answer": "", "where": where[c], "saw": ""}
+        if c == "classes" and fam == "raster" and not categorical:
+            e = {"check": c, "answer": "n/a", "why": "continuous values: no classes"}
+        if nums.get(c):
+            e["number"] = nums[c]
+        out.append(e)
+    return out
+
+
 def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = None) -> tuple[list[dict], list[str]]:
     """(prefilled Q-all receipts, skipped-dataset notes) for every compared raster/vector dataset that still lacks a
     complete receipt (or the named ones). kind auto = view when views.json has views of the dataset, else png. Shas
@@ -2470,7 +2615,9 @@ def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = N
             out.append({**base, "panel": "all", "plot": f"plots/{ds}/{_first_plot(doc)}",
                         "plot_sha256": next(s["plot_sha256"] for s in seen
                                             if s["plot"] == f"plots/{ds}/{_first_plot(doc)}"),
-                        "plots_seen": sorted(seen, key=lambda s: s["plot"]), "note": "", "model": ""})
+                        "plots_seen": sorted(seen, key=lambda s: s["plot"]),
+                        "looked": looked_template(run, ds, e["family"], [Path(x["plot"]).name for x in seen]),
+                        "note": "", "model": ""})
             continue
         # view
         if entry is None:
@@ -2506,6 +2653,8 @@ def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = N
         if fam == "raster":
             sk["engine"] = vrc.ENGINE_GPU
             sk["cells_read"] = [{"cell": c, "legacy": "", "new": ""} for c in sorted(cells)]
+        sk["looked"] = looked_template(run, ds, fam, [Path(r["project"]).name.replace(".geolibre.json", "")
+                                                      for r in refs])
         out.append({**sk, "note": "", "model": ""})
     return out, skipped
 
@@ -2518,7 +2667,8 @@ def cmd_review_template(args) -> int:
         print(f"skipped {s}", file=sys.stderr)
     print(f"{len(items)} prefilled receipt(s). A skipped receipt ('skipped: identical (<sha256>)': no views, "
           "nothing to show) needs only model. Q-all receipts: fill answer (\"no\" only after looking at every cited plot or "
-          "view), model, note (may stay empty for no); view receipts: each cells_read legacy/new as the popup shows "
+          "view), looked (per check: answer ok|cannot_tell|n/a and saw = what you saw where, never 'all green'; keep "
+          "or correct the numbers; map/LOOK.md), model, note (may stay empty for no); view receipts: each cells_read legacy/new as the popup shows "
           f"them (null = nodata). layer: null or one of {', '.join(VIEW_LAYERS)} (several joined with '+', e.g. "
           "legacy+new). A defect is a separate receipt with question_id Q1…Q7, answer yes, effect flag. Then "
           "plot.py review-add --run <run> --json <file>.", file=sys.stderr)

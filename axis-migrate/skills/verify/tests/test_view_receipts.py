@@ -341,6 +341,17 @@ def test_view_receipt_after_seal_goes_to_amend(same, tmp_path):
 
 
 # ------------------------------------------------------------------------------------------------ Q-all templates
+def fill_looked(sk: dict) -> dict:
+    """What a reviewer does with the template's looked: answer and say what was seen where."""
+    out = []
+    for x in sk["looked"]:
+        x = dict(x)
+        if x["answer"] == "":
+            x.update(answer="ok", saw=f"{x['check']}: legacy and new drawn alike on {x['where']}")
+        out.append(x)
+    return dict(sk, looked=out)
+
+
 def test_png_template_is_a_ready_q_all_receipt(same, tmp_path):
     run, _ = same
     assert plot.review_template(plot.Run(run), "png")[1] == ["ds.r: no plots (plot.py run --run <dir> --dataset ds.r)"]
@@ -353,7 +364,12 @@ def test_png_template_is_a_ready_q_all_receipt(same, tmp_path):
                                        for e in pj["png"]), key=lambda s: s["plot"])
     assert sk["plot"] == "plots/ds.r/overview.png" and sk["panel"] == "all" and sk["question_id"] == "Q-all"
     refused(run, tmp_path, sk, "answer must be")                 # left unfilled: refused
-    code, err = add(run, tmp_path, dict(sk, answer="no", model="test-model"))
+    assert [x["check"] for x in sk["looked"]] == list(plot.LOOK_CHECKS)
+    lk = {x["check"]: x for x in sk["looked"]}
+    assert lk["edges"]["where"] == "mask_diff.png" and lk["edges"]["number"]["value"] == 0
+    assert lk["classes"] == {"check": "classes", "answer": "n/a", "why": "continuous values: no classes"}
+    refused(run, tmp_path, dict(sk, answer="no", model="test-model"), "looked place: answer must be")
+    code, err = add(run, tmp_path, dict(fill_looked(sk), answer="no", model="test-model"))
     assert code == 0, err
     assert plot.review_status(plot.Run(run))["lacking"] == []
     assert plot.review_template(plot.Run(run), "png") == ([], [])  # nothing left to template
@@ -370,7 +386,8 @@ def test_view_template_cites_required_views_and_cells(same, tmp_path):
     cells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
     assert [c["cell"] for c in sk["cells_read"]] == sorted(cells)
     refused(run, tmp_path, dict(sk, answer="no", model="m"), "views.json has")   # cell values not read yet
-    filled = dict(sk, answer="no", model="test-model",
+    assert {x["check"]: x.get("where") for x in sk["looked"]}["edges"] == "edges"
+    filled = dict(fill_looked(sk), answer="no", model="test-model",
                   cells_read=[{"cell": c["cell"], "legacy": vb._popup(cells[c["cell"]]["legacy_value"]),
                                "new": vb._popup(cells[c["cell"]]["new_value"])} for c in sk["cells_read"]])
     code, err = add(run, tmp_path, filled)
@@ -393,7 +410,7 @@ def test_view_template_refuses_nothing_found_with_one_sided_cells(shifted, capsy
 
 def test_template_auto_picks_views_and_layer_accepts_joined_values(same, tmp_path):
     run, doc = same
-    sk = plot.review_template(plot.Run(run))[0][0]               # auto: views.json has ds.r → a view receipt
+    sk = fill_looked(plot.review_template(plot.Run(run))[0][0])  # auto: views.json has ds.r → a view receipt
     assert "views_seen" in sk and "plots_seen" not in sk and sk["layer"] is None
     e = vb.entry(doc, "ds.r")
     cells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
@@ -404,3 +421,30 @@ def test_template_auto_picks_views_and_layer_accepts_joined_values(same, tmp_pat
     code, err = add(run, tmp_path, dict(sk, answer="no", model="test-model", layer="legacy+new"))
     assert code == 0, err
     assert stored(run)[0]["layer"] == "legacy+new"
+
+
+def test_q_all_needs_looked_with_five_checks_and_more_than_all_green(same, tmp_path):
+    """map/LOOK.md: 'nothing found' says what was looked at — the five checks, where (a cited view), what was seen,
+    one number; 'all green' alone is refused; a defect is a flag, not Q-all."""
+    run, doc = same
+    sk = vb.view_receipt(doc, "ds.r")
+    no = {k: v for k, v in sk.items() if k != "looked"}
+    refused(run, tmp_path, no, "looked must be a list")
+    four = dict(sk, looked=sk["looked"][:4])
+    refused(run, tmp_path, four, "each check exactly once")
+    green = dict(sk, looked=[dict(x, saw="Edges are all green.") if x["check"] == "edges" else x
+                             for x in sk["looked"]])
+    refused(run, tmp_path, green, "says nothing a person can check")
+    elsewhere = dict(sk, looked=[dict(x, where="worst.png") if x["check"] == "place" else x for x in sk["looked"]])
+    refused(run, tmp_path, elsewhere, "is not cited by this receipt")
+    nonum = dict(sk, looked=[{k: v for k, v in x.items() if k != "number"} for x in sk["looked"]])
+    refused(run, tmp_path, nonum, "at least one number")
+    defect = dict(sk, looked=[dict(x, answer="defect") if x["check"] == "edges" else x for x in sk["looked"]])
+    refused(run, tmp_path, defect, "record it as a flag receipt")
+    na = dict(sk, looked=[{"check": "place", "answer": "n/a", "why": "x"} if x["check"] == "place" else x
+                          for x in sk["looked"]])
+    refused(run, tmp_path, na, "n/a is only for classes")
+    code, err = add(run, tmp_path, sk)
+    assert code == 0, err
+    assert [x["check"] for x in stored(run)[0]["looked"]] == list(plot.LOOK_CHECKS)
+    assert plot.looked_line(stored(run)[0]["looked"]).startswith("place ✓ coverage ✓ edges ✓ values ✓ classes ✓ — ")

@@ -29,6 +29,7 @@ for ds, spec in answers.items():
         findings.append({"dataset_id": ds, "question_id": "Q-all", "answer": "no", "effect": "none", "category": "none",
                          "panel": "all", "plot": rel(first), "plot_sha256": pngs[first]["sha256"],
                          "plots_seen": [{"plot": rel(n), "plot_sha256": pngs[n]["sha256"]} for n in sorted(pngs)],
+                         "looked": [{"check": c, "answer": "ok", "where": first, "saw": "stand-in: " + c + " checked on " + first, **({"number": {"name": "cells valid on one side only", "value": 0, "computed_by": "test stand-in"}} if c == "edges" else {})} for c in ("place", "coverage", "edges", "values", "classes")],
                          "note": "", "model": model})
         continue
     for a in spec:
