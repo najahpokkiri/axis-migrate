@@ -24,38 +24,33 @@ changed, contract changed, checker fault) is never fixed by changing pipeline co
 ## 2 Plots
 `plot.py run --run <run> [--dataset ds.x]…` writes `verify/plots/<ds>/*.png` + `plots.json` for every compare result
 (also when the new output is missing or the grid gate failed: it draws what exists and says what is missing).
-Raster: `overview.png` (legacy | new | diff; ONE shared colour scale; diff orange = new larger, purple = legacy larger,
-black/dark grey = valid on one side only; zone boundaries green), `mask_diff.png`, `hist.png`, `worst_tiles.png`
+Raster: `overview.png` (legacy | new | diff on one shared scale; colours: map/LOOK.md §2), `mask_diff.png`,
+`hist.png`, `worst_tiles.png`
 (native resolution, cell grid; `grid_overlay` mode draws both grids when the grid gate failed). Vector: `overlay.png`,
 `per_feature.png`, `worst_features.png`. Table: `residuals.png`. A plot that would show nothing (no differing cell or
 key) is not drawn; `plots.json` lists it under `omitted`. Plots are evidence about verdicts, never inputs.
 Always run it: the plots are the look's fallback and the report and evals use them, also when you look on the map.
 
 ## 3 Look (mandatory for every compared raster and vector dataset)
-**Primary where a browser pane exists: the map views → view receipts. Fallback (terminal, headless, evals): the PNG
-plots → PNG receipts.** Both count the same, a flag has the same effect, the report lists both, and the Stop gate
-refuses to end the turn while a compared dataset of the latest run has neither. Viewport, screenshot and readiness
-rules: map SKILL §2–3.
+**Look as `$P/skills/map/LOOK.md` says** (views on desktop, PNGs headless; the five checks; one chat block per
+dataset). View and PNG receipts count the same, a flag has the same effect, the report lists both, and the Stop gate
+refuses to end the turn while a compared dataset of the latest run has neither.
 **Nothing to show**: `views.py run` builds no views for a dataset whose new output is identical to legacy (compare
 `CANDIDATE_IDENTICAL_TO_REFERENCE`) or byte-equal to one already reviewed with nothing found in an earlier run;
 views.json lists it under `skipped` as `skipped: identical (<sha256 of the new output>)`. Do not open anything for
 it: review-template prints `{"dataset_id", "skipped": "skipped: identical (<sha256>)", "model"}`; fill `model` and
 review-add it (accepted only while the new output's bytes, hashed again, are that sha). A PASS_EXACT dataset that is
 not identical gets one overview and one cell; a dataset with max |new − legacy| = 0 gets no `worst` view.
-- **Claude desktop** (primary): `map` skill (`views.py run`, `start.py migration`), `views.py list --run <run>
-  --json` once (every URL, cell and value), `resize_window` 1280×960, then per view: navigate, wait for "axis-map:
-  ready", one screenshot at scale 1; for a `cell-<id>` project click the "click centre" the ready line gives and read
-  legacy/new from the popup with `get_page_text`. The GPU engine is already set; no dialog. Record a **view receipt**.
-- **Codex desktop** (primary): the same in the in-app browser through browser use. Record a **view receipt**.
-- **Fallback — terminal, no pane, headless, evals**: **PNG receipts** (steps 1–5); you still Read the PNGs yourself.
+Desktop: `views.py run --run <run>`, `start.py migration`, `views.py list --run <run> --json`, map SKILL §2–3 →
+**view receipt** (step 6). Headless: Read the PNGs → **PNG receipts** (steps 2–5).
 
 1. `plot.py review-status --run <run>` lists what still lacks a receipt and which questions are missing;
    `plot.py review-template --run <run> [--dataset <ds>] [--kind view|png]` prints the receipts prefilled (shas,
    views or plots seen, engine, cells to read, allowed values): fill in only what you saw, never copy it unseen.
 2. (PNG fallback) **Read every PNG** of the dataset (Read tool on `migration/runs/<id>/verify/plots/<ds>/<name>.png`;
    Codex: `view_image`). Take `plot_sha256`, `panel_names`, `crs` and `extent` from `plots.json`.
-3. Answer every rubric question of `$P/skills/verify/rubric.v1.yaml` that applies to the family (raster Q1, Q2, Q4,
-   Q5, Q6, Q7; vector Q1, Q3, Q4), from the plots the rubric names, following its `look` guidance. Yes means
+3. Answer the five checks (LOOK.md §3) and, for a defect, the rubric question of `$P/skills/verify/rubric.v1.yaml`
+   it is (raster Q1, Q2, Q4, Q5, Q6, Q7; vector Q1, Q3, Q4), from the plots the rubric names. Yes means
    **defect present**. Answer from what you see, not from the verdict printed in the title; a failing check does not
    make every question yes, a passing one does not make them no. `cannot_tell` is allowed and is listed as "not
    visually assessed" (it is not a receipt).
@@ -74,7 +69,8 @@ not identical gets one overview and one cell; a dataset with max |new − legacy
 5. **Looked, nothing found**: when every applicable question is no, one receipt per dataset is enough:
    `{"dataset_id": "ds.x", "question_id": "Q-all", "answer": "no", "effect": "none", "category": "none",
    "panel": "all", "plot": "plots/ds.x/overview.png", "plot_sha256": "…", "plots_seen": [{"plot": "…", "plot_sha256":
-   "…"}, … every png of the dataset], "note": "", "model": "…"}`. Use it only after reading every listed PNG.
+   "…"}, … every png of the dataset], "looked": [… the five checks, LOOK.md §8], "note": "", "model": "…"}`. Use it
+   only after reading every listed PNG; `review-add` refuses it without `looked`.
 6. **View receipt** (same command; it has `view` instead of `plot`):
    ```json
    {"dataset_id": "ds.x", "question_id": "Q6", "answer": "yes", "effect": "flag", "category": "boundary_stripes",
@@ -90,7 +86,8 @@ not identical gets one overview and one cell; a dataset with max |new − legacy
    worst; `omitted_views` are not required) and the `cell-<id>` project of every cell read, each sha equal to views.json and to the file; rasters need `engine: maplibre-gl-raster` and at
    least one cell, values as the popup shows them (checked to ~3 significant figures; null = nodata); a yes needs
    `location` (lon/lat), a note and `observations` with numbers. Nothing found = one `Q-all` view receipt with answer
-   no, refused while views.json counts cells valid on one side only (validity 1/2): flag those instead. A view
+   no, with `looked` (LOOK.md §8), refused while views.json counts cells valid on one side only (validity 1/2):
+   flag those instead. A view
    project whose bytes change after the review stops counting.
 7. Before sealing, receipts go to `verify/visual-review.json`. After the run is sealed, `review-add` appends to
    `runs/<id>/amend/visual-review.json` and calls `report/seal.py <migration> --run <id> --amend` itself (exit 4 =

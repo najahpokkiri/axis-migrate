@@ -26,7 +26,8 @@ description: Use first, before the migrate skill (this is the Codex entry point 
    - `run_local.py` when `--doctor` reports strace unusable inside the sandbox (ptrace), otherwise runs are capped.
    If the person refuses, stop and quote the one-line FAIL the script printed; never fall back to another way.
 3. **Flow.** Read `<P>/CODEX.md`, then follow `<P>/skills/migrate/SKILL.md` exactly (plan and build detail in
-   `<P>/skills/migrate/BUILD.md`, maps in `<P>/skills/map/SKILL.md` where it exists). Hook or script refusals are
+   `<P>/skills/migrate/BUILD.md`, maps in `<P>/skills/map/SKILL.md` where it exists, how to look at
+   maps and PNGs in `<P>/skills/map/LOOK.md`). Hook or script refusals are
    final: report them, never work around them.
 4. **Codex differences, everywhere in the skills.** AskUserQuestion → `request_user_input_async` (options) when it
    exists, else one plain-text question with numbered options, recommended first, plus "Don't know"; then stop and

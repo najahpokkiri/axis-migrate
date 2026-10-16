@@ -39,25 +39,10 @@ $AXPY $D/map.py inputs migration                               # always: the PNG
 $AXPY $D/map.py metrics migration                              # always: discover/metrics.json, the numbers to cite
 $AXPY ${CLAUDE_PLUGIN_ROOT}/skills/map/views.py inputs migration   # with a map pane: GeoLibre views of the same data
 ```
-**Primary where a browser pane exists: the map views → view findings. Everywhere (also terminal, headless, evals):
-Read the PNGs → PNG findings.** Both count the same; neither resolves anything.
-- **Claude desktop**: `map` skill §0 and §2–3 (`start.py migration`, then `views.py inputs-url migration --view
-  inputs-overview` → `mcp__Claude_Browser__preview_start {url}`, then `resize_window {width: 1280, height: 960}`);
-  wait for the page text "axis-map: ready" (the page sets the GPU engine itself); `views.py list --inputs migration
-  --json` gives every URL, cell and feature; open each `grid-<family>` view (bookmarks = the five `grid_corners` windows) and identify at
-  least the listed cells (`--dataset <ds> --cell max|aoi-edge|interior`) and features (`--feature
-  first|largest|central`). Record a **view finding**.
-- **Codex desktop**: the same in the in-app browser through browser use. Record a **view finding**.
-- **Everywhere**: **Read every PNG** `map.py inputs` lists (`discover/inputs_overview.png`, `grid_corners.png`,
-  `legacy_rasters.png` or `legacy_vectors.png`; Codex has no Read tool: open each PNG with `view_image`).
-
-Checklist (views and PNGs alike):
-- every input covers the area of interest; quantify slivers outside (`extent_relations`);
-- mixed CRS or units (degrees vs metres; nominal vs real cell size; documented resolution vs the grid);
-- grid families and offsets: aligned rasters share one set of cell edges (`grid_corners.png`, the `grid-<family>`
-  view's cell-edge layers); a second, shifted set of edges is a misalignment (half a cell is enough);
-- layers reaching past the area of interest, holes, NoData patches inside it, partial thematic coverage;
-- value ranges against units or legends; intermediates and finals that look empty or saturated.
+**Look as `${CLAUDE_PLUGIN_ROOT}/skills/map/LOOK.md` says** (where, the five checks, one block per dataset in
+chat; here: `inputs-overview` + one `grid-<family>` per family, or the PNGs `map.py inputs` lists, and one cell per
+raster and one feature per vector read). Desktop: `start.py migration`, `views.py list --inputs migration --json`
+(every URL, cell and feature), map skill §2–3. View and PNG findings count the same; neither resolves anything.
 
 Record each observation with a number computed by a script: first `discover/metrics.json` (NoData and valid cells
 inside the AOI per raster, valid cells lost/gained between family members, features not touching the AOI;

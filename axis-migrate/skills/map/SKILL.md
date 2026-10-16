@@ -77,13 +77,12 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
    list` / `views.json`: `legacy_value`/`new_value` (the popup rounds to about 3 significant figures), `row`/`col`
    on legacy.tif, `new_row`/`new_col` on new.tif, `grid_row`/`grid_col` on diff.tif and validity.tif, `validity`. A
    mismatch means you are on the wrong cell or the wrong layer: say so.
-5. **Colours**: legacy and new share one viridis scale (p2/p98 of both sides); diff is PuOr reversed on ±max|d|
-   (orange = new larger, purple = legacy larger, transparent = equal or nodata); validity is blue = legacy only,
-   orange = new only, green = both, transparent = neither. The caption in the top-left corner of the map names the
-   dataset · view · each visible layer with its scale · display only, and follows your layer toggles: quote it
-   rather than describing colours from memory. Basemap is off. A "Diagnostics: 1" badge with the luma.gl
-   warning "Binding sampler not set" comes from the GPU engine and is harmless.
-6. A screenshot is for you, not evidence; the receipt cites projects, shas and popup values.
+5. **Colours and the caption**: `LOOK.md` §2 (blue legacy only, orange new only, green both; the top-left caption
+   names dataset · view · visible layers with their scale and follows your toggles). Basemap is off. A
+   "Diagnostics: 1" badge with the luma.gl warning "Binding sampler not set" comes from the GPU engine and is
+   harmless.
+6. A screenshot is for you, not evidence; the receipt cites projects, shas and popup values. What to check and
+   what to say in chat: `LOOK.md` §3 and §7.
 
 ## 4 What each view is for
 - `overview`: legacy and new over the whole extent (toggle new off to see legacy).

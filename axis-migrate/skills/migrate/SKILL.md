@@ -38,10 +38,8 @@ anything in it. Codex: `$P` is the folder holding `.codex-plugin/plugin.json`; s
 
 - Files the person reads (`migration/graph.md`, input map PNGs, `plan.md`, `confirm_all.md`, `report/REPORT.md`) go
   in the file pane (Claude desktop `mcp__ccd_view__show_pane`; Codex, terminal: link the path), before any question.
-- Only the map uses the browser (skill `map` §2–3: `resize_window` 1280×960 once, wait for "axis-map: ready", one
-  scale-1 screenshot per view, values from page text; no fixed waits, nudges or engine dialog; a `skipped: identical`
-  dataset needs only the receipt `review-template` prints). Graph editor only on request; never write a server
-  token in chat. No hosted Artifact (customer data) unless the person opts in after report SKILL §Publishing.
+- Only the map uses the browser. Look at maps and PNGs as `$P/skills/map/LOOK.md` says. Graph editor only on
+  request; never write a server token in chat. No hosted Artifact (customer data) unless the person opts in after report SKILL §Publishing.
 
 ## Flow (follow the skills in this order; each SKILL.md has the exact commands)
 
@@ -54,7 +52,8 @@ anything in it. Codex: `$P` is the folder holding `.codex-plugin/plugin.json`; s
    chosen`, ask once: "Local only (Recommended): runs stay on this machine, max rung as doctor says" / "E2B sandbox,
    bring your own key: Linux with strace, uploads only the declared inputs after you see the list"; store it with
    `--doctor --record-sandbox local|e2b`. Never ask for a key in chat (skill `run`, §E2B). Codex: start skill first.
-1. **Discover** — skill `discover`: scan, input map (look at every PNG and record findings with numbers), lineage →
+1. **Discover** — skill `discover`: scan, input map (`map/LOOK.md`; findings with numbers
+   from `discover/metrics.json`), lineage →
    `graph.json`; `"$P/scripts/axpy" "$P/skills/report/graphview.py" md migration` (again after every `graph.py
    apply`) and show `migration/graph.md` in the file pane (§Showing).
 2. **Investigate and interview** — skill `interview`: fill `params.yaml` for every output-changing parameter with
