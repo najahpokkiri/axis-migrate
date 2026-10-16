@@ -1,6 +1,7 @@
 """seal.py: evidence.json, ids, read-only verify/, index line, amendments, NaN refusal (07 §3.2–3.5, test 16)."""
 from __future__ import annotations
 
+import shutil
 import json
 import os
 import subprocess
@@ -15,6 +16,7 @@ import synth
 
 HERE = Path(__file__).resolve().parent
 AXPY = HERE.parents[2] / "scripts" / "axpy"
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 
 
 def test_evidence_shape_and_ids(sealed):
@@ -46,7 +48,7 @@ def test_evidence_shape_and_ids(sealed):
 
 def test_verify_is_read_only_and_seal_runs_once(sealed):
     v = sealed["run_dir"] / "verify"
-    assert not os.access(v / "evidence.json", os.W_OK) or os.geteuid() == 0
+    assert not os.access(v / "evidence.json", os.W_OK) or getattr(os, "geteuid", lambda: 1)() == 0
     assert not (v.stat().st_mode & 0o222)
     with pytest.raises(sealmod.SealError):
         sealmod.seal(sealed["migration"], sealed["run_id"])
@@ -54,11 +56,11 @@ def test_verify_is_read_only_and_seal_runs_once(sealed):
 
 def test_cli_exit_codes(proj):
     r = synth.make_run(proj, 1, seal=False, display=False)
-    out = subprocess.run([str(AXPY), str(HERE.parent / "seal.py"), str(proj["migration"]), "--run", r["run_id"],
+    out = subprocess.run([*AXPY_CMD, str(HERE.parent / "seal.py"), str(proj["migration"]), "--run", r["run_id"],
                           "--json"], capture_output=True, text=True)
     assert out.returncode == 0, out.stderr
     assert json.loads(out.stdout)["evidence_id"].startswith("ev:")
-    again = subprocess.run([str(AXPY), str(HERE.parent / "seal.py"), str(proj["migration"]), "--run", r["run_id"]],
+    again = subprocess.run([*AXPY_CMD, str(HERE.parent / "seal.py"), str(proj["migration"]), "--run", r["run_id"]],
                            capture_output=True, text=True)
     assert again.returncode == 2 and "already sealed" in again.stderr
 

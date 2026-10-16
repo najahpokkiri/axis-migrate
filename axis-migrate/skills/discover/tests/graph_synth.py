@@ -10,6 +10,7 @@ Steps: m01_zones_edit (manual, keep_legacy), s01_clip, s02_mask, s03_stats, s03b
 """
 from __future__ import annotations
 
+import shutil
 import json
 import os
 import subprocess
@@ -23,6 +24,7 @@ GRAPH_PY = DISCOVER / "graph.py"
 SERVER_PY = DISCOVER / "graph_server.py"
 HOOK_PY = PLUGIN / "hooks" / "bin" / "graph_changed.py"
 AXPY = PLUGIN / "scripts" / "axpy"
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 
 if str(DISCOVER) not in sys.path:
     sys.path.insert(0, str(DISCOVER))
@@ -124,7 +126,7 @@ def run_cli(*args: str, stdin: str | None = None, env: dict | None = None, timeo
     """Run graph.py under the plugin interpreter (axpy)."""
     e = dict(os.environ)
     e.update(env or {})
-    return subprocess.run([str(AXPY), str(GRAPH_PY), *args], input=stdin, capture_output=True, text=True,
+    return subprocess.run([*AXPY_CMD, str(GRAPH_PY), *args], input=stdin, capture_output=True, text=True,
                           timeout=timeout, env=e)
 
 

@@ -32,6 +32,7 @@ needs_reference_verified = pytest.mark.skipif(
                       "without strace the runner caps runs at sandbox-validated")
 needs_strace = pytest.mark.skipif(NO_STRACE, reason="needs strace for the dry run's seek trace (T13)")
 AXPY = str(PLUGIN / "scripts" / "axpy")
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 MAKE = TARGET / "make_databricks.py"
 CHECK = TARGET / "target_check.py"
 SEAL = PLUGIN / "skills" / "report" / "seal.py"
@@ -73,7 +74,7 @@ def project(verified_template, tmp_path):
 
 
 def run(script: Path, *args, ok=(0, 1, 2, 3), env=None) -> tuple[int, dict | str]:
-    cp = subprocess.run([AXPY, str(script), *map(str, args)], capture_output=True, text=True, timeout=900, env=env)
+    cp = subprocess.run([*AXPY_CMD, str(script), *map(str, args)], capture_output=True, text=True, timeout=900, env=env)
     assert cp.returncode in ok, (script.name, cp.returncode, cp.stdout[-3000:], cp.stderr[-3000:])
     try:
         return cp.returncode, json.loads(cp.stdout)

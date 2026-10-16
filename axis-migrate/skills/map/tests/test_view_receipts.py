@@ -3,6 +3,8 @@ are read as the identify popup shows them, refuses 'nothing found' on the shifte
 and the Stop gate's rule count the receipts; a rebuilt (deterministic) view keeps them valid."""
 from __future__ import annotations
 
+import shutil
+import os
 import json
 import subprocess
 import sys
@@ -18,6 +20,7 @@ import _viewsbuilder as vb  # noqa: E402
 import visual_receipt as vrc  # noqa: E402
 
 AXPY = PLUGIN / "scripts" / "axpy"
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 PLOT = PLUGIN / "skills" / "verify" / "plot.py"
 COMPARE = PLUGIN / "skills" / "verify" / "compare.py"
 
@@ -34,7 +37,7 @@ def run(tmp_path_factory) -> Path:
 def review_add(run: Path, tmp: Path, f) -> subprocess.CompletedProcess:
     p = tmp / "finding.json"
     p.write_text(json.dumps(f))
-    return subprocess.run([str(AXPY), str(PLOT), "review-add", "--run", str(run), "--json", str(p)],
+    return subprocess.run([*AXPY_CMD, str(PLOT), "review-add", "--run", str(run), "--json", str(p)],
                           capture_output=True, text=True, timeout=300)
 
 
@@ -78,7 +81,7 @@ def test_review_loop_on_real_views(run, tmp_path):
     cp = run_cli("views.py", "run", "--run", run)
     assert cp.returncode == 0, cp.stderr
     assert vrc.RunReceipts(run).missing_reviews() == []
-    cp = subprocess.run([str(AXPY), str(COMPARE), "aggregate", "--run", str(run)], capture_output=True, text=True,
+    cp = subprocess.run([*AXPY_CMD, str(COMPARE), "aggregate", "--run", str(run)], capture_output=True, text=True,
                         timeout=300)
     v = json.loads((run / "verify" / "verdict.json").read_text())
     d = v["datasets"]
@@ -86,7 +89,7 @@ def test_review_loop_on_real_views(run, tmp_path):
     assert d["ds.b"]["verdict"] == d["ds.b"]["compare_verdict"] != "PASS_EXACT" and d["ds.b"]["visual"]["flags"]
     assert d["ds.v"]["visual"]["flags"] and d["ds.v"]["verdict"] not in ("PASS_EXACT", "PASS_WITHIN_TOLERANCE")
     assert d["ds.e"]["visual"]["flags"]
-    st = subprocess.run([str(AXPY), str(PLOT), "review-status", "--run", str(run), "--json"], capture_output=True,
+    st = subprocess.run([*AXPY_CMD, str(PLOT), "review-status", "--run", str(run), "--json"], capture_output=True,
                         text=True, timeout=300)
     assert json.loads(st.stdout)["lacking"] == []                           # ds.a: skipped: identical (sha)
 
@@ -98,10 +101,10 @@ def test_identical_skip_receipt(run, tmp_path):
     sha = json.loads((run / "verify" / "compare" / "ds.a.json").read_text())["new"]["sha256"]
     rec = {s["dataset"]: s for s in views_doc(run)["skipped"]}["ds.a"]
     assert rec["skipped"] == f"skipped: identical ({sha})" and rec["reason"].startswith(f"identical ({sha})")
-    st = json.loads(subprocess.run([str(AXPY), str(PLOT), "review-status", "--run", str(run), "--json"],
+    st = json.loads(subprocess.run([*AXPY_CMD, str(PLOT), "review-status", "--run", str(run), "--json"],
                                    capture_output=True, text=True, timeout=300).stdout)
     assert "ds.a" not in st["lacking"] and st["datasets"]["ds.a"]["via"] == "skipped"
-    tp = subprocess.run([str(AXPY), str(PLOT), "review-template", "--run", str(run), "--dataset", "ds.a"],
+    tp = subprocess.run([*AXPY_CMD, str(PLOT), "review-template", "--run", str(run), "--dataset", "ds.a"],
                         capture_output=True, text=True, timeout=300)
     tmpl = json.loads(tp.stdout)
     assert tmpl == [{"dataset_id": "ds.a", "skipped": f"skipped: identical ({sha})", "note": "", "model": ""}]
@@ -113,11 +116,11 @@ def test_identical_skip_receipt(run, tmp_path):
     assert cp.returncode == 2 and "is not identical" in cp.stderr          # a dataset with differences
     cp = review_add(run, tmp_path, {**tmpl[0], "model": "m"})
     assert cp.returncode == 0, cp.stderr
-    subprocess.run([str(AXPY), str(COMPARE), "aggregate", "--run", str(run)], capture_output=True, text=True,
+    subprocess.run([*AXPY_CMD, str(COMPARE), "aggregate", "--run", str(run)], capture_output=True, text=True,
                    timeout=300)
     d = json.loads((run / "verify" / "verdict.json").read_text())["datasets"]
     assert d["ds.a"]["verdict"] == "PASS_EXACT" and "VISUAL_REVIEW_MISSING" not in d["ds.a"]["reason_codes"]
-    st = json.loads(subprocess.run([str(AXPY), str(PLOT), "review-status", "--run", str(run), "--json"],
+    st = json.loads(subprocess.run([*AXPY_CMD, str(PLOT), "review-status", "--run", str(run), "--json"],
                                    capture_output=True, text=True, timeout=300).stdout)
     assert st["datasets"]["ds.a"]["skip_receipt"] is True
 

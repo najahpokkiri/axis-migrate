@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -15,6 +16,9 @@ import seal as sealmod
 import synth
 
 HERE = Path(__file__).resolve().parent
+# a plain system Python (not the plugin env): proves ladder.py needs the standard library only
+SYS_PY = "/usr/bin/python3" if os.path.exists("/usr/bin/python3") else (shutil.which("python3") or shutil.which("python")
+                                                                        or sys.executable)
 
 
 def rerun_compare(run_dir: Path, dsid: str, fn):
@@ -47,7 +51,7 @@ def test_ladder_is_stdlib_only_and_fast(sealed):
     code = ("import sys; sys.path.insert(0, %r); import ladder, time; t=time.time(); r=ladder.compute(%r); "
             "bad=[m for m in ('numpy','yaml','jinja2','rasterio') if m in sys.modules]; "
             "print(r['pipeline']['rung'], bad, round(time.time()-t, 3))") % (str(HERE.parent), str(sealed["migration"]))
-    out = subprocess.run(["/usr/bin/python3", "-I", "-c", code], capture_output=True, text=True, check=True).stdout
+    out = subprocess.run([SYS_PY, "-I", "-c", code], capture_output=True, text=True, check=True).stdout
     rung, rest = out.split(" ", 1)
     assert rung == "reference-verified"
     assert "[]" in rest
@@ -55,10 +59,10 @@ def test_ladder_is_stdlib_only_and_fast(sealed):
 
 
 def test_cli_status_line(sealed):
-    out = subprocess.run(["/usr/bin/python3", "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"])],
+    out = subprocess.run([SYS_PY, "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"])],
                          capture_output=True, text=True, check=True).stdout
     assert out.splitlines()[0].startswith("axis-migrate status: reference-verified | run ")
-    js = subprocess.run(["/usr/bin/python3", "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"]), "--json"],
+    js = subprocess.run([SYS_PY, "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"]), "--json"],
                         capture_output=True, text=True, check=True).stdout
     assert json.loads(js)["pipeline"]["rung"] == "reference-verified"
 
@@ -655,7 +659,7 @@ def test_brief_on_a_sealed_clean_run_and_cli(sealed):
     line = ladder.brief(sealed["migration"])
     assert "(chained, sealed): 4 PASS_EXACT | not PASS: none |" in line
     assert line.endswith(f"computed status: reference-verified from sealed run {sealed['run_id']}")
-    out = subprocess.run(["/usr/bin/python3", "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"]),
+    out = subprocess.run([SYS_PY, "-I", str(HERE.parent / "ladder.py"), str(sealed["migration"]),
                           "--brief"], capture_output=True, text=True, check=True).stdout
     assert out.strip() == line
 

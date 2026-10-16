@@ -1,6 +1,7 @@
 """E2B key loading, the person-run configure command and the template builder/publisher (fake keys, no network)."""
 from __future__ import annotations
 
+import shutil
 import json
 import os
 import subprocess
@@ -18,6 +19,7 @@ import e2b_key  # noqa: E402
 
 FAKE = "e2b_fake_key_for_tests_0123456789abcdef"
 AXPY = HERE.parents[2] / "scripts" / "axpy"
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 
 
 @pytest.fixture(autouse=True)
@@ -118,10 +120,10 @@ def test_sandbox_choice_is_stored_once_per_install(tmp_path):
 # --- scripts/axpy --configure e2b -------------------------------------------------------------------------------
 def test_configure_refuses_without_a_terminal(tmp_path):
     env = {"HOME": str(tmp_path), "PATH": "/usr/bin:/bin"}
-    cp = subprocess.run([str(AXPY), "--configure", "e2b"], input=FAKE + "\n", capture_output=True, text=True, env=env)
+    cp = subprocess.run([*AXPY_CMD, "--configure", "e2b"], input=FAKE + "\n", capture_output=True, text=True, env=env)
     assert cp.returncode == 13 and "NOT_A_TERMINAL" in cp.stderr and FAKE not in cp.stdout + cp.stderr
     assert not (tmp_path / ".config/axis-migrate/secrets.env").exists()
-    bad = subprocess.run([str(AXPY), "--configure", "aws"], capture_output=True, text=True, env=env)
+    bad = subprocess.run([*AXPY_CMD, "--configure", "aws"], capture_output=True, text=True, env=env)
     assert bad.returncode == 2
 
 
@@ -229,6 +231,6 @@ def test_shipped_record_matches_the_lock():
 @pytest.mark.skipif(not os.environ.get("AXIS_TEST_E2B_LIVE") or e2b_key.source()[0] != "ok",
                     reason="live E2B: set AXIS_TEST_E2B_LIVE=1 on a machine with a configured key")
 def test_live_public_template_exists():
-    cp = subprocess.run([str(AXPY), str(E2B_DIR / "e2b_key.py"), "--exists", bt.public_name()],
+    cp = subprocess.run([*AXPY_CMD, str(E2B_DIR / "e2b_key.py"), "--exists", bt.public_name()],
                         capture_output=True, text=True, timeout=120)
     assert json.loads(cp.stdout.strip().splitlines()[-1]) == {"ok": True, "code": None}

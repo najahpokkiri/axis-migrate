@@ -10,7 +10,7 @@ import sys
 
 import pytest
 
-from scan_synth import AXPY, SCAN, build_project, ds, op_by, run, scan, tree_state
+from scan_synth import AXPY, AXPY_CMD, SCAN, build_project, ds, op_by, run, scan, tree_state
 
 
 # OS runtime files the interpreter or its libraries read on their own (narrow, exact): macOS system version plist
@@ -244,7 +244,7 @@ except SystemExit:
     pass
 open({str(log)!r}, 'w').write('\\n'.join([sys.base_prefix, sys.prefix] + opened))
 """
-    r = subprocess.run([str(AXPY), "-c", wrapper], capture_output=True, text=True)
+    r = subprocess.run([*AXPY_CMD, "-c", wrapper], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     base, prefix, *opened = log.read_text().splitlines()
     opened = [p for p in opened if p.startswith("/")]  # '<unknown>' = in-memory code objects

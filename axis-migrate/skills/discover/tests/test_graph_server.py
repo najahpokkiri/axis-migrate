@@ -17,7 +17,7 @@ import graph as G
 
 class Server:
     def __init__(self, mdir: Path):
-        self.proc = subprocess.Popen([str(gs.AXPY), str(gs.SERVER_PY), "serve", str(mdir), "--port", "0"],
+        self.proc = subprocess.Popen([*gs.AXPY_CMD, str(gs.SERVER_PY), "serve", str(mdir), "--port", "0"],
                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         line = self.proc.stdout.readline().strip()
         assert line.startswith("http://127.0.0.1:"), (line, self.proc.stderr.read() if self.proc.poll() else "")
@@ -121,7 +121,7 @@ def test_graph_ops_conflict_and_events(srv: Server):
 
 def test_rt1_round_trip_with_wait(srv: Server):
     """T-rt-1: add a step + delete a step with legacy outputs, Send; wait exits 0 within 2 s with the diff."""
-    w = subprocess.Popen([str(gs.AXPY), str(gs.SERVER_PY), "wait", str(srv.mdir), "--timeout", "30"],
+    w = subprocess.Popen([*gs.AXPY_CMD, str(gs.SERVER_PY), "wait", str(srv.mdir), "--timeout", "30"],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     time.sleep(1.0)  # wait is polling before anything is sent
     st, g = srv.req("GET", "/api/graph")
@@ -150,7 +150,7 @@ def test_rt1_round_trip_with_wait(srv: Server):
     G.apply(srv.mdir, [{"type": "ack", "seq": d["ack_seq"]}], "agent", G.load_graph(srv.mdir)["revision"])
     srv.req("POST", "/api/ops", {"base_rev": G.load_graph(srv.mdir)["revision"],
                                  "ops": [{"type": "add_note", "id": "s02_mask", "text": "later"}]})
-    r = subprocess.run([str(gs.AXPY), str(gs.SERVER_PY), "wait", str(srv.mdir), "--timeout", "0.5"],
+    r = subprocess.run([*gs.AXPY_CMD, str(gs.SERVER_PY), "wait", str(srv.mdir), "--timeout", "0.5"],
                        capture_output=True, text=True, timeout=30)
     out = json.loads(r.stdout)
     assert r.returncode == 0 and out["timeout"] is True and out["edits"] == 0 and out["unsent_edits"] == 1
@@ -159,7 +159,7 @@ def test_rt1_round_trip_with_wait(srv: Server):
 def test_wait_survives_without_server(tmp_path: Path):
     mdir = gs.make_project(tmp_path)
     G.apply(mdir, [{"type": "submit", "message": "nothing changed"}], "user", 1, channel="graph")
-    r = subprocess.run([str(gs.AXPY), str(gs.SERVER_PY), "wait", str(mdir), "--timeout", "5"],
+    r = subprocess.run([*gs.AXPY_CMD, str(gs.SERVER_PY), "wait", str(mdir), "--timeout", "5"],
                        capture_output=True, text=True, timeout=30)
     assert r.returncode == 0 and json.loads(r.stdout)["ops"] == []
 

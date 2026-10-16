@@ -26,6 +26,7 @@ sys.path.insert(0, str(PLUGIN / "lib"))
 import axis_common as ac  # noqa: E402
 
 AXPY = str(PLUGIN / "scripts" / "axpy")
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 LEGACY = "legacy_tgt"
 CRS = "EPSG:32631"
 NODATA_IN = -99999.0
@@ -300,7 +301,7 @@ def graph_py():
 
 
 def sh(*args, ok=(0,), env=None) -> subprocess.CompletedProcess:
-    cp = subprocess.run([AXPY, *map(str, args)], capture_output=True, text=True, timeout=900, env=env)
+    cp = subprocess.run([*AXPY_CMD, *map(str, args)], capture_output=True, text=True, timeout=900, env=env)
     if cp.returncode not in ok:
         raise AssertionError(f"{[str(a) for a in args[:3]]} exit {cp.returncode}\n{cp.stdout[-3000:]}\n"
                              f"{cp.stderr[-3000:]}")

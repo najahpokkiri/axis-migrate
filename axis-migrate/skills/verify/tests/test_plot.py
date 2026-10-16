@@ -474,7 +474,7 @@ def test_review_add_after_seal_goes_to_amend(shifted, tmp_path):
     code = subprocess.run([sys.executable, str(PLUGIN / "skills" / "report" / "seal.py"), str(mig), "--run",
                            shifted.name], capture_output=True, text=True)
     assert code.returncode == 0, code.stderr
-    assert not os.access(shifted / "verify", os.W_OK)
+    assert os.name == "nt" or not os.access(shifted / "verify", os.W_OK)   # Windows: no read-only folders
     # the runner leaves the run dir read-only too
     shifted.chmod(stat.S_IMODE(shifted.stat().st_mode) & ~0o222)
     try:

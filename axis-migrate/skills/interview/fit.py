@@ -129,7 +129,7 @@ def _workspace(mdir: Path, pid: str, value, tmp: Path) -> Path:
 
 
 def _run_isolated(m2: Path, step: str) -> Path:
-    cmd = [str(PLUGIN / "scripts" / "axpy"), str(PLUGIN / "skills" / "run" / "run_local.py"), str(m2),
+    cmd = [*ac.axpy_cmd(), str(PLUGIN / "skills" / "run" / "run_local.py"), str(m2),
            "--chain", "isolated", "--steps", step, "--json"]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:

@@ -1,6 +1,7 @@
 """doctor.py (scripts/axpy --doctor): preflight checks and their one-line messages."""
 from __future__ import annotations
 
+import shutil
 import json
 import os
 import subprocess
@@ -12,6 +13,7 @@ import pytest
 import doctor
 
 AXPY = Path(__file__).resolve().parents[3] / "scripts" / "axpy"
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 
 
 def test_strace_missing_says_what_the_fallback_is(monkeypatch):
@@ -32,13 +34,13 @@ def test_port_and_cache_ok():
 
 
 def test_cli_exit_codes(tmp_path):
-    cp = subprocess.run([str(AXPY), "--doctor", "--no-sync", "--json"], capture_output=True, text=True)
+    cp = subprocess.run([*AXPY_CMD, "--doctor", "--no-sync", "--json"], capture_output=True, text=True)
     doc = json.loads(cp.stdout)
     assert cp.returncode == (0 if doc["ok"] else 13)
     assert [c["check"] for c in doc["checks"]] == ["uv", "cache", "env", "strace", "port", "plugin", "e2b", "refenv",
                                                    "rung"]
     assert "sandbox_choice" in doc and isinstance(doc["ask_sandbox"], bool)
-    bad = subprocess.run([str(AXPY), "--doctor", "--no-sync"], capture_output=True, text=True,
+    bad = subprocess.run([*AXPY_CMD, "--doctor", "--no-sync"], capture_output=True, text=True,
                          env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "XDG_CACHE_HOME": "/proc/nope"})
     assert bad.returncode == 13 and "ENV_CACHE_NOT_WRITABLE" in bad.stdout
     # one plain sentence for the person: the sandbox exists; what it blocks; the settings that allow it
@@ -55,16 +57,16 @@ def test_no_sandbox_note_when_nothing_was_blocked():
 
 def test_axpy_gives_matplotlib_a_writable_config_dir(tmp_path):
     env = {k: v for k, v in os.environ.items() if k != "MPLCONFIGDIR"}
-    out = subprocess.run([str(AXPY), "-c", "import os; print(os.environ['MPLCONFIGDIR'])"], capture_output=True,
+    out = subprocess.run([*AXPY_CMD, "-c", "import os; print(os.environ['MPLCONFIGDIR'])"], capture_output=True,
                          text=True, env=env).stdout.strip()
     assert out == str(doctor.ac.env_venv_dir() / ".mplconfig") and Path(out).is_dir() and os.access(out, os.W_OK)
-    mine = subprocess.run([str(AXPY), "-c", "import os; print(os.environ['MPLCONFIGDIR'])"], capture_output=True,
+    mine = subprocess.run([*AXPY_CMD, "-c", "import os; print(os.environ['MPLCONFIGDIR'])"], capture_output=True,
                           text=True, env=dict(env, MPLCONFIGDIR=str(tmp_path))).stdout.strip()
     assert mine == str(tmp_path)                                          # a caller's own setting wins
 
 
 def test_print_python_is_the_shared_resolver():
-    out = subprocess.run([str(AXPY), "--print-python"], capture_output=True, text=True).stdout.strip()
+    out = subprocess.run([*AXPY_CMD, "--print-python"], capture_output=True, text=True).stdout.strip()
     sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "lib"))
     import axis_common as ac
     assert out == str(ac.env_python()) and "/skills/run/env/.venv" not in out

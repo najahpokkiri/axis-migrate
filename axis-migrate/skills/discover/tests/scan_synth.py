@@ -22,6 +22,7 @@ HERE = Path(__file__).resolve().parent
 DISCOVER = HERE.parent
 PLUGIN = DISCOVER.parents[1]
 AXPY = PLUGIN / "scripts" / "axpy"
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 SCAN = DISCOVER / "scan.py"
 MAP = DISCOVER / "map.py"
 LINEAGE = DISCOVER / "lineage.py"
@@ -346,7 +347,7 @@ def build_model3(root: Path) -> Path:
 def run(script: Path, *args, env=None, check=True) -> subprocess.CompletedProcess:
     e = dict(os.environ)
     e.update(env or {})
-    r = subprocess.run([str(AXPY), str(script), *map(str, args)], capture_output=True, text=True, env=e)
+    r = subprocess.run([*AXPY_CMD, str(script), *map(str, args)], capture_output=True, text=True, env=e)
     if check and r.returncode != 0:
         raise AssertionError(f"{script.name} {args} exit {r.returncode}\n{r.stdout}\n{r.stderr}")
     return r

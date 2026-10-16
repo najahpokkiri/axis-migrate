@@ -8,6 +8,8 @@ finding still counting (map.py findings) and stopping to count when a project's 
 """
 from __future__ import annotations
 
+import shutil
+import os
 import hashlib
 import json
 import subprocess
@@ -24,6 +26,7 @@ sys.path.insert(0, str(DISCOVER / "tests"))
 import scan_synth  # noqa: E402
 
 AXPY = PLUGIN / "scripts" / "axpy"
+AXPY_CMD = ([shutil.which("sh") or "sh"] if os.name == "nt" else []) + [str(AXPY)]  # Windows cannot exec a shell script
 SCAN = DISCOVER / "scan.py"
 MAPPY = DISCOVER / "map.py"
 
@@ -183,12 +186,12 @@ def receipt(d: dict, **over) -> dict:
 def annotate(mig: Path, tmp: Path, f: dict) -> subprocess.CompletedProcess:
     p = tmp / "finding.json"
     p.write_text(json.dumps(f))
-    return subprocess.run([str(AXPY), str(SCAN), "annotate", str(mig), "map-finding", "--json", str(p)],
+    return subprocess.run([*AXPY_CMD, str(SCAN), "annotate", str(mig), "map-finding", "--json", str(p)],
                           capture_output=True, text=True, timeout=300)
 
 
 def findings(mig: Path) -> subprocess.CompletedProcess:
-    return subprocess.run([str(AXPY), str(MAPPY), "findings", str(mig), "--json"], capture_output=True, text=True,
+    return subprocess.run([*AXPY_CMD, str(MAPPY), "findings", str(mig), "--json"], capture_output=True, text=True,
                           timeout=300)
 
 

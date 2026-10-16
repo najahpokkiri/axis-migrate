@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -558,6 +559,7 @@ def test_automate_obligation_mentions_open_policy_question(mdir: Path):
 
 
 # ------------------------------------------------------------------------------------------------ B7: --ops files
+@pytest.mark.skipif(not hasattr(os, "getuid"), reason="POSIX uid and mode bits; Windows: test_windows_owner_sid")
 def test_ops_file_must_be_own_and_not_world_writable(tmp_path: Path, monkeypatch):
     p = tmp_path / "q05.json"
     p.write_text('[{"type": "add_note", "id": "s01_clip", "text": "x"}]')
@@ -578,6 +580,7 @@ def test_ops_file_must_be_own_and_not_world_writable(tmp_path: Path, monkeypatch
     assert e.value.code == "bad_ops"
 
 
+@pytest.mark.skipif(not hasattr(os, "getuid"), reason="POSIX uid and mode bits; Windows: test_windows_owner_sid")
 def test_scan_annotate_refuses_a_foreign_json(tmp_path: Path, monkeypatch, capsys):
     """B7 again in the BYU re-run: `scan.py annotate --json /tmp/axf/mf1.json` read another account's stale file
     after the agent's own write was denied. Every --json/--ops input goes through ac.read_own_text."""
@@ -587,5 +590,21 @@ def test_scan_annotate_refuses_a_foreign_json(tmp_path: Path, monkeypatch, capsy
     p.chmod(0o644)
     real = G.os.getuid()
     monkeypatch.setattr(G.os, "getuid", lambda: real + 1)
+    assert scan.main(["annotate", str(tmp_path), "map-finding", "--json", str(p)]) == 2
+    assert "not by you" in capsys.readouterr().err
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows owner-SID rule")
+def test_windows_owner_sid(tmp_path: Path, monkeypatch, capsys):
+    """Windows: mode bits are always 666, so ac.read_own_text checks the owner SID of the open handle instead."""
+    import scan
+    p = tmp_path / "mf1.json"
+    p.write_text('{"id": "MF-01"}')
+    assert G.ac.read_own_text(p) == '{"id": "MF-01"}'          # own file, mode 666: accepted
+    sysfile = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "win.ini"
+    if sysfile.is_file():                                         # owned by SYSTEM / TrustedInstaller: refused
+        with pytest.raises(G.ac.ForeignInputError, match="not by you"):
+            G.ac.read_own_text(sysfile)
+    monkeypatch.setattr(G.ac, "_win_foreign_owner", lambda fd: "owned by SID S-1-5-21-0-0-0-1001, not by you")
     assert scan.main(["annotate", str(tmp_path), "map-finding", "--json", str(p)]) == 2
     assert "not by you" in capsys.readouterr().err
