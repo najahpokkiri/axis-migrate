@@ -2724,7 +2724,9 @@ def _write_parquet(path: Path, rows: list[dict]) -> None:
 # Run mode: frozen contract, live checks, pairing from lineage (06 §4a; DESIGN §4.5-4.6; CONTRACTS §6-7)
 # =================================================================================================================
 def _read_text(p: Path) -> str | None:
-    return p.read_text(encoding="utf-8") if p.exists() else None
+    # bytes as stored: read_text() turns CRLF into LF, and the sha of that never matches the file's pin (a CRLF
+    # tolerances.yaml written on Windows was reported as TOLERANCE_CHANGED_AFTER_RUN)
+    return p.read_bytes().decode("utf-8") if p.exists() else None
 
 
 class RunContext:
