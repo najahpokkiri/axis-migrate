@@ -37,6 +37,9 @@ Plot set per family:
   vector  overlay.png (legacy blue solid, new orange dashed, symmetric difference red, unmatched keys labelled),
           per_feature.png (geometry metric and attribute agreement per key), worst_features.png (vertices drawn)
   table   residuals.png (per-key residuals for up to 6 numeric columns + new-vs-legacy scatter with y = x)
+A plot that would show nothing is not drawn: worst_tiles.png when no cell differs and none is valid on one side
+only, worst_features.png when no key is unmatched or differs in geometry, per_feature.png when additionally every
+attribute is equal. plots.json then lists it under omitted: {"<name>.png": "no difference"}.
 
 Colour convention (all plots): legacy = blue, new = orange; difference n − l: orange = new larger, purple = legacy
 larger, near-white = equal; light grey = no data.
@@ -1145,10 +1148,21 @@ class RasterPlotter:
                      f"{GATE_WIN}×{GATE_WIN} legacy cells", fontsize=7, y=0.995)
         return self._png("worst_tiles.png", "worst_tiles", fig, panels, {"mode": "grid_overlay"})
 
+    def no_difference(self) -> bool:
+        """Both sides read on one grid, no cell differs (max |d| = 0) and none is valid on one side only."""
+        return bool(self.gate_ok and not self.missing and self.d is not None and not self.over.any()
+                    and not (self.d[self.both] != 0).any() and not self.xor_l.any() and not self.xor_n.any())
+
     def render(self) -> list[dict]:
         if not (self.L.ok or self.N.ok):
             raise RuntimeError("neither side readable: " + "; ".join(self.missing))
-        return [self.overview(), self.mask_diff(), self.hist(), self.worst_tiles()]
+        self.omitted = {}
+        out = [self.overview(), self.mask_diff(), self.hist()]
+        if self.no_difference():                # 12 identical tiles say nothing (map review C1)
+            self.omitted["worst_tiles.png"] = "no difference"
+        else:
+            out.append(self.worst_tiles())
+        return out
 
 
 # =================================================================================================================
@@ -1618,7 +1632,25 @@ class VectorPlotter:
         if self.L is None:
             self.L, self.N = self.N, None
             self.notes.append("legacy unreadable: only the new layer is drawn (as if legacy)")
-        return [self.overlay(), self.per_feature(), self.worst_features()]
+        self.omitted = {}
+        out = [self.overlay()]
+        same_geom, same_all = self.no_difference()
+        if same_all:                            # every key equal in geometry and attributes (map review C1)
+            self.omitted["per_feature.png"] = "no difference"
+        else:
+            out.append(self.per_feature())
+        if same_geom:
+            self.omitted["worst_features.png"] = "no difference"
+        else:
+            out.append(self.worst_features())
+        return out
+
+    def no_difference(self) -> tuple[bool, bool]:
+        """(no key differs in geometry, no key differs at all): both sides read and matched, no unmatched key."""
+        if self.missing or self.N is None or not self.metrics or self.match["legacy_only"] or self.match["new_only"]:
+            return False, False
+        geom = all(not (r["ratio"] or 0) and not (r["haus"] or 0) for r in self.metrics)
+        return geom, geom and all(r.get("attr_class") == "identical" for r in self.metrics)
 
 
 def _parts(g):
@@ -1807,6 +1839,8 @@ def plot_dataset(run: Run, res: dict) -> dict:
                       "legacy_path": (res.get("legacy") or {}).get("path"), "new_path": (res.get("new") or {}).get("path")},
            "missing": list(getattr(p, "missing", [])), "notes": list(getattr(p, "notes", [])),
            "png": sorted(pngs, key=lambda e: e["name"])}
+    if getattr(p, "omitted", None):                    # plots not drawn because they would show nothing
+        doc["omitted"] = dict(sorted(p.omitted.items()))
     ac.dump_json(out / "plots.json", doc)
     return doc
 

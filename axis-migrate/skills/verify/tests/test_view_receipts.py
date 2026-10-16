@@ -299,7 +299,7 @@ def test_png_receipts_unchanged_beside_view_receipts(same, tmp_path):
     from test_plot import finding, plot_run
     run, doc = same
     assert plot_run(run) == 0
-    code, err = add(run, tmp_path, finding(run, "ds.r"))
+    code, err = add(run, tmp_path, finding(run, "ds.r", name="overview.png"))
     assert code == 0, err
     code, err = add(run, tmp_path, vb.view_receipt(doc, "ds.r"))
     assert code == 0, err

@@ -322,9 +322,29 @@ def test_vector_plots_pair_by_compare_match_not_legacy_only(tmp_path, match):
     d = pj(run, "ds.v")
     ov = next(e for e in d["png"] if e["name"] == "overlay.png")
     assert ov["unmatched"] == {"legacy_only": [], "new_only": []}
-    wf = next(e for e in d["png"] if e["name"] == "worst_features.png")
-    feats = wf.get("features") or []
-    assert feats and all(f["kind"].startswith("equal") and f["hausdorff"] == 0.0 for f in feats), feats
+    # nothing differs: no reference-only worst_features / all-white per_feature (map review C1)
+    assert {e["name"] for e in d["png"]} == {"overlay.png"}
+    assert d["omitted"] == {"per_feature.png": "no difference", "worst_features.png": "no difference"}
+    assert not (run / "verify" / "plots" / "ds.v" / "worst_features.png").exists()
+
+
+def test_identical_raster_omits_worst_tiles(tmp_path):
+    run = raster_run(tmp_path, feature_raster(), feature_raster())
+    assert plot_run(run) == 0
+    d = pj(run, "ds.r")
+    assert {e["name"] for e in d["png"]} == {"overview.png", "mask_diff.png", "hist.png"}
+    assert d["omitted"] == {"worst_tiles.png": "no difference"}
+    assert not (run / "verify" / "plots" / "ds.r" / "worst_tiles.png").exists()
+
+
+def test_one_sided_cells_keep_worst_tiles(tmp_path):
+    leg = feature_raster()
+    new = leg.copy()
+    new[3, 3] = -9999.0                                  # equal values, one cell valid in legacy only
+    run = raster_run(tmp_path, leg, new)
+    assert plot_run(run) == 0
+    d = pj(run, "ds.r")
+    assert "worst_tiles.png" in {e["name"] for e in d["png"]} and "omitted" not in d
 
 
 def test_table_residuals(tmp_path):

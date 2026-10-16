@@ -27,7 +27,8 @@ changed, contract changed, checker fault) is never fixed by changing pipeline co
 Raster: `overview.png` (legacy | new | diff; ONE shared colour scale; diff orange = new larger, purple = legacy larger,
 black/dark grey = valid on one side only; zone boundaries green), `mask_diff.png`, `hist.png`, `worst_tiles.png`
 (native resolution, cell grid; `grid_overlay` mode draws both grids when the grid gate failed). Vector: `overlay.png`,
-`per_feature.png`, `worst_features.png`. Table: `residuals.png`. Plots are evidence about verdicts, never inputs.
+`per_feature.png`, `worst_features.png`. Table: `residuals.png`. A plot that would show nothing (no differing cell or
+key) is not drawn; `plots.json` lists it under `omitted`. Plots are evidence about verdicts, never inputs.
 Always run it: the plots are the look's fallback and the report and evals use them, also when you look on the map.
 
 ## 3 Look (mandatory for every compared raster and vector dataset)
