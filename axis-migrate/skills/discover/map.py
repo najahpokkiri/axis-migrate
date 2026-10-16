@@ -2,7 +2,14 @@
 """discover/map.py: the input map the agent looks at before any code exists (01 §4.7).
 
     map.py inputs <migration> [--json]
+    map.py metrics <migration> [--json]
     map.py findings <migration> [--json]
+
+`metrics` writes <migration>/discover/metrics.json and prints it as a short table: per raster (dtype, nodata value)
+the cells inside the AOI (cell centre rule), how many are valid and how many NoData (with km², on the ellipsoid for
+geographic grids), and the whole-raster valid count up to 50M cells; between consecutive rasters of one grid family
+(role order input → intermediate → final, then lineage order) the valid cells lost and gained; per vector the
+features that do not touch the AOI. Map findings cite it as metric.computed_by. Exit 0, 2 no inventory.
 
 `findings` lists every recorded map finding and whether it still counts (lib/visual_receipt.map_finding_problem: a
 PNG finding whose PNG still has its bytes, or a view receipt on the inputs views that still passes; both kinds count
@@ -477,6 +484,176 @@ def run_inputs(migration: Path) -> tuple[int, dict]:
     return 0, {"pngs": res}
 
 
+METRICS_SCHEMA = "axis-migrate.discover-metrics.v1"
+WHOLE_MAX = 50_000_000            # whole-raster counts only up to this many cells (inside the AOI: always)
+ROLE_RANK = {"input": 0, "unknown": 1, "unused": 1, "intermediate": 2, "final": 3}
+
+
+def _cell_km2(t, rows: np.ndarray, geographic: bool) -> np.ndarray:
+    """Area of one cell per row (km²): on the ellipsoid for a geographic grid, |a·e| otherwise."""
+    if not geographic:
+        return np.full(len(rows), abs(t.a * t.e) / 1e6)
+    from pyproj import Geod
+    geod = Geod(ellps="WGS84")
+    lat0 = t.f + rows * t.e
+    return np.array([abs(geod.polygon_area_perimeter([t.c, t.c + t.a, t.c + t.a, t.c],
+                                                     [la, la, la + t.e, la + t.e])[0]) for la in lat0]) / 1e6
+
+
+def _valid(a: np.ndarray, nd) -> np.ndarray:
+    bad = np.isnan(a) if np.issubdtype(a.dtype, np.floating) else np.zeros(a.shape, bool)
+    if nd is not None:
+        bad |= a == np.array(nd).astype(a.dtype)
+    return ~bad
+
+
+def _aoi_window(src, aoi_g):
+    """(window, inside mask) of the AOI on this raster's grid, cell-centre rule; None when they do not overlap."""
+    import shapely
+    from pyproj import CRS, Transformer
+    from rasterio import features, windows
+    rc = CRS.from_wkt(src.crs.to_wkt()) if src.crs is not None else None
+    g = shapely.union_all(shapely.make_valid(aoi_g.geometry.values))
+    if rc is not None and aoi_g.crs is not None and not rc.equals(CRS(aoi_g.crs)):
+        tr = Transformer.from_crs(aoi_g.crs, rc, always_xy=True)
+        g = shapely.transform(g, lambda xy: np.column_stack(tr.transform(xy[:, 0], xy[:, 1])))
+    f = windows.from_bounds(*g.bounds, src.transform)
+    c0, r0 = max(math.floor(f.col_off), 0), max(math.floor(f.row_off), 0)
+    c1, r1 = min(math.ceil(f.col_off + f.width), src.width), min(math.ceil(f.row_off + f.height), src.height)
+    if c1 <= c0 or r1 <= r0:
+        return None
+    w = windows.Window(c0, r0, c1 - c0, r1 - r0)
+    inside = features.geometry_mask([g], out_shape=(int(w.height), int(w.width)),
+                                    transform=src.window_transform(w), invert=True)
+    return w, inside
+
+
+def metrics(migration: Path) -> tuple[int, dict]:
+    """The numbers the agents kept computing with ad hoc scripts (map review C6): per raster NoData and valid cells
+    inside the AOI (cell centre) with km², nodata value and dtype; between consecutive rasters of one grid family the
+    valid cells lost/gained (inside the AOI, else the whole raster when small enough); per vector the features not
+    touching the AOI. Display-independent; reads the legacy folder only."""
+    import rasterio
+    import shapely
+    from pyproj import CRS, Transformer
+    inv_p = migration / "inventory.json"
+    if not inv_p.exists():
+        return 2, {"error": "inventory.json not found: run scan.py first"}
+    inv = ac.load_json(inv_p)
+    legacy = (migration / inv["legacy_root"]).resolve()
+    shown, fallback = map_datasets(inv)
+    aoi, aoi_note = aoi_dataset(inv, shown, migration)
+    aoi_g = None
+    if aoi is not None:
+        try:
+            aoi_g = read_vec(legacy, aoi)
+        except Exception as exc:  # noqa: BLE001
+            aoi_note = f"AOI {aoi['id']} not readable: {exc}"
+    on_disk = [d for d in inv["datasets"] if d["exists"] and d["kind"] in ("raster", "vector") and not d.get("alias_of")]
+    op_pos = {o["id"]: i for i, o in enumerate(inv.get("ops") or [])}
+
+    def order(d):
+        return (ROLE_RANK.get(d["role"], 1), min((op_pos.get(o, 10 ** 9) for o in d.get("produced_by") or []),
+                                                 default=-1), d["id"])
+    rasters, masks = [], {}
+    for d in sorted((d for d in on_disk if d["kind"] == "raster"), key=order):
+        rec = {"dataset": d["id"], "role": d["role"]}
+        try:
+            with rasterio.open(legacy / d["legacy_path"]) as src:
+                rec.update(dtype=src.dtypes[0], nodata=None if src.nodata is None else float(src.nodata),
+                           shape=[src.height, src.width])
+                geographic = src.crs is not None and src.crs.is_geographic
+                if src.width * src.height <= WHOLE_MAX:
+                    rec["valid_cells"] = int(_valid(src.read(1), src.nodata).sum())
+                hit = _aoi_window(src, aoi_g) if aoi_g is not None and src.crs is not None else None
+                if aoi_g is not None and hit is None:
+                    rec["aoi"] = "no overlap"
+                elif hit is not None:
+                    w, inside = hit
+                    v = _valid(src.read(1, window=w), src.nodata)
+                    nd = inside & ~v
+                    rows = np.arange(int(w.row_off), int(w.row_off + w.height))
+                    km2 = float((nd.sum(axis=1) * _cell_km2(src.transform, rows, geographic)).sum())
+                    n_in = int(inside.sum())
+                    rec.update(cells_inside_aoi=n_in, valid_inside_aoi=int((inside & v).sum()),
+                               nodata_inside_aoi=int(nd.sum()), nodata_inside_aoi_km2=round(km2, 4),
+                               nodata_inside_aoi_pct=round(100 * int(nd.sum()) / n_in, 2) if n_in else None)
+                    masks[d["id"]] = (src.transform, w, inside, v)
+                elif src.width * src.height <= WHOLE_MAX:
+                    masks[d["id"]] = (src.transform, None, None, _valid(src.read(1), src.nodata))
+        except Exception as exc:  # noqa: BLE001
+            rec["error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+        rasters.append(rec)
+    by_id = {d["id"]: d for d in on_disk}
+    transitions = []
+    for fam in inv.get("grids") or []:
+        mem = [by_id[m["dataset"]] for m in fam.get("members") or [] if m["dataset"] in by_id]
+        mem.sort(key=order)
+        for a, b in zip(mem, mem[1:]):
+            t = {"family": fam["id"], "from": a["id"], "to": b["id"]}
+            ma, mb = masks.get(a["id"]), masks.get(b["id"])
+            if ma is None or mb is None:
+                t["note"] = "not compared (raster too large without an AOI window, or unreadable)"
+            elif ma[0] != mb[0] or (ma[1] is not None and ma[1] != mb[1]) or ma[3].shape != mb[3].shape:
+                t["note"] = "not compared (members of the family do not share one transform and window)"
+            else:
+                sel = ma[2] if ma[2] is not None else np.ones(ma[3].shape, bool)
+                t.update(where="inside AOI" if ma[2] is not None else "whole raster",
+                         valid_lost=int((sel & ma[3] & ~mb[3]).sum()), valid_gained=int((sel & ~ma[3] & mb[3]).sum()))
+            transitions.append(t)
+    vectors = []
+    if aoi_g is not None:
+        u = shapely.union_all(shapely.make_valid(aoi_g.geometry.values))
+        for d in sorted((d for d in on_disk if d["kind"] == "vector" and d["id"] != aoi["id"]), key=order):
+            rec = {"dataset": d["id"], "role": d["role"]}
+            try:
+                g = read_vec(legacy, d)
+                geoms = g.geometry.values
+                if g.crs is not None and aoi_g.crs is not None and not CRS(g.crs).equals(CRS(aoi_g.crs)):
+                    tr = Transformer.from_crs(g.crs, aoi_g.crs, always_xy=True)
+                    geoms = shapely.transform(geoms, lambda xy: np.column_stack(tr.transform(xy[:, 0], xy[:, 1])))
+                rec.update(features=int(len(g)), not_touching_aoi=int((~shapely.intersects(geoms, u)).sum()))
+            except Exception as exc:  # noqa: BLE001
+                rec["error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+            vectors.append(rec)
+    doc = {"schema": METRICS_SCHEMA, "generator": "axis-migrate.discover.map", "aoi": aoi["id"] if aoi else None,
+           "rule": "a cell is inside the AOI when its centre is; km² on the ellipsoid for geographic grids",
+           "notes": [x for x in (fallback, aoi_note) if x] + ([] if aoi else ["no AOI: nothing measured inside one"]),
+           "rasters": rasters, "transitions": transitions, "vectors": vectors}
+    out = migration / "discover" / "metrics.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    ac.dump_json(out, doc)
+    return 0, doc
+
+
+def metrics_table(doc: dict) -> list[str]:
+    def n(v):
+        return "-" if v is None else (f"{v:,}" if isinstance(v, int) else f"{v:g}")
+    lines = [f"discover/metrics.json · AOI {doc['aoi'] or 'none'} · cell centre rule"]
+    for r in doc["rasters"]:
+        if r.get("error"):
+            lines.append(f"  {r['dataset']}: not read ({r['error']})")
+            continue
+        head = f"  {r['dataset']} [{r['role']}] {r['dtype']} nodata {n(r['nodata'])}"
+        if "cells_inside_aoi" in r:
+            head += (f": inside AOI {n(r['valid_inside_aoi'])} valid of {n(r['cells_inside_aoi'])} cells, NoData "
+                     f"{n(r['nodata_inside_aoi'])} ({n(r['nodata_inside_aoi_pct'])} %, "
+                     f"{n(r['nodata_inside_aoi_km2'])} km²)")
+        elif r.get("aoi"):
+            head += f": AOI {r['aoi']}"
+        if "valid_cells" in r:
+            head += f"; whole raster {n(r['valid_cells'])} valid"
+        lines.append(head)
+    for t in doc["transitions"]:
+        lines.append(f"  {t['from']} → {t['to']}: " + (t.get("note") or f"{n(t['valid_lost'])} valid cells lost, "
+                                                        f"{n(t['valid_gained'])} gained ({t['where']})"))
+    for v in doc["vectors"]:
+        lines.append(f"  {v['dataset']} [{v['role']}]: " + (f"not read ({v['error']})" if v.get("error") else
+                     f"{n(v['not_touching_aoi'])} of {n(v['features'])} features do not touch the AOI"))
+    lines += [f"  note: {x}" for x in doc["notes"]]
+    return lines
+
+
 def findings_status(migration: Path) -> tuple[int, dict]:
     import visual_receipt as vr
     inv_p = migration / "inventory.json"
@@ -503,10 +680,24 @@ def main(argv=None) -> int:
     p = sub.add_parser("inputs", help="inputs_overview.png, grid_corners.png, legacy_rasters.png")
     p.add_argument("migration", type=Path)
     p.add_argument("--json", action="store_true")
+    m = sub.add_parser("metrics", help="discover/metrics.json: NoData inside the AOI, valid cells lost between "
+                                       "family members, features outside the AOI")
+    m.add_argument("migration", type=Path)
+    m.add_argument("--json", action="store_true")
     q = sub.add_parser("findings", help="which recorded map findings still count")
     q.add_argument("migration", type=Path)
     q.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
+    if a.cmd == "metrics":
+        code, res = metrics(a.migration.resolve())
+        if code:
+            print(res["error"], file=sys.stderr)
+        elif a.json:
+            print(json.dumps(res, sort_keys=True, indent=1))
+        else:
+            print("\n".join(metrics_table(res)))
+            print("Cite these in map findings: metric.computed_by \"map.py metrics (discover/metrics.json)\"")
+        return code
     if a.cmd == "findings":
         code, res = findings_status(a.migration.resolve())
         if a.json or code == 2:

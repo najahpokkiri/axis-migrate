@@ -160,3 +160,41 @@ def test_map_inputs_pngs_registered_and_deterministic(tmp_path):
     assert sorted(p["path"] for p in inv["map"]["pngs"]) == sorted(f"discover/{n}" for n in names)
     run(MAP, "inputs", mig)
     assert {n: (mig / "discover" / n).read_bytes() for n in names} == first
+
+
+def test_map_metrics_nodata_inside_aoi_and_cells_lost_along_a_family(tmp_path):
+    """map.py metrics (map review C6): the numbers three runs computed with ad hoc scripts, checked here against
+    a direct numpy count of the legacy files."""
+    import numpy as np
+    import rasterio
+    leg = build_project(tmp_path)
+    mig = tmp_path / "migration"
+    scan(leg, mig)
+    cp = run(MAP, "metrics", mig)
+    assert "discover/metrics.json" in cp.stdout and "valid cells lost" in cp.stdout
+    doc = json.loads((mig / "discover" / "metrics.json").read_text())
+    assert doc["schema"] == "axis-migrate.discover-metrics.v1"
+    inv = json.loads((mig / "inventory.json").read_text())
+    by_path = {d["legacy_path"]: d["id"] for d in inv["datasets"]}
+
+    def valid(rel):
+        with rasterio.open(leg / rel) as s:
+            a = s.read(1)
+            return a != s.nodata if s.nodata is not None else np.ones(a.shape, bool)
+    r = {x["dataset"]: x for x in doc["rasters"]}
+    raw, clip, mask = (r[by_path[k]] for k in ("in/raw.tif", "tmp/01_clip.tif", "tmp/02_mask.tif"))
+    assert raw["dtype"] == "float32" and raw["nodata"] == -1.0 and raw["valid_cells"] == int(valid("in/raw.tif").sum())
+    assert doc["aoi"] == "ds.zones"
+    for x in (raw, clip, mask):
+        assert x["valid_inside_aoi"] + x["nodata_inside_aoi"] == x["cells_inside_aoi"] > 0
+    t = {(x["from"], x["to"]): x for x in doc["transitions"]}
+    assert list(t) == [(raw["dataset"], clip["dataset"]), (clip["dataset"], mask["dataset"])]   # role order
+    for (a, b), x in t.items():                     # lost − gained = the drop in valid cells inside the AOI
+        assert x["where"] == "inside AOI"
+        assert x["valid_lost"] - x["valid_gained"] == r[a]["valid_inside_aoi"] - r[b]["valid_inside_aoi"]
+    assert t[(clip["dataset"], mask["dataset"])]["valid_lost"] == 199 and mask["nodata_inside_aoi_pct"] == 47.84
+    # deterministic, and the legacy folder is only read
+    first = (mig / "discover" / "metrics.json").read_bytes()
+    run(MAP, "metrics", mig)
+    assert (mig / "discover" / "metrics.json").read_bytes() == first
+    assert not list(leg.rglob("*.aux.xml")) or all(p.name == "raw.tif.aux.xml" for p in leg.rglob("*.aux.xml"))

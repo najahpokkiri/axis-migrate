@@ -124,3 +124,18 @@ def test_single_feature_finals_match_full_row(byu):
         assert ds[did]["compare_hints"]["key_candidates"] == []
         assert ds[did]["compare_hints"]["match_proposed"]["match"] == "full_row"
     assert ds["ds.osm_flood_gpkg"]["compare"]["match"] is None      # three rows: a real key question
+
+
+def test_map_metrics_byu_numbers(byu):
+    """map.py metrics on BYU: WorldPop has 97 valid of 6,927 cells inside the flood polygon (98.6 % NoData; the
+    scan's nodata_inside_aoi skips a raster this large), 37 of 44 OSM points do not touch it."""
+    cp = run(MAP, "metrics", byu["mig"], "--json")
+    doc = json.loads(cp.stdout)
+    assert doc == json.loads((byu["mig"] / "discover" / "metrics.json").read_text())
+    r = {x["dataset"]: x for x in doc["rasters"]}
+    wp = r["ds.worldpop_colombia_tif"]
+    assert (wp["valid_inside_aoi"], wp["cells_inside_aoi"], wp["nodata_inside_aoi_pct"]) == (97, 6927, 98.6)
+    assert wp["nodata"] == -99999.0 and wp["dtype"] == "float32" and "valid_cells" not in wp     # 434M cells
+    v = {x["dataset"]: x for x in doc["vectors"]}
+    assert (v["ds.inirida_osmpts"]["not_touching_aoi"], v["ds.inirida_osmpts"]["features"]) == (37, 44)
+    assert tree_state(byu["leg"]) == byu["copy_state"]

@@ -36,6 +36,7 @@ name the same output fields, with a guessed parity reference), `toolboxes[]` (.t
 ## 2 Look at the inputs
 ```
 $AXPY $D/map.py inputs migration                               # always: the PNGs (headless paths and the report)
+$AXPY $D/map.py metrics migration                              # always: discover/metrics.json, the numbers to cite
 $AXPY ${CLAUDE_PLUGIN_ROOT}/skills/map/views.py inputs migration   # with a map pane: GeoLibre views of the same data
 ```
 **Primary where a browser pane exists: the map views → view findings. Everywhere (also terminal, headless, evals):
@@ -58,8 +59,10 @@ Checklist (views and PNGs alike):
 - layers reaching past the area of interest, holes, NoData patches inside it, partial thematic coverage;
 - value ranges against units or legends; intermediates and finals that look empty or saturated.
 
-Record each observation with a number computed by a script (inventory, profile, or your own analysis code under
-`migration/analysis/`):
+Record each observation with a number computed by a script: first `discover/metrics.json` (NoData and valid cells
+inside the AOI per raster, valid cells lost/gained between family members, features not touching the AOI;
+`computed_by: "map.py metrics (discover/metrics.json)"`), then inventory or profile; your own analysis code under
+`migration/analysis/` only for what neither has:
 ```
 $AXPY $D/scan.py annotate migration map-finding --json finding.json
 # PNG:  {"id": "MF-01", "png": "discover/inputs_overview.png", "observation": "...", "severity": "info|watch|question",
