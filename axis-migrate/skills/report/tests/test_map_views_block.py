@@ -91,11 +91,7 @@ def test_views_block_lists_views_with_sha_and_match_state(proj):
     v = block(html, "ds.a_outline")
     assert 'data-view="overview"' in v and 'data-view="worst"' in v and 'data-view="edges"' not in v
     assert "--cell" not in v
-    # the swipe map (its own local page) links each dataset to its views block in index.html
-    sw = (proj["migration"] / "report" / "swipe.html").read_text(encoding="utf-8")
-    for ds in tvr.FAMS:
-        assert f'href="index.html#views-{ds}"' in sw
-    assert 'id="swipe-wrap"' in sw and 'id="layer-select"' in sw
+    assert not (proj["migration"] / "report" / "swipe.html").exists()     # no swipe map (map review C8)
 
 
 def test_view_receipt_flag_shows_observations(proj):
@@ -140,9 +136,8 @@ def test_absent_views_json_falls_back_to_the_plots(sealed):
     card = html[html.index('id="ds-ds.a_mask"'):html.index('id="ds-', html.index('id="ds-ds.a_mask"') + 10)]
     assert 'src="data:image/png;base64,' in card and "worst_tiles.png" in card
     assert 'class="view-row"' not in html and "views.py" not in html
-    # no link to map views that do not exist (BYU e2e): neither the page nor the swipe map points at them
-    sw = (sealed["migration"] / "report" / "swipe.html").read_text(encoding="utf-8")
-    assert "GeoLibre map views per dataset" not in html and 'id="map-views-links"' not in sw
+    # no link to map views that do not exist (BYU e2e)
+    assert "GeoLibre map views per dataset" not in html
 
 
 def test_no_port_server_address_or_network_url(proj):

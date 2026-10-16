@@ -40,15 +40,11 @@ def test_failure_in_first_screen(proj, tmp_path):  # 07 test 1
     assert d["verdict"].strip() in ("sandbox-validated", "generated", "none")
 
 
-def test_offline_swipe(sealed):  # 07 test 14: the swipe map is its own local page next to index.html
+def test_no_swipe_map(sealed):  # map review C8: no swipe.html (its two sides drew differently); cards link the views
     report.build(sealed["migration"])
-    d = check(sealed["migration"] / "report" / "swipe.html", "--swipe")
-    assert d["external"] == []
-    assert d["errors"] == []
-    assert d["mapReady"] and d["compare"] and d["fallbackShown"] is False
-    assert d["swipe"]["moved"]
-    assert d["caption"].startswith("Display only: warped to Web Mercator, nearest neighbour.")
-    assert "(EPSG:4326)" in d["caption"]
+    rd = sealed["migration"] / "report"
+    assert not (rd / "swipe.html").exists() and not (rd / "assets" / "vendor").exists()
+    assert "swipe" not in (rd / "index.html").read_text(encoding="utf-8").lower()
 
 
 def test_map_views_block_renders(proj):  # GeoLibre step 5: the views block renders offline, nothing is fetched
@@ -65,9 +61,6 @@ def test_map_views_block_renders(proj):  # GeoLibre step 5: the views block rend
     assert m["receipts"] == ["view:counts"] and m["shaTitles"] >= 7
     assert "views.py\" url --run migration/runs/" in m["text"] and "127.0.0.1" not in m["text"]
     assert views["views-ds.a_outline"]["rows"] == 2
-    s = check(proj["migration"] / "report" / "swipe.html")
-    assert s["mapReady"] and s["external"] == [] and s["errors"] == []
-    assert sorted(s["mapViewLinks"]) == sorted("index.html#" + k for k in views)
 
 
 def test_absent_views_fallback_renders(sealed):

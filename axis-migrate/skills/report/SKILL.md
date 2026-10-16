@@ -17,9 +17,8 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
    review-add` (view receipts from the map views where a pane exists; PNG receipts are the terminal/headless/eval
    fallback), and `compare.py aggregate --run migration/runs/<id>` has run.
    An isolated run is for diagnosis: it can never reach a rung above `generated`.
-2. **Display layers**: `"$P/scripts/axpy" "$P/skills/report/map.py" display --run migration/runs/<id> [--dataset ds.x]…`. This writes
-   `verify/display/` (EPSG:3857, nearest neighbour, one shared colour scale). It is for display only and must run before
-   sealing.
+2. (No display-layer step: the report shows thumbnails cut from the sealed plots and links to the GeoLibre map
+   views; it has no swipe map.)
 3. **Seal**: `"$P/scripts/axpy" "$P/skills/report/seal.py" migration --run <id> [--json]`. This writes `verify/evidence.json` and `EVIDENCE_ID`, makes
    `verify/` read-only and appends a line to `runs/index.jsonl`. Exit 2 means refused (already sealed, a secret was found,
    or a NaN was found); report the stderr line verbatim. Seal runs once per run.
@@ -35,7 +34,7 @@ stdlib only and also runs as `python3 -I "$P/skills/report/ladder.py" …`. Run 
 6. **Report**: `"$P/scripts/axpy" "$P/skills/report/report.py" migration [--run <id>] [--json]`. It writes `migration/report/`: `REPORT.md` (the
    summary: status line first, what it means, what the next rung needs, failures and NOT_COMPARED, decisions for the
    person, parity table, lineage as Mermaid), `index.html` (one self-contained page, opens from disk, no network),
-   `parity.xlsx` (values only), `swipe.html` (local swipe map, when display layers exist) and `REPORT.json`. Show
+   `parity.xlsx` (values only) and `REPORT.json`. Show
    `migration/report/REPORT.md` in the file pane (migrate SKILL §Showing); `index.html` is the offline export, not a
    pane page.
    - exit 0: the report is complete (it may still show failures).
@@ -55,7 +54,7 @@ The default is the local file in the file pane. You may **offer once**, after th
 warning in the question itself: "This puts the customer's data (outputs, thumbnails, paths, parameters) on
 Anthropic's service, outside this machine. Publish a private copy? (Recommended: No, keep it local)". Publish only on
 an explicit yes, as is (it already embeds only downsampled thumbnails; never add full-resolution images or the
-`assets/` folder), and say where the copy lives. Never publish `swipe.html`, `parity.xlsx`, `REPORT.json` or files
+`assets/` folder), and say where the copy lives. Never publish `parity.xlsx`, `REPORT.json` or files
 under `runs/`. If the person said no, do not ask again in this session.
 
 ## Late evidence: amend, never re-seal
@@ -90,7 +89,7 @@ under `runs/`. If the person said no, do not ask again in this session.
 - **Red integrity bar**: EVIDENCE_FILE_MISSING, EVIDENCE_HASH_MISMATCH, STATE_RECOMPUTE_MISMATCH, UNBOUND_COMPARE and
   LEGACY_REF_CHANGED mean no rung is shown. `*_CHANGED_AFTER_RUN` means stale, and the steps are capped at
   sandbox-validated until a new run.
-- **Map views** (in each compared raster/vector's card; the swipe map links to them): the views of `views.json` with
+- **Map views** (in each compared raster/vector's card): the views of `views.json` with
   path and sha256, sealed or not, `matches` or `changed after the review` (its receipts then do not count), the
   dataset's receipts (PNG or view: engine, views seen, cells read, flag observations, counts or why not) and the two
   commands to open the views. The page holds no server address and embeds no GeoLibre. No `views.json` → "No map

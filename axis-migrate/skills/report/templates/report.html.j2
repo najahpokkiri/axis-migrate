@@ -425,7 +425,6 @@ each view: {% for x in t0.views %}<code>--view {{ x }}</code>{{ ' · ' if not lo
 {% for f in not_checked.sweep %}<li><code>{{ f }}</code>: legacy file under an output folder that lineage never mentions</li>{% endfor %}
 {% for s in not_checked.dropped %}<li><code>{{ s }}</code>: step out of scope (drop)</li>{% endfor %}
 </ul>
-{% if has_swipe %}<p class="small">Swipe map (legacy | new, local only; it needs the <code>assets/</code> folder next to it): <a href="swipe.html">swipe.html</a>{% if views_links %} · GeoLibre map views per dataset are listed in each card{% endif %}.</p>{% endif %}
 </section>
 
 <section id="agent-notes">

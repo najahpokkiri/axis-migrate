@@ -12,7 +12,6 @@ Writes migration/report/:
   REPORT.md     the native summary for the file pane (status line first)
   index.html    one self-contained page (inline CSS/JS/SVG, thumbnails as data URIs; no network request of any kind)
   parity.xlsx   values only: Status, Parity, Decisions, Parameters, Sign-off, Runs
-  swipe.html    the swipe map, local only (vendored MapLibre in assets/), when display layers exist
   assets/       hash-checked copies of the sealed plots and compare results (linked from REPORT.md)
   REPORT.json   {status, rung, steps, …, thumbnails{key: source, source_sha256, sha256}, files{path: sha256}}
 Exit: 0 complete · 2 evidence incomplete, stale or nothing verified · 3 no sealed run.
@@ -852,29 +851,6 @@ def _data_uri(path: Path, mime: str) -> str:
     return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode("ascii")
 
 
-def layers_js(ctx: dict, assets: Path) -> str:
-    out = {"default": ctx["default_layer"], "caption": CAPTION, "layers": []}
-    for l in ctx["layers"]:
-        e = {"dataset": l["dataset"], "family": l["family"], "crs": l.get("crs"), "state": l.get("state"),
-             "disposition": l.get("disposition"), "scale": l.get("scale"), "diff_scale": l.get("diff_scale"),
-             "bounds_3857": l.get("bounds_3857"), "native_cell_px": l.get("native_cell_px"),
-             "resampling": l.get("resampling")}
-        files = l.get("files") or {}
-        if l["family"] == "raster":
-            e["corners"] = l["corners_lonlat"]
-            for side in ("legacy", "new", "diff"):
-                p = assets / "display" / files.get(side, "")
-                e[side] = _data_uri(p, "image/png") if p.is_file() else None
-            e["triptych"] = f"assets/display/{files.get('triptych')}" if files.get("triptych") else None
-        else:
-            e["bounds_4326"] = l.get("bounds_4326")
-            for side in ("legacy", "new"):
-                p = assets / "display" / files.get(side, "")
-                e[side] = json.loads(p.read_text(encoding="utf-8")) if p.is_file() else None
-        out["layers"].append(e)
-    return "window.AXIS_LAYERS = " + json.dumps(out, sort_keys=True, separators=(",", ":"), allow_nan=False) + ";\n"
-
-
 def _env() -> jinja2.Environment:
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(HERE / "templates")),
                              autoescape=jinja2.select_autoescape(["html", "j2"], default=True),
@@ -940,34 +916,15 @@ def render_files(migration: Path, run_id: str | None = None) -> tuple[int, dict,
     ctx = build_context(migration, lad, phrases)
     files: dict[str, bytes] = {}
     # hash-checked copies the Markdown summary links to (bad paths were excluded in build_context)
-    for group in ("plots", "compare", "display"):
-        if group == "display" and not ctx["layers"]:
-            continue
-        for src, rel in ctx["_copy"][group]:
+    for group in ("plots", "compare"):     # no swipe map any more (map review C8): the cards show the plot
+        for src, rel in ctx["_copy"][group]:  # thumbnails and link to the GeoLibre views
             if src.is_file():
                 files[f"assets/{rel}"] = src.read_bytes()
-    ctx["has_swipe"] = bool(ctx["layers"])
-    if ctx["layers"]:  # the swipe map is a separate local page (it needs the vendored MapLibre next to it)
-        stage = Path(tempfile.mkdtemp(prefix="axis-report-"))
-        try:
-            for rel, data in files.items():
-                if rel.startswith("assets/display/"):
-                    (stage / "display").mkdir(parents=True, exist_ok=True)
-                    (stage / "display" / Path(rel).name).write_bytes(data)
-            files["assets/layers.js"] = layers_js(ctx, stage).encode()
-        finally:
-            shutil.rmtree(stage, ignore_errors=True)
-        vendor = HERE / "assets" / "vendor"
-        for vp in sorted(vendor.iterdir()):
-            files[f"assets/vendor/{vp.name}"] = vp.read_bytes()
-        files["assets/swipe.js"] = (HERE / "assets" / "swipe.js").read_bytes()
     ctx["phrase_missing"] = sorted(phrases.missing)
     page = render(ctx)
     ctx["phrase_missing"] = sorted(phrases.missing)  # second pass catches codes first seen while rendering
     page = render(ctx)
     files["index.html"] = page.encode("utf-8")
-    if ctx["layers"]:
-        files["swipe.html"] = render(ctx, "swipe.html.j2").encode("utf-8")
     files["REPORT.md"] = rp.report_md(ctx, ctx["mermaid"]).encode("utf-8")
     try:
         files["parity.xlsx"] = rp.parity_xlsx(ctx)

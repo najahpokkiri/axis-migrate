@@ -96,7 +96,7 @@ the graph page of C and C's report. Also a terminal in A, one in B, and Claude C
 | Time | Segment | Live / pre-baked |
 |---|---|---|
 | 0:00–2:00 | Problem and principle: "scripts decide, the model writes and looks" | slide or terminal |
-| 2:00–7:00 | Report of the fixed run: ladder, counts, failures first, swipe map, status line | A, live browser |
+| 2:00–7:00 | Report of the fixed run: ladder, counts, failures first, a dataset card, status line | A, live browser |
 | 7:00–11:00 | (a) Run history: the failing run, s01 card, worst tiles, graph inheritance | A, pre-rendered |
 | 11:00–13:00 | (b) Guard: a tolerance edit after the FAIL is refused | A, live terminal |
 | 13:00–17:30 | (c) Live graph edit: automate the canton rename | B, live clicks |
@@ -112,7 +112,9 @@ Open stage A, `migration/report/index.html` (screenshot `demo-assets/a6-fixed-ru
   itself only holds within 1.57e-9). Say: "the agent measured two numbers for each and proposed a tolerance; only I can sign it. Until then it is
   NEEDS_DECISION, never a pass."
 - The **failures list** is the first thing on the page, and every line has a reason code.
-- The **swipe map** (scroll down). Read its caption: "Display only … Verdicts are computed on the native grid."
+- A **dataset card** (scroll down): legacy | new | difference thumbnails cut from the sealed plots, the `looked:`
+  line of its visual review (five checks and one number), and the GeoLibre views it lists. Every view's caption ends
+  "display only · verdicts come from compare.py". (The swipe map is gone since map review C8.)
 - The **status line**: read it verbatim.
 
 ### 3.2 (a) The failing run in the history (7:00–11:00)

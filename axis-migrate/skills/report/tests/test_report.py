@@ -36,7 +36,7 @@ def test_clean_report(sealed):
     assert "✓ none: every in-scope step is verified" in html
     assert re.search(r'class="greyed"[^>]*>' + " · ".join(ac.GREYED_RUNGS) + " <span>not attempted</span>", html)
     files = rep["files"]
-    assert "index.html" in files and "assets/layers.js" in files
+    assert "index.html" in files and not any(f.startswith(("assets/vendor/", "assets/layers.js")) for f in files)
     for rel, h in files.items():
         assert ac.sha256_file(sealed["migration"] / "report" / rel) == h
     # page order (07 §4.1)
@@ -49,7 +49,7 @@ def test_clean_report(sealed):
         lad["status_line"].replace("&", "&amp;")
     md = (sealed["migration"] / "report" / "REPORT.md").read_text(encoding="utf-8")
     assert md.splitlines()[0] == lad["status_line"]
-    assert {"REPORT.md", "parity.xlsx", "swipe.html"} <= set(files)
+    assert {"REPORT.md", "parity.xlsx"} <= set(files) and "swipe.html" not in files
 
 
 def test_failure_listed_first_unfoldable(proj):  # 07 test 1 (structural half; browser half in test_browser.py)

@@ -24,9 +24,9 @@ report/map.py's vector_display) and the overview and worst projects. views.json 
 
 The display grid is the union of both grids when they share CRS and cell size and are offset by whole cells (exact,
 no resampling); otherwise new is placed on the legacy grid by nearest neighbour and views.json says so.
-Scales: legacy and new share one p2/p98 scale (verify/plot.py `_value_norm`, the rule of the plots and the swipe
-map); diff uses a symmetric diverging scale ±max|d| (report/map.py's rule), PuOr reversed: orange = new larger,
-purple = legacy larger.
+Scales: legacy and new share one p2/p98 scale (verify/plot.py `_value_norm`, the rule of the plots); diff uses a
+symmetric diverging scale ±max|d| (report/map.py's rule), PuOr reversed: orange = new larger, purple = legacy
+larger.
 
 Project URLs are origin-relative (`/data/<path under the migration>`): the bytes on disk do not depend on the
 server port, so `project_sha256` in views.json is the sha of exactly what the server sends. Only the page URL

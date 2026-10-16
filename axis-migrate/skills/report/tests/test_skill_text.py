@@ -11,7 +11,7 @@ SKILL = PLUGIN / "skills" / "report" / "SKILL.md"
 
 def test_every_script_has_a_full_path_that_exists():
     text = SKILL.read_text(encoding="utf-8")
-    assert '`"$P/scripts/axpy" "$P/skills/report/map.py" display --run' in text
+    assert "map.py display" not in text            # no display-layer step since the swipe map went (map review C8)
     assert not re.search(r"axpy [\w]+\.py", text), "a bare `axpy <script>.py` without its path"
     assert not re.search(r"python3 -I [\w]+\.py", text)
     for ref in re.findall(r'\$P/([^`\s"]+\.py)', text):
