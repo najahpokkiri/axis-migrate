@@ -127,7 +127,13 @@ def ensure_map_env(argv: list[str], script: str | None = None) -> None:
         print(f"map: {e}", file=sys.stderr)
         raise SystemExit(13)
     os.environ["AXIS_MAP_REEXEC"] = "1"
-    os.execv(str(py), [str(py), str(Path(script or __file__).resolve()), *argv])
+    cmd = [str(py), str(Path(script or __file__).resolve()), *argv]
+    if os.name == "nt":   # Windows os.execv starts a new process and this one exits 0 at once: the exit code is lost
+        import subprocess
+        sys.stdout.flush()
+        sys.stderr.flush()
+        raise SystemExit(subprocess.call(cmd))
+    os.execv(str(py), cmd)
 
 
 def _load_module(name: str, path: Path):
