@@ -87,7 +87,11 @@ def test_files_are_confined_to_migration(srv: Server, tmp_path: Path):
     assert st == 200 and body == b"\x89PNG"
     assert srv.req("GET", "/files/../legacy/in/raw.tif", origin=None)[0] in (403, 404)
     assert srv.req("GET", "/files/%2e%2e/legacy/in/raw.tif", origin=None)[0] == 403
-    (srv.mdir / "link").symlink_to(tmp_path / "legacy")
+    try:
+        (srv.mdir / "link").symlink_to(tmp_path / "legacy")
+    except OSError:   # Windows without the symlink privilege: a junction, which any user can make
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(srv.mdir / "link"), str(tmp_path / "legacy")], check=True,
+                       capture_output=True)
     assert srv.req("GET", "/files/link/in/raw.tif", origin=None)[0] == 403  # resolved, then prefix-checked
     assert srv.req("GET", "/files/runs/r1/verify/plots/p.png", token=False, origin=None)[0] == 403
 

@@ -32,7 +32,7 @@ def test_start_stop_roundtrip(tmp_path):
     map_python()
     mig = tmp_path / "migration"
     (mig / "runs").mkdir(parents=True)
-    (mig / "runs" / "hello.txt").write_text("hi\n")
+    (mig / "runs" / "hello.txt").write_text("hi\n", newline="\n")
     before = _plugin_listing()
     cp = run_cli("start.py", mig)
     assert cp.returncode == 0, cp.stdout + cp.stderr

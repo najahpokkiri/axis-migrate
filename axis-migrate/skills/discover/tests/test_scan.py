@@ -237,23 +237,24 @@ def hook(ev, args):
     if ev == 'open' and isinstance(args[0], str):
         opened.append(args[0])
 sys.addaudithook(hook)
-sys.argv = ['scan.py', {str(leg)!r}, '--out', {str(out)!r}]
+sys.argv = ['scan.py', {leg.as_posix()!r}, '--out', {out.as_posix()!r}]  # Git Bash collapses \ inside quotes
 try:
-    runpy.run_path({str(SCAN)!r}, run_name='__main__')
+    runpy.run_path({SCAN.as_posix()!r}, run_name='__main__')
 except SystemExit:
     pass
-open({str(log)!r}, 'w').write('\\n'.join([sys.base_prefix, sys.prefix] + opened))
+open({log.as_posix()!r}, 'w').write('\\n'.join([sys.base_prefix, sys.prefix] + opened))
 """
     r = subprocess.run([*AXPY_CMD, "-c", wrapper], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     base, prefix, *opened = log.read_text().splitlines()
-    opened = [p for p in opened if p.startswith("/")]  # '<unknown>' = in-memory code objects
+    opened = [p for p in opened if os.path.isabs(p)]  # '<unknown>' = in-memory code objects
     assert not any(p.endswith(".env") for p in opened)
     allowed = (str(leg), str(out), base, prefix, str(SCAN.parents[2]), str(log))
     import os.path as osp
     venv = osp.realpath(osp.join(osp.dirname(str(AXPY)), "..", "skills", "run", "env", ".venv"))
-    bad = [p for p in opened if not osp.realpath(p).startswith(allowed + (venv,)) and not p.startswith(allowed)
-           and not os_runtime(p)]
+    nc = lambda q: osp.normcase(osp.realpath(q))   # Windows: case and separators; POSIX: realpath as before
+    allowed_n = tuple(nc(a) for a in allowed + (venv,))
+    bad = [p for p in opened if not nc(p).startswith(allowed_n) and not p.startswith(allowed) and not os_runtime(p)]
     assert not bad, bad[:10]
 
 
