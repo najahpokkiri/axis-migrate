@@ -19,25 +19,17 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True     # never write __pycache__ into the plugin folder
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import proc  # noqa: E402
 
-
-def _cmdline(pid: int) -> str:
-    try:
-        return Path(f"/proc/{pid}/cmdline").read_bytes().replace(b"\0", b" ").decode(errors="replace")
-    except OSError:
-        pass
-    try:
-        return subprocess.run(["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True,
-                              timeout=5).stdout
-    except (OSError, subprocess.SubprocessError):
-        return ""
+_cmdline = proc.cmdline
 
 
 def _alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except OSError:
+    if not proc.alive(pid):
         return False
+    if os.name == "nt":                    # no zombies on Windows (and no os.WNOHANG)
+        return True
     try:                                   # a zombie child of ours counts as gone
         done, _ = os.waitpid(pid, os.WNOHANG)
         return done == 0
@@ -61,7 +53,7 @@ def stop(migration: Path) -> str:
         while _alive(pid) and time.time() - t0 < 3:
             time.sleep(0.05)
         if _alive(pid):
-            os.kill(pid, signal.SIGKILL)
+            os.kill(pid, getattr(signal, "SIGKILL", signal.SIGTERM))   # Windows: SIGTERM is TerminateProcess
         msg = f"map server (pid {pid}) stopped"
     for name in ("serve.pid", "server.json", "ready.json"):
         try:

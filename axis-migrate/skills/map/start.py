@@ -36,6 +36,7 @@ sys.dont_write_bytecode = True     # never write __pycache__ into the plugin fol
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import mapenv  # noqa: E402
+import proc  # noqa: E402
 
 BIND_MSG = ("map server could not bind 127.0.0.1 — rerun this one command outside the sandbox (Codex: approve it "
             "with escalated permissions; Claude Code: sandbox.network.allowLocalBinding)")
@@ -50,11 +51,7 @@ def state_dir(migration: Path) -> Path:
 
 
 def _alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except (OSError, ValueError):
-        return False
-    return True
+    return proc.alive(pid)   # never os.kill(pid, 0) on Windows: that terminates the process
 
 
 def _probe(port: int, timeout: float = 2.0) -> bool:
@@ -146,9 +143,20 @@ def launch(migration: Path, app: Path, port: int) -> dict:
         ready.unlink()
     log = open(sd / "serve.log", "ab")
     py = sys.executable or "python3"
-    p = subprocess.Popen([py, "-I", str(HERE / "serve.py"), str(app), str(migration), str(port), str(ovr),
-                          "--ready", str(ready)], stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-                         start_new_session=True, close_fds=True)
+    argv = [py, "-I", str(HERE / "serve.py"), str(app), str(migration), str(port), str(ovr), "--ready", str(ready)]
+    if os.name == "nt":
+        # start_new_session does nothing on Windows: detach from the console and, where the job allows it, break
+        # away from the job of the shell that ran start.py (else the server dies when that tool call ends)
+        flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+        try:
+            p = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=log, stderr=log, close_fds=True,
+                                 creationflags=flags | subprocess.CREATE_BREAKAWAY_FROM_JOB)
+        except OSError:
+            p = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=log, stderr=log, close_fds=True,
+                                 creationflags=flags)
+    else:
+        p = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True,
+                             close_fds=True)
     log.close()
     t0 = time.time()
     while time.time() - t0 < READY_TIMEOUT_S:

@@ -252,7 +252,7 @@ def test_after_seal_views_go_to_amend(tmp_path):
         doc = json.loads((run / "amend" / "views" / "views.json").read_text())
         assert doc["sealed_run"] is True and doc["root"] == "amend/views"
         assert doc["datasets"][0]["views"]["worst"]["url_path"].startswith(f"/data/runs/{run.name}/amend/views/")
-        assert not os.access(run, os.W_OK)                                 # run dir left read-only
+        assert os.name == "nt" or not os.access(run, os.W_OK)             # run dir left read-only (POSIX folders)
     finally:
         for p in [run, *run.rglob("*")]:
             if p.is_dir() or p.is_file():
