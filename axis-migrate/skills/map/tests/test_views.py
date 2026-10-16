@@ -272,3 +272,63 @@ def test_check_script(synth_run, tmp_path):
         assert cp.returncode == 2 and "project_sha256" in cp.stdout and "basemap is not off" in cp.stdout
     finally:
         p.write_bytes(keep)
+
+
+def test_projects_carry_the_caption_label(synth_run):
+    """Every view project names what it shows (map review C4): title = dataset · view, each layer's colour scale."""
+    ve = entry(synth_run, "ds.b")["views"]
+    pr = json.loads((synth_run / ve["worst"]["project"]).read_text())
+    lb = pr["metadata"]["axis-migrate"]["label"]
+    assert lb["title"] == "ds.b · worst"
+    assert [x["id"] for x in lb["layers"]] == [lay["id"] for lay in pr["layers"]]
+    by = {x["name"]: x["scale"] for x in lb["layers"]}
+    lo, hi = pr["layers"][0]["metadata"]["rasterState"]["rescale"][0]
+    assert by["legacy"] == by["new"] == f"viridis p2/p98 {lo:.4g}–{hi:.4g}"
+    assert by["diff"].startswith("±") and "orange new larger" in by["diff"]
+    assert by["validity"] == "blue legacy only · orange new only · green both"
+    vec = json.loads((synth_run / entry(synth_run, "ds.v")["views"]["overview"]["project"]).read_text())
+    assert [(x["name"], x["scale"]) for x in vec["metadata"]["axis-migrate"]["label"]["layers"]] == \
+        [("legacy", "blue outline"), ("new", "orange outline")]
+
+
+def _chrome() -> bool:
+    return any(shutil.which(c) for c in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser"))
+
+
+@pytest.mark.skipif(not _chrome(), reason="no Chrome/Chromium for the headless render check")
+def test_page_caption_names_view_layers_and_follows_toggles(synth_run):
+    """The override draws the caption in the canvas corner from the project label and updates it when a layer is
+    toggled in GeoLibre's layer panel."""
+    mig = synth_run.parents[1]
+    cp = run_cli("start.py", mig)
+    assert cp.returncode == 0, cp.stdout + cp.stderr
+    try:
+        port = json.loads((mig / ".axis" / "map" / "server.json").read_text())["port"]
+        ov = entry(synth_run, "ds.b")["views"]["overview"]["url_path"]
+        toggle = ('(async function(){var w=function(ms){return new Promise(function(r){setTimeout(r,ms)})};'
+                  'var b=[].slice.call(document.querySelectorAll("button,[role=tab],div")).filter(function(e){'
+                  'return e.textContent.trim()==="Layers"})[0]; if(b) b.click(); await w(800);'
+                  'var n=document.querySelector("[aria-label=visible-new],[title=visible-new]"); if(!n) return null;'
+                  'n.click(); await w(2000); return window.__AXIS_MAP__.caption;})()')
+        out = map_py("import render_check as R, json, sys, time, views\n"
+                     f"u = views.page_url({port}, {ov!r})\n"
+                     "ch = R.Chrome()\n"
+                     "try:\n"
+                     " ch.cmd('Page.enable'); ch.cmd('Runtime.enable'); r = R.check_page(ch, u)\n"
+                     " box = ch.js(\"(function(){var c=document.getElementById('axis-map-caption');"
+                     "var r=c.getBoundingClientRect();return {x:r.left,y:r.top,w:r.width,h:r.height,"
+                     "text:c.textContent};})()\")\n"
+                     f" after = ch.js({toggle!r})\n"
+                     "finally:\n ch.close()\n"
+                     "print(json.dumps({'ready': r['ready'], 'centre': r['status']['centre'], "
+                     "'caption': r['status']['caption'], 'box': box, 'after': after}))")
+        assert out["ready"]
+        cap = out["caption"]
+        assert cap.startswith("ds.b · overview · legacy + new: viridis p2/p98 ") and "display only" in cap, cap
+        assert "diff" not in cap and "validity" not in cap                     # hidden in this view
+        c, b = out["centre"], out["box"]
+        assert c["x"] - c["width"] / 2 <= b["x"] <= c["x"] - c["width"] / 2 + 20                  # canvas corner
+        assert c["y"] - c["height"] / 2 <= b["y"] <= c["y"] - c["height"] / 2 + 20 and b["h"] > 30
+        assert out["after"] and out["after"].startswith("ds.b · overview · legacy: viridis"), out["after"]
+    finally:
+        run_cli("stop.py", mig)

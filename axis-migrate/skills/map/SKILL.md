@@ -79,7 +79,9 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
    mismatch means you are on the wrong cell or the wrong layer: say so.
 5. **Colours**: legacy and new share one viridis scale (p2/p98 of both sides); diff is PuOr reversed on ±max|d|
    (orange = new larger, purple = legacy larger, transparent = equal or nodata); validity is blue = legacy only,
-   orange = new only, green = both, transparent = neither. Basemap is off. A "Diagnostics: 1" badge with the luma.gl
+   orange = new only, green = both, transparent = neither. The caption in the top-left corner of the map names the
+   dataset · view · each visible layer with its scale · display only, and follows your layer toggles: quote it
+   rather than describing colours from memory. Basemap is off. A "Diagnostics: 1" badge with the luma.gl
    warning "Binding sampler not set" comes from the GPU engine and is harmless.
 6. A screenshot is for you, not evidence; the receipt cites projects, shas and popup values.
 

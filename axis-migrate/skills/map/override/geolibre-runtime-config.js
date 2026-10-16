@@ -15,6 +15,10 @@
 //    map canvas in CSS px). When the map is moved and tiles load again the line says "drawing" until idle again.
 // 5. Never arms GeoLibre's "unsaved changes" beforeunload prompt (it arms after an identify click and would block the
 //    next navigate in the agent's browser): view projects are display only and never saved from the page.
+// 6. Caption: a project with metadata["axis-migrate"].label {title, layers: [{id, name, scale}]} gets a caption in the
+//    top-left corner of the map canvas: title (dataset · view) · each visible layer with its colour scale · "display
+//    only". Layer visibility is read from GeoLibre's layer list (a layer toggled in the app updates the caption within
+//    a second), else from the project. Every screenshot then names what it shows.
 // Display only: nothing here changes data, values or what the identify popup reports.
 window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
 (function () {
@@ -25,7 +29,8 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
   var st = window.__AXIS_MAP__ = {
     version: AXIS_GEOLIBRE_VERSION, state: "loading", engine: null, engineWanted: null, project: null,
     projectSha256: null, inflight: 0, requests: 0, lastActivity: Date.now(), started: Date.now(), centre: null,
-    rasterLayers: null, fitBounds: null, fitted: false, map: false, idle: false, repaints: 0, problems: []
+    rasterLayers: null, fitBounds: null, fitted: false, map: false, idle: false, repaints: 0, problems: [],
+    label: null, caption: null
   };
   function touch() { st.lastActivity = Date.now(); }
   // view projects are display only and never edited here: GeoLibre's "unsaved changes" prompt (it arms itself after
@@ -71,6 +76,14 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
         st.engineWanted = st.rasterLayers ? ENGINE : null;
         var fb = ((doc.metadata || {})["axis-migrate"] || {}).fit_bounds;
         if (Array.isArray(fb) && fb.length === 4 && fb.every(function (v) { return typeof v === "number" && isFinite(v); })) st.fitBounds = fb;
+        var lb = ((doc.metadata || {})["axis-migrate"] || {}).label;
+        if (lb && typeof lb.title === "string" && Array.isArray(lb.layers)) {
+          var vis = {};
+          (doc.layers || []).forEach(function (l) { if (l && l.id) vis[l.id] = l.visible !== false; });
+          st.label = { title: lb.title, layers: lb.layers.filter(function (l) { return l && l.id; }).map(function (l) {
+            return { id: String(l.id), name: String(l.name || ""), scale: String(l.scale || ""), visible: vis[l.id] !== false };
+          }) };
+        }
         return crypto.subtle ? crypto.subtle.digest("SHA-256", buf) : null;
       }).then(function (d) { if (d) st.projectSha256 = hex(d); touch(); })
         .catch(function (e) { st.problems.push("project: " + e); st.rasterLayers = 0; });
@@ -162,6 +175,71 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
     return "axis-map: " + st.state + " · engine " + (st.engineWanted ? (st.engine || "pending") : "n/a (no raster layer)") +
       " · project sha256 " + (st.projectSha256 || "pending") + (c ? " · click centre " + c.x + "," + c.y : "");
   }
+  // GeoLibre keeps its layer list (with `visible`) in React state: the first hook-state array whose first item has
+  // the id of one of this project's layers is that list; read at most once a second (≈1000 fibers). Not found =
+  // the project's own visible flags.
+  var visAt = 0, visById = null;
+  function liveVisibility(ids) {
+    var root = document.getElementById("root"), key = root && Object.keys(root).filter(function (k) { return k.indexOf("__reactContainer") === 0; })[0];
+    if (!key) return null;
+    var stack = [root[key]], n = 0;
+    function pick(x) {
+      if (!Array.isArray(x) || !x.length || !x[0] || ids.indexOf(x[0].id) < 0) return null;
+      var out = {};
+      x.forEach(function (l) { if (l && l.id) out[l.id] = l.visible !== false; });
+      return out;
+    }
+    while (stack.length && n < 20000) {
+      var f = stack.pop(); n++;
+      if (!f) continue;
+      for (var h = f.memoizedState, m = 0; h && typeof h === "object" && "next" in h && m < 80; h = h.next, m++) {
+        var ms = h.memoizedState, got = pick(ms) || (ms && typeof ms === "object" && !Array.isArray(ms) && "current" in ms ? pick(ms.current) : null);
+        if (got) return got;
+      }
+      if (f.sibling) stack.push(f.sibling);
+      if (f.child) stack.push(f.child);
+    }
+    return null;
+  }
+  function layerVisible(l) {
+    return visById && l.id in visById ? visById[l.id] : l.visible;
+  }
+  var cap = null;
+  function caption() {
+    var lb = st.label, c = st.centre;
+    if (!lb || !document.body) return;
+    if (Date.now() - visAt > 1000) {
+      visAt = Date.now();
+      try { visById = liveVisibility(lb.layers.map(function (l) { return l.id; })) || visById; } catch (e) { st.problems.push("caption: " + e); }
+    }
+    var groups = [];
+    lb.layers.forEach(function (l) {
+      if (!layerVisible(l)) return;
+      var g = groups.length && groups[groups.length - 1].scale === l.scale ? groups[groups.length - 1] : null;
+      if (g) g.names.push(l.name); else groups.push({ names: [l.name], scale: l.scale });
+    });
+    var shown = groups.length ? groups.map(function (g) { return g.names.join(" + ") + (g.scale ? ": " + g.scale : ""); }) : ["no layer visible"];
+    var text = [lb.title].concat(shown).concat(["display only · verdicts come from compare.py"]);
+    st.caption = text.join(" · ");
+    if (!cap) {
+      cap = document.createElement("div");
+      cap.id = "axis-map-caption";
+      cap.style.cssText = "position:fixed;z-index:2147483646;font:13px/1.35 system-ui,sans-serif;color:#111;" +
+        "background:rgba(255,255,255,.9);border:1px solid #888;border-radius:3px;padding:3px 7px;pointer-events:none;" +
+        "max-width:min(560px,60vw);overflow-wrap:anywhere;white-space:pre-line";
+      document.body.appendChild(cap);
+    }
+    var box = c ? { left: c.x - c.width / 2, top: c.y - c.height / 2 } : { left: 0, top: 0 };
+    cap.style.left = Math.round(box.left + 10) + "px";
+    cap.style.top = Math.round(box.top + 10) + "px";
+    var html = "<b></b>", t = text.slice(1).join("\n");
+    if (cap.getAttribute("data-text") !== st.caption) {
+      cap.setAttribute("data-text", st.caption);
+      cap.innerHTML = html;
+      cap.firstChild.textContent = text[0];
+      cap.appendChild(document.createTextNode("\n" + t));
+    }
+  }
   var repaintAt = 0;
   function repaint(m) {
     st.idle = false;
@@ -205,6 +283,7 @@ window.__GEOLIBRE_DEPLOYMENT_ENV__ = {};
       st.state = now - st.started > GIVE_UP_MS && !engineOk ? "engine-not-set (this GeoLibre build has no maplibre-gl-raster engine select)" : "loading";
     }
     document.documentElement.setAttribute("data-axis-map", st.state === "ready" ? "ready" : "loading");
+    caption();
     show(line());
   }
   setInterval(tick, 150);

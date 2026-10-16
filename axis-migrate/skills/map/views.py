@@ -35,7 +35,8 @@ on a PASS_EXACT) or byte-equal to one reviewed with nothing found in an earlier 
 `skipped: identical (<sha256 of the new output>)` (lib/visual_receipt.py re-hashes the bytes before it counts); a
 PASS_EXACT dataset gets only overview and one cell; max |new − legacy| = 0 gets no worst (`omitted_views`).
 Cameras: overview/nodata (and inputs-overview) carry metadata["axis-migrate"].fit_bounds; the page's override fits
-them into the canvas it really has. Projects switch off the app's animated atmosphere (starry sky) plugin.
+them into the canvas it really has. Every project carries metadata["axis-migrate"].label (title "<ds> · <view>", each
+layer's id, name and colour scale): the override draws it as a caption in the canvas corner. Projects switch off the app's animated atmosphere (starry sky) plugin.
 
 After seal (verify/ read-only), views go to <run>/amend/views/ instead (display only; never part of the evidence).
 
@@ -417,12 +418,35 @@ def _stable_layer(layer: dict, key: str) -> dict:
     return json.loads(json.dumps(layer).replace(old, new))
 
 
+def _g(v: float) -> str:
+    return f"{float(v):.4g}"
+
+
+def scale_label(spec: dict) -> str:
+    """What a layer's colours mean, for the caption the page draws in the canvas corner: the spec's own `scale`
+    (e.g. "p2/p98 0.12–5.3"), else derived from its colour map, rescale and stroke colour."""
+    if spec.get("scale"):
+        return str(spec["scale"])
+    if spec.get("kind") == "cog":
+        if spec.get("colormap") == VALIDITY_PALETTE:
+            return "blue legacy only · orange new only · green both"
+        lo, hi = (spec.get("rescale") or [[None, None]])[0]
+        if spec.get("colormap") == DIFF_PALETTE and lo is not None:
+            return f"±{_g(hi)}: orange new larger, purple legacy larger"
+        return f"{spec.get('colormap')} {_g(lo)}–{_g(hi)}" if lo is not None else str(spec.get("colormap") or "")
+    col = {C_LEGACY: "blue", C_NEW: "orange", C_ZONES: "black"}.get((spec.get("style") or {}).get("strokeColor"))
+    return f"{col} outline" if col else ""
+
+
 def build_project(name: str, camera: dict, layers: list[dict], bookmarks: list[dict], key: str,
                   fit_bounds: list[float] | None = None) -> dict:
-    """layers: [{name, kind: cog|vector, url, visible, colormap?, rescale?, reversed?, style?}] bottom → top.
-    fit_bounds [w, s, e, n] (lon/lat): the page's override fits the camera to them in whatever canvas it has."""
+    """layers: [{name, kind: cog|vector, url, visible, colormap?, rescale?, reversed?, style?, scale?}] bottom → top.
+    fit_bounds [w, s, e, n] (lon/lat): the page's override fits the camera to them in whatever canvas it has.
+    metadata["axis-migrate"].label {title, layers: [{id, name, scale}]}: the caption the page draws in the canvas
+    corner (title · visible layers with their scale · display only), so every screenshot names what it shows."""
     from geolibre import authoring as A, project as P
     pr = P.build_empty_project(name, center=camera["center"], zoom=camera["zoom"], basemap_url="")
+    label = []
     for spec in layers:
         if spec["kind"] == "cog":
             lay = P.cog_layer(spec["name"], spec["url"], colormap=spec["colormap"], rescale=spec["rescale"])
@@ -433,6 +457,8 @@ def build_project(name: str, camera: dict, layers: list[dict], bookmarks: list[d
             lay = P.vector_layer(spec["name"], spec["url"], **spec.get("style", {}))
         lay = _stable_layer(lay, f"{key}/{spec['name']}")
         lay["visible"] = bool(spec.get("visible", True))
+        sc = scale_label(spec)
+        label.append({"id": lay["id"], "name": spec["name"].split(" (")[0] if sc else spec["name"], "scale": sc})
         A.add_layer(pr, lay)
     for i, b in enumerate(bookmarks):
         A.add_bookmark(pr, b["name"], center=b["center"], zoom=b["zoom"],
@@ -444,7 +470,8 @@ def build_project(name: str, camera: dict, layers: list[dict], bookmarks: list[d
     # dark vector outlines and changes between two screenshots); the layer control and the deck.gl overlay stay
     plugins = P.ensure_plugins_block(pr)
     plugins["activePluginIds"] = [x for x in plugins["activePluginIds"] if x != "maplibre-atmosphere-effects"]
-    pr["metadata"] = {"axis-migrate": {"display_only": True, "caption": CAPTION}}
+    pr["metadata"] = {"axis-migrate": {"display_only": True, "caption": CAPTION,
+                                       "label": {"title": name, "layers": label}}}
     if fit_bounds:
         pr["metadata"]["axis-migrate"]["fit_bounds"] = [round(float(x), 9) for x in fit_bounds]
     return pr
@@ -606,8 +633,10 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
     if norm["kind"] == "categorical":
         cl = norm["classes"]
         vmin, vmax = (cl[0] - 0.5, cl[-1] + 0.5) if len(cl) == 1 else (cl[0], cl[-1])
+        vscale = f"viridis classes {_g(cl[0])}–{_g(cl[-1])}"
     else:
         vmin, vmax = norm["vmin"], norm["vmax"]
+        vscale = f"viridis p2/p98 {_g(vmin)}–{_g(vmax)}"
     gtr, shape, pl, pn, aligned, method = display_grid(L, N)
     if shape[0] * shape[1] > MAX_CELLS:
         raise SetupError(f"display grid {shape} exceeds {MAX_CELLS} cells")
@@ -713,9 +742,9 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
     zone = ctx.zone_layer(dsid)
     rescale = [[float(vmin), float(vmax)]]
     base = [{"name": "legacy", "role": "legacy", "kind": "cog", "path": files["legacy"], "colormap": PALETTE,
-             "rescale": rescale},
+             "rescale": rescale, "scale": vscale},
             {"name": "new", "role": "new", "kind": "cog", "path": files["new"], "colormap": PALETTE,
-             "rescale": rescale},
+             "rescale": rescale, "scale": vscale},
             {"name": "diff (new − legacy)", "role": "diff", "kind": "cog", "path": files["diff"],
              "colormap": DIFF_PALETTE, "reversed": True, "rescale": [[-dl, dl]]},
             {"name": "validity (1 legacy only · 2 new only · 3 both)", "role": "validity", "kind": "cog",
@@ -732,7 +761,7 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
     for v in [x for x in RASTER_VIEWS if x not in omit]:
         specs = []
         for lay in base:
-            s = {k: lay[k] for k in ("name", "kind", "colormap", "rescale", "reversed", "style") if k in lay}
+            s = {k: lay[k] for k in ("name", "kind", "colormap", "rescale", "reversed", "style", "scale") if k in lay}
             s["url"] = ctx.up(lay["path"])
             s["visible"] = lay["role"] in visible[v]
             specs.append(s)
@@ -756,7 +785,8 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
     # one small project per cell to identify: it opens with the camera on the cell centre, so a click on the map
     # centre lands on that cell (the embed has no camera URL parameter)
     for k, c in sorted(cells.items()):
-        specs = [{**{q: lay[q] for q in ("name", "kind", "colormap", "rescale", "reversed", "style") if q in lay},
+        specs = [{**{q: lay[q] for q in ("name", "kind", "colormap", "rescale", "reversed", "style", "scale")
+                     if q in lay},
                   "url": ctx.up(lay["path"]), "visible": True} for lay in base]     # the popup lists every visible layer
         ppath = out / f"cell-{k}.geolibre.json"
         pr = build_project(f"{dsid} · cell {k}", {"center": c["camera"]["center"], "zoom": c["camera"]["zoom"]},
@@ -1011,7 +1041,7 @@ class ICtx:
     def save(self, path: Path, name: str, camera: dict, specs: list[dict], bookmarks: list[dict],
              fit_bounds: list[float] | None = None) -> dict:
         """specs: [{name, role, kind, path, visible, colormap?, rescale?, style?}] bottom → top."""
-        layers = [{**{k: s[k] for k in ("name", "kind", "colormap", "rescale", "style") if k in s},
+        layers = [{**{k: s[k] for k in ("name", "kind", "colormap", "rescale", "style", "scale") if k in s},
                    "url": self.up(s["path"]), "visible": s["visible"]} for s in specs]
         pr = build_project(name, camera, layers, bookmarks, key=f"inputs/{self.rel(path)}", fit_bounds=fit_bounds)
         pr["metadata"]["axis-migrate"]["caption"] = INPUTS_CAPTION
@@ -1121,7 +1151,8 @@ def inputs_raster(ctx: ICtx, d: dict, src: Path, out: Path, aoi) -> dict:
                       "lon": round(lon, 9), "lat": round(lat, 9),
                       "value": _py(S.arr[r, c], kind) if valid[r, c] else None, "camera": cam})
     spec = {"name": d["id"], "dataset": d["id"], "role": d["role"], "kind": "cog", "path": data,
-            "colormap": PALETTE, "rescale": [[vmin, vmax]]}
+            "colormap": PALETTE, "rescale": [[vmin, vmax]],
+            "scale": f"viridis {_g(vmin)}–{_g(vmax)} ({basis.split(' of ')[0]})"}
     for c in cells:              # one-layer project per cell: camera on its centre, so a centre click identifies it
         c.update({k: v for k, v in ctx.save(out / f"cell-{c['id']}.geolibre.json", f"{d['id']} · cell {c['id']}",
                                             c["camera"], [{**spec, "visible": True}], []).items()

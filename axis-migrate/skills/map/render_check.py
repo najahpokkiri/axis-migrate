@@ -167,11 +167,14 @@ class Chrome:
         shutil.rmtree(self.dir, ignore_errors=True)
 
 
-def crisp_ratio(png: bytes, rect: dict) -> float | None:
+def crisp_ratio(png: bytes, rect: dict, below: float | None = None) -> float | None:
+    """`below`: start under this page y (the caption box in the canvas corner is text, not cells)."""
     from PIL import Image
     import numpy as np
     a = np.asarray(Image.open(io.BytesIO(png)).convert("RGB")).astype("int16")
     x0, y0 = int(rect["x"] - rect["width"] / 2) + 8, int(rect["y"] - rect["height"] / 2) + 8
+    if below is not None:
+        y0 = max(y0, int(below) + 4)
     x1, y1 = int(rect["x"] + rect["width"] / 2) - 8, int(rect["y"] + rect["height"] / 2) - 60  # above the status line
     sub = a[max(0, y0):max(0, y1), max(0, x0):max(0, x1)]
     if sub.shape[0] < 10 or sub.shape[1] < 10:
@@ -204,7 +207,9 @@ def check_page(ch: Chrome, url: str, shot: Path | None = None) -> dict:
         res["crisp"] = crisp_ratio(png, rect) if rect else None      # what the stock engine draws (smoothed)
         return res
     if st.get("rasterLayers"):
-        res["crisp"] = crisp_ratio(png, st["centre"]) if st.get("centre") else None
+        below = ch.js("(function(){var c=document.getElementById('axis-map-caption');"
+                      "return c ? c.getBoundingClientRect().bottom : null;})()")
+        res["crisp"] = crisp_ratio(png, st["centre"], below) if st.get("centre") else None
         res["engine"] = st.get("engine")
         if res["engine"] != "maplibre-gl-raster":
             res["problem"] = f"raster engine is {res['engine']!r}, not maplibre-gl-raster"
