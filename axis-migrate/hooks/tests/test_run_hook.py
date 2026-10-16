@@ -100,9 +100,12 @@ def test_no_migration_needs_no_python(tmp_path, nopy, shell, hook, data):
 def test_no_migration_is_fast_with_python(tmp_path):
     work = tmp_path / "w"
     work.mkdir()
-    times = [run("guard_bash", bash(work, "ls"), proc_cwd=work).ms for _ in range(5)]
-    # Windows: sh + the env python start (no pre-filter there) is about 0.5 s; it was 7 s before the //migration fix
-    assert min(times) < (1500 if WIN else 100), times
+    env = {"CLAUDE_PLUGIN_DATA": str(tmp_path / "pd")}   # SessionStart writes the hook-python pointer first
+    assert run("session_start", payload("SessionStart", cwd=str(work)), env=env, proc_cwd=work).returncode == 0
+    assert (tmp_path / "pd" / "hook-python").is_file()
+    times = [run("guard_bash", bash(work, "ls"), env=env, proc_cwd=work).ms for _ in range(5)]
+    # Windows: sh + python process starts alone are ~0.2 s (Git Bash, antivirus); 0.4.1 took 3.6-9.5 s there
+    assert min(times) < (1000 if WIN else 100), times
 
 
 # --- migration/ and no interpreter: NEEDS_PYTHON3 -----------------------------------------------------------------------
@@ -343,3 +346,42 @@ def test_hooks_leave_no_bytecode_in_the_plugin(project, tmp_path):
                        cwd=str(project.root), timeout=60)
     left = sorted(str(p.relative_to(copy)) for p in copy.rglob("__pycache__"))
     assert left == [], left
+
+
+# --- hook-python pointer (fast start) -----------------------------------------------------------------------------------
+def test_session_start_writes_the_pointer_and_later_hooks_use_it(project, tmp_path):
+    """SessionStart records its interpreter; every later hook execs it without the shell pre-filter, and the guards
+    still decide (a legacy write is denied, a command outside any migration passes)."""
+    pd = tmp_path / "pd"
+    env = {"CLAUDE_PLUGIN_DATA": str(pd)}
+    r = run("session_start", payload("SessionStart", cwd=str(project.root)), env=env)
+    assert r.returncode == 0
+    ptr = (pd / "hook-python").read_text().strip()
+    assert ptr and os.path.isfile(ptr) and "windowsapps" not in ptr.lower()
+    r = run("guard_write", write(project.root, "legacy-demo/NOTES.txt"), env=env)
+    assert r.returncode == 0 and json.loads(r.out)["hookSpecificOutput"]["permissionDecision"] == "deny"
+    other = tmp_path / "elsewhere"
+    other.mkdir()
+    r = run("guard_bash", bash(other, "rm -rf x"), env=env, proc_cwd=other)
+    assert r.returncode == 0 and r.out.strip() == ""
+
+
+def test_stale_pointer_falls_back(project, tmp_path):
+    pd = tmp_path / "pd"
+    pd.mkdir()
+    (pd / "hook-python").write_text(str(tmp_path / "gone" / "python") + "\n")
+    r = run("guard_write", write(project.root, "legacy-demo/NOTES.txt"), env={"CLAUDE_PLUGIN_DATA": str(pd)})
+    assert r.returncode == 0 and "deny" in r.out
+
+
+def test_pointer_cannot_be_written_by_the_agent(project, tmp_path):
+    pd = tmp_path / "pd"
+    pd.mkdir()
+    env = {"CLAUDE_PLUGIN_DATA": str(pd)}
+    other = tmp_path / "elsewhere"
+    other.mkdir()
+    for cwd in (project.root, other):
+        r = run("guard_write", write(cwd, str(pd / "hook-python")), env=env, proc_cwd=cwd)
+        assert "deny" in r.out and "hook-python" in r.out
+        r = run("guard_bash", bash(cwd, f"echo /bin/true > '{pd.as_posix()}/hook-python'"), env=env, proc_cwd=cwd)
+        assert "deny" in r.out

@@ -2,40 +2,49 @@
 # run-hook.sh <hook>: start one axis-migrate hook (hooks/bin/<hook>.py) without assuming a working python3.
 # POSIX sh only (macOS /bin/sh, dash, Git Bash). Used by every hooks/hooks.json command, in Claude Code and Codex.
 #
+# 0. Fast start (every hook but session_start): ${PLUGIN_DATA:-$CLAUDE_PLUGIN_DATA}/hook-python names the interpreter
+#    SessionStart resolved (hooks/bin/_hooklib.write_hook_python: the one chosen by 1.-3. below). When it is there and
+#    executable, it is exec'd on the hook at once: shell builtins only, stdin passed straight through, and Python
+#    decides everything (no migration -> exit 0). Process starts cost 50-200 ms each under Git Bash on Windows, so the
+#    pre-filter below made every hook take seconds there. Missing or stale pointer: the steps below, as before.
+#    Windows (Git Bash) without a pointer: any plugin env python found under the data/cache folders is exec'd the
+#    same way.
 # 1. Read the hook payload from stdin once (kept byte for byte and passed on unchanged).
 # 2. Look for migration/graph.json walking up from: every "cwd" in the payload, the folder of every "file_path" /
 #    "notebook_path", and the hook process cwd (not for Stop: a Stop is scoped by session, see stop_gate.py).
 #    None found -> exit 0 at once, without any Python: projects that are not migrations are never affected.
-#    Exceptions that always go on to Python: session_start (it writes the hooks-active marker and the plugin
-#    secrets file even before migration/ exists) and a payload carrying an apply_patch text (absolute paths).
-#    Windows (Git Bash) with the plugin's environment present skips 2. and 3.: that python runs every hook at once,
-#    since process starts are slow there and the Python hooks are idle outside a migration anyway.
+#    Exceptions that always go on to Python: session_start (it writes the hooks-active marker, the hook-python
+#    pointer and the plugin secrets file even before migration/ exists) and a payload carrying an apply_patch text
+#    (absolute paths).
 # 3. Interpreter: the plugin's own uv environment (same rule as scripts/axpy and lib/axis_common.env_venv_dir:
 #    ${CLAUDE_PLUGIN_DATA}/env-<lock8>, ${PLUGIN_DATA}/env-<lock8>, ${XDG_CACHE_HOME:-~/.cache}/axis-migrate/env-<lock8>,
 #    then any env-* there: the hooks need the standard library only), else a python3 (python) that really runs
 #    Python >= 3.9 within 3 s. On macOS /usr/bin/python3 is tried only when `xcode-select -p` succeeds, so the
-#    Command Line Tools stub never pops its install dialog.
+#    Command Line Tools stub never pops its install dialog; the Windows Store alias (...\WindowsApps\python*.exe)
+#    is never used.
 # 4. No interpreter: NEEDS_PYTHON3. PreToolUse denies (exit 2, reason on stderr) except `scripts/axpy --print-python`
 #    and `scripts/axpy --doctor`, the two fix commands; PostToolUse blocks (exit 2); Stop blocks once (exit 2) when
 #    this session is recorded in migration/.axis/sessions.json and stop_hook_active is false, else allows;
 #    SessionStart allows with the reason as context; UserPromptSubmit allows silently.
 unset CDPATH
-PLUGIN="$(cd "$(dirname "$0")/.." && pwd)"
 HOOK="$1"
 case "$HOOK" in
   ''|*[!a-z_]*) echo "axis-migrate run-hook.sh: unknown hook '$HOOK'" >&2; exit 2 ;;
 esac
-SCRIPT="$PLUGIN/hooks/bin/$HOOK.py"
-[ -f "$SCRIPT" ] || { echo "axis-migrate run-hook.sh: missing $SCRIPT" >&2; exit 2; }
+PYTHONIOENCODING=utf-8
+PYTHONDONTWRITEBYTECODE=1   # -B covers the hook; this covers any Python it starts (doctor: PLUGIN_NOT_CLEAN)
+export PYTHONIOENCODING PYTHONDONTWRITEBYTECODE
 
-PAYLOAD="$(cat; printf x)"
-PAYLOAD="${PAYLOAD%x}"
-
-# ---- Windows (Git Bash) ------------------------------------------------------------------------------------------
-# Every process start costs 50-100 ms there (more under antivirus), and the JSON pre-filter below needs about 25 of
-# them: over a second per hook, on every tool call, in every project. So on Windows the plugin's own environment
-# python decides at once (the hooks are idle outside a migration; about 0.3 s). Without that environment the POSIX
-# path below runs (NEEDS_PYTHON3 included). macOS and Linux never take this branch.
+# ---- 0. fast start: builtins only, no payload capture --------------------------------------------------------------
+HOOKS_DIR="${0%/*}"
+[ "$HOOKS_DIR" != "$0" ] || HOOKS_DIR="${0%\\*}"   # C:\...\hooks\run-hook.sh (Windows)
+[ "$HOOKS_DIR" != "$0" ] || HOOKS_DIR=.
+if [ "$HOOK" != "session_start" ] && [ -f "$HOOKS_DIR/bin/$HOOK.py" ]; then
+  PTR="${PLUGIN_DATA:-${CLAUDE_PLUGIN_DATA:-}}"
+  if [ -n "$PTR" ] && [ -f "$PTR/hook-python" ] && read -r PY < "$PTR/hook-python" && [ -n "$PY" ] && [ -x "$PY" ]; then
+    exec "$PY" -I -B "$HOOKS_DIR/bin/$HOOK.py"
+  fi
+fi
 WIN=0
 case "${OSTYPE:-}" in
   msys*|cygwin*) WIN=1 ;;
@@ -43,20 +52,21 @@ case "${OSTYPE:-}" in
        case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) WIN=1 ;; esac
      fi ;;
 esac
-if [ "$WIN" = 1 ]; then
-  for b in "${CLAUDE_PLUGIN_DATA:-}" "${PLUGIN_DATA:-}" "${XDG_CACHE_HOME:-${HOME:-/nonexistent}/.cache}/axis-migrate"; do
+if [ "$WIN" = 1 ] && [ -f "$HOOKS_DIR/bin/$HOOK.py" ]; then   # no pointer yet: any plugin env python (stdlib only)
+  for b in "${PLUGIN_DATA:-}" "${CLAUDE_PLUGIN_DATA:-}" "${XDG_CACHE_HOME:-${HOME:-/nonexistent}/.cache}/axis-migrate"; do
     [ -n "$b" ] && [ -d "$b" ] || continue
-    for c in "$b"/env-*/Scripts/python.exe; do   # any env: the hooks need the standard library only
-      if [ -x "$c" ]; then
-        PYTHONIOENCODING=utf-8
-        PYTHONDONTWRITEBYTECODE=1
-        export PYTHONIOENCODING PYTHONDONTWRITEBYTECODE
-        printf '%s' "$PAYLOAD" | "$c" -I -B "$SCRIPT"
-        exit $?
-      fi
+    for c in "$b"/env-*/Scripts/python.exe; do
+      [ -x "$c" ] && exec "$c" -I -B "$HOOKS_DIR/bin/$HOOK.py"
     done
   done
 fi
+
+PLUGIN="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT="$PLUGIN/hooks/bin/$HOOK.py"
+[ -f "$SCRIPT" ] || { echo "axis-migrate run-hook.sh: missing $SCRIPT" >&2; exit 2; }
+
+PAYLOAD="$(cat; printf x)"
+PAYLOAD="${PAYLOAD%x}"
 
 # ---- JSON string values of a key (one per line, unescaped; a value with \u, \n or \t escapes marks UNSURE) --------
 UNSURE=0
@@ -66,7 +76,10 @@ json_values() {
     | sed -E "s/^\"$1\"[[:space:]]*:[[:space:]]*\"//; s/\"\$//"
 }
 mark_unsure() {  # call in this shell (not in $(...)): a value with \u, \n, \t ... escapes cannot be decoded here
-  case "$1" in *'\u'*|*'\n'*|*'\t'*|*'\r'*|*'\b'*|*'\f'*) UNSURE=1 ;; esac
+  case "$1" in *'\'*) ;; *) return 0 ;; esac
+  # an escaped backslash pair is not an escape: C:\\Users\\najah holds \\n, not \n
+  s="$(printf '%s' "$1" | sed 's/[\][\]//g')"
+  case "$s" in *'\u'*|*'\n'*|*'\t'*|*'\r'*|*'\b'*|*'\f'*) UNSURE=1 ;; esac
 }
 unescape() {
   printf '%s' "$1" | sed "s/\\\\\\\\/$ONE/g; s/\\\\\"/\"/g; s/\\\\\\//\\//g; s/$ONE/\\\\/g"
@@ -196,6 +209,7 @@ $(command -v python 2>/dev/null)"
 '
   for c in $CANDS; do
     [ -x "$c" ] || continue
+    case "$c" in */[Ww]indows[Aa]pps/*) continue ;; esac   # the Windows Store / install manager alias: never used
     if [ "$DARWIN" = 1 ] && [ "$c" = "/usr/bin/python3" ]; then
       xcode-select -p >/dev/null 2>&1 || continue   # the CLT stub: never run it (it opens an install dialog)
     fi

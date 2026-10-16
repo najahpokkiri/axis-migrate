@@ -286,6 +286,57 @@ def graph_integrity(mig: Path) -> list[str] | None:
     return list(mod.integrity_problems(mig))
 
 
+POINTER_NAME = "hook-python"
+
+
+def pointer_path() -> Path | None:
+    """${PLUGIN_DATA:-$CLAUDE_PLUGIN_DATA}/hook-python, the interpreter every hook after SessionStart starts at once
+    (run-hook.sh reads it with shell builtins only). None when the harness gives no data folder."""
+    d = os.environ.get("PLUGIN_DATA") or os.environ.get("CLAUDE_PLUGIN_DATA")
+    return Path(d) / POINTER_NAME if d else None
+
+
+POINTER_DENY = ("axis-migrate: the plugin's hook-python pointer chooses the interpreter that runs every guard; only the "
+                "SessionStart hook writes it. Do not write, move or delete it.")
+
+
+def same_file(p, q) -> bool:
+    """Same path after realpath (and case and separators on Windows); the target may not exist yet."""
+    a, b = os.path.realpath(str(p)), os.path.realpath(str(q))
+    return os.path.normcase(a) == os.path.normcase(b)
+
+
+def mentions_pointer(cmd: str) -> bool:
+    """A shell command naming the hook-python pointer (any verb: the guard does not parse which ones write)."""
+    return POINTER_NAME in cmd
+
+
+def store_stub(exe: str) -> bool:
+    """The Windows Store / Python Install Manager alias (...\\WindowsApps\\python3.exe): never recorded."""
+    return "\\windowsapps\\" in exe.replace("/", "\\").lower()
+
+
+def write_hook_python() -> Path | None:
+    """SessionStart: record the interpreter run-hook.sh chose for this hook (the plugin env, else a probed python3)
+    so later hooks skip the shell pre-filter and probe. Atomic; unchanged content is not rewritten."""
+    p = pointer_path()
+    exe = sys.executable
+    if p is None or not exe or not os.path.isfile(exe) or store_stub(exe) or "\n" in exe:
+        return None
+    line = exe + "\n"
+    try:
+        if p.read_text(encoding="utf-8") == line:
+            return p
+    except OSError:
+        pass
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.parent / f".{POINTER_NAME}.{os.getpid()}"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(line)
+    os.replace(tmp, p)
+    return p
+
+
 MARKER_NAME = "hooks-active.json"
 MARKER_SCHEMA = "axis-migrate.hooks-active.v1"
 

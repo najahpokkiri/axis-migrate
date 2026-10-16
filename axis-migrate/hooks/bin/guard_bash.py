@@ -736,10 +736,13 @@ def main() -> int:
     tool = hl.require_tool_payload(data)
     if tool not in ("Bash", "PowerShell"):
         return 0
+    cmd = (data.get("tool_input") or {}).get("command")
+    if isinstance(cmd, str) and hl.mentions_pointer(cmd):   # in any project (see _hooklib.POINTER_DENY)
+        hl.pre_decision("deny", hl.POINTER_DENY)
+        return 0
     mig = hl.find_migration(data)
     if mig is None:
         return 0
-    cmd = (data.get("tool_input") or {}).get("command")
     if not isinstance(cmd, str):
         raise ValueError(f"{tool} payload without command")
     cwd = data.get("cwd") or os.getcwd()

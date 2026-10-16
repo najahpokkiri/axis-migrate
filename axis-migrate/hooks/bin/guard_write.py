@@ -368,6 +368,9 @@ def decide(data: dict) -> tuple[str, str] | None:
         targets += [(alt, None) for alt in paths[1:]]  # path rules from the hook process cwd too (Codex desktop)
     else:
         return None
+    ptr = hl.pointer_path()   # in any project: the hook-python pointer decides which interpreter runs every guard
+    if ptr is not None and any(hl.same_file(path, ptr) for path, _ in targets):
+        return ("deny", hl.POINTER_DENY)
     mig = hl.find_migration(data)
     if mig is None:
         for path, _ in targets:

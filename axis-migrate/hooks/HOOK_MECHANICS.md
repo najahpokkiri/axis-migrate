@@ -132,8 +132,18 @@ dash, `bash --posix` and Git Bash; tested under the first three):
 | session_start | allow, with the reason as `additionalContext`. |
 | graph_changed | allow, silent. |
 
-Not verified: a real macOS CLT stub (simulated here with a fake `uname`/`xcode-select`), and Windows (Git Bash
-runs hooks there per the Claude Code docs; not run).
+Not verified: a real macOS CLT stub (simulated here with a fake `uname`/`xcode-select`).
+
+**Fast start: the `hook-python` pointer (16 Oct 2026, Windows test pass).** Under Git Bash on Windows every process
+start costs 50-200 ms (antivirus included), and the pre-filter above needs about 25 of them; in 0.4.1 a hook took
+3.6-9.5 s outside a migration (each walk also tested `//migration/graph.json`, which Git Bash takes for a UNC share)
+and about 1.2 s inside one, against 3-5 s timeouts with `onFailure: block`. Now SessionStart (`write_hook_python`)
+records the interpreter the steps above chose in `${PLUGIN_DATA:-$CLAUDE_PLUGIN_DATA}/hook-python` (atomic; never the
+Windows Store alias), and every other hook starts with shell builtins only: `read` the pointer, `[ -x ]`, `exec` the
+interpreter on the hook, stdin passed straight through. Python decides everything, including "not a migration ->
+exit 0". A missing or stale pointer falls back to the steps above (on Windows first to any plugin env python).
+The guards deny writing the pointer, in any project: it chooses what runs every guard. Windows, 10 calls each, as
+hooks.json launches them: 0.21-0.38 s per hook inside and outside a migration.
 
 **Matchers.** The write matcher is `Write|Edit|MultiEdit|NotebookEdit|apply_patch`. Claude Code reads it as a list of
 exact names; Codex reads it as a regex, where it is a plain alternation. PostToolUse also has a `Bash` entry so that a

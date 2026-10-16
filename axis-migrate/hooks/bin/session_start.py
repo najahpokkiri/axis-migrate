@@ -129,6 +129,10 @@ def main() -> int:
         hl.write_hooks_marker(data, mig)
     except OSError:
         pass
+    try:  # the interpreter for every later hook of this install (run-hook.sh starts it without a pre-filter)
+        hl.write_hook_python()
+    except OSError:
+        pass
     try:
         secret_note = write_plugin_secrets()
     except OSError as e:
