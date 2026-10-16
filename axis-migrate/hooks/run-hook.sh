@@ -14,8 +14,8 @@
 #    "notebook_path", and the hook process cwd (not for Stop: a Stop is scoped by session, see stop_gate.py).
 #    None found -> exit 0 at once, without any Python: projects that are not migrations are never affected.
 #    Exceptions that always go on to Python: session_start (it writes the hooks-active marker, the hook-python
-#    pointer and the plugin secrets file even before migration/ exists) and a payload carrying an apply_patch text
-#    (absolute paths).
+#    pointer and the plugin secrets file even before migration/ exists), a payload carrying an apply_patch text
+#    (absolute paths) and a payload naming hook-python (the pointer is guarded in every project).
 # 3. Interpreter: the plugin's own uv environment (same rule as scripts/axpy and lib/axis_common.env_venv_dir:
 #    ${CLAUDE_PLUGIN_DATA}/env-<lock8>, ${PLUGIN_DATA}/env-<lock8>, ${XDG_CACHE_HOME:-~/.cache}/axis-migrate/env-<lock8>,
 #    then any env-* there: the hooks need the standard library only), else a python3 (python) that really runs
@@ -145,6 +145,7 @@ if [ -z "$MIG" ]; then
     *)
       case "$PAYLOAD" in
         *'*** Begin Patch'*) ;;                     # apply_patch carries absolute paths: let Python decide
+        *hook-python*) ;;                           # may name the interpreter pointer: Python guards it anywhere
         *) [ "$UNSURE" = 1 ] || exit 0 ;;           # not a migration: nothing to guard, no Python needed
       esac ;;
   esac

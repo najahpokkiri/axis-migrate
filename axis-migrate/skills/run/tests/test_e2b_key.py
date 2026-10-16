@@ -102,7 +102,7 @@ def test_not_a_regular_file_and_missing(tmp_path):
 def test_source_names_the_file_never_the_key(tmp_path):
     p = secrets(tmp_path / "home/.config/axis-migrate/secrets.env", f"E2B_API_KEY={FAKE}\n")
     st, detail = e2b_key.source(clean_env(tmp_path))
-    assert (st, detail) == ("ok", str(p)) and FAKE not in detail and str(len(FAKE)) not in detail
+    assert (st, detail) == ("ok", str(p)) and FAKE not in detail   # detail is exactly the path: neither key nor length
     assert e2b_key.scrub(f"boom {FAKE} boom", FAKE) == "boom <E2B_API_KEY> boom"
 
 
