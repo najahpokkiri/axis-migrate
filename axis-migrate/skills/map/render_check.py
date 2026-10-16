@@ -41,8 +41,14 @@ class NoChrome(Exception):
 
 
 def find_chrome() -> str:
+    win = []
+    if os.name == "nt":   # not on PATH on Windows: the standard install folders (Chrome, then Edge, also Chromium)
+        for base in (os.environ.get("PROGRAMFILES"), os.environ.get("PROGRAMFILES(X86)"), os.environ.get("LOCALAPPDATA")):
+            if base:
+                win += [os.path.join(base, "Google", "Chrome", "Application", "chrome.exe"),
+                        os.path.join(base, "Microsoft", "Edge", "Application", "msedge.exe")]
     for c in (os.environ.get("AXIS_CHROME"), "google-chrome", "google-chrome-stable", "chromium", "chromium-browser",
-              "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"):
+              "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", *win):
         if c and (shutil.which(c) or Path(c).is_file()):
             return shutil.which(c) or c
     raise NoChrome("no Chrome/Chromium found (set AXIS_CHROME)")

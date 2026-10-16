@@ -58,11 +58,19 @@ def python_path(venv: Path | None = None) -> Path:
 
 
 def _uv() -> str | None:
+    """Same search as lib/axis_common.find_uv (this file stays standalone)."""
     u = shutil.which("uv")
     if u:
         return u
-    c = Path.home() / ".local" / "bin" / "uv"
-    return str(c) if c.is_file() and os.access(c, os.X_OK) else None
+    home = Path.home()
+    cands = [home / ".local" / "bin" / "uv"]
+    if os.name == "nt":
+        cands = [home / ".local" / "bin" / "uv.exe"]
+        for base in (os.environ.get("APPDATA"), os.environ.get("LOCALAPPDATA")):
+            if base:
+                for pat in ("Python/Python3*/Scripts/uv.exe", "Programs/Python/Python3*/Scripts/uv.exe"):
+                    cands += sorted(Path(base).glob(pat), reverse=True)
+    return next((str(c) for c in cands if c.is_file() and os.access(c, os.X_OK)), None)
 
 
 def is_synced() -> bool:

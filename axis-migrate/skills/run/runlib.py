@@ -216,11 +216,7 @@ def lock_versions_for_boot(lock_path: Path) -> dict[str, str]:
 
 
 def find_uv() -> str | None:
-    p = shutil.which("uv")
-    if p:
-        return p
-    cand = Path.home() / ".local" / "bin" / "uv"
-    return str(cand) if cand.is_file() and os.access(cand, os.X_OK) else None
+    return ac.find_uv()
 
 
 def run_probe(python: Path, crs: list[str], timeout: int = 120) -> dict:

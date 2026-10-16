@@ -41,6 +41,12 @@ case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) WIN=1; PY="$VENV/Scripts
 MARK="$VENV/.axis-lock-sha256"
 if [ ! -x "$PY" ] || [ "$(cat "$MARK" 2>/dev/null)" != "$LOCKSHA" ]; then
   UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
+  if [ "$WIN" = 1 ] && [ ! -x "$UV" ]; then   # same search as lib/axis_common.find_uv (not on the app's tool PATH)
+    for c in "$HOME/.local/bin/uv.exe" "${APPDATA:-/nonexistent}"/Python/Python3*/Scripts/uv.exe \
+             "${LOCALAPPDATA:-/nonexistent}"/Programs/Python/Python3*/Scripts/uv.exe; do
+      [ -x "$c" ] && { UV="$c"; break; }
+    done
+  fi
   if [ ! -x "$UV" ]; then echo "axpy: UV_MISSING (install uv; the runner never falls back to system Python)" >&2; exit 13; fi
   mkdir -p "$(dirname "$VENV")" || { echo "axpy: ENV_CACHE_NOT_WRITABLE: $(dirname "$VENV") — in a sandbox, rerun this one command with approval (Codex: escalated permissions; Claude Code: outside the sandbox)" >&2; exit 13; }
   UV_PROJECT_ENVIRONMENT="$VENV" UV_PYTHON_PREFERENCE=only-managed "$UV" sync --frozen --quiet --project "$ENV" >&2 \

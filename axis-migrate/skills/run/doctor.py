@@ -48,11 +48,7 @@ import e2b_key  # noqa: E402
 
 
 def find_uv() -> str | None:
-    p = shutil.which("uv")
-    if p:
-        return p
-    cand = Path.home() / ".local" / "bin" / "uv"
-    return str(cand) if cand.is_file() and os.access(cand, os.X_OK) else None
+    return ac.find_uv()
 
 
 def check_uv() -> tuple[str, str]:

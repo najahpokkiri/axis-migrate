@@ -737,7 +737,7 @@ def main() -> int:
     if tool not in ("Bash", "PowerShell"):
         return 0
     cmd = (data.get("tool_input") or {}).get("command")
-    if isinstance(cmd, str) and hl.mentions_pointer(cmd):   # in any project (see _hooklib.POINTER_DENY)
+    if isinstance(cmd, str) and hl.mentions_pointer(cmd, data.get("cwd") or os.getcwd()):   # any project
         hl.pre_decision("deny", hl.POINTER_DENY)
         return 0
     mig = hl.find_migration(data)

@@ -1553,6 +1553,10 @@ def brief(migration_dir, run_id: str | None = None) -> str:
 
 
 def main(argv=None) -> int:
+    try:  # Windows: a console or pipe is cp1252 and `-I` ignores PYTHONIOENCODING; the lines hold '·'
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    except (AttributeError, ValueError, OSError):
+        pass
     ap = argparse.ArgumentParser(description="Compute axis-migrate status rungs from the sealed evidence bundle.")
     ap.add_argument("migration", help="path to <project>/migration (or the project folder)")
     ap.add_argument("--run", default=None, help="run id (default: newest sealed run in runs/index.jsonl)")

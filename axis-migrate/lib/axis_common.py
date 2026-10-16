@@ -587,6 +587,28 @@ def find_strace() -> str | None:
     return shutil.which("strace") or ("/usr/bin/strace" if Path("/usr/bin/strace").is_file() else None)
 
 
+def uv_candidates() -> list[Path]:
+    """Where uv lives when it is not on PATH: ~/.local/bin/uv (the uv installer); on Windows also uv.exe there and in
+    the Scripts folder of a pip --user or per-user Python install (the desktop app's tool PATH has neither)."""
+    home = Path.home()
+    if os.name != "nt":
+        return [home / ".local" / "bin" / "uv"]
+    out = [home / ".local" / "bin" / "uv.exe"]
+    for base in (os.environ.get("APPDATA"), os.environ.get("LOCALAPPDATA")):
+        if base:
+            for pat in ("Python/Python3*/Scripts/uv.exe", "Programs/Python/Python3*/Scripts/uv.exe"):
+                out += sorted(Path(base).glob(pat), reverse=True)
+    return out
+
+
+def find_uv() -> str | None:
+    import shutil
+    p = shutil.which("uv")
+    if p:
+        return p
+    return next((str(c) for c in uv_candidates() if c.is_file() and os.access(c, os.X_OK)), None)
+
+
 def axpy_cmd() -> list[str]:
     """argv prefix that runs scripts/axpy: the script itself on POSIX; on Windows, which cannot exec a shell
     script, Git Bash's sh followed by the script."""

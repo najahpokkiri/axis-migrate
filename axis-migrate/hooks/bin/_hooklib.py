@@ -297,7 +297,8 @@ def pointer_path() -> Path | None:
 
 
 POINTER_DENY = ("axis-migrate: the plugin's hook-python pointer chooses the interpreter that runs every guard; only the "
-                "SessionStart hook writes it. Do not write, move or delete it.")
+                "SessionStart hook writes it. Do not write, move or delete it; shell commands naming it in the plugin "
+                "data folder are refused (to look at it, use the Read tool).")
 
 
 def same_file(p, q) -> bool:
@@ -306,9 +307,28 @@ def same_file(p, q) -> bool:
     return os.path.normcase(a) == os.path.normcase(b)
 
 
-def mentions_pointer(cmd: str) -> bool:
-    """A shell command naming the hook-python pointer (any verb: the guard does not parse which ones write)."""
-    return POINTER_NAME in cmd
+def mentions_pointer(cmd: str, cwd: str | None = None) -> bool:
+    """A shell command that names the pointer FILE: its name together with the plugin data folder (the folder itself,
+    $PLUGIN_DATA / $CLAUDE_PLUGIN_DATA, or a plugins/data path), or its name while the shell is in that folder. Any
+    verb counts (the guard does not parse which ones write). The bare word alone (a commit message, a grep of this
+    repository) is not the file."""
+    if POINTER_NAME not in cmd:
+        return False
+    p = pointer_path()
+    folder = str(p.parent) if p is not None else None
+    if folder and cwd:
+        try:
+            if same_file(cwd, folder):
+                return True
+        except (OSError, ValueError):
+            pass
+    low = cmd.replace("\\", "/").lower()
+    marks = ["plugin_data", "plugins/data"]
+    if folder:
+        marks += [folder.replace("\\", "/").lower(), os.path.realpath(folder).replace("\\", "/").lower()]
+        if len(folder) > 2 and folder[1] == ":":   # Git Bash form /c/Users/...
+            marks.append(("/" + folder[0] + folder[2:]).replace("\\", "/").lower())
+    return any(m and m in low for m in marks)
 
 
 def store_stub(exe: str) -> bool:

@@ -385,3 +385,11 @@ def test_pointer_cannot_be_written_by_the_agent(project, tmp_path):
         assert "deny" in r.out and "hook-python" in r.out
         r = run("guard_bash", bash(cwd, f"echo /bin/true > '{pd.as_posix()}/hook-python'"), env=env, proc_cwd=cwd)
         assert "deny" in r.out
+        r = run("guard_bash", bash(cwd, 'echo x > "$CLAUDE_PLUGIN_DATA/hook-python"'), env=env, proc_cwd=cwd)
+        assert "deny" in r.out
+    r = run("guard_bash", bash(pd, "echo /bin/true > hook-python"), env=env, proc_cwd=pd)   # from inside the folder
+    assert "deny" in r.out
+    # the bare word is not the file: a commit message or a grep of this repository passes (Windows e2e, 16 Oct)
+    for cmd in ('git commit -m "the hook-python pointer"', "grep -rn hook-python hooks/"):
+        r = run("guard_bash", bash(other, cmd), env=env, proc_cwd=other)
+        assert "deny" not in r.out, cmd

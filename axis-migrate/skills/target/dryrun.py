@@ -85,8 +85,7 @@ def unshare_works() -> bool:
 
 
 def uv_bin() -> str | None:
-    return shutil.which("uv") or (str(Path.home() / ".local/bin/uv") if (Path.home() / ".local/bin/uv").is_file()
-                                  else None)
+    return ac.find_uv()
 
 
 # ---------------------------------------------------------------------------------------------------------------
