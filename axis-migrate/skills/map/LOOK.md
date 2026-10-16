@@ -25,7 +25,7 @@ One path per dataset, never both.
 |---|---|---|---|---|
 | place | Is the data where the AOI or outline is, in the right CRS and units, not shifted? | `overview`, `grid-<family>` | `overview.png`, `worst_tiles.png`, `grid_corners.png`, `inputs_overview.png` | compare grid gate, `extent_relations` |
 | coverage | Is anything missing, empty or outside the AOI? | `overview` (toggle new), `edges` bookmark "whole extent" | `mask_diff.png`, `inputs_overview.png` | `map.py metrics`, compare `raster.mask`, feature counts |
-| edges | Cells valid on one side only along a border; paired stripes (a one-cell shift)? | `edges` (validity over legacy) | `mask_diff.png`, `worst_tiles.png` | views.json `validity_counts`, compare `raster.mask` |
+| edges | Cells valid on one side only along a border; paired stripes (a one-cell shift)? | `edges` (validity over the data) | `mask_diff.png`, `worst_tiles.png` | views.json `validity_counts`, compare `raster.mask` |
 | values | Same picture under the shared scale; does the range fit the unit? | `overview` + one cell read as text | `overview.png`, `hist.png` | compare `raster.values`, the cell read |
 | classes | Is a class or feature type absent on one side? (`n/a` for continuous rasters) | `overview`, layers toggled | `overlay.png`, `per_feature.png` | compare key set, class counts |
 

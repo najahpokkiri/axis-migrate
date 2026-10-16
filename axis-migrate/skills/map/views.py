@@ -756,8 +756,10 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
         base.append({"name": f"zones ({zone['dataset']})", "role": "zones", "kind": "vector",
                      "path": ctx.run / zone["file"],
                      "style": {"fillOpacity": 0, "strokeColor": C_ZONES, "strokeWidth": 1.5}})
+    # edges keeps new visible under validity: with a hidden raster layer between visible ones GeoLibre 3.4.0 at times
+    # drew nothing after ready (headless Chrome: 2 of 6 runs blank; 0 of 8 with new visible)
     visible = {"overview": {"legacy", "new", "zones"}, "worst": {"legacy", "new", "diff", "zones"},
-               "edges": {"legacy", "validity", "zones"}}
+               "edges": {"legacy", "new", "validity", "zones"}}
     view_cells = {v: list(cells) for v in RASTER_VIEWS}
     views = {}
     for v in [x for x in RASTER_VIEWS if x not in omit]:

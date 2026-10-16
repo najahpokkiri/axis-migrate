@@ -38,7 +38,7 @@ def test_every_compared_dataset_has_views(synth_run):
                    "ds.v": ["overview", "worst"]}             # nodata folded into edges (map review C7)
     ed = json.loads((synth_run / entry(synth_run, "ds.b")["views"]["edges"]["project"]).read_text())
     assert {lay["name"].split(" ")[0]: lay["visible"] for lay in ed["layers"]} == \
-        {"legacy": True, "new": False, "diff": False, "validity": True}   # validity over legacy
+        {"legacy": True, "new": True, "diff": False, "validity": True}    # validity over the data
     assert "whole extent (validity everywhere)" in entry(synth_run, "ds.b")["views"]["edges"]["bookmarks"]
     # ds.e differs only in NoData (max|d| = 0): no worst view, and views.json says why
     assert entry(synth_run, "ds.e")["omitted_views"] == {"worst": "no difference: max |new − legacy| = 0"}
@@ -333,5 +333,37 @@ def test_page_caption_names_view_layers_and_follows_toggles(synth_run):
         assert c["x"] - c["width"] / 2 <= b["x"] <= c["x"] - c["width"] / 2 + 20                  # canvas corner
         assert c["y"] - c["height"] / 2 <= b["y"] <= c["y"] - c["height"] / 2 + 20 and b["h"] > 30
         assert out["after"] and out["after"].startswith("ds.b · overview · legacy: viridis"), out["after"]
+    finally:
+        run_cli("stop.py", mig)
+
+
+@pytest.mark.skipif(not _chrome(), reason="no Chrome/Chromium for the headless render check")
+def test_every_raster_view_draws_something(synth_run, tmp_path):
+    """No blank canvas after ready (map review: a blank view was read as 'equal everywhere'). With a hidden raster
+    layer between visible ones GeoLibre 3.4.0 at times drew nothing, so the edges view keeps new visible."""
+    mig = synth_run.parents[1]
+    cp = run_cli("start.py", mig)
+    assert cp.returncode == 0, cp.stdout + cp.stderr
+    try:
+        port = json.loads((mig / ".axis" / "map" / "server.json").read_text())["port"]
+        urls = {f"{e['dataset']}/{v}": ve["url_path"] for e in views_doc(synth_run)["datasets"]
+                if e["family"] == "raster" for v, ve in e["views"].items()}
+        out = map_py("import render_check as R, json, sys, views, numpy as np, io\n"
+                     "from PIL import Image\nfrom pathlib import Path\n"
+                     f"names, paths = zip(*sorted({urls!r}.items()))\n"
+                     f"shots = Path({str(tmp_path)!r})\n"
+                     f"res = R.check_pages([views.page_url({port}, p) for p in paths], shots)\n"
+                     "ink = {}\n"
+                     "for i, (n, r) in enumerate(zip(names, res)):\n"
+                     "    a = np.asarray(Image.open(shots / f'render-{i:02d}.png').convert('RGB')).astype(int)\n"
+                     "    c = r['status']['centre']\n"
+                     "    x0, x1 = int(c['x'] - c['width'] / 2) + 8, int(c['x'] + c['width'] / 2) - 8\n"
+                     "    y0, y1 = int(c['y'] - c['height'] / 2) + 140, int(c['y'] + c['height'] / 2) - 60\n"
+                     "    sub = a[y0:y1, x0:x1]\n"
+                     "    ink[n] = [r['ready'], float((sub.min(axis=2) < 235).mean())]\n"
+                     "print(json.dumps(ink))")
+        assert set(out) == {"ds.b/edges", "ds.b/overview", "ds.b/worst", "ds.e/edges", "ds.e/overview"}, out
+        for n, (ready, ink) in out.items():
+            assert ready and ink > 0.05, (n, ink, out)
     finally:
         run_cli("stop.py", mig)

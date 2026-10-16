@@ -29,7 +29,7 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
 - `views.py run --run <run>` after `compare.py run`: per compared raster `verify/views/<ds>/` gets `legacy.tif`,
   `new.tif` (COG copies; the legacy folder is only read), `diff.tif` (new − legacy) and `validity.tif`
   (1 legacy only, 2 new only, 3 both), and the projects `overview`, `worst` (only when max |d| > 0), `edges`
-  (validity over legacy) plus one `cell-<id>` project centred on the cell to identify (worst, else edge, else
+  (validity over the data) plus one `cell-<id>` project centred on the cell to identify (worst, else edge, else
   interior); vectors get GeoJSON (EPSG:4326) and `overview`, `worst` (only when a feature differs). Views that
   cannot show anything are not built: a dataset identical to legacy (or byte-equal to one reviewed before with
   nothing found) gets none (`skipped: identical (<sha256>)` in views.json; verify SKILL §3), a PASS_EXACT dataset
@@ -88,7 +88,7 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
 ## 4 What each view is for
 - `overview`: legacy and new over the whole extent (toggle new off to see legacy).
 - `worst`: camera on the largest |new − legacy|; diff on top; bookmarks for plot.py's worst tiles or compare samples.
-- `edges`: validity over legacy where cells valid on one side only concentrate (a one-cell shift shows as a blue
+- `edges`: validity over the data where cells valid on one side only concentrate (a one-cell shift shows as a blue
   stripe on one side and an orange one on the other); its bookmark "whole extent (validity everywhere)" shows
   where NoData differs over the whole extent (what the `nodata` view showed in older runs).
 
