@@ -67,12 +67,15 @@ def _site_dirs() -> list[str]:
     import sysconfig
     dirs = list(getattr(site, "getsitepackages", lambda: [])())
     dirs += [sysconfig.get_paths()["purelib"], sysconfig.get_paths()["platlib"]]
+    if os.name == "nt":  # Windows getsitepackages() also lists the env prefix itself: keep site-packages only
+        dirs = [d for d in dirs if d and os.path.basename(os.path.normpath(d)).lower() == "site-packages"]
     return sorted({os.path.realpath(d) for d in dirs if d})
 
 
 def _under_any(path: str, roots: list[str]) -> bool:
-    rp = os.path.realpath(path)
-    return any(rp == r or rp.startswith(r.rstrip("/") + "/") for r in roots)
+    nc = os.path.normcase                       # Windows: backslashes and case-insensitive; POSIX: unchanged
+    rp = nc(os.path.realpath(path))
+    return any(rp == nc(r) or rp.startswith(nc(r).rstrip(os.sep) + os.sep) for r in roots)
 
 
 def module_check(expect: dict | None, *, baseline: dict | None = None) -> dict:
@@ -304,7 +307,7 @@ def _frames(tb, snapshot_pkg: str | None) -> dict:
     inner_pkg = None
     if snapshot_pkg:
         for fr in reversed(frames):
-            if os.path.realpath(fr.filename).startswith(snapshot_pkg.rstrip("/") + "/") and \
+            if _under_any(fr.filename, [snapshot_pkg]) and \
                     not fr.filename.endswith("_axis_runtime.py"):
                 inner_pkg = fr
                 break
@@ -488,7 +491,7 @@ def run_boot(args) -> int:
         import importlib
         rt = importlib.import_module("axis_pipeline._axis_runtime")
         rt_origin = os.path.realpath(rt.__spec__.origin)
-        if not rt_origin.startswith(pkg_dir + "/"):
+        if not _under_any(rt_origin, [pkg_dir]) or os.path.normcase(rt_origin) == os.path.normcase(pkg_dir):
             result["reason_codes"].append("RUNTIME_NOT_FROM_SNAPSHOT")
             return finish(EXIT_OUTPUT)
         ctx = rt.Ctx.from_ctx_json(args.ctx)

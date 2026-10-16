@@ -13,7 +13,6 @@ Everything else here is shared.
 from __future__ import annotations
 
 import dataclasses
-import fcntl
 import hashlib
 import importlib.util
 import json
@@ -56,6 +55,24 @@ DETERMINISM_ENV = {
 }
 # What every step process gets on top of DETERMINISM_ENV (nothing else is inherited; AT-10).
 STEP_ENV_FIXED = {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1", "PYTHONUTF8": "1", "MPLBACKEND": "Agg"}
+
+
+def base_env() -> dict:
+    """The base of every allow-listed child environment: PATH and HOME on POSIX. Windows also needs SYSTEMROOT and
+    WINDIR (without them Winsock cannot start, so asyncio and anything using sockets fail with WinError 10106) and
+    USERPROFILE; with_tmp() mirrors TMPDIR into TEMP/TMP there, which GDAL and Windows itself read."""
+    if os.name != "nt":
+        return {"PATH": "/usr/bin:/bin", "HOME": str(Path.home())}
+    sr = os.environ.get("SYSTEMROOT") or r"C:\Windows"
+    return {"PATH": os.pathsep.join([os.path.join(sr, "System32"), sr]), "HOME": str(Path.home()),
+            "USERPROFILE": str(Path.home()), "SYSTEMROOT": sr, "WINDIR": sr}
+
+
+def with_tmp(env: dict) -> dict:
+    if os.name == "nt" and env.get("TMPDIR"):
+        env.setdefault("TEMP", env["TMPDIR"])
+        env.setdefault("TMP", env["TMPDIR"])
+    return env
 
 EXIT = ac.EXIT_RUN
 CONTRACT_REASONS = ("STUB_DETECTED", "UNDECLARED_READ", "UNDECLARED_WRITE", "STAGED_INPUT_MODIFIED",
@@ -208,7 +225,7 @@ def find_uv() -> str | None:
 
 def run_probe(python: Path, crs: list[str], timeout: int = 120) -> dict:
     cmd = [str(python), "-I", str(AXIS_BOOT), "--probe"] + [a for c in crs for a in ("--crs", c)]
-    env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()), **DETERMINISM_ENV, **STEP_ENV_FIXED}
+    env = {**base_env(), **DETERMINISM_ENV, **STEP_ENV_FIXED}
     cp = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
     if cp.returncode != 0:
         raise RuntimeError(f"probe failed ({cp.returncode}): {cp.stderr[-2000:]}")
@@ -484,6 +501,10 @@ def parse_strace(path: Path) -> list[dict]:
 
 _VSI_ARCHIVE = re.compile(r"^/vsi(?:zip|gzip|tar|7z|rar)/+(.*)$")
 _DRIVER_PREFIX = re.compile(r'^[A-Za-z0-9_]+:"?(/[^"]+?)"?(?::[^/]*)?$')
+# Windows: the path inside is a drive path (GPKG:"C:\p\x.gpkg":layer); a driver name has 2+ characters, so a bare
+# C:\x or C:/x is never read as driver "C"
+_DRIVER_PREFIX_WIN = re.compile(r'^[A-Za-z0-9_]{2,}:"?([A-Za-z]:[\\/][^"]+?)"?(?::[^/\\]*)?$')
+_WIN_DRIVE = re.compile(r"^[A-Za-z]:[\\/]")
 
 
 def gdal_name_to_path(raw: str, cwd: str | None) -> str | None:
@@ -495,6 +516,8 @@ def gdal_name_to_path(raw: str, cwd: str | None) -> str | None:
     m = _VSI_ARCHIVE.match(raw)
     if m:
         inner = "/" + m.group(1).lstrip("/")
+        if os.name == "nt" and _WIN_DRIVE.match(m.group(1).lstrip("/")):   # /vsizip/C:/a/b.zip/x
+            inner = m.group(1).lstrip("/").replace("\\", "/")
         parts = inner.split("/")
         for i in range(len(parts), 1, -1):          # the archive file is the longest existing prefix
             cand = "/".join(parts[:i])
@@ -503,6 +526,12 @@ def gdal_name_to_path(raw: str, cwd: str | None) -> str | None:
         return inner
     if raw.startswith("/vsi"):
         return None                                 # network/other virtual file systems: no local file
+    if os.name == "nt":
+        if _WIN_DRIVE.match(raw):                   # C:\x or C:/x: a path, not driver "C"
+            return os.path.normpath(raw)
+        m = _DRIVER_PREFIX_WIN.match(raw)
+        if m:
+            return m.group(1)
     m = _DRIVER_PREFIX.match(raw)
     if m and not raw.startswith("/"):
         return m.group(1)
@@ -553,7 +582,9 @@ def _real(p: str | Path) -> str:
 
 
 def _is_under(p: str, root: str) -> bool:
-    return p == root or p.startswith(root.rstrip("/") + "/")
+    if os.name == "nt":   # Windows: backslashes, case-insensitive (POSIX: os.sep is "/", unchanged)
+        p, root = os.path.normcase(p), os.path.normcase(root)
+    return p == root or p.startswith(root.rstrip(os.sep) + os.sep)
 
 
 @dataclass
@@ -960,7 +991,7 @@ class Run:
         executes has an approved plan. Both refuse with exit 11 and are recorded in manifest.preflight."""
         python = python or VENV_PY
         gi: dict = {"status": "not_available", "tool": "graph.py check-integrity"}
-        env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()), "AXIS_MIGRATE_PLUGIN": str(PLUGIN),
+        env = {**base_env(), "AXIS_MIGRATE_PLUGIN": str(PLUGIN),
                **DETERMINISM_ENV, **STEP_ENV_FIXED}
         if GRAPH_PY.is_file():
             hp = subprocess.run([str(python), str(GRAPH_PY), "--help"], capture_output=True, text=True, env=env,
@@ -1114,7 +1145,7 @@ class Run:
         if drift:
             raise RunAbort(EXIT["contract"], [f"SCAN_TARGET_CHANGED:{d}" for d in drift])
         cmd = [str(python), str(CODESCAN), "--all", str(self.migration), "--out", str(out), "--json"]
-        env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()), "AXIS_MIGRATE_PLUGIN": str(PLUGIN),
+        env = {**base_env(), "AXIS_MIGRATE_PLUGIN": str(PLUGIN),
                **DETERMINISM_ENV, **STEP_ENV_FIXED}
         try:
             cp = subprocess.run(cmd, capture_output=True, text=True, timeout=300, env=env)
@@ -1188,8 +1219,8 @@ class Run:
         junit = scratch / "junit.xml"
         cmd = [str(python), "-m", "pytest", str(tdir), "-q", "-p", "no:cacheprovider", f"--junitxml={junit}",
                f"--rootdir={tdir}"]
-        env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()), "PYTHONPATH": str(self.dir / "snapshot"),
-               "TMPDIR": str(scratch), **DETERMINISM_ENV, **STEP_ENV_FIXED}
+        env = with_tmp({**base_env(), "PYTHONPATH": str(self.dir / "snapshot"),
+                        "TMPDIR": str(scratch), **DETERMINISM_ENV, **STEP_ENV_FIXED})
         t = time.monotonic()
         try:
             cp = subprocess.run(cmd, capture_output=True, text=True, timeout=600, env=env, cwd=str(scratch))
@@ -1232,9 +1263,9 @@ class Run:
         in hashed records; CONTRACTS §1)."""
         rp = _real(p)
         if self.dir is not None and _is_under(rp, _real(self.dir)):
-            return os.path.relpath(rp, _real(self.dir))
+            return Path(os.path.relpath(rp, _real(self.dir))).as_posix()   # "/" on every OS (hashed records)
         if _is_under(rp, _real(self.project)):
-            return "project:" + os.path.relpath(rp, _real(self.project))
+            return "project:" + Path(os.path.relpath(rp, _real(self.project))).as_posix()
         return p
 
     # ---- per step -------------------------------------------------------------------------------------------
@@ -1257,11 +1288,11 @@ class Run:
 
     def step_env(self, ps: PlannedStep, extra: dict | None = None) -> dict:
         scratch = self.dir / "scratch" / ps.id
-        env = {"PATH": "/usr/bin:/bin", "HOME": str(Path.home()), "TMPDIR": str(scratch),
+        env = {**base_env(), "TMPDIR": str(scratch),
                "MPLCONFIGDIR": str(scratch / "mpl"), **DETERMINISM_ENV, **STEP_ENV_FIXED}
         if extra:
             env.update(extra)
-        return env
+        return with_tmp(env)
 
     def boot_argv(self, ps: PlannedStep, python: Path | str, boot: Path | str | None = None) -> list[str]:
         # not -I: it implies -E, which would drop PYTHONHASHSEED; the environment is a full allow-list anyway.
@@ -1644,7 +1675,7 @@ class Run:
             "steps": self.steps_records, "outputs": sorted(self.outputs_records, key=lambda o: o["dataset_id"]),
             "scan": self.scan_record, "tests": self.tests_record, "preflight": self.preflight,
             "plan": [{"step_id": p.id, "action": p.action, "timeout_s": p.timeout_s} for p in self.plan],
-            "legacy_root": os.path.relpath(self.legacy_root, self.migration),
+            "legacy_root": Path(os.path.relpath(self.legacy_root, self.migration)).as_posix(),
             "sealed": True, "checksums": "checksums.sha256",
         }
         if self.executor == "refenv":
@@ -1723,14 +1754,10 @@ def seal(run_dir: Path) -> None:
 def append_index(migration: Path, row: dict) -> None:
     idx = migration / "runs" / "index.jsonl"
     line = json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n"
-    with open(idx, "a", encoding="utf-8") as fh:
-        fcntl.flock(fh, fcntl.LOCK_EX)
-        try:
-            fh.write(line)
-            fh.flush()
-            os.fsync(fh.fileno())
-        finally:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+    with open(idx, "a", encoding="utf-8") as fh, ac.file_lock(fh):
+        fh.write(line)
+        fh.flush()
+        os.fsync(fh.fileno())
 
 
 def vendor_runtime(pipeline_dir: Path) -> list[str]:

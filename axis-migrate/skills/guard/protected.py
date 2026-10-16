@@ -159,7 +159,7 @@ def main(argv=None) -> int:
     ps = ProtectedSet(mig, rec)
     if a.json:
         out = dict(rec)
-        out["hidden_siblings"] = [os.path.relpath(h, ps.mig) for h in ps.hidden]
+        out["hidden_siblings"] = [Path(os.path.relpath(h, ps.mig)).as_posix() for h in ps.hidden]
         if a.check:
             out["check"] = {c: ps.classify(c) for c in a.check}
         print(json.dumps(out, sort_keys=True, indent=1))

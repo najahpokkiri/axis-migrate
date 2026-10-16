@@ -83,6 +83,7 @@ sys.path.insert(0, str(PLUGIN / "lib"))
 sys.path.insert(0, str(HERE))
 import axis_common as ac  # noqa: E402
 import visual_receipt as vrc  # noqa: E402
+import proc  # noqa: E402
 
 SCHEMA = "axis-migrate.map-views.v1"
 GENERATOR = {"name": "axis-migrate.map.views", "version": "1.0.0"}
@@ -1414,7 +1415,7 @@ def build_inputs_views(migration: Path) -> tuple[dict, int]:
         for m in have:
             entries[m]["views"].append(name)
     doc = {"schema": SCHEMA, "mode": "inputs", "generator": GENERATOR, "caption": INPUTS_CAPTION, "run_id": None,
-           "root": INPUTS_ROOT, "legacy_root": os.path.relpath(legacy, migration), "aoi": aoi_id,
+           "root": INPUTS_ROOT, "legacy_root": Path(os.path.relpath(legacy, migration)).as_posix(), "aoi": aoi_id,
            "aoi_note": aoi_note, "shown": inv.get("_fallback") or "inputs (role input) and legacy rasters",
            "served_as": "/data/ = the migration folder (start.py); project and layer URLs are origin-relative",
            "page_url": "http://127.0.0.1:<port>/?url=<urlencoded http://127.0.0.1:<port><url_path>>&panels=collapsed",
@@ -1440,10 +1441,10 @@ def server_state(migration: Path) -> dict | None:
     if not isinstance(st, dict) or not st.get("port") or not st.get("pid"):
         return None
     try:
-        os.kill(int(st["pid"]), 0)
-    except (OSError, ValueError):
+        pid = int(st["pid"])
+    except (TypeError, ValueError):
         return None
-    return st
+    return st if proc.alive(pid) else None   # never os.kill(pid, 0) on Windows: that terminates the process
 
 
 # ---------------------------------------------------------------------------------------------------------------

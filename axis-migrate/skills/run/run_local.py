@@ -34,6 +34,37 @@ from runlib import ac  # noqa: E402
 STRACE = ac.find_strace()
 
 
+def _execute_windows(argv, env, run, ps, logs, kind, ledger_rel, started_at, started_epoch, t0) -> rl.ExecResult:
+    """Windows has no process groups, os.wait4 or ru_maxrss: the step and its children run in a Job Object, which a
+    timeout kills, and which is killed again after the step exits (leftover children die with it, as with killpg)."""
+    with open(logs / f"{ps.id}.stdout", "wb") as out, open(logs / f"{ps.id}.stderr", "wb") as err:
+        proc = subprocess.Popen(argv, cwd=str(run.dir), env=env, stdout=out, stderr=err, stdin=subprocess.DEVNULL,
+                                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+        try:
+            job = ac.WinJob(proc)
+        except OSError:
+            proc.kill()
+            proc.wait()
+            raise
+        timed_out = False
+        try:
+            try:
+                proc.wait(timeout=ps.timeout_s)
+            except subprocess.TimeoutExpired:
+                timed_out = True
+                job.kill()
+                proc.wait()
+            peak = job.peak_rss_mb()
+            job.kill()
+        finally:
+            job.close()
+    code = proc.returncode
+    return rl.ExecResult(exit_code=None if timed_out else code, signal=None, timed_out=timed_out,
+                         started_at=started_at, ended_at=ac.utc_now_iso(), started_epoch=started_epoch,
+                         duration_s=time.monotonic() - t0, peak_rss_mb=round(peak, 1), ledger_kind=kind,
+                         ledger_path=ledger_rel)
+
+
 def make_executor(python: Path, *, use_strace: bool):
     def execute(run: rl.Run, ps: rl.PlannedStep) -> rl.ExecResult:
         logs = run.dir / "logs"
@@ -49,6 +80,8 @@ def make_executor(python: Path, *, use_strace: bool):
             argv = argv + ["--audit-ledger", str(run.dir / ledger_rel)]
             env["CPL_DEBUG"] = "ON"
         started_at, started_epoch, t0 = ac.utc_now_iso(), time.time(), time.monotonic()
+        if os.name == "nt":
+            return _execute_windows(argv, env, run, ps, logs, kind, ledger_rel, started_at, started_epoch, t0)
         with open(logs / f"{ps.id}.stdout", "wb") as out, open(logs / f"{ps.id}.stderr", "wb") as err:
             proc = subprocess.Popen(argv, cwd=str(run.dir), env=env, stdout=out, stderr=err, stdin=subprocess.DEVNULL,
                                     start_new_session=True)

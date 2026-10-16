@@ -62,7 +62,9 @@ def test_clean_chained_run_is_sealed_and_complete(runner, project):
     assert not list((rd / "snapshot").rglob("__pycache__"))
     # sealed: checksums intact, files read-only, verify/ writable, index appended
     assert rl.verify_checksums(rd) == []
-    assert not os.access(rd / "manifest.json", os.W_OK) and not os.access(rd / "outputs", os.W_OK)
+    assert not os.access(rd / "manifest.json", os.W_OK)
+    if os.name != "nt":   # Windows ignores the read-only attribute on folders; checksums report ADDED files there
+        assert not os.access(rd / "outputs", os.W_OK)
     assert os.access(rd / "verify", os.W_OK)
     assert sorted(p.name for p in (rd / "verify").iterdir()) == ["scan.json", "tests.json"]
     assert not (rd / "scratch").exists()
@@ -208,7 +210,8 @@ def test_at8_edit_during_run_is_recorded_and_snapshot_code_runs(project):
     synth.set_step(project, S01, slow)
     original_s02 = (project / "pipeline" / f"{S02}.py").read_bytes()
     axpy = RUN_SKILL.parents[1] / "scripts" / "axpy"
-    proc = subprocess.Popen([str(axpy), str(RUN_SKILL / "run_local.py"), str(project), "--json"],
+    sh = [shutil.which("sh") or "sh"] if os.name == "nt" else []   # Windows cannot exec a shell script
+    proc = subprocess.Popen([*sh, str(axpy), str(RUN_SKILL / "run_local.py"), str(project), "--json"],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     deadline = time.time() + 60
     while time.time() < deadline:
@@ -234,9 +237,15 @@ def test_at9_immutability(runner, project):
     assert code2 == 15
     with pytest.raises(PermissionError):
         open(rd / "manifest.json", "a").close()
-    with pytest.raises(PermissionError):
-        (rd / "outputs" / S01 / "extra.tif").write_bytes(b"x")
     import run_local
+    if os.name == "nt":   # no read-only folders on Windows: an added file is caught by the checksum seal instead
+        extra = rd / "outputs" / S01 / "extra.tif"
+        extra.write_bytes(b"x")
+        assert run_local.main([str(project), "--check-sealed", man["run_id"]]) == 15
+        extra.unlink()
+    else:
+        with pytest.raises(PermissionError):
+            (rd / "outputs" / S01 / "extra.tif").write_bytes(b"x")
     assert run_local.main([str(project), "--check-sealed", man["run_id"]]) == 0
     # tamper (as the owner could) → detected, and resume from it is refused
     victim = rd / "outputs" / S01 / "01_pop_clip.tif"
@@ -409,7 +418,7 @@ def test_a_blind_ledger_refuses(runner, project, monkeypatch):
     import run_local
     monkeypatch.setattr(run_local, "STRACE", None)
     real = rl.parse_audit
-    monkeypatch.setattr(rl, "parse_audit", lambda p, e, cwd=None: [x for x in real(p, e, cwd) if not x["path"].endswith("/pop.tif")])
+    monkeypatch.setattr(rl, "parse_audit", lambda p, e, cwd=None: [x for x in real(p, e, cwd) if not x["path"].replace("\\", "/").endswith("/pop.tif")])
     code, man = runner()
     assert code == 11 and "LEDGER_BLIND:ds.pop" in man["reason_codes"]
 
