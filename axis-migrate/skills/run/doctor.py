@@ -37,6 +37,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True     # run as `python3 -I`, which ignores PYTHONDONTWRITEBYTECODE (PLUGIN_NOT_CLEAN)
 PLUGIN = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PLUGIN / "lib"))
 os.environ.setdefault("AXIS_MIGRATE_PLUGIN", str(PLUGIN))
@@ -121,7 +122,7 @@ def check_env(no_sync: bool) -> tuple[str, str]:
 
 
 def check_strace() -> tuple[str, str]:
-    st = shutil.which("strace") or ("/usr/bin/strace" if Path("/usr/bin/strace").is_file() else None)
+    st = ac.find_strace()
     fallback = ("read ledger = audit+cpl_debug (Python audit hook + GDAL CPL_DEBUG), rung capped at "
                 "sandbox-validated; E2B sandbox runs (strace inside) are the way past the cap (see the e2b line)")
     if not st:
@@ -236,6 +237,10 @@ def check_rung(results: list[tuple[str, str, str]]) -> tuple[str, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    try:  # Windows: a piped stdout is cp1252 and `-I` ignores PYTHONIOENCODING; the messages hold arrows and dashes
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    except (AttributeError, ValueError, OSError):
+        pass
     ap = argparse.ArgumentParser(description="axis-migrate preflight checks.")
     ap.add_argument("--no-sync", action="store_true", help="do not sync the environment; dry run only")
     ap.add_argument("--online", action="store_true", help="e2b: one authenticated check that the template exists")

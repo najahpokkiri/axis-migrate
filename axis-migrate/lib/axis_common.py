@@ -407,8 +407,23 @@ def env_venv_rule() -> tuple[Path, str]:
             "CLAUDE_PLUGIN_DATA unset in this shell → ~/.cache/axis-migrate")
 
 
+def venv_python(venv: Path) -> Path:
+    """The interpreter inside a uv/venv environment: Scripts/python.exe on Windows, bin/python elsewhere."""
+    return venv / "Scripts" / "python.exe" if os.name == "nt" else venv / "bin" / "python"
+
+
+def find_strace() -> str | None:
+    """The Linux strace for the read/write ledger, or None. Never on Windows: Git for Windows puts an unrelated MSYS
+    `strace.exe` on PATH (no -f/--seccomp-bpf/-y), so there the ledger falls back to audit+cpl_debug and the rung is
+    capped at sandbox-validated, as on macOS."""
+    if os.name == "nt":
+        return None
+    import shutil
+    return shutil.which("strace") or ("/usr/bin/strace" if Path("/usr/bin/strace").is_file() else None)
+
+
 def env_python() -> Path:
-    return env_venv_dir() / "bin" / "python"
+    return venv_python(env_venv_dir())
 
 
 def env_lock_marker() -> Path:

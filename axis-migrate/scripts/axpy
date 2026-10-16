@@ -36,6 +36,8 @@ else
   VENV="${XDG_CACHE_HOME:-$HOME/.cache}/axis-migrate/env-$LOCK8"
 fi
 PY="$VENV/bin/python"
+WIN=0
+case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) WIN=1; PY="$VENV/Scripts/python.exe" ;; esac  # Git Bash: uv makes Scripts/
 MARK="$VENV/.axis-lock-sha256"
 if [ ! -x "$PY" ] || [ "$(cat "$MARK" 2>/dev/null)" != "$LOCKSHA" ]; then
   UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
@@ -52,5 +54,7 @@ if [ -z "$MPLCONFIGDIR" ]; then
   mkdir -p "$MPLCONFIGDIR" 2>/dev/null || MPLCONFIGDIR="${TMPDIR:-/tmp}/axis-migrate-mplconfig-$(id -u)"
   mkdir -p "$MPLCONFIGDIR" 2>/dev/null
 fi
+# Windows: without UTF-8 mode Python writes cp1252 to pipes and opens text files as cp1252
+if [ "$WIN" = 1 ]; then PYTHONUTF8=1; export PYTHONUTF8; fi
 export MPLCONFIGDIR GDAL_PAM_ENABLED=NO PYTHONHASHSEED=0 AXIS_MIGRATE_PLUGIN="$PLUGIN"
 exec "$PY" "$@"

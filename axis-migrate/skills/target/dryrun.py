@@ -71,7 +71,7 @@ class SetupError(Exception):
 def find_strace() -> str | None:
     if os.environ.get("AXIS_TARGET_NO_STRACE") == "1":
         return None
-    return shutil.which("strace") or ("/usr/bin/strace" if Path("/usr/bin/strace").is_file() else None)
+    return ac.find_strace()
 
 
 def unshare_works() -> bool:
@@ -116,7 +116,7 @@ def make_venv(tmp: Path, runtime: dict, lock_file: Path, wheel: Path, log: list)
     else:
         info["error"] = "PYTHON_UNAVAILABLE"
         return info
-    py = venv / "bin" / "python"
+    py = ac.venv_python(venv)
     info["python_used"] = subprocess.run([str(py), "-I", "-c", "import platform;print(platform.python_version())"],
                                          capture_output=True, text=True).stdout.strip()
     if info["python_used"] != want and not info["deviation"]:

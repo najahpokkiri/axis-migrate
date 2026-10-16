@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import runlib as rl  # noqa: E402
 from runlib import ac  # noqa: E402
 
-STRACE = shutil.which("strace") or ("/usr/bin/strace" if Path("/usr/bin/strace").is_file() else None)
+STRACE = ac.find_strace()
 
 
 def make_executor(python: Path, *, use_strace: bool):

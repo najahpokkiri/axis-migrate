@@ -51,8 +51,10 @@ def venv_dir() -> Path:
     return data_root() / f"map-env-{lock_sha256()[:8]}"
 
 
-def python_path() -> Path:
-    return venv_dir() / "bin" / "python"
+def python_path(venv: Path | None = None) -> Path:
+    """Scripts/python.exe on Windows, bin/python elsewhere (same rule as lib/axis_common.venv_python)."""
+    venv = venv_dir() if venv is None else venv
+    return venv / "Scripts" / "python.exe" if os.name == "nt" else venv / "bin" / "python"
 
 
 def _uv() -> str | None:
@@ -66,7 +68,7 @@ def _uv() -> str | None:
 def is_synced() -> bool:
     venv = venv_dir()
     try:
-        return (venv / "bin" / "python").exists() and (venv / MARKER).read_text().strip() == lock_sha256()
+        return python_path(venv).exists() and (venv / MARKER).read_text().strip() == lock_sha256()
     except OSError:
         return False
 
