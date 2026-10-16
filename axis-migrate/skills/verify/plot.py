@@ -53,7 +53,6 @@ review-status 0 every compared raster/vector dataset has a complete receipt · 1
 from __future__ import annotations
 
 import argparse
-import fcntl
 import io
 import json
 import math
@@ -2336,13 +2335,8 @@ def validate_skip_finding(run: Run, f: dict, existing_ids: set) -> tuple[list[st
 
 
 def _locked_update(lock_dir: Path, fn) -> Any:
-    fd = os.open(lock_dir, os.O_RDONLY)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
+    with ac.dir_lock(lock_dir):
         return fn()
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
 
 
 def _amend_dir(run: Run) -> Path:

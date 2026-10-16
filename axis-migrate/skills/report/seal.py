@@ -279,14 +279,9 @@ def append_index(migration: Path, rec: dict):
     p = migration / "runs" / "index.jsonl"
     p.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(rec, sort_keys=True, ensure_ascii=False, allow_nan=False)
-    import fcntl
-    with open(p, "a", encoding="utf-8") as fh:
-        fcntl.flock(fh, fcntl.LOCK_EX)  # same lock as the runner's append_index
-        try:
-            fh.write(line + "\n")
-            fh.flush()
-        finally:
-            fcntl.flock(fh, fcntl.LOCK_UN)
+    with open(p, "a", encoding="utf-8") as fh, ac.file_lock(fh):  # same lock as the runner's append_index
+        fh.write(line + "\n")
+        fh.flush()
 
 
 # ------------------------------------------------------------------------------------------------------------------

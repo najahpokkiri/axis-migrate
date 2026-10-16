@@ -15,7 +15,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import copy
-import fcntl
 import importlib.util
 import json
 import os
@@ -146,10 +145,9 @@ def locked(mdir: str | os.PathLike, shared: bool = False):
     p["gdir"].mkdir(parents=True, exist_ok=True)
     fd = os.open(p["lock"], os.O_RDWR | os.O_CREAT, 0o644)
     try:
-        fcntl.flock(fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
-        yield
+        with ac.file_lock(fd, shared=shared):
+            yield
     finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
 
 

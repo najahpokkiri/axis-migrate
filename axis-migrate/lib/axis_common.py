@@ -5,6 +5,7 @@ else. Hooks import this with `python3 -I`, so nothing here may import a third-pa
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import math
@@ -153,6 +154,68 @@ def atomic_write_bytes(path: str | os.PathLike, data: bytes) -> None:
         raise
 
 
+
+# ---------------------------------------------------------------------------------------------------------------
+# File locks (fcntl.flock on POSIX; msvcrt on Windows, which has no fcntl)
+# ---------------------------------------------------------------------------------------------------------------
+_WIN_LOCK_OFFSET = 0x7FFFFFF0   # a byte far past any data: Windows locks are mandatory, so lock no byte a reader reads
+
+
+@contextlib.contextmanager
+def file_lock(fh, shared: bool = False):
+    """Hold an advisory lock on an open file (object or descriptor) for the block. POSIX: flock, shared or
+    exclusive. Windows: an exclusive msvcrt lock on one byte beyond the data (no shared mode there: readers
+    serialise, which is stricter, never looser); the descriptor's position is restored."""
+    fd = fh if isinstance(fh, int) else fh.fileno()
+    if os.name != "nt":
+        import fcntl
+        fcntl.flock(fd, fcntl.LOCK_SH if shared else fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    import msvcrt
+    import time
+
+    def _at_lock_byte(mode):
+        pos = os.lseek(fd, 0, os.SEEK_CUR)
+        os.lseek(fd, _WIN_LOCK_OFFSET, os.SEEK_SET)
+        try:
+            msvcrt.locking(fd, mode, 1)
+        finally:
+            os.lseek(fd, pos, os.SEEK_SET)
+
+    while True:  # blocks like flock; LK_LOCK alone gives up after 10 s
+        try:
+            _at_lock_byte(msvcrt.LK_NBLCK)
+            break
+        except OSError:
+            time.sleep(0.05)
+    try:
+        yield
+    finally:
+        _at_lock_byte(msvcrt.LK_UNLCK)
+
+
+@contextlib.contextmanager
+def dir_lock(path: str | os.PathLike):
+    """Exclusive lock keyed by a directory. POSIX: flock on the directory itself. Windows cannot open a directory
+    as a file, so the lock is a file in the temp folder named by the directory's hash (nothing is added to the
+    directory, which may be sealed)."""
+    if os.name != "nt":
+        fd = os.open(path, os.O_RDONLY)
+    else:
+        key = hashlib.sha256(os.path.normcase(os.path.realpath(path)).encode("utf-8")).hexdigest()[:16]
+        d = Path(tempfile.gettempdir()) / "axis-migrate-locks"
+        d.mkdir(parents=True, exist_ok=True)
+        fd = os.open(d / f"dir-{key}.lock", os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        with file_lock(fd):
+            yield
+    finally:
+        os.close(fd)
+
 # ---------------------------------------------------------------------------------------------------------------
 # Hashing
 # ---------------------------------------------------------------------------------------------------------------
@@ -164,6 +227,99 @@ def sha256_file(path: str | os.PathLike) -> str:
     return h.hexdigest()
 
 
+def _win_foreign_owner(fd: int) -> str | None:
+    """Windows: None when the file behind fd is owned by this process's user SID, else why not (stdlib ctypes)."""
+    import ctypes
+    from ctypes import wintypes
+    import msvcrt
+    adv, k32 = ctypes.WinDLL("advapi32", use_last_error=True), ctypes.WinDLL("kernel32", use_last_error=True)
+    adv.GetSecurityInfo.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.DWORD, ctypes.POINTER(ctypes.c_void_p),
+                                    ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
+    adv.GetSecurityInfo.restype = wintypes.DWORD
+    adv.OpenProcessToken.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(wintypes.HANDLE)]
+    adv.GetTokenInformation.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+                                        ctypes.POINTER(wintypes.DWORD)]
+    adv.EqualSid.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    adv.ConvertSidToStringSidW.argtypes = [ctypes.c_void_p, ctypes.POINTER(wintypes.LPWSTR)]
+    k32.GetCurrentProcess.restype = wintypes.HANDLE
+    k32.LocalFree.argtypes = [ctypes.c_void_p]
+    k32.CloseHandle.argtypes = [wintypes.HANDLE]
+    owner, sd = ctypes.c_void_p(), ctypes.c_void_p()
+    rc = adv.GetSecurityInfo(msvcrt.get_osfhandle(fd), 1, 1, ctypes.byref(owner), None, None, None, ctypes.byref(sd))
+    if rc != 0:  # SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION
+        return f"owner could not be read (GetSecurityInfo error {rc})"
+    tok = wintypes.HANDLE()
+    try:
+        if not adv.OpenProcessToken(k32.GetCurrentProcess(), 0x0008, ctypes.byref(tok)):  # TOKEN_QUERY
+            return "this user's SID could not be read (OpenProcessToken)"
+        try:
+            need = wintypes.DWORD()
+            adv.GetTokenInformation(tok, 1, None, 0, ctypes.byref(need))  # TokenUser
+            buf = ctypes.create_string_buffer(need.value)
+            if not adv.GetTokenInformation(tok, 1, buf, need, ctypes.byref(need)):
+                return "this user's SID could not be read (GetTokenInformation)"
+            me = ctypes.c_void_p.from_buffer(buf).value   # TOKEN_USER.User.Sid
+            if adv.EqualSid(owner, me):
+                return None
+            s = wintypes.LPWSTR()
+            name = s.value if adv.ConvertSidToStringSidW(owner, ctypes.byref(s)) else "?"
+            if s:
+                k32.LocalFree(s)
+            return f"owned by SID {name}, not by you"
+        finally:
+            k32.CloseHandle(tok)
+    finally:
+        k32.LocalFree(sd)
+
+
+class WinJob:
+    """Windows only: a Job Object holding a started process and every child it starts, the Windows form of a POSIX
+    process group (start_new_session + killpg). kill() ends them all; peak_rss_mb() is the process's peak working
+    set (the nearest measure to ru_maxrss). stdlib ctypes."""
+
+    def __init__(self, proc):
+        import ctypes
+        from ctypes import wintypes
+        self._ct, self._wt = ctypes, wintypes
+        k32 = self._k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.CreateJobObjectW.restype = wintypes.HANDLE
+        k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+        k32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        k32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        k32.CloseHandle.argtypes = [wintypes.HANDLE]
+        k32.K32GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD]
+        self._proc = proc
+        self.h = k32.CreateJobObjectW(None, None)
+        if not self.h:
+            raise OSError(ctypes.get_last_error(), "CreateJobObjectW failed")
+        if not k32.AssignProcessToJobObject(self.h, int(proc._handle)):
+            err = ctypes.get_last_error()
+            k32.CloseHandle(self.h)
+            raise OSError(err, "AssignProcessToJobObject failed")
+
+    def kill(self) -> None:
+        self._k32.TerminateJobObject(self.h, 1)
+
+    def peak_rss_mb(self) -> float:
+        ct, wt = self._ct, self._wt
+
+        class PMC(ct.Structure):
+            _fields_ = [("cb", wt.DWORD), ("PageFaultCount", wt.DWORD)] + [
+                (n, ct.c_size_t) for n in ("PeakWorkingSetSize", "WorkingSetSize", "QuotaPeakPagedPoolUsage",
+                                           "QuotaPagedPoolUsage", "QuotaPeakNonPagedPoolUsage",
+                                           "QuotaNonPagedPoolUsage", "PagefileUsage", "PeakPagefileUsage")]
+        pmc = PMC()
+        pmc.cb = ct.sizeof(PMC)
+        if not self._k32.K32GetProcessMemoryInfo(int(self._proc._handle), ct.byref(pmc), pmc.cb):
+            return 0.0
+        return pmc.PeakWorkingSetSize / (1024.0 * 1024.0)
+
+    def close(self) -> None:
+        if self.h:
+            self._k32.CloseHandle(self.h)
+            self.h = None
+
+
 class ForeignInputError(ValueError):
     """An input file (--json, --ops, --spec) that another account owns or anyone may write (B7)."""
 
@@ -172,8 +328,17 @@ def read_own_text(path: str | os.PathLike, what: str = "input") -> str:
     """Text of an input file the agent named on a command line, only when this user owns it and it is not
     world-writable. A stale file of another project in a shared folder (/tmp/q05.json, /tmp/axf/mf1.json from an
     eval account) has the same name as the one the agent meant to write; reading it would record foreign content.
-    Checked on the open descriptor. Pass '-' and stdin instead."""
+    Checked on the open descriptor. Pass '-' and stdin instead.
+    Windows: the owner SID of the open handle must be this user's (fails closed when it cannot be read). Mode bits
+    mean nothing there (always 666), and NTFS ACLs under a folder made at a drive root grant Authenticated Users
+    write on every file, so no world-writable test is applied on Windows (decided by Najah, 16 Oct)."""
     with open(path, "r", encoding="utf-8") as fh:
+        if os.name == "nt":
+            problem = _win_foreign_owner(fh.fileno())
+            if problem:
+                raise ForeignInputError(f"{what} {path}: {problem}: refused (a stale file of another account?). Pass "
+                                        "it on stdin with '-' (a quoted heredoc), or write it under migration/analysis/")
+            return fh.read()
         st = os.fstat(fh.fileno())
         if hasattr(os, "getuid") and st.st_uid != os.getuid():
             raise ForeignInputError(f"{what} {path} is owned by uid {st.st_uid}, not by you (uid {os.getuid()}): "
@@ -420,6 +585,20 @@ def find_strace() -> str | None:
         return None
     import shutil
     return shutil.which("strace") or ("/usr/bin/strace" if Path("/usr/bin/strace").is_file() else None)
+
+
+def axpy_cmd() -> list[str]:
+    """argv prefix that runs scripts/axpy: the script itself on POSIX; on Windows, which cannot exec a shell
+    script, Git Bash's sh followed by the script."""
+    axpy = str(plugin_root() / "scripts" / "axpy")
+    if os.name != "nt":
+        return [axpy]
+    import shutil
+    sh = shutil.which("sh") or next((c for c in (r"C:\Program Files\Git\bin\sh.exe",
+                                                  r"C:\Program Files\Git\usr\bin\sh.exe") if os.path.isfile(c)), None)
+    if not sh:
+        raise FileNotFoundError("SH_MISSING: scripts/axpy needs Git for Windows (sh) on Windows")
+    return [sh, axpy]
 
 
 def env_python() -> Path:

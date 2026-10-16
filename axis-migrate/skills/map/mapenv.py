@@ -73,6 +73,22 @@ def is_synced() -> bool:
         return False
 
 
+def _lock(fh) -> None:
+    """Exclusive lock held until fh closes: flock on POSIX, msvcrt on Windows (no fcntl there; the lock file holds
+    no data, so locking its first byte blocks no reader)."""
+    if os.name == "nt":
+        import msvcrt
+        import time
+        while True:
+            try:
+                msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+                return
+            except OSError:
+                time.sleep(0.1)
+    import fcntl
+    fcntl.flock(fh, fcntl.LOCK_EX)
+
+
 class EnvError(Exception):
     pass
 
@@ -93,9 +109,8 @@ def ensure(quiet: bool = True) -> Path:
         venv.parent.mkdir(parents=True, exist_ok=True)
     except OSError as e:
         raise EnvError(f"ENV_CACHE_NOT_WRITABLE: {venv.parent} ({e})" + SANDBOX_HINT)
-    import fcntl
     with open(venv.parent / f".{venv.name}.lock", "w") as lk:
-        fcntl.flock(lk, fcntl.LOCK_EX)
+        _lock(lk)
         if is_synced():
             return python_path()
         env = dict(os.environ, UV_PROJECT_ENVIRONMENT=str(venv), UV_PYTHON_PREFERENCE="only-managed")
@@ -112,7 +127,8 @@ def ensure(quiet: bool = True) -> Path:
 def app_dir(py: Path | None = None) -> Path:
     """The bundled GeoLibre web app inside the env (no import of geolibre needed)."""
     venv = (py or python_path()).parent.parent
-    for c in sorted(venv.glob("lib/python3*/site-packages/geolibre/static/app")):
+    pattern = "Lib/site-packages" if os.name == "nt" else "lib/python3*/site-packages"   # Windows venv layout
+    for c in sorted(venv.glob(f"{pattern}/geolibre/static/app")):
         if (c / "index.html").is_file():
             return c
     raise EnvError(f"GEOLIBRE_APP_MISSING: no geolibre/static/app/index.html under {venv}")
