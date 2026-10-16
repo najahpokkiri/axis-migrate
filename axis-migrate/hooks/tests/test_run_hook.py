@@ -19,7 +19,9 @@ import pytest
 from conftest import PLUGIN, SYS_PY, payload, tool_payload
 
 WRAPPER = PLUGIN / "hooks" / "run-hook.sh"
-SHELLS = [["/bin/sh"]] + [[p] for p in ("/usr/bin/dash", "/bin/dash") if os.path.exists(p)][:1] + \
+WIN = os.name == "nt"
+SH = shutil.which("sh") if WIN else "/bin/sh"   # Windows: Git Bash's sh, as Claude Code runs hooks there
+SHELLS = [[SH]] + [[p] for p in ("/usr/bin/dash", "/bin/dash") if os.path.exists(p)][:1] + \
     ([["/bin/bash", "--posix"]] if os.path.exists("/bin/bash") else [])
 LOCK8 = hashlib.sha256((PLUGIN / "skills" / "run" / "env" / "uv.lock").read_bytes()).hexdigest()[:8]
 
@@ -32,6 +34,9 @@ def shell(request):
 @pytest.fixture
 def nopy(tmp_path):
     """PATH with every tool of /usr/bin and /bin except any python*, HOME and plugin data empty: no interpreter."""
+    if WIN:
+        pytest.skip("a machine without Python is simulated with a PATH of symlinks, which Windows refuses without "
+                    "the symlink privilege")
     b = tmp_path / "nopy-bin"
     b.mkdir()
     for d in ("/usr/local/bin", "/usr/bin", "/bin"):
@@ -48,7 +53,7 @@ def nopy(tmp_path):
     return {"PATH": str(b), "HOME": str(home), "CLAUDE_PLUGIN_DATA": str(tmp_path / "pd-empty")}
 
 
-def run(hook, data, *, env=None, shell=("/bin/sh",), proc_cwd=None, timeout=30):
+def run(hook, data, *, env=None, shell=(SH,), proc_cwd=None, timeout=30):
     e = {k: v for k, v in os.environ.items()
          if k not in ("PLUGIN_ROOT", "PLUGIN_DATA", "CLAUDE_PLUGIN_DATA", "XDG_CACHE_HOME")
          and not k.startswith(("AXIS_MIGRATE_HIDDEN", "AXIS_MIGRATE_CODESCAN"))}
@@ -96,7 +101,8 @@ def test_no_migration_is_fast_with_python(tmp_path):
     work = tmp_path / "w"
     work.mkdir()
     times = [run("guard_bash", bash(work, "ls"), proc_cwd=work).ms for _ in range(5)]
-    assert min(times) < 100, times
+    # Windows: sh + the env python start (no pre-filter there) is about 0.5 s; it was 7 s before the //migration fix
+    assert min(times) < (1500 if WIN else 100), times
 
 
 # --- migration/ and no interpreter: NEEDS_PYTHON3 -----------------------------------------------------------------------
@@ -193,6 +199,7 @@ def fake_env_python(base: Path, name: str, log: Path) -> Path:
     return py
 
 
+@pytest.mark.skipif(WIN, reason="Windows takes any env-*/Scripts/python.exe at once (fast path); fakes are POSIX")
 def test_env_python_preferred_over_python3(project, tmp_path, shell):
     pd = tmp_path / "pd"
     log = tmp_path / "used.log"
@@ -261,14 +268,15 @@ def test_macos_clt_stub_never_run(project, tmp_path):
 # --- passthrough -------------------------------------------------------------------------------------------------------
 def test_payload_reaches_python_byte_for_byte(project, tmp_path, shell):
     pd = tmp_path / "pd"
-    py = pd / f"env-{LOCK8}" / "bin" / "python"
+    py = pd / f"env-{LOCK8}" / ("Scripts/python.exe" if WIN else "bin/python")   # Git Bash runs a #! file
     py.parent.mkdir(parents=True)
     out = tmp_path / "got.bin"
-    py.write_text(f'#!/bin/sh\ncat > "{out}"\n')
+    py.write_text(f'#!/bin/sh\ncat > "{out.as_posix() if WIN else out}"\n')
     py.chmod(0o755)
     d = bash(project.root, "printf 'a\\tb' && echo \"café \\\\ — x\"\r\n")
+    env = {"CLAUDE_PLUGIN_DATA": str(pd), **({"HOME": str(tmp_path / "h")} if WIN else {})}   # not the real env
     for raw in (json.dumps(d) + "\n\n\n", json.dumps(d, ensure_ascii=False, indent=2), json.dumps(d) + "  \r\n"):
-        r = run("guard_bash", raw.encode("utf-8"), env={"CLAUDE_PLUGIN_DATA": str(pd)}, shell=shell)
+        r = run("guard_bash", raw.encode("utf-8"), env=env, shell=shell)
         assert r.returncode == 0 and out.read_bytes() == raw.encode("utf-8")
 
 
@@ -284,7 +292,8 @@ def test_hooks_through_wrapper_behave_as_before(project, tmp_path, shell):
 # Claude Code and Codex run a hook's `command` through a shell (`<shell> -c "<command>"`); on macOS that shell may be
 # zsh or bash, on Linux sh/dash. Claude sets CLAUDE_PLUGIN_ROOT, Codex sets PLUGIN_ROOT only. Each combination with
 # python3 only, python only (no python3) and no interpreter: fail closed inside a migration, a no-op outside one.
-LAUNCH_SHELLS = [s for s in ("/bin/sh", "/bin/bash", shutil.which("zsh") or "", shutil.which("dash") or "") if s]
+LAUNCH_SHELLS = [s for s in (SH, "/bin/bash", shutil.which("zsh") or "", shutil.which("dash") or "")
+                 if s and (not WIN or os.path.isabs(s))]
 HJ_CMDS = {h["command"].rsplit(" ", 1)[1]: h["command"]
            for groups in json.loads((PLUGIN / "hooks" / "hooks.json").read_text())["hooks"].values()
            for g in groups for h in g["hooks"]}
@@ -330,7 +339,7 @@ def test_hooks_leave_no_bytecode_in_the_plugin(project, tmp_path):
                        ("guard_write", write(project.root, str(project.mig / "analysis" / "x.py"))),
                        ("guard_bash", bash(project.root, "ls")),
                        ("stop_gate", payload("Stop", cwd=str(project.root), last_assistant_message="Done."))):
-        subprocess.run(["/bin/sh", str(wrapper), hook], input=json.dumps(data).encode(), capture_output=True,
+        subprocess.run([SH, str(wrapper), hook], input=json.dumps(data).encode(), capture_output=True,
                        cwd=str(project.root), timeout=60)
     left = sorted(str(p.relative_to(copy)) for p in copy.rglob("__pycache__"))
     assert left == [], left

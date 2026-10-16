@@ -25,7 +25,9 @@ PAYLOADS = Path(__file__).resolve().parent / "payloads"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 import tempfile as _tempfile
 MARKER_DIR = _tempfile.mkdtemp(prefix="axis-hooks-data-")
-SYS_PY = "/usr/bin/python3" if os.path.exists("/usr/bin/python3") else (shutil.which("python3") or sys.executable)
+SYS_PY = "/usr/bin/python3" if os.path.exists("/usr/bin/python3") else (
+    # Windows: python3 on PATH is often the Python Install Manager alias, which fails in a stripped env
+    sys.executable if os.name == "nt" else (shutil.which("python3") or sys.executable))
 
 for p in (GUARD, PLUGIN / "lib", BIN):
     if str(p) not in sys.path:

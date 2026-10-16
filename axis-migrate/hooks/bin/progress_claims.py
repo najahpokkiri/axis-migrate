@@ -38,11 +38,12 @@ def new_assistant_text(tp: str, offset: int) -> tuple[str, int]:
         lines = lines[1:]                         # a partial first line
     end = start
     for raw in lines:
-        if not raw.endswith(b"}"):
+        body = raw[:-1] if raw.endswith(b"\r") else raw   # a CRLF transcript (text-mode writer on Windows)
+        if not body.endswith(b"}"):
             break                                 # an unfinished last line: read it next time
         end += len(raw) + 1
         try:
-            rec = json.loads(raw)
+            rec = json.loads(body)
         except ValueError:
             continue
         m = rec.get("message") if isinstance(rec, dict) else None

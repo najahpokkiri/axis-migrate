@@ -67,7 +67,7 @@ def test_e2b_key_option_written_to_plugin_data(project, tmp_path):
         assert r.rc == 0 and key not in r.raw and key not in r.err
         f = data / "secrets.env"
         assert f.read_text() == f"E2B_API_KEY={key}\n"
-        assert stat.S_IMODE(os.stat(f).st_mode) == 0o600
+        assert os.name == "nt" or stat.S_IMODE(os.stat(f).st_mode) == 0o600   # Windows: no mode bits (open item)
         assert not [p for p in data.iterdir() if p.name.endswith(".tmp")]
     bad = run_hook("session_start.py", payload("SessionStart", cwd=str(tmp_path)),
                    env=dict(env, CLAUDE_PLUGIN_OPTION_E2B_API_KEY="x y\nE2B_OTHER=1"))

@@ -8,6 +8,8 @@
 #    None found -> exit 0 at once, without any Python: projects that are not migrations are never affected.
 #    Exceptions that always go on to Python: session_start (it writes the hooks-active marker and the plugin
 #    secrets file even before migration/ exists) and a payload carrying an apply_patch text (absolute paths).
+#    Windows (Git Bash) with the plugin's environment present skips 2. and 3.: that python runs every hook at once,
+#    since process starts are slow there and the Python hooks are idle outside a migration anyway.
 # 3. Interpreter: the plugin's own uv environment (same rule as scripts/axpy and lib/axis_common.env_venv_dir:
 #    ${CLAUDE_PLUGIN_DATA}/env-<lock8>, ${PLUGIN_DATA}/env-<lock8>, ${XDG_CACHE_HOME:-~/.cache}/axis-migrate/env-<lock8>,
 #    then any env-* there: the hooks need the standard library only), else a python3 (python) that really runs
@@ -29,6 +31,33 @@ SCRIPT="$PLUGIN/hooks/bin/$HOOK.py"
 PAYLOAD="$(cat; printf x)"
 PAYLOAD="${PAYLOAD%x}"
 
+# ---- Windows (Git Bash) ------------------------------------------------------------------------------------------
+# Every process start costs 50-100 ms there (more under antivirus), and the JSON pre-filter below needs about 25 of
+# them: over a second per hook, on every tool call, in every project. So on Windows the plugin's own environment
+# python decides at once (the hooks are idle outside a migration; about 0.3 s). Without that environment the POSIX
+# path below runs (NEEDS_PYTHON3 included). macOS and Linux never take this branch.
+WIN=0
+case "${OSTYPE:-}" in
+  msys*|cygwin*) WIN=1 ;;
+  *) if [ -n "${WINDIR:-}${SYSTEMROOT:-}" ]; then
+       case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) WIN=1 ;; esac
+     fi ;;
+esac
+if [ "$WIN" = 1 ]; then
+  for b in "${CLAUDE_PLUGIN_DATA:-}" "${PLUGIN_DATA:-}" "${XDG_CACHE_HOME:-${HOME:-/nonexistent}/.cache}/axis-migrate"; do
+    [ -n "$b" ] && [ -d "$b" ] || continue
+    for c in "$b"/env-*/Scripts/python.exe; do   # any env: the hooks need the standard library only
+      if [ -x "$c" ]; then
+        PYTHONIOENCODING=utf-8
+        PYTHONDONTWRITEBYTECODE=1
+        export PYTHONIOENCODING PYTHONDONTWRITEBYTECODE
+        printf '%s' "$PAYLOAD" | "$c" -I -B "$SCRIPT"
+        exit $?
+      fi
+    done
+  done
+fi
+
 # ---- JSON string values of a key (one per line, unescaped; a value with \u, \n or \t escapes marks UNSURE) --------
 UNSURE=0
 ONE="$(printf '\001')"
@@ -44,12 +73,9 @@ unescape() {
 }
 
 # ---- find migration/ -----------------------------------------------------------------------------------------
-# Git Bash on Windows: payload paths come as C:\a\b (a backslash is a separator there, so walking up must split on
-# it too, and C:\ / C:/ is absolute). On macOS and Linux a backslash is a file-name character: nothing changes.
-WIN=0
-if [ -n "${WINDIR:-}${SYSTEMROOT:-}" ]; then
-  case "$(uname -s 2>/dev/null)" in MINGW*|MSYS*|CYGWIN*) WIN=1 ;; esac
-fi
+# Git Bash on Windows (no environment yet): payload paths come as C:\a\b (a backslash is a separator there, so
+# walking up must split on it too, and C:\ / C:/ is absolute). On macOS and Linux a backslash is a file-name
+# character: nothing changes.
 winpath() {
   if [ "$WIN" = 1 ]; then printf '%s' "$1" | tr '\\' '/'; else printf '%s' "$1"; fi
 }
@@ -62,7 +88,8 @@ walk() {  # $1 = a folder (or a path inside one that may not exist yet)
   [ -n "$d" ] || return 1
   d="$(cd "$d" 2>/dev/null && pwd -P)" || return 1
   while :; do
-    if [ -f "$d/migration/graph.json" ]; then MIG="$d/migration"; return 0; fi
+    # at the root: /migration, never //migration (Git Bash takes //x for a UNC share: a ~3 s network lookup)
+    if [ -f "${d%/}/migration/graph.json" ]; then MIG="${d%/}/migration"; return 0; fi
     case "$d" in */migration) if [ -f "$d/graph.json" ]; then MIG="$d"; return 0; fi ;; esac
     [ "$d" = "/" ] && return 1
     d="${d%/*}"
