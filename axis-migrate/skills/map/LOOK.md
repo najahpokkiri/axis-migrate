@@ -8,7 +8,10 @@ or lifts a verdict. Discover, verify and migrate all follow this file.
 - **Claude desktop, Codex desktop with a browser**: the GeoLibre views (map SKILL §1–3). Do not also read the PNGs
   (they are rendered for the report and evals) unless a view cannot be built; say so if you do.
 - **Terminal, headless, evals, no browser tool**: the PNGs (Read; Codex `view_image`).
-One path per dataset, never both.
+- **Place against the real world** (any desktop): the MapLibre page (map SKILL §6). Set a basemap (`imagery` or
+  `osm`), wait until `basemapStatus` is `loaded`, lower the data opacity, and check that rivers, roads, towns or
+  coastline line up with the data. Read the values with `identify(lon, lat)`, not from the colours.
+One path per dataset, never both (the MapLibre page is an addition to the views, not a second path).
 
 ## 2 Colours (one vocabulary)
 - Legacy blue, new orange. Validity: **blue = legacy only, orange = new only, green = both**, transparent = neither

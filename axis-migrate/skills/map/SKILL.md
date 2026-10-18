@@ -102,3 +102,32 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
   never holds the server's port and never embeds the app.
 - The app loads its default basemap style from tiles.openfreemap.org once at start-up; the migration's data is only
   ever served from 127.0.0.1.
+
+## 6 One MapLibre page with identify and a basemap (trial, next to the GeoLibre views)
+One page with every layer, an exact value at any point and a real basemap underneath, so you can check that the
+data is where the place is. Display only, like everything here.
+- Build: `mlview.py build migration` (discover: the legacy inputs, AOI + 25 %) or `mlview.py build migration --run
+  <run>` (verify: the compared rasters/vectors, legacy and new, plus the inputs hidden and the AOI shown). It prints
+  the page path; with `start.py` running, open `url_base` + that path (also `url` in `mlview.json`). The page needs
+  no CDN (MapLibre is vendored); the only outside requests are the basemap tiles you choose.
+- Ready: `document.documentElement.dataset.axisMap == "ready"` and the line `axis-map: ready · engine maplibre-gl
+  4.7.1 · data sha256 <sha>` (`get_page_text`); the sha must be `data_sha256` in `mlview.json`.
+- Drive it with `javascript_tool` on `window.__AXIS_MAP__`, not by clicking:
+  - `identify(lon, lat)` returns every data layer's value at that point, visible or not; the basemap is never
+    included. Rasters give `{row, col, value}` read from the cell values in the page (not pixels; `null` with
+    `note: "nodata"` or `"outside"`); vectors give the attributes of each polygon containing the point or each point
+    within 8 px. `identifyMany([[lon, lat], …])` for several. Clicking the map writes the same as text in the side panel.
+  - `setBasemap(name)` with `none` (the default), `osm`, `positron`, `topo`, `imagery` (Esri satellite) or `s2`
+    (Sentinel-2 cloudless 2016). It resolves `state()` once the tiles have drawn: `basemapStatus` is `loaded`,
+    `failed (N tile errors)` (a proxy or firewall: say the basemap check could not be done) or `not drawn within 10 s`.
+    Never judge position against a basemap that is not `loaded`.
+  - `setOpacity({basemap, data})` (0–1; data starts at 0.85): lower `data` to see the place through the rasters.
+  - `setLayer(id, on)` toggles a layer (ids as in `mlview.json`); `state()` returns basemap, opacities, visible
+    layers, zoom and centre.
+- A layer with `exact: false` in `mlview.json` (warped to EPSG:4326 or decimated) gives source values, but its cell
+  outlines are approximate or sampled: say so when you quote it. Values of an `exact: true` raster equal the source cell for cell.
+- The app's pane pauses drawing while hidden. The page keeps rendering on timers but is slower (ready after ~20 s,
+  not ~1 s), and a screenshot of a hidden pane can show an older frame. Show the pane (`preview_start` with the URL)
+  before you take the screenshot you judge by; `identify` does not need the pane shown.
+- Trial: a receipt still cites the GeoLibre views (`plot.py review-add`, `scan.py annotate`). Use the page for the
+  place check against a basemap and for values, and say in `saw` what you read there.

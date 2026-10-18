@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Axis map view</title>
+<link rel="stylesheet" href="maplibre-gl.css">
+<script>
+// The app's browser pane pauses requestAnimationFrame while hidden, which stalls MapLibre (no load, no draw, no idle).
+// Each frame request also gets a 100 ms timer; whichever fires first runs it, so a hidden pane still renders.
+(() => {
+  const raf = requestAnimationFrame.bind(window), caf = cancelAnimationFrame.bind(window), pending = new Map();
+  let n = 0;
+  window.requestAnimationFrame = cb => {
+    const id = ++n;
+    const cancel = () => { caf(r); clearTimeout(t); pending.delete(id); };
+    const run = ts => { if (!pending.has(id)) return; cancel(); cb(ts); };
+    const r = raf(run), t = setTimeout(() => run(performance.now()), 100);
+    pending.set(id, cancel);
+    return id;
+  };
+  window.cancelAnimationFrame = id => pending.get(id)?.();
+})();
+</script>
+<script src="maplibre-gl.js"></script>
+<script src="data.js"></script>
+<style>
+  :root { --bg:#f7f5f0; --fg:#1d1d1b; --muted:#6b675f; --legacy:#2166ac; --new:#e66101; --panel:#fffdf8; --line:#d9d4c7; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:13px/1.4 system-ui,sans-serif; }
+  #app { display:grid; grid-template-columns:260px 1fr; height:100%; }
+  #side { background:var(--panel); border-right:1px solid var(--line); overflow:auto; padding:10px 12px; }
+  #side h1 { font-size:14px; margin:0 0 4px; } #side h2 { font-size:12px; margin:12px 0 4px; color:var(--muted); text-transform:uppercase; }
+  #side label { display:flex; gap:6px; align-items:center; padding:2px 0; }
+  .sw { width:10px; height:10px; border-radius:2px; flex:none; }
+  #map { position:relative; }
+  #caption { position:absolute; left:8px; bottom:8px; z-index:2; background:var(--panel); border:1px solid var(--line); padding:6px 8px; max-width:60%; }
+  #identify { white-space:pre-wrap; font:12px/1.35 ui-monospace,monospace; background:#fff; border:1px solid var(--line); padding:6px; min-height:40px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="side">
+    <h1 id="title"></h1>
+    <div style="color:var(--muted)">Click the map: every data layer's value at that point (basemap excluded).</div>
+    <h2>Basemap</h2>
+    <select id="bm"></select>
+    <label>Basemap opacity <input id="bmop" type="range" min="0" max="1" step="0.05" value="1"></label>
+    <label>Data opacity <input id="dataop" type="range" min="0" max="1" step="0.05" value="0.85"></label>
+    <div id="bmstate" style="color:var(--muted)">none</div>
+    <h2>Layers</h2><div id="layers"></div>
+    <h2>Identify</h2><div id="identify">—</div>
+    <div id="ready" style="color:var(--muted);margin-top:8px;overflow-wrap:anywhere">axis-map: loading</div>
+  </div>
+  <div id="map"><div id="caption"></div></div>
+</div>
+<script>
+const D = window.AXIS_DATA, DATA_SHA256 = "__DATA_SHA256__";
+document.getElementById("title").textContent = D.title;
+const ROLE_COLOUR = { input: "#7a7a7a", legacy: "var(--legacy)", new: "var(--new)" };
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v.slice(4, -1)).trim() || v;
+
+// Rasters: exact Float32 values, indexed by the geotransform (no pixel reading).
+for (const l of D.layers) if (l.kind === "raster") {
+  const bin = atob(l.grid), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  l.values = l.dtype === "float64" ? new Float64Array(u8.buffer) : new Float32Array(u8.buffer);
+}
+
+function rasterValue(l, lon, lat) {
+  const [x0, dx, y0, dy] = l.transform;
+  const col = Math.floor((lon - x0) / dx), row = Math.floor((lat - y0) / dy);
+  if (col < 0 || row < 0 || col >= l.width || row >= l.height) return { value: null, note: "outside" };
+  const v = l.values[row * l.width + col];
+  return { row, col, value: Number.isNaN(v) ? null : v, note: Number.isNaN(v) ? "nodata" : l.exact ? undefined : l.exact_note };
+}
+
+function inRing(pt, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+const inPoly = (pt, rings) => inRing(pt, rings[0]) && !rings.slice(1).some(r => inRing(pt, r));
+
+function vectorHits(l, lon, lat, tolPx) {
+  const hits = [], here = map.project([lon, lat]);
+  for (const f of l.geojson.features) {
+    const g = f.geometry; if (!g) continue;
+    let hit = false, distPx;
+    if (g.type === "Polygon") hit = inPoly([lon, lat], g.coordinates);
+    else if (g.type === "MultiPolygon") hit = g.coordinates.some(p => inPoly([lon, lat], p));
+    else {
+      const pts = g.type === "Point" ? [g.coordinates] : g.type === "MultiPoint" ? g.coordinates : [];
+      for (const p of pts) { const q = map.project(p), d = Math.hypot(q.x - here.x, q.y - here.y); if (d <= tolPx && (distPx === undefined || d < distPx)) distPx = d; }
+      hit = distPx !== undefined;
+    }
+    if (hit) hits.push({ ...f.properties, ...(distPx !== undefined ? { _px: +distPx.toFixed(1) } : {}) });
+  }
+  return hits;
+}
+
+// identify(lon, lat) → { layerId: result } for every data layer, visible or not; the basemap is never included.
+function identify(lon, lat, tolPx = 8) {
+  const out = {};
+  for (const l of D.layers) out[l.id] = l.kind === "raster" ? rasterValue(l, lon, lat) : vectorHits(l, lon, lat, tolPx);
+  return { lon, lat, layers: out };
+}
+const identifyMany = (pts, tolPx) => pts.map(([lon, lat]) => identify(lon, lat, tolPx));
+
+function fmt(r) {
+  return `${r.lon.toFixed(6)}, ${r.lat.toFixed(6)}\n` + Object.entries(r.layers).map(([k, v]) =>
+    Array.isArray(v) ? `${k}: ${v.length ? v.map(p => JSON.stringify(p)).join(" ") : "—"}`
+                     : `${k}: ${v.value ?? v.note}${v.row !== undefined ? `  (r${v.row},c${v.col})` : ""}`).join("\n");
+}
+
+// Free, keyless basemaps; context only — identify() never reads them. ponytail: public tile servers have fair-use
+// limits and can be blocked by a corporate proxy; bmstate reports that instead of failing silently.
+const BASEMAPS = {
+  none: null,
+  osm: { label: "OpenStreetMap", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], maxzoom: 19, attribution: "© OpenStreetMap contributors" },
+  positron: { label: "CARTO Positron (light)", tiles: ["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"], maxzoom: 20, attribution: "© OpenStreetMap contributors © CARTO" },
+  topo: { label: "OpenTopoMap (terrain)", tiles: ["https://a.tile.opentopomap.org/{z}/{x}/{y}.png"], maxzoom: 17, attribution: "© OpenStreetMap contributors, SRTM · © OpenTopoMap (CC-BY-SA)" },
+  imagery: { label: "Esri World Imagery (satellite)", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], maxzoom: 19, attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community" },
+  s2: { label: "Sentinel-2 cloudless 2016 (10 m)", tiles: ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg"], maxzoom: 15, attribution: "Sentinel-2 cloudless – s2maps.eu by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016)" },
+};
+const style = { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": "#f2efe8" } }] };
+for (const [k, b] of Object.entries(BASEMAPS)) if (b) {
+  style.sources["bm-" + k] = { type: "raster", tiles: b.tiles, tileSize: 256, maxzoom: b.maxzoom, attribution: b.attribution };
+  style.layers.push({ id: "bm-" + k, type: "raster", source: "bm-" + k, layout: { visibility: "none" }, paint: { "raster-opacity": 1 } });
+}
+const map = new maplibregl.Map({ container: "map", style, bounds: [[D.aoi[0], D.aoi[1]], [D.aoi[2], D.aoi[3]]], attributionControl: { compact: true } });
+map.addControl(new maplibregl.NavigationControl(), "top-right");
+map.addControl(new maplibregl.ScaleControl(), "bottom-right");
+
+const toggles = [];
+map.on("load", () => {
+  for (const l of D.layers) {
+    const id = l.id, colour = css(ROLE_COLOUR[l.role] || "#888");
+    if (l.kind === "raster") {
+      map.addSource(id, { type: "image", url: "data:image/png;base64," + l.png, coordinates: l.corners });
+      map.addLayer({ id, type: "raster", source: id, layout: { visibility: l.visible ? "visible" : "none" }, paint: { "raster-resampling": "nearest", "raster-fade-duration": 0, "raster-opacity": view.dataOpacity } });
+      toggles.push([id, id, [id], l.scale.type === "classes" ? l.scale.legend[0]?.color : "#3b528b", l.visible]);
+      continue;
+    }
+    map.addSource(id, { type: "geojson", data: l.geojson });
+    const ids = [], dash = l.role === "new" ? [2, 2] : [1, 0], vis = l.visible;
+    const layout = { visibility: vis ? "visible" : "none" };
+    map.addLayer({ id: id + ":fill", type: "fill", source: id, filter: ["==", "$type", "Polygon"], layout, paint: { "fill-color": colour, "fill-opacity": 0.12 } }); ids.push(id + ":fill");
+    map.addLayer({ id: id + ":line", type: "line", source: id, filter: ["==", "$type", "Polygon"], layout, paint: { "line-color": colour, "line-width": 1.5, "line-dasharray": dash } }); ids.push(id + ":line");
+    map.addLayer({ id: id + ":pt", type: "circle", source: id, filter: ["==", "$type", "Point"], layout,
+      paint: { "circle-color": l.role === "new" ? "rgba(0,0,0,0)" : colour, "circle-stroke-color": colour, "circle-stroke-width": 2,
+               "circle-radius": l.role === "new" ? 7 : 4 } }); ids.push(id + ":pt");
+    toggles.push([id, `${id} (${l.count})`, ids, colour, vis]);
+  }
+  const box = document.getElementById("layers");
+  for (const [id, label, ids, colour, on] of toggles) {
+    const el = document.createElement("label");
+    el.innerHTML = `<input type="checkbox" ${on ? "checked" : ""}><span class="sw" style="background:${colour}"></span><span></span>`;
+    el.lastChild.textContent = label;
+    el.firstChild.onchange = e => { for (const x of ids) map.setLayoutProperty(x, "visibility", e.target.checked ? "visible" : "none"); caption(); };
+    box.appendChild(el);
+  }
+  const sel = document.getElementById("bm");
+  for (const [k, b] of Object.entries(BASEMAPS)) sel.add(new Option(b ? b.label : "None (default)", k));
+  sel.onchange = () => setBasemap(sel.value);
+  document.getElementById("bmop").oninput = e => setOpacity({ basemap: +e.target.value });
+  document.getElementById("dataop").oninput = e => setOpacity({ data: +e.target.value });
+  caption();
+  // The pane can be hidden (0×0) at start; fit the AOI whenever the container first gets a size.
+  const fit = () => map.fitBounds([[D.aoi[0], D.aoi[1]], [D.aoi[2], D.aoi[3]]], { padding: 20, animate: false });
+  new ResizeObserver(() => { if (map.getContainer().clientWidth) { map.resize(); if (!fit.done) { fit(); fit.done = true; map.once("idle", ready); } } }).observe(map.getContainer());
+  // ready only once the map has a size, is fitted to the AOI and has drawn every source
+  function ready() {
+    const line = `axis-map: ready · engine maplibre-gl ${maplibregl.getVersion()} · data sha256 ${DATA_SHA256}`;
+    document.documentElement.dataset.axisMap = "ready";
+    document.getElementById("ready").textContent = line;
+    console.log(line);
+  }
+});
+
+const view = { basemap: "none", basemapOpacity: 1, dataOpacity: 0.85, basemapStatus: "none", tileErrors: 0 };
+map.on("error", e => { if (e.sourceId === "bm-" + view.basemap) { view.tileErrors++; status(); } });
+
+// setBasemap(name) resolves once the basemap's tiles for this view have loaded (or failed), so an agent knows
+// whether it is really there before it judges position against it.
+function setBasemap(name) {
+  if (!(name in BASEMAPS)) throw new Error("unknown basemap " + name + "; one of " + Object.keys(BASEMAPS));
+  for (const k of Object.keys(BASEMAPS)) if (BASEMAPS[k]) map.setLayoutProperty("bm-" + k, "visibility", k === name ? "visible" : "none");
+  Object.assign(view, { basemap: name, tileErrors: 0, basemapStatus: name === "none" ? "none" : "loading" });
+  document.getElementById("bm").value = name; status();
+  return afterDraw().then(drawn => {
+    if (name !== "none") view.basemapStatus = !drawn ? "not drawn within 10 s (pane hidden?)" : view.tileErrors ? `failed (${view.tileErrors} tile errors)` : "loaded";
+    status(); return state();
+  });
+}
+function setOpacity({ basemap, data } = {}) {
+  if (basemap !== undefined) { view.basemapOpacity = basemap; for (const k of Object.keys(BASEMAPS)) if (BASEMAPS[k]) map.setPaintProperty("bm-" + k, "raster-opacity", basemap); document.getElementById("bmop").value = basemap; }
+  if (data !== undefined) { view.dataOpacity = data; for (const l of D.layers) if (l.kind === "raster") map.setPaintProperty(l.id, "raster-opacity", data); document.getElementById("dataop").value = data; }
+  status(); return state();
+}
+function setLayer(id, on) {
+  const t = toggles.find(t => t[0] === id); if (!t) throw new Error("unknown layer " + id);
+  for (const x of t[2]) map.setLayoutProperty(x, "visibility", on ? "visible" : "none");
+  document.querySelectorAll("#layers label").forEach(el => { if (el.lastChild.textContent.startsWith(id)) el.firstChild.checked = on; });
+  caption(); return state();
+}
+// A hidden pane can pause requestAnimationFrame, so MapLibre neither draws nor goes idle: time out and say so.
+// (document.hidden is not reliable in the app's pane: it reads true while the map draws.)
+const afterDraw = (ms = 10000) => new Promise(res => {
+  const t = setTimeout(() => res(false), ms);
+  map.once("idle", () => { clearTimeout(t); res(true); });
+  map.triggerRepaint();
+});
+const visibleLayers = () => toggles.filter(t => map.getLayoutProperty(t[2][0], "visibility") !== "none").map(t => t[0]);
+const state = () => ({ ...view, ready: document.documentElement.dataset.axisMap || "loading", visible: visibleLayers(), zoom: +map.getZoom().toFixed(2), center: map.getCenter().toArray().map(v => +v.toFixed(6)) });
+function status() {
+  document.getElementById("bmstate").textContent = `${view.basemap}: ${view.basemapStatus} · basemap ${view.basemapOpacity} · data ${view.dataOpacity}`;
+  document.documentElement.dataset.axisBasemap = `${view.basemap}:${view.basemapStatus}`;
+  caption();
+}
+function caption() {
+  const b = BASEMAPS[view.basemap];
+  document.getElementById("caption").textContent = `Showing: ${visibleLayers().join(" · ") || "nothing"}. Basemap: ${b ? `${b.label} (${view.basemapStatus}, opacity ${view.basemapOpacity})` : "none"}; data opacity ${view.dataOpacity}. Legacy = blue, new = orange (dashed line / ring), inputs = grey. ${D.caption}`;
+}
+
+let marker;
+map.on("click", e => {
+  const r = identify(e.lngLat.lng, e.lngLat.lat);
+  document.getElementById("identify").textContent = fmt(r);
+  (marker ||= new maplibregl.Marker({ color: "#1d1d1b", scale: 0.6 })).setLngLat(e.lngLat).addTo(map);
+});
+window.__AXIS_MAP__ = { identify, identifyMany, setBasemap, setOpacity, setLayer, state, basemaps: Object.keys(BASEMAPS), map, data: D };
+</script>
+</body>
+</html>
