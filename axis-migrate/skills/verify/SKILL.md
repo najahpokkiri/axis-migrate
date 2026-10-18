@@ -41,8 +41,8 @@ views.json lists it under `skipped` as `skipped: identical (<sha256 of the new o
 it: review-template prints `{"dataset_id", "skipped": "skipped: identical (<sha256>)", "model"}`; fill `model` and
 review-add it (accepted only while the new output's bytes, hashed again, are that sha). A PASS_EXACT dataset that is
 not identical gets one overview and one cell; a dataset with max |new − legacy| = 0 gets no `worst` view.
-Desktop: `views.py run --run <run>`, `start.py migration`, `views.py list --run <run> --json`, map SKILL §2–3 →
-**view receipt** (step 6). Headless: Read the PNGs → **PNG receipts** (steps 2–5).
+Desktop: `views.py run --run <run>`, `mlview.py build migration --run <run>`, `start.py migration`, `views.py list
+--run <run> --json`, map SKILL §2–3 and §6 → **view receipt** (step 6) with the identified points. Headless: Read the PNGs → **PNG receipts** (steps 2–5).
 
 1. `plot.py review-status --run <run>` lists what still lacks a receipt and which questions are missing;
    `plot.py review-template --run <run> [--dataset <ds>] [--kind view|png]` prints the receipts prefilled (shas,
@@ -77,14 +77,18 @@ Desktop: `views.py run --run <run>`, `start.py migration`, `views.py list --run 
     "view": {"project": "verify/views/ds.x/edges.geolibre.json", "project_sha256": "<views.json>"},
     "views_seen": [{"project": "verify/views/ds.x/overview.geolibre.json", "project_sha256": "…"}, … worst, edges,
                    cell-edge],
-    "engine": "maplibre-gl-raster", "cells_read": [{"cell": "edge", "legacy": 1, "new": null}], "layer": "validity",
+    "engine": "maplibre-gl-raster", "layer": "validity",
+    "mlview": {"data_sha256": "<mlview.json>"},
+    "identified": [{"point": "worst", "exact": true, "identify": {…identifyMany's result for that point…}}, …],
     "location": {"crs": "EPSG:4326", "bbox": [west, south, east, north]},
     "observations": [{"what": "cells valid on legacy only, west edge", "value": 812, "unit": "cells"}],
     "note": "one-cell blue stripe west, orange stripe east", "model": "<your model id>"}
    ```
    Enforced: `views_seen` holds every view views.json built of overview, worst, edges (vector: overview,
-   worst; `omitted_views` are not required) and the `cell-<id>` project of every cell read, each sha equal to views.json and to the file; rasters need `engine: maplibre-gl-raster` and at
-   least one cell, values as the popup shows them (checked to ~3 significant figures; null = nodata); a yes needs
+   worst; `omitted_views` are not required), each sha equal to views.json and to the file; rasters need `engine:
+   maplibre-gl-raster`; **no click, no credit**: `mlview {data_sha256}` and `identified[]` with the MapLibre page's
+   identify JSON for every point mlview.json lists, equal to the page's values and, on exact raster layers, to
+   compare's (LOOK.md §8; `cells_read` from popups is optional); a yes needs
    `location` (lon/lat), a note and `observations` with numbers. Nothing found = one `Q-all` view receipt with answer
    no, with `looked` (LOOK.md §8), refused while views.json counts cells valid on one side only (validity 1/2):
    flag those instead. A view

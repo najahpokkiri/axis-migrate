@@ -8,6 +8,7 @@ from pathlib import Path
 
 import axis_common as ac
 import ladder
+import report  # noqa: E402
 import seal as sealmod
 import synth
 
@@ -155,3 +156,19 @@ def test_amend_adds_views_and_view_receipts(proj):
     lad = ladder.compute(proj["migration"])
     assert lad["pipeline"]["rung"] == "reference-verified"
     assert lad["datasets"]["ds.a_mask"]["visual"]["view_receipts"] == 2
+
+
+def test_report_prints_identified_points_and_labels_png_receipts(proj, tmp_path):
+    """IDENTIFY-UPDATE §3–4: a view receipt's points as read off the MapLibre page; a PNG receipt says it has none."""
+    view_run(proj)
+    report.build(proj["migration"])
+    html = (proj["migration"] / "report" / "index.html").read_text(encoding="utf-8")
+    md = (proj["migration"] / "report" / "REPORT.md").read_text(encoding="utf-8")
+    want = "Clicked 3 point(s): edge legacy 1 · new nodata; interior legacy 10.5678 · new 10.5678; worst legacy " \
+           "12.25 · new 3.125"
+    assert want in html and want in md
+    png = synth.build_project(tmp_path / "png")
+    synth.make_run(png, 1, looked=True)
+    report.build(png["migration"])
+    assert "PNG review, no map values" in (png["migration"] / "report" / "index.html").read_text(encoding="utf-8")
+    assert "PNG review, no map values" in (png["migration"] / "report" / "REPORT.md").read_text(encoding="utf-8")

@@ -42,7 +42,8 @@ $AXPY ${CLAUDE_PLUGIN_ROOT}/skills/map/views.py inputs migration   # with a map 
 **Look as `${CLAUDE_PLUGIN_ROOT}/skills/map/LOOK.md` says** (where, the five checks, one block per dataset in
 chat; here: `inputs-overview` + one `grid-<family>` per family, or the PNGs `map.py inputs` lists, and one cell per
 raster and one feature per vector read). Desktop: `start.py migration`, `views.py list --inputs migration --json`
-(every URL, cell and feature), map skill §2–3. View and PNG findings count the same; neither resolves anything.
+(every URL, cell and feature, and the points to identify), `mlview.py build migration`, map skill §2–3 and §6:
+a view finding carries the points' identify values (no click, no credit). View and PNG findings count the same; neither resolves anything.
 
 Record each observation with a number computed by a script: first `discover/metrics.json` (NoData and valid cells
 inside the AOI per raster, valid cells lost/gained between family members, features not touching the AOI;
@@ -54,15 +55,18 @@ $AXPY $D/scan.py annotate migration map-finding --json finding.json
 #        "metric": {"name": "...", "value": 0.0, "computed_by": "..."}, "about": ["ds.x"]}
 # view: {"id": "MF-02", "view": {"project": "discover/views/grid-x.geolibre.json", "project_sha256": "<views.json>"},
 #        "views_seen": [{"project": "discover/views/inputs-overview.geolibre.json", "project_sha256": "…"}, … every
-#                       project opened, incl. the cell-/feature- projects read],
-#        "engine": "maplibre-gl-raster", "cells_read": [{"dataset": "ds.x", "cell": "max", "value": 12.3}],
-#        "features_read": [{"dataset": "ds.z", "feature": "first", "attribute": "name", "value": "…"}],
+#                       project opened],
+#        "engine": "maplibre-gl-raster",
+#        "mlview": {"data_sha256": "<discover/mlview/mlview.json>"},
+#        "identified": [{"dataset": "ds.x", "point": "max", "exact": true, "identify": {…identifyMany result…}}, …
+#                       every point `views.py list --inputs migration` gives for the datasets in about],
 #        "observation": "...", "severity": "...", "metric": {...}, "about": ["ds.x", "ds.z"]}
 ```
 A finding without a computed metric can only have `severity: question`. A view finding is refused unless every
 project's sha equals `discover/views.json` and the file, `views_seen` holds `inputs-overview`, rasters were seen with
-`maplibre-gl-raster`, and every dataset it covers has at least one cell value or feature attribute read as the popup
-shows it (checked against `views.json`; a mismatch means the wrong cell or layer). `map.py findings migration` says
+`maplibre-gl-raster`, and `identified[]` holds the MapLibre page's identify JSON for every point of every dataset it
+covers, equal to the page's values (a mismatch means another point, layer or page; `cells_read`/`features_read`
+from popups are optional). `map.py findings migration` says
 which findings still count (a PNG or project whose bytes changed stops counting). Visual findings never resolve
 anything; they only raise. Free-form agent notes: `scan.py annotate migration note --json note.json`. Findings and
 notes survive a rescan.

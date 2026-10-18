@@ -5816,10 +5816,24 @@ def annotate(migration: Path, what: str, payload: dict | None, path: str | None,
         if is_view:
             import visual_receipt as vr       # lib/: the one rule for view receipts (verify and discover)
             extra = sorted(set(f) - {"id", "view", "views_seen", "engine", "cells_read", "features_read", "about",
-                                     "observation", "severity", "metric", "location", "receipt", "model"})
+                                     "observation", "severity", "metric", "location", "receipt", "model",
+                                     "mlview", "identified"})
             if extra:
                 return 2, f"unknown field(s) in a view finding: {', '.join(extra)}"
+            if not isinstance(f.get("identified"), list) or not f["identified"] or not isinstance(f.get("mlview"),
+                                                                                                   dict):
+                return 2, ("view receipt refused: no click, no credit — a map finding carries identified[] "
+                           "({dataset, point, exact, identify}: the MapLibre page's identifyMany JSON for every point "
+                           "`views.py list --inputs migration` gives for the datasets it is about) and mlview "
+                           "{data_sha256} (mlview.py build migration). Looking alone does not count (map/LOOK.md)")
             probs = vr.check_inputs_on_disk(migration, f)
+            mdoc, why = vr.find_mlview(migration, vr.MLVIEW_DIRS_DISCOVER, f["mlview"].get("data_sha256"))
+            if why:
+                probs.append(why)
+            else:
+                ids = {x.get("dataset") for x in f["identified"] if isinstance(x, dict)}
+                for d in sorted((set(f.get("about") or []) | ids) & set(mdoc.get("points") or {})):
+                    probs += vr.identified_problems(mdoc, d, f["identified"], with_dataset=True)
             if probs:
                 return 2, "view receipt refused:\n  - " + "\n  - ".join(probs)
             f["receipt"] = "view"

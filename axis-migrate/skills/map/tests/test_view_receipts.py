@@ -34,6 +34,15 @@ def run(tmp_path_factory) -> Path:
     return r
 
 
+def page_doc(run: Path) -> dict:
+    """views.json plus the MapLibre page built for it (mlview.py): receipts carry its identify values."""
+    cp = run_cli("mlview.py", "build", run.parents[1], "--run", run)
+    assert cp.returncode == 0, cp.stdout + cp.stderr
+    doc = views_doc(run)
+    doc["_mlview"] = json.loads((run / "verify" / "views" / "mlview" / "mlview.json").read_text())
+    return doc
+
+
 def review_add(run: Path, tmp: Path, f) -> subprocess.CompletedProcess:
     p = tmp / "finding.json"
     p.write_text(json.dumps(f))
@@ -42,7 +51,7 @@ def review_add(run: Path, tmp: Path, f) -> subprocess.CompletedProcess:
 
 
 def test_review_loop_on_real_views(run, tmp_path):
-    doc = views_doc(run)
+    doc = page_doc(run)
     assert all("bounds_4326" in e for e in doc["datasets"])
     # wrong engine and a misread cell are refused
     cp = review_add(run, tmp_path, vb.view_receipt(doc, "ds.e", engine="cog-tiler-wasm"))
@@ -159,7 +168,7 @@ def test_reviewed_before_carries_by_sha(tmp_path):
     import shutil
     r1 = synth_map.build(tmp_path / "proj")
     assert run_cli("views.py", "run", "--run", r1).returncode == 0
-    doc = views_doc(r1)
+    doc = page_doc(r1)
     for f in (vb.view_receipt(doc, "ds.v"),                               # ds.v: looked, nothing found
               vb.view_receipt(doc, "ds.b", flag=True, cells=("edge",),   # ds.b: flagged
                               observations=[{"what": "legacy only", "value": 1, "unit": "cells"}],

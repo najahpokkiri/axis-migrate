@@ -46,11 +46,24 @@ def proj(tmp_path_factory):
     before = tree(leg)
     cp = run_cli("views.py", "inputs", mig)
     assert cp.returncode == 0, cp.stdout + cp.stderr
+    cp = run_cli("mlview.py", "build", mig)                          # the MapLibre page: identify values
+    assert cp.returncode == 0, cp.stdout + cp.stderr
     return {"legacy": leg, "mig": mig, "before": before}
 
 
 def doc(mig: Path) -> dict:
-    return json.loads((mig / "discover" / "views.json").read_text())
+    d = json.loads((mig / "discover" / "views.json").read_text())
+    ml = mig / "discover" / "mlview" / "mlview.json"
+    d["_mlview"] = json.loads(ml.read_text()) if ml.is_file() else {"points": {}, "data_sha256": None}
+    return d
+
+
+def identified(d: dict, datasets) -> list[dict]:
+    """What identifyMany on the MapLibre page returns at each listed point (the page values mlview.json holds)."""
+    ml = d["_mlview"]
+    return [{"dataset": ds, "point": p["id"], "exact": all(l["exact"] for l in p["layers"].values()),
+             "identify": {"lon": p["lon"], "lat": p["lat"], "layers": {k: v["page"] for k, v in p["layers"].items()}}}
+            for ds in datasets for p in ml["points"].get(ds, []) if p["in_page"]]
 
 
 def ent(d: dict, ds: str) -> dict:
@@ -178,9 +191,28 @@ def receipt(d: dict, **over) -> dict:
                             "value": feat["properties"]["name"]}],
          "about": ["ds.raw", "ds.zones"], "observation": "raster covers every zone; west zone edge on cell edges",
          "severity": "info", "metric": {"name": "valid_cells", "value": raw["raster"]["counts"]["valid"],
-                                        "computed_by": "views.json raster.counts"}}
+                                        "computed_by": "views.json raster.counts"},
+         "mlview": {"data_sha256": d["_mlview"]["data_sha256"]}, "identified": identified(d, ["ds.raw", "ds.zones"])}
     f.update(over)
     return f
+
+
+def test_discover_finding_needs_identified_points(proj, tmp_path):
+    """No click, no credit at discover too: a view finding carries the MapLibre page's identify JSON for the points
+    of every dataset it is about."""
+    mig, d = proj["mig"], doc(proj["mig"])
+    assert set(d["_mlview"]["points"]) >= {"ds.raw", "ds.zones"}
+    cp = annotate(mig, tmp_path, receipt(d, identified=[]))
+    assert cp.returncode == 2 and "no click, no credit" in cp.stderr
+    part = [x for x in receipt(d)["identified"] if x["dataset"] != "ds.zones"]
+    cp = annotate(mig, tmp_path, receipt(d, identified=part))
+    assert cp.returncode == 2 and "ds.zones point" in cp.stderr and "was not identified" in cp.stderr
+    bad = receipt(d)
+    r0 = next(x for x in bad["identified"] if x["dataset"] == "ds.raw")
+    lid = next(k for k in r0["identify"]["layers"] if k.startswith("ds.raw"))
+    r0["identify"]["layers"][lid] = {"row": 0, "col": 0, "value": -1.0}
+    cp = annotate(mig, tmp_path, bad)
+    assert cp.returncode == 2 and "the page holds" in cp.stderr
 
 
 def annotate(mig: Path, tmp: Path, f: dict) -> subprocess.CompletedProcess:
@@ -229,10 +261,10 @@ def test_value_mismatch_refused(proj, tmp_path):
     f["features_read"][0]["value"] = "Zone Nowhere"
     cp = annotate(proj["mig"], tmp_path, f)
     assert cp.returncode == 2 and "wrong feature or wrong layer" in cp.stderr
-    f = receipt(d, cells_read=[])                       # ds.raw is covered but nothing was identified on it
+    f = receipt(d, cells_read=[], identified=identified(d, ["ds.zones"]))   # ds.raw covered, nothing identified
     f["views_seen"] = f["views_seen"][:1] + f["views_seen"][2:]
     cp = annotate(proj["mig"], tmp_path, f)
-    assert cp.returncode == 2 and "ds.raw: identify at least one cell" in cp.stderr
+    assert cp.returncode == 2 and "ds.raw point" in cp.stderr and "was not identified" in cp.stderr
     cp = annotate(proj["mig"], tmp_path, receipt(d, engine="cog-tiler-wasm"))
     assert cp.returncode == 2 and "maplibre-gl-raster" in cp.stderr
     f = receipt(d)

@@ -2157,7 +2157,12 @@ def validate_finding(run: Run, f: Any, rubric: dict, existing_ids: set) -> tuple
 
 # ---- view receipts (GeoLibre map views, skills/map/views.py; acceptance rule in lib/visual_receipt.py)
 VIEW_REQUIRED = ("dataset_id", "question_id", "category", "answer", "effect", "view", "views_seen", "note", "model")
-VIEW_OPTIONAL = ("finding_id", "run_id", "location", "engine", "cells_read", "layer", "observations", "looked")
+VIEW_OPTIONAL = ("finding_id", "run_id", "location", "engine", "cells_read", "layer", "observations", "looked",
+                 "mlview", "identified", "identify_js")             # identify_js: review-template's hint, not stored
+NO_CLICK = ("no click, no credit: a map receipt carries identified[] — for every point `views.py list --run <run>` "
+            "gives, the JSON `window.__AXIS_MAP__.identifyMany(…)` returned on the MapLibre page (mlview.py build) — "
+            "and mlview {\"data_sha256\": \"<mlview.json>\"}. Looking alone, or a screenshot, does not count "
+            "(LOOK.md §4)")
 VIEW_ADDED = FINDING_ADDED + ("receipt",)
 VIEW_LAYERS = ("legacy", "new", "diff", "validity", "zones")
 OBS_MAX = 20
@@ -2265,7 +2270,15 @@ def validate_view_finding(run: Run, f: dict, rubric: dict, existing_ids: set) ->
             errs.append("location.bbox must be 4 finite lon/lat numbers west ≤ east, south ≤ north")
     if errs:
         return errs, None
+    if not isinstance(f.get("identified"), list) or not f["identified"] or not isinstance(f.get("mlview"), dict):
+        return [NO_CLICK], None
     probs = vrc.check_view_on_disk(run.dir, run.run_id, f, fam)
+    if probs:
+        return probs, None
+    mdoc, why = vrc.find_mlview(run.dir, vrc.MLVIEW_DIRS_RUN, f["mlview"].get("data_sha256"))
+    if why:
+        return [why], None
+    probs = vrc.identified_problems(mdoc, ds, f["identified"])
     if probs:
         return probs, None
     if q == Q_ALL:
@@ -2276,7 +2289,7 @@ def validate_view_finding(run: Run, f: dict, rubric: dict, existing_ids: set) ->
     out["views_seen"] = sorted(f["views_seen"], key=lambda s: s["project"])
     out["engine"] = f.get("engine")
     out["cells_read"] = sorted(f.get("cells_read") or [], key=lambda c: str(c["cell"]))
-    for k in ("location", "layer", "observations") + (("looked",) if q == Q_ALL else ()):
+    for k in ("location", "layer", "observations", "mlview", "identified") + (("looked",) if q == Q_ALL else ()):
         if f.get(k) is not None:
             out[k] = f[k]
     out["run_id"] = run.run_id
@@ -2528,12 +2541,11 @@ def looked_template(run: Run, ds: str, fam: str, names: list[str]) -> list[dict]
             return None
         return {"name": name, "value": v, **({"unit": unit} if unit else {}),
                 "computed_by": f"compare.py {cid}.{field} (verify/compare/{ds}.json)"}
-    cell = next((n for n in names if n.startswith("cell-")), None)
     if fam == "raster":
         where = {"place": first("overview", "overview.png"),
                  "coverage": first("nodata", "overview", "mask_diff.png"),
                  "edges": first("edges", "mask_diff.png"),
-                 "values": first(f"overview+{cell}" if cell else "overview", "overview.png+hist.png", "overview.png"),
+                 "values": first("overview", "overview.png+hist.png", "overview.png"),
                  "classes": first("overview", "overview.png")}
         vm = (chk.get("raster.values") or {}).get("metric") or ""
         nums = {"coverage": num("raster.mask", "valid cells in new", "new", "cells"),
@@ -2629,8 +2641,8 @@ def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = N
             continue
         projects, cells = vrc.entry_projects(entry)
         by_name = {info["name"]: rel for rel, info in projects.items()}
-        names = list(vrc.REQUIRED_VIEWS.get(fam, ())) + ([f"cell-{c}" for c in sorted(cells)] if fam == "raster"
-                                                          else [])
+        names = [v for v in vrc.REQUIRED_VIEWS.get(fam, ()) if v not in (entry.get("omitted_views") or {})] + \
+            ([f"cell-{c}" for c in sorted(cells)] if fam == "raster" else [])
         refs, bad = [], []
         for n in names:
             rel = by_name.get(n)
@@ -2643,10 +2655,22 @@ def review_template(run: Run, kind: str = "auto", datasets: list[str] | None = N
             skipped.append(f"{ds}: view project(s) {', '.join(bad)} missing or changed since views.json "
                            "(rerun views.py run)")
             continue
-        sk = {**base, "view": refs[0], "views_seen": sorted(refs, key=lambda r: r["project"]), "layer": None}
+        sk = {**base, "view": refs[0], "views_seen": [r for r in sorted(refs, key=lambda r: r["project"])
+                                                      if not Path(r["project"]).name.startswith("cell-")],
+              "layer": None}
         if fam == "raster":
             sk["engine"] = vrc.ENGINE_GPU
-            sk["cells_read"] = [{"cell": c, "legacy": "", "new": ""} for c in sorted(cells)]
+        mdoc = next((d for d in (vrc._load_json(run.dir / x / "mlview.json") for x in reversed(vrc.MLVIEW_DIRS_RUN))
+                     if isinstance(d, dict)), None)
+        pts = ((mdoc or {}).get("points") or {}).get(ds)
+        if not pts:
+            skipped.append(f"{ds}: no MapLibre page points (views.py run, then mlview.py build --run <dir>): a map "
+                           "receipt needs identified[] values")
+            continue
+        sk["mlview"] = {"data_sha256": mdoc["data_sha256"]}
+        sk["identified"] = [{"point": pt["id"], "exact": all(l.get("exact") for l in pt["layers"].values()),
+                             "identify": None} for pt in pts if pt.get("in_page")]
+        sk["identify_js"] = (mdoc.get("identify") or {}).get(ds)
         sk["looked"] = looked_template(run, ds, fam, [Path(r["project"]).name.replace(".geolibre.json", "")
                                                       for r in refs])
         out.append({**sk, "note": "", "model": ""})
@@ -2662,8 +2686,9 @@ def cmd_review_template(args) -> int:
     print(f"{len(items)} prefilled receipt(s). A skipped receipt ('skipped: identical (<sha256>)': no views, "
           "nothing to show) needs only model. Q-all receipts: fill answer (\"no\" only after looking at every cited plot or "
           "view), looked (per check: answer ok|cannot_tell|n/a and saw = what you saw where, never 'all green'; keep "
-          "or correct the numbers; map/LOOK.md), model, note (may stay empty for no); view receipts: each cells_read legacy/new as the popup shows "
-          f"them (null = nodata). layer: null or one of {', '.join(VIEW_LAYERS)} (several joined with '+', e.g. "
+          "or correct the numbers; map/LOOK.md), model, note (may stay empty for no); view receipts: run identify_js on the MapLibre page "
+          "(mlview.json url) with javascript_tool and put each result, in order, as that point's identify (no click, "
+          f"no credit; values are checked against the page and compare). layer: null or one of {', '.join(VIEW_LAYERS)} (several joined with '+', e.g. "
           "legacy+new). A defect is a separate receipt with question_id Q1…Q7, answer yes, effect flag. Then "
           "plot.py review-add --run <run> --json <file>.", file=sys.stderr)
     return EXIT_OK if items or not skipped else EXIT_SOME

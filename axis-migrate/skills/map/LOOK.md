@@ -8,10 +8,11 @@ or lifts a verdict. Discover, verify and migrate all follow this file.
 - **Claude desktop, Codex desktop with a browser**: the GeoLibre views (map SKILL §1–3). Do not also read the PNGs
   (they are rendered for the report and evals) unless a view cannot be built; say so if you do.
 - **Terminal, headless, evals, no browser tool**: the PNGs (Read; Codex `view_image`).
-- **Place against the real world** (any desktop): the MapLibre page (map SKILL §6). Set a basemap (`imagery` or
-  `osm`), wait until `basemapStatus` is `loaded`, lower the data opacity, and check that rivers, roads, towns or
-  coastline line up with the data. Read the values with `identify(lon, lat)`, not from the colours.
-One path per dataset, never both (the MapLibre page is an addition to the views, not a second path).
+- **Values: the MapLibre page** (any desktop; map SKILL §6). **Looking alone does not count: no click, no
+  credit.** Read every point `views.py list` gives for the dataset with one `identifyMany` call on the page; the
+  receipt carries what it returned. Also for place against the real world: set a basemap (`imagery` or `osm`), wait
+  until `basemapStatus` is `loaded`, lower the data opacity, check rivers, roads, towns or coastline against the data.
+One path per dataset, never both (the MapLibre page is part of the desktop path, not a second path).
 
 ## 2 Colours (one vocabulary)
 - Legacy blue, new orange. Validity: **blue = legacy only, orange = new only, green = both**, transparent = neither
@@ -29,23 +30,31 @@ One path per dataset, never both (the MapLibre page is an addition to the views,
 | place | Is the data where the AOI or outline is, in the right CRS and units, not shifted? | `overview`, `grid-<family>` | `overview.png`, `worst_tiles.png`, `grid_corners.png`, `inputs_overview.png` | compare grid gate, `extent_relations` |
 | coverage | Is anything missing, empty or outside the AOI? | `overview` (toggle new), `edges` bookmark "whole extent" | `mask_diff.png`, `inputs_overview.png` | `map.py metrics`, compare `raster.mask`, feature counts |
 | edges | Cells valid on one side only along a border; paired stripes (a one-cell shift)? | `edges` (validity over the data) | `mask_diff.png`, `worst_tiles.png` | views.json `validity_counts`, compare `raster.mask` |
-| values | Same picture under the shared scale; does the range fit the unit? | `overview` + one cell read as text | `overview.png`, `hist.png` | compare `raster.values`, the cell read |
+| values | Same picture under the shared scale; does the range fit the unit? | `overview` + the points read with `identifyMany` on the MapLibre page | `overview.png`, `hist.png` | compare `raster.values`, the identified points |
 | classes | Is a class or feature type absent on one side? (`n/a` for continuous rasters) | `overview`, layers toggled | `overlay.png`, `per_feature.png` | compare key set, class counts |
 
 A check you could not do is `cannot_tell` with why. A finding with no number is `severity: question`, never a flag.
 
 ## 4 How (desktop)
-- `views.py list … --json` once; `resize_window` 1280×960 once. Per view: `navigate`, wait for `axis-map: ready`
-  with the view's sha, **one** screenshot at scale 1, toggle the one layer the check needs; a second screenshot
-  only if the picture changed what you think. `zoom` on a region for detail. Values from the popup via
-  `get_page_text`, never from pixels. No fixed waits, no nudges, no dialogs.
+- `views.py list … --json` once (views, the points to read and one `identifyMany(…)` call per dataset);
+  `resize_window` 1280×960 once. Per view: `navigate`, wait for `axis-map: ready` with the view's sha, **one**
+  screenshot at scale 1, toggle the one layer the check needs; a second screenshot only if the picture changed what
+  you think. `zoom` on a region for detail. No fixed waits, no nudges, no dialogs.
+- **Values**: `mlview.py build` (once per run, after `views.py`), open its page (`mlview.json` url), wait for its
+  ready line with `data_sha256`, then per dataset run the listed `window.__AXIS_MAP__.identifyMany([[lon, lat], …])`
+  with `javascript_tool` (Codex: the in-app browser's JS) and keep the JSON. Points: the worst cell when max |d| > 0,
+  one edge cell where data starts or stops, one interior cell; one feature per vector. Never pixels, never a value
+  you did not read there.
 - Open only the views `views.json` built. A dataset under `skipped` gets the template receipt and no views.
-- A blank canvas after `ready` is a defect to report (`check.py --render`), not "no difference".
+- A blank canvas after `ready` is a defect to report (`check.py --render`), not "no difference". `check.py --render`
+  also runs `identifyMany` on every point headlessly and checks the page against compare (a check, not your
+  receipt).
 
 ## 5 Per stage
 - **Discover**: `inputs-overview` + one `grid-<family>` per family (or `inputs_overview.png`, `grid_corners.png`,
-  `legacy_rasters.png` / `legacy_vectors.png`); read **one cell per raster and one feature per vector** (that is
-  what the finding rule checks). Numbers from `map.py metrics` (`discover/metrics.json`). Record with
+  `legacy_rasters.png` / `legacy_vectors.png`); identify the points `views.py list --inputs migration` gives on the
+  page of `mlview.py build migration` (the cells of each raster, one feature per vector): a view finding carries
+  them in `identified[]` with `dataset`. Numbers from `map.py metrics` (`discover/metrics.json`). Record with
   `scan.py annotate migration map-finding` (discover SKILL §2). Budget: ≤ 10 min, ≤ 15 browser calls.
 - **Verify, each isolated run**: the views `views.json` lists for the dataset (raster `overview` + `edges` + one
   cell, `worst` only when max |d| > 0; vector `overview`, `worst` only when a feature differs), or every PNG in
@@ -56,18 +65,20 @@ A check you could not do is `cannot_tell` with why. A finding with no number is 
   counted view receipt.
 
 ## 6 Done, per dataset
-Every listed view or PNG opened once; the five checks answered; at least one cell or feature read as text
+Every listed view or PNG opened once; the five checks answered; every listed point identified on the MapLibre page
 (desktop); one receipt accepted (`review-add` in verify, `scan.py annotate` in discover). Then stop. Do not reopen
 views of an output byte-equal to one you reviewed.
 
 ## 7 What you say in chat (one block per dataset, no more)
 ```
-Looked at ds.x (3 views): place ✓ coverage ✓ edges ✓ values ✓ classes n/a — cell r488,c418 legacy 0.506452 =
-new 0.506452; 9179 NoData cells (51 km²) inside the AOI, same on both sides. Nothing to flag.
+Clicked 3 points on ds.pop_res (overview, edges): worst r488,c418 legacy 0.506452 = new 0.506452; edge r12,c7 legacy
+1 · new nodata; inside r300,c250 legacy 4.2 = new 4.2. place ✓ coverage ✓ edges ✓ values ✓ classes n/a — 9179
+NoData cells (51 km²) inside the AOI, same on both sides. Nothing to flag.
 ```
 With a flag: `… edges ✗ — 812 legacy-only cells along the west edge (validity 1), flagged Q6 boundary_stripes.`
-Always one thing worth knowing with its number. Never "all green", "looks right" or "uniform" alone; never a status
-word (`ladder.py` prints those).
+Values as identify returned them (say "warped" for a layer with `exact: false`). Always one thing worth knowing with
+its number. Never "all green", "looks right" or "uniform" alone; never a status word (`ladder.py` prints those).
+A PNG review says so: "PNG review of ds.x, no map values: …".
 
 ## 8 The receipt says the same (verify; `review-template` prefills where and the numbers it has)
 A `Q-all` ("looked, nothing found") receipt carries `looked`, one entry per check:
@@ -82,3 +93,14 @@ A `Q-all` ("looked, nothing found") receipt carries `looked`, one entry per chec
 receipt cites, joined with `+`) and `saw` (≤ 120 characters, more than "all green"); `cannot_tell` and `n/a`
 (classes only) need `why`; at least one entry carries a `number`. A defect is never `Q-all`: record it as a flag
 (verify SKILL §3.4/§3.6).
+
+A map receipt (verify view receipt, discover view finding) also carries the values it read — no click, no credit:
+```json
+"mlview": {"data_sha256": "<mlview.json data_sha256>"},
+"identified": [{"point": "worst", "exact": true, "identify": <identifyMany's result for that point, as returned>}, …]
+```
+`review-add` / `scan.py annotate` refuse it without them, when a listed point is missing, when an identify was run
+elsewhere or its values are not the page's, or when the page and compare disagree on an exact raster layer (`exact`
+false: a layer there was warped or decimated; say so, its values are the warped page's). `review-template` prefills
+`mlview`, the points and `exact`; `cells_read` is no longer needed. PNG receipts are unchanged; the report labels
+them "PNG review, no map values".

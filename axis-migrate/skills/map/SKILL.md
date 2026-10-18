@@ -103,11 +103,14 @@ annotate migration map-finding` (discover SKILL §2), never `plot.py`.
 - The app loads its default basemap style from tiles.openfreemap.org once at start-up; the migration's data is only
   ever served from 127.0.0.1.
 
-## 6 One MapLibre page with identify and a basemap (trial, next to the GeoLibre views)
+## 6 One MapLibre page with identify and a basemap: where the values come from
 One page with every layer, an exact value at any point and a real basemap underneath, so you can check that the
-data is where the place is. Display only, like everything here.
-- Build: `mlview.py build migration` (discover: the legacy inputs, AOI + 25 %) or `mlview.py build migration --run
-  <run>` (verify: the compared rasters/vectors, legacy and new, plus the inputs hidden and the AOI shown). It prints
+data is where the place is. Display only, like everything here. **No click, no credit**: a map receipt carries the
+values `identifyMany` returned here for every point `views.py` listed (LOOK.md §4 and §8).
+- Build after `views.py` (it lists the points): `mlview.py build migration` (discover: the legacy inputs, AOI +
+  25 %) or `mlview.py build migration --run <run>` (verify: the compared rasters/vectors, legacy and new, plus the
+  inputs hidden and the AOI shown). `mlview.json` `points` holds, per dataset, each point with what the page
+  returns there per layer and whether it equals compare's value; `identify` holds the `identifyMany(…)` call. It prints
   the page path; with `start.py` running, open `url_base` + that path (also `url` in `mlview.json`). The page needs
   no CDN (MapLibre is vendored); the only outside requests are the basemap tiles you choose.
 - Ready: `document.documentElement.dataset.axisMap == "ready"` and the line `axis-map: ready · engine maplibre-gl
@@ -129,5 +132,8 @@ data is where the place is. Display only, like everything here.
 - The app's pane pauses drawing while hidden. The page keeps rendering on timers but is slower (ready after ~20 s,
   not ~1 s), and a screenshot of a hidden pane can show an older frame. Show the pane (`preview_start` with the URL)
   before you take the screenshot you judge by; `identify` does not need the pane shown.
-- Trial: a receipt still cites the GeoLibre views (`plot.py review-add`, `scan.py annotate`). Use the page for the
-  place check against a basemap and for values, and say in `saw` what you read there.
+- Receipts: a view receipt still cites the GeoLibre views you looked at (`views_seen`) and adds `mlview
+  {data_sha256}` and `identified[]` ({point, exact, identify}; discover: also `dataset`), one per listed point, each
+  `identify` exactly as the page returned it. `cell-<id>` projects and `cells_read` are no longer needed.
+  `check.py --render` runs the same `identifyMany` headlessly and writes `mlview/identify-check.json`: a check of the
+  page against compare, not a substitute for reading the values yourself in a pane.

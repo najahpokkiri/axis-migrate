@@ -171,7 +171,7 @@ def test_required_views_and_cells(same, tmp_path):
     good = vb.view_receipt(doc, "ds.r")
     no_edges = [s for s in good["views_seen"] if "/edges." not in s["project"]]
     refused(run, tmp_path, dict(good, views_seen=no_edges), "missing edges")
-    refused(run, tmp_path, dict(good, cells_read=[]), "at least one cell")
+    refused(run, tmp_path, dict(good, cells_read=[], identified=[]), "no click, no credit")
     f = dict(good, cells_read=[{"cell": "interior", "legacy": 10.7, "new": 10.6}])
     refused(run, tmp_path, f, "wrong cell or wrong layer")
     f = dict(good, cells_read=[{"cell": "interior", "legacy": 10.6, "new": None}])
@@ -384,12 +384,11 @@ def test_view_template_cites_required_views_and_cells(same, tmp_path):
     names = {s["project"].rsplit("/", 1)[1].split(".")[0] for s in sk["views_seen"]}
     assert set(vrc.REQUIRED_VIEWS["raster"]) <= names and sk["engine"] == vrc.ENGINE_GPU
     cells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
-    assert [c["cell"] for c in sk["cells_read"]] == sorted(cells)
-    refused(run, tmp_path, dict(sk, answer="no", model="m"), "views.json has")   # cell values not read yet
+    assert "cells_read" not in sk and [x["point"] for x in sk["identified"]] == sorted(cells)
+    assert sk["mlview"] == {"data_sha256": doc["_mlview"]["data_sha256"]} and "identifyMany" in sk["identify_js"]
+    refused(run, tmp_path, dict(fill_looked(sk), answer="no", model="m"), "not a screenshot")   # not identified yet
     assert {x["check"]: x.get("where") for x in sk["looked"]}["edges"] == "edges"
-    filled = dict(fill_looked(sk), answer="no", model="test-model",
-                  cells_read=[{"cell": c["cell"], "legacy": vb._popup(cells[c["cell"]]["legacy_value"]),
-                               "new": vb._popup(cells[c["cell"]]["new_value"])} for c in sk["cells_read"]])
+    filled = dict(fill_looked(sk), answer="no", model="test-model", identified=vb.identified(doc["_mlview"], "ds.r"))
     code, err = add(run, tmp_path, filled)
     assert code == 0, err
     assert plot.review_status(plot.Run(run))["datasets"]["ds.r"]["via"] == "views"
@@ -414,8 +413,7 @@ def test_template_auto_picks_views_and_layer_accepts_joined_values(same, tmp_pat
     assert "views_seen" in sk and "plots_seen" not in sk and sk["layer"] is None
     e = vb.entry(doc, "ds.r")
     cells = {c["id"]: c for ve in e["views"].values() for c in ve["cells_to_identify"]}
-    sk["cells_read"] = [{"cell": c["cell"], "legacy": vb._popup(cells[c["cell"]]["legacy_value"]),
-                         "new": vb._popup(cells[c["cell"]]["new_value"])} for c in sk["cells_read"]]
+    sk["identified"] = vb.identified(doc["_mlview"], "ds.r")
     for bad in ("legacy+legacy", "both", "legacy+"):
         refused(run, tmp_path, dict(sk, answer="no", model="m", layer=bad), "joined with '+'")
     code, err = add(run, tmp_path, dict(sk, answer="no", model="test-model", layer="legacy+new"))
@@ -448,3 +446,52 @@ def test_q_all_needs_looked_with_five_checks_and_more_than_all_green(same, tmp_p
     assert code == 0, err
     assert [x["check"] for x in stored(run)[0]["looked"]] == list(plot.LOOK_CHECKS)
     assert plot.looked_line(stored(run)[0]["looked"]).startswith("place ✓ coverage ✓ edges ✓ values ✓ classes ✓ — ")
+
+
+def test_no_click_no_credit(same, tmp_path):
+    """IDENTIFY-UPDATE §3: a map receipt carries the MapLibre page's identify JSON for every listed point, with the
+    page's data sha; values that are not the page's (or not compare's on an exact layer) are refused."""
+    run, doc = same
+    ml = doc["_mlview"]
+    good = vb.view_receipt(doc, "ds.r")
+    refused(run, tmp_path, {k: v for k, v in good.items() if k != "identified"}, "no click, no credit")
+    refused(run, tmp_path, {k: v for k, v in good.items() if k != "mlview"}, "no click, no credit")
+    refused(run, tmp_path, dict(good, identified=good["identified"][1:]), "was not identified")
+    refused(run, tmp_path, dict(good, mlview={"data_sha256": "0" * 64}), "not the MapLibre page built now")
+    shot = [dict(x, identify="screenshot.png") for x in good["identified"]]
+    refused(run, tmp_path, dict(good, identified=shot), "not a screenshot")
+    moved = [dict(x, identify={**x["identify"], "lon": x["identify"]["lon"] + 0.01}) for x in good["identified"]]
+    refused(run, tmp_path, dict(good, identified=moved), "identify was run at")
+    wrong = json.loads(json.dumps(good["identified"]))
+    wrong[0]["identify"]["layers"]["ds.r · legacy"]["value"] = 99.0
+    refused(run, tmp_path, dict(good, identified=wrong), "the page holds")
+    refused(run, tmp_path, dict(good, identified=[dict(x, exact=False) for x in good["identified"]]),
+            "exact must be true")
+    # the page and compare disagree on an exact layer: refused, whatever was read
+    mp = run / "verify" / "views" / "mlview" / "mlview.json"
+    bad = json.loads(mp.read_text())
+    bad["points"]["ds.r"][0]["layers"]["ds.r · new"]["compare_match"] = False
+    mp.write_text(json.dumps(bad))
+    refused(run, tmp_path, good, "differs from compare's")
+    mp.write_text(json.dumps(ml))
+    # data.js changed after the page was built: the sha no longer holds
+    (run / "verify" / "views" / "mlview" / "data.js").write_text("changed")
+    refused(run, tmp_path, good, "no longer hashes")
+
+
+def test_template_skips_views_that_were_not_built(same, tmp_path):
+    """views.py omits worst when nothing differs (every PASS_EXACT dataset): review-template must not ask for it."""
+    run, doc = same
+    idx = run / "verify" / "views" / "views.json"
+    d = json.loads(idx.read_text())
+    e = next(x for x in d["datasets"] if x["dataset"] == "ds.r")
+    (run / e["views"].pop("worst")["project"]).unlink()
+    e["omitted_views"] = {"worst": "no difference: max |new − legacy| = 0"}
+    idx.write_text(json.dumps(d))
+    items, skipped = plot.review_template(plot.Run(run), "view")
+    assert skipped == [] and len(items) == 1
+    assert not any("/worst." in v["project"] for v in items[0]["views_seen"])
+    f = dict(fill_looked(items[0]), answer="no", model="test-model", identified=vb.identified(doc["_mlview"], "ds.r"))
+    f.pop("identify_js")
+    code, err = add(run, tmp_path, f)
+    assert code == 0, err

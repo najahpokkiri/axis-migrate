@@ -53,7 +53,47 @@ def make_views(run: Path, datasets: dict[str, str], *, root: str = "verify/views
            "skipped": []}
     (run / root).mkdir(parents=True, exist_ok=True)
     (run / root / "views.json").write_text(json.dumps(doc, indent=1, sort_keys=True))
+    doc["_mlview"] = make_mlview(run / root / "mlview", datasets, cells or CELLS)
     return doc
+
+
+def make_mlview(out: Path, datasets: dict[str, str], cells: dict) -> dict:
+    """A stand-in MapLibre page (skills/map/mlview.py): data.js bytes and mlview.json with the points to identify
+    and, per layer, what the page's identify returns there (exact layers holding compare's values)."""
+    out.mkdir(parents=True, exist_ok=True)
+    data = out / "data.js"
+    data.write_text("window.AXIS_DATA = " + json.dumps(sorted(datasets.items())) + ";\n")
+    points = {}
+    for ds, fam in sorted(datasets.items()):
+        if fam == "raster":
+            pts = []
+            for i, (cid, (lv, nv)) in enumerate(sorted(cells.items())):
+                lay = {}
+                for side, v in (("legacy", lv), ("new", nv)):
+                    page = {"row": i, "col": i, "value": v} if v is not None else \
+                        {"row": i, "col": i, "value": None, "note": "nodata"}
+                    lay[f"{ds} · {side}"] = {"page": page, "compare": v, "exact": True, "compare_match": True}
+                pts.append({"id": cid, "why": f"cell {cid}", "lon": 10.1 + i / 10, "lat": 45.1 + i / 10,
+                            "in_page": True, "layers": lay})
+        else:
+            feat = {"key": "k1", "name": "zone 1"}
+            pts = [{"id": "feature", "why": "feature", "lon": 10.3, "lat": 45.3, "in_page": True,
+                    "layers": {f"{ds} · {side}": {"page": [feat], "compare": feat, "exact": True,
+                                                   "compare_match": True} for side in ("legacy", "new")}}]
+        points[ds] = pts
+    doc = {"schema": "axis-migrate.mlview.v1", "data_sha256": _sha(data), "points": points, "points_note": None,
+           "identify": {ds: "window.__AXIS_MAP__.identifyMany(" + json.dumps([[p["lon"], p["lat"]] for p in pts])
+                        + ")" for ds, pts in points.items()}}
+    (out / "mlview.json").write_text(json.dumps(doc, indent=1, sort_keys=True))
+    return doc
+
+
+def identified(ml: dict, ds: str, *, dataset: bool = False) -> list[dict]:
+    """What a reviewer pastes after running identifyMany on the page: one entry per point, the page's own values."""
+    return [{**({"dataset": ds} if dataset else {}), "point": p["id"],
+             "exact": all(l["exact"] for l in p["layers"].values()),
+             "identify": {"lon": p["lon"], "lat": p["lat"], "layers": {k: v["page"] for k, v in p["layers"].items()}}}
+            for p in ml["points"][ds] if p["in_page"]]
 
 
 def entry(doc: dict, ds: str) -> dict:
@@ -80,6 +120,9 @@ def view_receipt(doc: dict, ds: str, *, flag: bool = False, cells=("interior",),
     if fam == "raster":
         f["engine"] = "maplibre-gl-raster"
         f["cells_read"] = read
+    if doc.get("_mlview"):
+        f["mlview"] = {"data_sha256": doc["_mlview"]["data_sha256"]}
+        f["identified"] = identified(doc["_mlview"], ds)
     w = Path(mv["project"]).name.replace(".geolibre.json", "")
     f["looked"] = [{"check": c, "answer": "ok", "where": w, "saw": "stand-in: " + c + " checked on " + w, **({"number": {"name": "cells valid on one side only", "value": 0, "computed_by": "test stand-in"}} if c == "edges" else {})} for c in ("place", "coverage", "edges", "values", "classes")]
     if flag:

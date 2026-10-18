@@ -208,7 +208,9 @@ def check_view_receipt(f: dict, *, family: str | None, lookup, cells: dict | Non
         if cr not in (None, []):
             return ["cells_read is for rasters (vectors have no cells to identify)"]
         return _location_problems(f, bounds)
-    if not isinstance(cr, list) or not cr:
+    if cr in (None, []) and isinstance(f.get("identified"), list) and f["identified"]:
+        cr = []                                       # values read off the MapLibre page instead (review-add checks)
+    elif not isinstance(cr, list) or not cr:
         return ["cells_read needs at least one cell per raster: open a cell-<id> project (views.py url --cell "
                 "worst|interior|edge), click the map centre and record {cell, legacy, new} as the popup shows them"]
     ids = []
@@ -723,6 +725,7 @@ def check_inputs_receipt(f: dict, doc: dict, current, inventory: dict | None = N
         return probs
     if not covered:
         return [f"about must name at least one dataset of {INPUTS_INDEX} (the inputs this finding is about)"]
+    read_ok |= {x.get("dataset") for x in f.get("identified") or [] if isinstance(x, dict)}   # MapLibre identify
     for d in sorted(covered):
         e = entries[d]
         if d not in read_ok and not e.get("nothing_to_identify"):
@@ -813,3 +816,137 @@ def looked_line(looked) -> str | None:
         head += f" — {num.get('name')}: " + (f"{v:g}" if isinstance(v, (int, float)) else str(v))
         head += (f" {num['unit']}" if num.get("unit") else "") + f" ({num.get('computed_by')})"
     return head
+
+
+# ---- no click, no credit: values read off the MapLibre page (skills/map/mlview.py, LOOK.md)
+MLVIEW_DIRS_RUN = ("verify/views/mlview", "amend/views/mlview")
+MLVIEW_DIRS_DISCOVER = ("discover/mlview",)
+IDENTIFY_JS = "window.__AXIS_MAP__.identifyMany"
+
+
+def find_mlview(root: Path, dirs: tuple, sha) -> tuple[dict | None, str | None]:
+    """(mlview.json, None) for the page whose data.js still hashes to `sha`, else (None, why)."""
+    if not isinstance(sha, str) or len(sha) != 64:
+        return None, ("mlview must be {\"data_sha256\": \"<mlview.json data_sha256>\"}: the MapLibre page whose "
+                      "identify you read (mlview.py build, then open its page)")
+    seen = False
+    for d in dirs:
+        p = Path(root) / d / "mlview.json"
+        doc = _load_json(p)
+        if not isinstance(doc, dict):
+            continue
+        seen = True
+        if doc.get("data_sha256") != sha:
+            continue
+        data = p.parent / "data.js"
+        if not data.is_file() or ac.sha256_file(data) != sha:
+            return None, f"{d}/data.js no longer hashes to {sha[:12]}…: rebuild the page and identify again"
+        return doc, None
+    if not seen:
+        return None, "no MapLibre page for this: run mlview.py build, open it, identify the listed points"
+    return None, f"data_sha256 {sha[:12]}… is not the MapLibre page built now (mlview.json): identify again"
+
+
+def _load_json(p: Path):
+    try:
+        return json.loads(Path(p).read_text(encoding="utf-8")) if Path(p).is_file() else None
+    except (OSError, ValueError):
+        return None
+
+
+def _strip(h):
+    return {k: v for k, v in h.items() if not str(k).startswith("_")} if isinstance(h, dict) else h
+
+
+def identified_problems(doc: dict, ds: str, entries, *, with_dataset: bool = False) -> list[str]:
+    """Each point mlview.json lists for `ds` (inside the page) needs one entry {point, exact, identify} (discover:
+    also dataset) whose identify JSON is what the page returns there: same lon/lat, and per layer of `ds` the same
+    raster value (row, col) or the listed features among the hits. A raster layer marked exact must also hold
+    compare's value at that point. `exact` states whether every layer at the point is exact (false: warped or
+    decimated; values are the warped page's)."""
+    pts = (doc.get("points") or {}).get(ds)
+    if pts is None:
+        return [f"the MapLibre page lists no points for {ds}" + (f" ({doc['points_note']})" if doc.get(
+            "points_note") else "") + ": run views.py, then mlview.py build, and identify its points"]
+    if not isinstance(entries, list):
+        return ["identified must be a list of {\"point\", \"exact\", \"identify\": <identifyMany result for that "
+                "point>}, one per point views.py list / mlview.json gives"]
+    mine = [x for x in entries if isinstance(x, dict) and (not with_dataset or x.get("dataset") == ds)]
+    by = {}
+    for x in mine:
+        if x.get("point") in by:
+            return [f"identified: point {x.get('point')} of {ds} twice"]
+        by[x.get("point")] = x
+    errs = []
+    for pt in pts:
+        if not pt.get("in_page"):
+            continue
+        x = by.get(pt["id"])
+        tag = f"{ds} point {pt['id']}"
+        if x is None:
+            errs.append(f"no click, no credit: {tag} ({pt['lon']}, {pt['lat']}) was not identified — run "
+                        f"{IDENTIFY_JS}(…) on the MapLibre page (views.py list gives the call) and put each "
+                        "result in identified[]")
+            continue
+        exact = all(l.get("exact") for l in pt["layers"].values())
+        if x.get("exact") is not exact:
+            errs.append(f"{tag}: exact must be {str(exact).lower()}" + ("" if exact else
+                        " (a layer there is warped or decimated: say so; its values are the warped page's)"))
+        r = x.get("identify")
+        if not isinstance(r, dict) or not isinstance(r.get("layers"), dict):
+            errs.append(f"{tag}: identify must be the JSON identify returned ({{lon, lat, layers}}), not a "
+                        "screenshot or a summary")
+            continue
+        try:
+            far = abs(float(r.get("lon")) - pt["lon"]) > 1e-9 or abs(float(r.get("lat")) - pt["lat"]) > 1e-9
+        except (TypeError, ValueError):
+            far = True
+        if far:
+            errs.append(f"{tag}: identify was run at ({r.get('lon')}, {r.get('lat')}), not at ({pt['lon']}, "
+                        f"{pt['lat']})")
+            continue
+        for lid, want in sorted(pt["layers"].items()):
+            got = r["layers"].get(lid)
+            page = want.get("page")
+            if isinstance(page, dict):
+                if not isinstance(got, dict) or got.get("value") != page.get("value") or \
+                        any(got.get(k) != page.get(k) for k in ("row", "col") if k in page):
+                    errs.append(f"{tag}: {lid} reads {None if not isinstance(got, dict) else got.get('value')!r}, "
+                                f"the page holds {page.get('value')!r} there: not this page's identify")
+                elif want.get("exact") and not want.get("compare_match"):
+                    errs.append(f"{tag}: {lid} page value {page.get('value')!r} differs from compare's "
+                                f"{want.get('compare')!r} on an exact layer: rebuild views.py and mlview.py; if it "
+                                "stays, report it")
+            else:
+                hits = [_strip(h) for h in got] if isinstance(got, list) else None
+                if hits is None or any(_strip(h) not in hits for h in page or []):
+                    errs.append(f"{tag}: {lid} hits {hits!r} do not include the page's feature(s) {page!r}")
+    return errs
+
+
+def identified_line(ds: str, entries) -> str | None:
+    """'Clicked 3 points: worst legacy 27.8 · new 0.858; edge legacy 3.27 · new nodata; …' for the report."""
+    if not isinstance(entries, list) or not entries:
+        return None
+
+    def val(v):
+        if isinstance(v, list):
+            if not v:
+                return "no feature"
+            h = _strip(v[0]) or {}
+            txt = ", ".join(f"{k}={h[k]}" for k in list(h)[:3]) + (", …" if len(h) > 3 else "")
+            return f"[{txt}]" + (f" (+{len(v) - 1} more)" if len(v) > 1 else "")
+        if not isinstance(v, dict):
+            return "—"
+        x = v.get("value")
+        return (v.get("note") or "nodata") if x is None else f"{x:.6g}" if isinstance(x, (int, float)) else str(x)
+    parts = []
+    for x in entries:
+        if not isinstance(x, dict):
+            continue
+        lays = (x.get("identify") or {}).get("layers") or {} if isinstance(x.get("identify"), dict) else {}
+        mine = {k.split(" · ")[-1].split(" (")[0].replace(f"{ds} ", ""): v for k, v in sorted(lays.items())
+                if k.startswith(f"{ds} ·") or k.startswith(f"{ds} (")}
+        parts.append(f"{x.get('point')} " + " · ".join(f"{k} {val(v)}" for k, v in mine.items())
+                     + ("" if x.get("exact", True) else " (warped page values)"))
+    return f"Clicked {len(parts)} point(s): " + "; ".join(parts)

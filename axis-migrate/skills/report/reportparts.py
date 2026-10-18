@@ -575,12 +575,13 @@ def report_md(ctx: dict, mermaid: str) -> str:
         L.append("")
     L += ["## Lineage", "", "```mermaid", mermaid, "```", ""]
     looked = [(c["id"], r) for c in ctx["cards"] for r in (c.get("views") or {}).get("receipts") or []
-              if r.get("status") == "counts" and (r.get("looked") or r.get("flag"))]
+              if r.get("status") == "counts" and (r.get("looked") or r.get("flag") or r.get("identified"))]
     if looked:
         L += ["## Visual review", "", "What the reviewing model says it looked at (its receipts; model-written):", ""]
         for ds, r in looked:
             what = r["looked"] if r.get("looked") else (f"flag {r['question']} {r['category']}: {_md(r.get('note'))}")
-            L.append(f"- `{ds}` ({r['kind']} receipt): {_md(what)}")
+            how = r.get("identified") or r.get("label") or ""
+            L.append(f"- `{ds}` ({r['kind']} receipt): {_md(what)}" + (f" — {_md(how)}" if how else ""))
         L.append("")
     views = [(c["id"], c["views"]) for c in ctx["cards"] if c.get("views") and c["views"].get("tables")]
     if views:
