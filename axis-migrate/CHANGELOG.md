@@ -4,6 +4,35 @@ All notable changes to axis-migrate. Versions follow semantic versioning; both m
 (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`) and `lib/axis_common.py` `PLUGIN_VERSION` carry the same
 number (Codex caches installs by version, so every shipped change needs a bump).
 
+## 0.4.2 (2026-10-18)
+
+Windows (from a full BYU run on a Windows laptop in the Claude desktop app: 4 of 4 PASS_EXACT, sandbox-validated)
+- The plugin runs on Windows: the venv Python is found, file locks work without fcntl, pipeline steps run in a
+  Windows job object, the map server's process checks work, and `scripts/axpy` runs through `sh`. Git for Windows'
+  strace is never used, so the read ledger falls back and the status stops at sandbox-validated, as designed.
+- Hooks are fast: SessionStart writes a hook-python pointer and every later hook starts that Python directly
+  (Windows 3.6-9.5 s per hook before, 0.2-0.3 s now; Linux about 40 ms). The pointer is guarded in every project.
+- uv and Chrome are found when they are not on the PATH; the status line prints correctly on a Windows console;
+  compare hashes tolerances and known differences as stored, so CRLF checkouts do not break them.
+- Writes into new subfolders of the legacy folder are refused like any other write there.
+
+Looking at maps
+- One guideline for every stage (`skills/map/LOOK.md`): where to look, one colour vocabulary (blue legacy only,
+  orange new only, green both), five checks (place, coverage, edges, values, classes), and what to say in chat.
+- A "looked, nothing found" receipt must say what was checked: all five checks, each with where and what was seen,
+  and at least one number from a script. "All green" alone is refused. The report prints each dataset's looked line.
+- Every map view names itself in a caption (dataset, view, visible layers and their colour scales).
+- Fewer views: a raster gets overview, edges and one cell; worst only when something differs.
+- `map.py metrics` writes NoData and valid-cell counts inside the AOI. The inputs overview shows the AOI first.
+- No empty worst-tile plots when nothing differs. The report's swipe map is gone (its two sides drew differently).
+- Trial: one MapLibre page per migration or run (`skills/map/mlview.py build`), next to the GeoLibre views. It shows
+  every input, legacy and new layer. `identify(lon, lat)` gives every data layer's exact value at a point (the
+  basemap is never included).
+- Free basemaps you can switch: OpenStreetMap, CARTO Positron, OpenTopoMap, Esri imagery and Sentinel-2 cloudless.
+  The page reports whether the tiles really loaded. Basemap and data opacity are adjustable, so you can check that
+  the data sits where the place is.
+- MapLibre GL JS 4.7.1 is vendored: no CDN. The page keeps drawing when the app's pane is hidden.
+
 ## 0.4.1 (2026-10-16)
 
 Report (from the BYU headless end-to-end run)
