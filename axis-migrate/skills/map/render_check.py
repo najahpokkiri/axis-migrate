@@ -226,6 +226,33 @@ def check_page(ch: Chrome, url: str, shot: Path | None = None) -> dict:
     return res
 
 
+def identify_page(url: str, calls: dict[str, list], shot: Path | None = None,
+                  tmp_root: Path | None = None) -> dict:
+    """Open the MapLibre page (mlview.py), wait for its ready line, run window.__AXIS_MAP__.identifyMany on each
+    named list of [lon, lat] points: {"ready", "ready_line", "results": {name: [identify JSON, …]}}."""
+    ch = Chrome(tmp_root)
+    try:
+        ch.cmd("Page.enable")
+        ch.cmd("Runtime.enable")
+        ch.cmd("Page.navigate", url=url)
+        t0 = time.time()
+        state = None
+        while time.time() - t0 < READY_TIMEOUT_S:
+            state = ch.js("document.documentElement.dataset.axisMap || null")
+            if state == "ready":
+                break
+            time.sleep(0.25)
+        out = {"ready": state == "ready", "seconds": round(time.time() - t0, 1),
+               "ready_line": ch.js("(document.getElementById('ready')||{}).textContent || null"), "results": {}}
+        for name, pts in calls.items():
+            out["results"][name] = json.loads(ch.js(f"JSON.stringify(window.__AXIS_MAP__.identifyMany({json.dumps(pts)}))"))
+        if shot:
+            shot.write_bytes(base64.b64decode(ch.cmd("Page.captureScreenshot", format="png")["data"]))
+        return out
+    finally:
+        ch.close()
+
+
 def check_pages(urls: list[str], shots: Path | None = None, tmp_root: Path | None = None) -> list[dict]:
     ch = Chrome(tmp_root)
     try:

@@ -210,6 +210,78 @@ def compared(run: Path):
     return out, skipped
 
 
+def page_raster_value(l: dict, lon: float, lat: float) -> dict:
+    """What the page's rasterValue(l, lon, lat) returns (same index arithmetic, same float32/float64 cell values)."""
+    import math
+    import numpy as np
+    x0, dx, y0, dy = l["transform"]
+    col, row = math.floor((lon - x0) / dx), math.floor((lat - y0) / dy)
+    if col < 0 or row < 0 or col >= l["width"] or row >= l["height"]:
+        return {"value": None, "note": "outside"}
+    if "_vals" not in l:
+        l["_vals"] = np.frombuffer(base64.b64decode(l["grid"]), dtype="<f8" if l["dtype"] == "float64" else "<f4")
+    v = float(l["_vals"][row * l["width"] + col])
+    if math.isnan(v):
+        return {"row": row, "col": col, "value": None, "note": "nodata"}
+    return {"row": row, "col": col, "value": v}
+
+
+def page_vector_hits(l: dict, lon: float, lat: float) -> list[dict]:
+    """The features the page's identify certainly returns at this point: polygons containing it, points on it (the
+    page also returns points within 8 px, which depends on the zoom)."""
+    from shapely.geometry import Point, shape
+    here, out = Point(lon, lat), []
+    for f in l["geojson"]["features"]:
+        g = f.get("geometry")
+        if not g:
+            continue
+        gs = shape(g)
+        if (g["type"] in ("Polygon", "MultiPolygon") and gs.contains(here)) or \
+                (g["type"] in ("Point", "MultiPoint") and gs.distance(here) <= 1e-9):
+            out.append(dict(f.get("properties") or {}))
+    return out
+
+
+def page_points(layers: list[dict], index_path: Path | None, run: Path | None) -> tuple[dict, str | None]:
+    """Per dataset, the points views.py listed (worst/edge/interior cell, one feature) with, per page layer of that
+    dataset, what identify returns there and whether it equals compare's value (rasters marked exact)."""
+    if index_path is None:
+        return {}, "no views index: run views.py first (it lists the points to identify)"
+    doc = views._load(index_path) or {}
+    if run is not None and doc.get("run_id") not in (None, run.name):
+        return {}, f"{index_path.name} is of run {doc.get('run_id')}, not {run.name}: rerun views.py run"
+    by_id = {l["id"]: l for l in layers}
+    out = {}
+    for e in doc.get("datasets") or []:
+        ds = e.get("dataset")
+        pts = views.points_of_entry(e)
+        sides = (("legacy", f"{ds} · legacy"), ("new", f"{ds} · new")) if run is not None else \
+            (("value", f"{ds} (input)"),)
+        sides = [(k, by_id[lid]) for k, lid in sides if lid in by_id]
+        if not pts or not sides:
+            continue
+        rows = []
+        for pt in pts:
+            lay, in_page = {}, True
+            for key, l in sides:
+                want = pt.get(key)
+                if l["kind"] == "raster":
+                    got = page_raster_value(l, pt["lon"], pt["lat"])
+                    in_page &= got.get("note") != "outside"
+                    same = got.get("value") == (float(want) if isinstance(want, (int, float)) else want)
+                else:
+                    got = page_vector_hits(l, pt["lon"], pt["lat"])
+                    same = want is None and not got or any(
+                        {k: str(v) for k, v in h.items()} == {k: str(v) for k, v in (want or {}).items()}
+                        for h in got)
+                lay[l["id"]] = {"page": got, "compare": want, "exact": bool(l["exact"]),
+                                "compare_match": bool(same)}
+            rows.append({"id": pt["id"], "why": pt.get("why"), "lon": pt["lon"], "lat": pt["lat"],
+                         "in_page": bool(in_page), "layers": lay})
+        out[ds] = rows
+    return out, None
+
+
 def build(migration: Path, run: Path | None) -> tuple[dict, int]:
     import numpy as np
     migration = Path(migration).resolve()
@@ -292,6 +364,8 @@ def build(migration: Path, run: Path | None) -> tuple[dict, int]:
                                     encoding="utf-8")
     for f in ("maplibre-gl.js", "maplibre-gl.css"):
         shutil.copyfile(VENDOR / f, out / f)
+    idx = views.find_index(run) if run is not None else views.inputs_index(migration)
+    points, points_note = page_points(layers, idx, run)
     st = views.server_state(migration)
     upath = views.url_path(migration, out / "index.html")
     doc = {"schema": "axis-migrate.mlview.v1", "title": title, "folder": out.relative_to(migration).as_posix(),
@@ -299,7 +373,9 @@ def build(migration: Path, run: Path | None) -> tuple[dict, int]:
            "data_sha256": sha, "data_bytes": len(data), "aoi": box, "aoi_note": aoi_note,
            "layers": [{k: l.get(k) for k in ("id", "kind", "role", "visible", "exact", "exact_note", "count",
                                               "width", "height", "valid_cells", "source")} for l in layers],
-           "skipped": skipped}
+           "skipped": skipped, "points": points, "points_note": points_note,
+           "identify": {ds: "window.__AXIS_MAP__.identifyMany(" + json.dumps([[p["lon"], p["lat"]] for p in pts])
+                        + ")" for ds, pts in points.items()}}
     (out / "mlview.json").write_text(json.dumps(doc, indent=1, sort_keys=True) + "\n")
     return doc, rc
 
@@ -328,6 +404,11 @@ def main(argv=None) -> int:
             print(f"{s['layer']}: skipped ({s['reason']})")
         print(f"page: {doc['url'] or doc['url_path'] + '  (start.py first, then http://127.0.0.1:<port> + this)'}")
         print(f"data sha256 {doc['data_sha256']} · {doc['data_bytes'] / 1e6:.1f} MB · {doc['aoi_note']}")
+        for ds, js in sorted(doc["identify"].items()):
+            pts = doc["points"][ds]
+            print(f"{ds}: points {', '.join(p['id'] for p in pts)} → {js}")
+        if doc["points_note"]:
+            print(f"points: {doc['points_note']}")
     return rc
 
 

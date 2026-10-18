@@ -619,6 +619,43 @@ def _cell_record(ctx_tr, grid_tr, r: int, c: int, L, N, validity, d, why: str) -
     return rec
 
 
+def point_of(pid: str, c: dict) -> dict:
+    """A point to read with the MapLibre page's identify: where, why, and the values compare reads there."""
+    return {"id": pid, "why": c["why"], "lon": c["lon"], "lat": c["lat"], "row": c.get("row"), "col": c.get("col"),
+            "legacy": c.get("legacy_value"), "new": c.get("new_value"), "diff": c.get("diff"),
+            "validity": c.get("validity")}
+
+
+def _feature_point(g):
+    """A coordinate that identify hits on this feature: a point's own coordinate, else a point inside it."""
+    if g.geom_type in ("Point", "MultiPoint"):
+        q = g if g.geom_type == "Point" else g.geoms[0]
+        return round(q.x, 9), round(q.y, 9)
+    q = g.representative_point()
+    return round(q.x, 9), round(q.y, 9)
+
+
+def points_of_entry(e: dict) -> list[dict]:
+    """The points to read with identify for one views.json entry: a run entry's `points` (with compare's legacy/new
+    values); for discover's inputs every listed cell (value) and one feature (central, else the first)."""
+    if isinstance(e.get("points"), list):
+        return e["points"]
+    out = [{"id": c["id"], "why": c.get("why"), "lon": c["lon"], "lat": c["lat"], "row": c.get("row"),
+            "col": c.get("col"), "value": c.get("value")} for c in e.get("cells_to_identify") or [] if c.get("id")]
+    feats = {f["id"]: f for f in e.get("features_to_identify") or [] if f.get("id")}
+    f = feats.get("central") or next(iter(feats.values()), None)
+    if f is not None:
+        out.append({"id": f"feature-{f['id']}", "why": f.get("why"), "lon": f["lon"], "lat": f["lat"],
+                    "value": f.get("properties")})
+    return out
+
+
+def mlview_doc(index_path: Path) -> dict | None:
+    """mlview.json next to a views index (verify/views/, amend/views/ or discover/), if mlview.py built one."""
+    p = Path(index_path).parent / "mlview" / "mlview.json"
+    return _load(p) if p.is_file() else None
+
+
 def _plot_tiles(ctx: Ctx, dsid: str) -> list[dict]:
     doc = _load(ctx.run / "verify" / "plots" / dsid / "plots.json") or {}
     for e in doc.get("png") or doc.get("plots") or []:
@@ -685,6 +722,19 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
         cells["edge"] = _cell_record(t4326, gtr, *ec, L, N, validity, d,
                                      "valid on one side only, where such cells concentrate")
     edge_place = ec or densest_block(boundary_cells(vl | vn))
+    # ---- points to read with identify (map SKILL §6, LOOK.md): worst when max |d| > 0, one edge cell where data
+    # starts or stops, one interior cell; each with the legacy/new values compare reads from the same files
+    pts = []
+    if wc and lim > 0:
+        pts.append(("worst", cells["worst"]))
+    if ec:
+        pts.append(("edge", cells["edge"]))
+    elif edge_place:
+        pts.append(("edge", _cell_record(t4326, gtr, *edge_place, L, N, validity, d,
+                                         "valid cell where the data starts or stops")))
+    if ic:
+        pts.append(("interior", cells["interior"]))
+    points = [point_of(k, c) for k, c in pts]
     # worst places: plot.py worst tiles (legacy grid) → compare samples → own max |d|
     places, src = [], None
     for t in _plot_tiles(ctx, dsid)[:4]:
@@ -825,7 +875,7 @@ def raster_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
             "diff_scale": {"min": -dl, "max": dl, "max_abs_diff": lim, "palette": DIFF_PALETTE + " reversed",
                            "meaning": "orange = new larger, purple = legacy larger, transparent = equal or nodata"},
             "validity_counts": counts, "bounds_4326": [round(x, 9) for x in bbox],
-            "places": {"source": src, "items": places}, "views": views, "omitted_views": omit}
+            "places": {"source": src, "items": places}, "views": views, "omitted_views": omit, "points": points}
 
 
 def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) -> dict:
@@ -871,6 +921,34 @@ def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                     break
     else:
         cam["worst"] = {**cam["overview"], "source": "no geometric difference: data extent"}
+    # ---- the feature to read with identify: the one touching the largest difference, else the legacy feature
+    # nearest the centre; both sides' attributes at that point as the display files hold them
+    points = []
+    pick = None
+    if features:
+        f0 = features[0]
+        src = next((f for f in fcs[f0["side"]]["features"] if f.get("properties") == f0["properties"]
+                    and f.get("geometry")), None)
+        if src is not None:
+            pick = (f0["side"], src, "feature touching the largest difference")
+    if pick is None and fcs["legacy"]["features"]:
+        cands = [f for f in fcs["legacy"]["features"] if f.get("geometry")]
+        if cands:
+            cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+            rp = [shp(f["geometry"]).representative_point() for f in cands]
+            k = min(range(len(cands)), key=lambda i: ((rp[i].x - cx) ** 2 + (rp[i].y - cy) ** 2, i))
+            pick = ("legacy", cands[k], "legacy feature nearest the centre of the data")
+    if pick is not None:
+        side, feat, why = pick
+        lon, lat = _feature_point(shp(feat["geometry"]))
+        from shapely.geometry import Point
+        here = Point(lon, lat).buffer(1e-9)
+        at = {s2: next(({k: v for k, v in sorted(f["properties"].items()) if not k.startswith("_")}
+                        for f in fcs[s2]["features"]
+                        if f.get("geometry") and shp(f["geometry"]).intersects(here)), None)
+              for s2 in ("legacy", "new")}
+        points.append({"id": "feature", "why": why, "lon": lon, "lat": lat, "legacy": at["legacy"],
+                       "new": at["new"]})
     omit = {}
     if cmp.get("verdict") == "PASS_EXACT":
         omit["worst"] = "PASS_EXACT: equal features (one overview is enough)"
@@ -902,7 +980,7 @@ def vector_views(ctx: Ctx, cmp: dict, dsid: str, Lp: Path, Np: Path, out: Path) 
                         "new": {"path": (cmp.get("new") or {}).get("path"), "sha256": ac.sha256_file(Np)
                                 if Np.is_file() else ac.tree_hash(Np)}},
             "files": {k: ctx.file_entry(p) for k, p in files.items()}, "crs": disp.get("crs"),
-            "bounds_4326": bbox, "views": views, "omitted_views": omit}
+            "bounds_4326": bbox, "views": views, "omitted_views": omit, "points": points}
 
 
 def build_views(run_dir: Path, datasets: list[str] | None = None) -> tuple[dict, int]:
@@ -1639,7 +1717,11 @@ def cmd_list(a) -> int:
         return 2
     out = {"index": Path(idx).resolve().relative_to(mig).as_posix(), "mode": doc.get("mode") or "run",
            "run_id": doc.get("run_id"), "click": CLICK_NOTE, "viewport": {"width": VIEWPORT[0], "height": VIEWPORT[1]},
-           "views": [], "cells": [], "features": [], "skipped": doc.get("skipped") or []}
+           "views": [], "cells": [], "features": [], "points": [], "identify": [],
+           "skipped": doc.get("skipped") or []}
+    ml = mlview_doc(idx)
+    if ml:
+        out["mlview"] = {"url": f"http://127.0.0.1:{int(port)}{ml['url_path']}", "data_sha256": ml["data_sha256"]}
     if doc.get("mode") == "inputs":
         out.update(shown=doc.get("shown"), aoi=doc.get("aoi"), aoi_note=doc.get("aoi_note"))
     ref = lambda x: {"project": x["project"], "project_sha256": x["project_sha256"]}  # noqa: E731
@@ -1666,6 +1748,12 @@ def cmd_list(a) -> int:
             if f.get("url_path"):
                 out["features"].append({"dataset": ds, "feature": f["id"], "url": page_url(port, f["url_path"]),
                                         **ref(f), "properties": f.get("properties")})
+        pts = points_of_entry(e)
+        out["points"] += [{"dataset": ds, **pt} for pt in pts]
+        if pts:
+            out["identify"].append({"dataset": ds, "points": [pt["id"] for pt in pts],
+                                    "js": "window.__AXIS_MAP__.identifyMany("
+                                          + json.dumps([[pt["lon"], pt["lat"]] for pt in pts]) + ")"})
     if a.json:
         print(json.dumps(out, sort_keys=True, indent=1))
     else:
@@ -1677,6 +1765,12 @@ def cmd_list(a) -> int:
             print(f"{f['dataset']} feature-{f['feature']}: {f['url']}")
         for s_ in out["skipped"]:
             print(f"{s_['dataset']}: no views ({s_['reason']})")
+        if out.get("mlview"):
+            print(f"MapLibre page (identify): {out['mlview']['url']} · data sha256 {out['mlview']['data_sha256']}")
+        else:
+            print("MapLibre page: not built (mlview.py build … first: receipts need its identify values)")
+        for i in out["identify"]:
+            print(f"{i['dataset']} points {', '.join(i['points'])}: {i['js']}")
         print(CLICK_NOTE)
     return 0
 

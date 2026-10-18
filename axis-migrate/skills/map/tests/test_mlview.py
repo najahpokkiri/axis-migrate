@@ -103,3 +103,60 @@ def test_setup_errors(built, tmp_path):
     assert cp.returncode == 2 and "inventory" in cp.stderr
     cp = run_cli("mlview.py", "build", tmp_path, "--run", built["run"])  # a run of another migration
     assert cp.returncode == 2 and "is not a run of" in cp.stderr
+
+
+@pytest.fixture(scope="module")
+def with_points(tmp_path_factory):
+    """views.py first (it lists the points to identify), then the MapLibre page."""
+    map_python()
+    import synth_map
+    run = synth_map.build(tmp_path_factory.mktemp("mlpoints") / "proj")
+    assert run_cli("views.py", "run", "--run", run).returncode == 0
+    cp = run_cli("mlview.py", "build", run.parents[1], "--run", run, "--json")
+    assert cp.returncode == 0, cp.stdout + cp.stderr
+    return run, json.loads(cp.stdout)
+
+
+def test_points_listed_with_page_and_compare_values(with_points):
+    run, doc = with_points
+    pts = doc["points"]
+    assert {ds: [p["id"] for p in v] for ds, v in pts.items()} == \
+        {"ds.b": ["worst", "edge", "interior"], "ds.e": ["edge", "interior"], "ds.v": ["feature"]}
+    views = {e["dataset"]: e for e in json.loads((run / "verify" / "views" / "views.json").read_text())["datasets"]}
+    for ds, rows in pts.items():
+        assert [(p["lon"], p["lat"]) for p in rows] == [(p["lon"], p["lat"]) for p in views[ds]["points"]]
+        for p, vp in zip(rows, views[ds]["points"]):
+            assert p["in_page"]
+            for side in ("legacy", "new"):
+                lay = p["layers"][f"{ds} · {side}"]
+                assert lay["compare"] == vp[side]
+                if ds == "ds.v":                                  # vectors: the feature's own attributes
+                    assert lay["exact"] and lay["compare_match"] and lay["page"] == [vp[side]]
+                else:                                             # rasters here are warped: not exact
+                    assert lay["exact"] is False and set(lay["page"]) >= {"value"}
+    assert doc["identify"]["ds.v"].startswith("window.__AXIS_MAP__.identifyMany([[")
+    cp = run_cli("views.py", "list", "--run", run, "--json", "--port", "8765")
+    lst = json.loads(cp.stdout)
+    assert [p["id"] for p in lst["points"] if p["dataset"] == "ds.b"] == ["worst", "edge", "interior"]
+    assert {i["dataset"] for i in lst["identify"]} == {"ds.b", "ds.e", "ds.v"}
+
+
+def _chrome() -> bool:
+    import shutil
+    return any(shutil.which(c) for c in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser"))
+
+
+@pytest.mark.skipif(not _chrome(), reason="no Chrome/Chromium for the headless identify check")
+def test_headless_identify_equals_the_listed_values(with_points):
+    """check.py --render opens the MapLibre page, runs identifyMany on every listed point and finds exactly the values
+    mlview.json lists (the rule review-add applies); the result is saved as identify-check.json."""
+    run, doc = with_points
+    cp = run_cli("check.py", "--run", run, "--render", "--json")
+    assert cp.returncode == 0, cp.stdout + cp.stderr
+    res = json.loads(cp.stdout)
+    assert res["identify"]["points"] == 6 and res["problems"] == []
+    chk = json.loads((run.parents[1] / res["identify"]["file"]).read_text())
+    assert chk["data_sha256"] == doc["data_sha256"]
+    w = chk["datasets"]["ds.b"][0]
+    assert w["point"] == "worst" and w["identify"]["layers"]["ds.b · legacy"]["value"] == \
+        doc["points"]["ds.b"][0]["layers"]["ds.b · legacy"]["page"]["value"]

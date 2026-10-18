@@ -121,6 +121,36 @@ def _render(base: str, mig: Path, upaths: list[tuple[str, str]], problems: list)
                                            for (n, _), r in zip(upaths, res)]}
 
 
+def _identify(base: str, idx: Path, mig: Path, problems: list) -> dict | None:
+    """With a MapLibre page next to the views (mlview.py build): open it in headless Chrome, run identifyMany on every
+    listed point and check the values against mlview.json (lib/visual_receipt.identified_problems, the rule
+    review-add applies). Saves <mlview>/identify-check.json ({dataset: [{point, exact, identify}]})."""
+    import render_check as RC
+    import visual_receipt as vrc
+    ml = V.mlview_doc(idx)
+    if not ml or not ml.get("points"):
+        return None
+    calls = {ds: [[p["lon"], p["lat"]] for p in pts] for ds, pts in sorted(ml["points"].items())}
+    try:
+        res = RC.identify_page(base + ml["url_path"], calls, tmp_root=mig / ".axis" / "tmp")
+    except RC.NoChrome as e:
+        problems.append(f"identify: not checked ({e})")
+        return {"points": 0}
+    if not res["ready"] or ml["data_sha256"] not in (res["ready_line"] or ""):
+        problems.append(f"identify: the MapLibre page was not ready with data sha256 {ml['data_sha256'][:12]}… "
+                        f"({res['ready_line']})")
+        return {"points": 0}
+    got, n = {}, 0
+    for ds, pts in sorted(ml["points"].items()):
+        got[ds] = [{"point": p["id"], "exact": all(l.get("exact") for l in p["layers"].values()), "identify": r}
+                   for p, r in zip(pts, res["results"][ds])]
+        n += len(pts)
+        problems += [f"identify: {x}" for x in vrc.identified_problems(ml, ds, got[ds])]
+    out = Path(idx).parent / "mlview" / "identify-check.json"
+    out.write_text(json.dumps({"data_sha256": ml["data_sha256"], "datasets": got}, indent=1, sort_keys=True) + "\n")
+    return {"points": n, "file": out.relative_to(mig).as_posix(), "seconds": res["seconds"]}
+
+
 def check_run(run_dir: Path, keep: bool = False, render: bool = False) -> dict:
     run_dir = Path(run_dir).resolve()
     idx = V.find_index(run_dir)
@@ -151,6 +181,7 @@ def check_run(run_dir: Path, keep: bool = False, render: bool = False) -> dict:
                 pages += [(n, ve["url_path"]) for n, ve in p if n.endswith("/overview")]
                 pages += [(n, ve["url_path"]) for n, ve in p if "/cell-" in n][:1]
             out["render"] = _render(base, V.migration_of(run_dir), pages, problems)
+            out["identify"] = _identify(base, idx, V.migration_of(run_dir), problems)
         return {**out, "problems": problems, "ok": not problems and n_proj > 0}
     return _served(V.migration_of(run_dir), keep, go)
 
@@ -184,6 +215,7 @@ def check_inputs(migration: Path, keep: bool = False, render: bool = False) -> d
                        e["cells_to_identify"][0]["url_path"]) for e in doc.get("datasets") or []
                       if e.get("cells_to_identify")]
             out["render"] = _render(base, mig, pages, problems)
+            out["identify"] = _identify(base, idx, mig, problems)
         return {**out, "problems": problems, "ok": not problems and n_proj > 0}
     return _served(mig, keep, go)
 
@@ -220,6 +252,9 @@ def main(argv=None) -> int:
         if res.get("render"):
             print(f"render: {res['render']['pages']} page(s) opened in headless Chrome (ready marker, engine, "
                   "crisp cells)")
+            if res.get("identify"):
+                print(f"identify: {res['identify']['points']} point(s) read on the MapLibre page and checked "
+                      f"against mlview.json/compare → {res['identify'].get('file')}")
         else:
             print("headless only: what the map shows in a browser is not checked here (--render opens pages in "
                   "headless Chrome)")
